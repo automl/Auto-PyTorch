@@ -32,7 +32,7 @@ from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head
 from autoPyTorch.pipeline.components.setup.network_initializer import (
     NetworkInitializerChoice
 )
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.forecasting_target_scaling import \
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.targets_preprocessing.forecasting_target_scaling import \
     TargetScalerChoice
 from autoPyTorch.pipeline.components.setup.optimizer import OptimizerChoice
 from autoPyTorch.pipeline.components.setup.forecasting_training_loss import ForecastingLossChoices

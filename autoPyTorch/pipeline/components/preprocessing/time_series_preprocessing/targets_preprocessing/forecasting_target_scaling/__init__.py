@@ -12,8 +12,8 @@ from autoPyTorch.pipeline.components.base_component import (
     autoPyTorchComponent,
     find_components,
 )
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.forecasting_target_scaling.\
-    base_target_scaler import BaseTargetScaler
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.targets_preprocessing.\
+    forecasting_target_scaling.base_target_scaler import BaseTargetScaler
 
 scaling_directory = os.path.split(__file__)[0]
 _scalers = find_components(__package__,

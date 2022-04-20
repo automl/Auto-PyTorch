@@ -1,7 +1,6 @@
 from typing import Any, Dict, Optional, Union
 
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.\
-    forecasting_target_scaling.base_target_scaler import BaseTargetScaler
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.targets_preprocessing.forecasting_target_scaling import BaseTargetScaler
 
 
 class TargetNoScaler(BaseTargetScaler):

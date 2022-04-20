@@ -1,23 +1,19 @@
 from abc import ABC
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
-import warnings
 import numpy as np
 
 import pandas as pd
 
 import torch
-import torch.nn.functional as F
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
 
 from autoPyTorch.constants import REGRESSION_TASKS, FORECASTING_TASKS
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.forecasting_target_scaling. \
-    base_target_scaler import BaseTargetScaler
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.forecasting_target_scaling. \
-    TargetNoScaler import TargetNoScaler
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.targets_preprocessing.forecasting_target_scaling import BaseTargetScaler
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.targets_preprocessing.forecasting_target_scaling.TargetNoScaler import TargetNoScaler
 from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
 from autoPyTorch.pipeline.components.setup.network.forecasting_network import ForecastingNet, ForecastingDeepARNet, \
     NBEATSNet, ForecastingSeq2SeqNet

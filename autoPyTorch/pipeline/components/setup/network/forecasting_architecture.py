@@ -1,6 +1,4 @@
-from collections import OrderedDict
-from typing import Any, Dict, Optional, Union, Tuple, List
-from enum import Enum
+from typing import Dict, Optional, Union, Tuple, List
 
 from abc import abstractmethod
 
@@ -13,8 +11,7 @@ from torch.distributions import (
     TransformedDistribution,
 )
 
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.forecasting_target_scaling. \
-    base_target_scaler import BaseTargetScaler
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.targets_preprocessing.forecasting_target_scaling import BaseTargetScaler
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import NetworkStructure
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import (
     EncoderNetwork,

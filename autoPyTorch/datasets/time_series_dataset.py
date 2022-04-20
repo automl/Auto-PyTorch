@@ -780,7 +780,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         """
         sequence_datasets = []
-        idx_start_test = 0
 
         y_group = Y.groupby(Y.index)
         if X is not None:
@@ -822,27 +821,18 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         return sequence_datasets, train_tensors, test_tensors
 
-    def replace_data(self, X_train: BaseDatasetInputType, X_test: Optional[BaseDatasetInputType]) -> 'BaseDataset':
+    def replace_data(self, X_train: pd.DataFrame, X_test: Optional[pd.DataFrame]) -> 'BaseDataset':
         super(TimeSeriesForecastingDataset, self).replace_data(X_train=X_train, X_test=X_test)
-        self.update_tensors_seqs(X_train, self.sequence_lengths_train + self.n_prediction_steps, is_train=True)
         if X_test is not None:
-            self.update_tensors_seqs(X_test, self.sequence_lengths_tests, is_train=False)
-        return self
+            X_test_group = X_test.groupby(X_test.index)
+        for seq, x in zip(self.datasets, X_train.groupby(X_train.index)):
+            ser_id = x[0]
+            x_ser = x[1].transform(np.array).values
+            seq.X = x_ser
+            if X_test is not None:
+                seq.X_test = X_test_group.get_group(ser_id).transform(np.array).values
 
-    def update_tensors_seqs(self, X: np.ndarray, sequence_lengths, is_train=True):
-        if X.size == 0:
-            return
-        idx_start = 0
-        if is_train:
-            for seq, seq_length in zip(self.datasets, sequence_lengths):
-                idx_end = idx_start + seq_length
-                seq.X = X[idx_start: idx_end]
-                idx_start = idx_end
-        else:
-            for seq, seq_length in zip(self.datasets, sequence_lengths):
-                idx_end = idx_start + seq_length
-                seq.X_test = X[idx_start: idx_end]
-                idx_start = idx_end
+        return self
 
     def update_transform(self, transform: Optional[torchvision.transforms.Compose],
                          train: bool = True,
@@ -952,7 +942,10 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                                    'time_feature_transform': self.time_feature_transform,
                                    'time_feature_names': self.time_feature_names,
                                    'future_feature_shapes': self.future_feature_shapes,
-                                   'uni_variant': self.is_uni_variant})
+                                   'uni_variant': self.is_uni_variant,
+                                   'targets_have_missing_values': self.train_tensors[1].isnull().values.any(),
+                                   'features_have_missing_values': False if self.train_tensors[0] is None
+                                   else self.train_tensors[0].isnull().values.any()})
         return dataset_properties
 
     def create_cross_val_splits(
@@ -1101,106 +1094,3 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             test_seq.is_test_set = True
             test_seq.only_has_past_targets = True
         return test_sets
-
-
-def _check_time_series_forecasting_inputs(train: np.ndarray,
-                                          val: Optional[np.ndarray] = None) -> None:
-    if train.ndim != 3 or any(isinstance(i, (list, np.ndarray)) for i in train):
-        raise ValueError(
-            "The training data for time series forecasting has to be a three-dimensional tensor of shape PxLxM. or a"
-            "nested list")
-    if val is not None:
-        if val.ndim != 3 or any(isinstance(i, (list, np.ndarray)) for i in val):
-            raise ValueError(
-                "The validation data for time series forecasting "
-                "has to be a three-dimensional tensor of shape PxLxM or a nested list.")
-
-
-class TimeSeriesDataset(BaseDataset):
-    """
-    Common dataset for time series classification and regression data
-    Args:
-        X (np.ndarray): input training data.
-        Y (Union[np.ndarray, pd.Series]): training data targets.
-        X_test (Optional[np.ndarray]):  input testing data.
-        Y_test (Optional[Union[np.ndarray, pd.DataFrame]]): testing data targets
-        resampling_strategy (Union[CrossValTypes, HoldoutValTypes]),
-            (default=HoldoutValTypes.holdout_validation):
-            strategy to split the training data.
-        resampling_strategy_args (Optional[Dict[str, Any]]): arguments
-            required for the chosen resampling strategy. If None, uses
-            the default values provided in DEFAULT_RESAMPLING_PARAMETERS
-            in ```datasets/resampling_strategy.py```.
-        shuffle:  Whether to shuffle the data before performing splits
-        seed (int), (default=1): seed to be used for reproducibility.
-        train_transforms (Optional[torchvision.transforms.Compose]):
-            Additional Transforms to be applied to the training data.
-        val_transforms (Optional[torchvision.transforms.Compose]):
-            Additional Transforms to be applied to the validation/test data.
-
-        Notes: Support for Numpy Arrays is missing Strings.
-
-        """
-
-    def __init__(self,
-                 train: TIME_SERIES_CLASSIFICATION_INPUT,
-                 val: Optional[TIME_SERIES_CLASSIFICATION_INPUT] = None):
-        _check_time_series_inputs(train=train,
-                                  val=val,
-                                  task_type="time_series_classification")
-        super().__init__(train_tensors=train, val_tensors=val, shuffle=True)
-        self.cross_validators = CrossValFuncs.get_cross_validators(
-            CrossValTypes.stratified_k_fold_cross_validation,
-            CrossValTypes.k_fold_cross_validation,
-            CrossValTypes.shuffle_split_cross_validation,
-            CrossValTypes.stratified_shuffle_split_cross_validation
-        )
-        self.holdout_validators = HoldOutFuncs.get_holdout_validators(
-            HoldoutValTypes.holdout_validation,
-            HoldoutValTypes.stratified_holdout_validation
-        )
-
-
-class TimeSeriesRegressionDataset(BaseDataset):
-    def __init__(self, train: Tuple[np.ndarray, np.ndarray], val: Optional[Tuple[np.ndarray, np.ndarray]] = None):
-        _check_time_series_inputs(train=train,
-                                  val=val,
-                                  task_type="time_series_regression")
-        super().__init__(train_tensors=train, val_tensors=val, shuffle=True)
-        self.cross_validators = CrossValFuncs.get_cross_validators(
-            CrossValTypes.k_fold_cross_validation,
-            CrossValTypes.shuffle_split_cross_validation
-        )
-        self.holdout_validators = HoldOutFuncs.get_holdout_validators(
-            HoldoutValTypes.holdout_validation
-        )
-
-
-def _check_time_series_inputs(task_type: str,
-                              train: Union[TIME_SERIES_CLASSIFICATION_INPUT, TIME_SERIES_REGRESSION_INPUT],
-                              val: Optional[
-                                  Union[TIME_SERIES_CLASSIFICATION_INPUT, TIME_SERIES_REGRESSION_INPUT]] = None
-                              ) -> None:
-    if len(train) != 2:
-        raise ValueError(f"There must be exactly two training tensors for {task_type}. "
-                         f"The first one containing the data and the second one containing the targets.")
-    if train[0].ndim != 3:
-        raise ValueError(
-            f"The training data for {task_type} has to be a three-dimensional tensor of shape NxSxM.")
-    if train[1].ndim != 1:
-        raise ValueError(
-            f"The training targets for {task_type} have to be of shape N."
-        )
-    if val is not None:
-        if len(val) != 2:
-            raise ValueError(
-                f"There must be exactly two validation tensors for{task_type}. "
-                f"The first one containing the data and the second one containing the targets.")
-        if val[0].ndim != 3:
-            raise ValueError(
-                f"The validation data for {task_type} has to be a "
-                f"three-dimensional tensor of shape NxSxM.")
-        if val[0].ndim != 1:
-            raise ValueError(
-                f"The validation targets for {task_type} have to be of shape N."
-            )

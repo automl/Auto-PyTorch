@@ -1,7 +1,7 @@
 import collections
 import os
 
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Dict, List, Optional
 
 from autoPyTorch.pipeline.components.training.trainer.forecasting_trainer.forecasting_base_trainer import (
     ForecastingBaseTrainerComponent,
@@ -16,11 +16,9 @@ from autoPyTorch.pipeline.components.base_component import (
 )
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BudgetTracker
 
-from autoPyTorch.utils.common import FitRequirement, get_device_from_fit_dictionary
-from autoPyTorch.pipeline.components.training.losses import get_loss
+from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.forecasting_target_scaling. \
-    base_target_scaler import BaseTargetScaler
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.targets_preprocessing.forecasting_target_scaling import BaseTargetScaler
 
 from autoPyTorch.utils.common import get_device_from_fit_dictionary
 from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE

@@ -1,19 +1,16 @@
-from typing import Any, Dict, List, Optional, Union, Tuple
+from typing import Any, Dict, Optional, Union
 
 import numpy as np
 
-from sklearn.pipeline import Pipeline, make_pipeline
+from sklearn.pipeline import Pipeline
 #from sktime.transformations.panel.compose import ColumnTransformer
-from sklearn.compose import ColumnTransformer
 
 import torch
 
-from autoPyTorch.utils.common import FitRequirement, subsampler
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.base_time_series_preprocessing import (
     autoPyTorchTimeSeriesPreprocessingComponent
 )
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.forecasting_target_scaling\
-    .utils import TargetScaler
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.targets_preprocessing.forecasting_target_scaling import TargetScaler
 
 
 class BaseTargetScaler(autoPyTorchTimeSeriesPreprocessingComponent):
