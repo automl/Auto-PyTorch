@@ -1,5 +1,3 @@
-from autoPyTorch.data.time_series_validator import TimeSeriesInputValidator
-
 # -*- encoding: utf-8 -*-
 import logging
 import warnings
@@ -12,6 +10,7 @@ from sklearn.exceptions import NotFittedError
 from autoPyTorch.data.utils import DatasetCompressionSpec
 from autoPyTorch.data.tabular_validator import TabularInputValidator
 from autoPyTorch.data.time_series_feature_validator import TimeSeriesFeatureValidator
+from autoPyTorch.data.time_series_target_validator import TimeSeriesTargetValidator
 
 
 class TimeSeriesForecastingInputValidator(TabularInputValidator):
@@ -20,6 +19,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
     As a time series forecasting dataset might contain several time sequence with different length, we will transform
     all the data to DataFrameGroupBy whereas each group represents a series
     """
+
     def __init__(self,
                  is_classification: bool = False,
                  logger_port: Optional[int] = None,
@@ -27,6 +27,8 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                  ) -> None:
         super(TimeSeriesForecastingInputValidator, self).__init__(is_classification, logger_port, dataset_compression)
         self.feature_validator = TimeSeriesFeatureValidator(logger=self.logger)
+        self.target_validator = TimeSeriesTargetValidator(is_classification=self.is_classification,
+                                                          logger=self.logger)
         self._is_uni_variant = False
         self.known_future_features = None
         self.n_prediction_steps = 1
@@ -179,7 +181,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                 if X is None:
                     raise ValueError('Multi Variant dataset requires X as input!')
                 num_features = self.feature_validator.num_features
-            assert len(X) == len(y), "Length of features must equal to length of targets!"
+                assert len(X) == len(y), "Length of features must equal to length of targets!"
 
             for seq_idx in range(num_sequences):
                 sequence_lengths[seq_idx] = len(y[seq_idx])
@@ -198,7 +200,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                 y_flat[start_idx: end_idx] = np.array(y[seq_idx]).reshape([-1, num_targets])
                 start_idx = end_idx
 
-            y_transformed = self.target_validator.transform(y_flat)
+            y_transformed: np.ndarray = self.target_validator.transform(y_flat)
             if y_transformed.ndim == 1:
                 y_transformed = np.expand_dims(y_transformed, -1)
 

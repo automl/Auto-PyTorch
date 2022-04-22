@@ -619,7 +619,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             self.future_feature_shapes: Tuple[int, int] = (self.seq_length_min, len(known_future_features))
 
         if len(self.train_tensors) == 2 and self.train_tensors[1] is not None:
-            self.output_type: str = type_of_target(self.train_tensors[1][0])
+            self.output_type: str = type_of_target(self.train_tensors[1][0].fillna(method="pad"))
 
             if self.output_type in ["binary", "multiclass"]:
                 self.output_type = "continuous"
