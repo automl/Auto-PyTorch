@@ -7,13 +7,12 @@ from sklearn.pipeline import Pipeline
 
 import torch
 
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.base_time_series_preprocessing import (
-    autoPyTorchTimeSeriesPreprocessingComponent
-)
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.targets_preprocessing.forecasting_target_scaling import TargetScaler
+from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
+
+from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import TargetScaler
 
 
-class BaseTargetScaler(autoPyTorchTimeSeriesPreprocessingComponent):
+class BaseTargetScaler(autoPyTorchComponent):
     def __init__(self, random_state: Optional[Union[np.random.RandomState, int]] = None):
         super().__init__()
         self.random_state = random_state

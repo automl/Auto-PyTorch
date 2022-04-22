@@ -5,15 +5,13 @@ from typing import Any, Dict, List, Optional
 import ConfigSpace.hyperparameters as CSH
 from ConfigSpace.configuration_space import ConfigurationSpace
 
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.base_scaler_choice import \
-    ScalerChoice
+from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import (
     ThirdPartyComponents,
     autoPyTorchComponent,
     find_components,
 )
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.targets_preprocessing.\
-    forecasting_target_scaling.base_target_scaler import BaseTargetScaler
+from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.base_target_scaler import BaseTargetScaler
 
 scaling_directory = os.path.split(__file__)[0]
 _scalers = find_components(__package__,
@@ -27,7 +25,7 @@ def add_scaler(scaler: BaseTargetScaler) -> None:
     _addons.add_component(scaler)
 
 
-class TargetScalerChoice(ScalerChoice):
+class TargetScalerChoice(autoPyTorchChoice):
     """
     Allows for dynamically choosing scaling component at runtime, not
     """
