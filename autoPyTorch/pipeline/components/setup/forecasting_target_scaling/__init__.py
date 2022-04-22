@@ -27,7 +27,8 @@ def add_scaler(scaler: BaseTargetScaler) -> None:
 
 class TargetScalerChoice(autoPyTorchChoice):
     """
-    Allows for dynamically choosing scaling component at runtime, not
+    Allows for dynamically choosing scale component at runtime, Hence we consider it as part of "setup", not
+    "preprocessing"
     """
 
     def get_components(self) -> Dict[str, autoPyTorchComponent]:
@@ -90,14 +91,3 @@ class TargetScalerChoice(autoPyTorchChoice):
         self.configuration_space = cs
         self.dataset_properties = dataset_properties
         return cs
-
-    def _check_dataset_properties(self, dataset_properties: Dict[str, Any]) -> None:
-        """
-        A mechanism in code to ensure the correctness of the fit dictionary
-        It recursively makes sure that the children and parent level requirements
-        are honored before fit.
-        Args:
-            dataset_properties (Dict[str, Any]): dictionary holding the dataset properties
-
-        """
-        super()._check_dataset_properties(dataset_properties)

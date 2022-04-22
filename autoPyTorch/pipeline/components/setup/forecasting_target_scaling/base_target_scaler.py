@@ -9,7 +9,7 @@ import torch
 
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 
-from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import TargetScaler
+from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.utils import TargetScaler
 
 
 class BaseTargetScaler(autoPyTorchComponent):

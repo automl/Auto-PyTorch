@@ -2,7 +2,10 @@ from typing import Dict, Optional, Union
 
 from sklearn.base import BaseEstimator
 
-from autoPyTorch.pipeline.components.preprocessing.base_preprocessing import autoPyTorchPreprocessingComponent
+from autoPyTorch.pipeline.components.preprocessing.base_preprocessing import (
+    autoPyTorchPreprocessingComponent,
+    autoPyTorchTargetPreprocessingComponent
+)
 
 
 class autoPyTorchTimeSeriesPreprocessingComponent(autoPyTorchPreprocessingComponent):
@@ -26,6 +29,43 @@ class autoPyTorchTimeSeriesPreprocessingComponent(autoPyTorchPreprocessingCompon
             Dict[str, BaseEstimator]: early_preprocessor dictionary
         """
         if (self.preprocessor['numerical'] and self.preprocessor['categorical']) is None:
+            raise AttributeError("{} can't return early_preprocessor dict without fitting first"
+                                 .format(self.__class__.__name__))
+        return self.preprocessor
+
+    def __str__(self) -> str:
+        """ Allow a nice understanding of what components where used """
+        string = self.__class__.__name__
+        return string
+
+
+class autoPyTorchTimeSeriesTargetPreprocessingComponent(autoPyTorchTargetPreprocessingComponent):
+    """
+     Provides abstract interface for time series target preprocessing algorithms in AutoPyTorch.
+     Currently only numerical target preprocessing is supported.
+     # TODO add support for categorical targets!
+     # TODO define inverse transformation for each inversible numerical transformation (log, deseasonalization, etc. )
+    """
+    """
+     Provides abstract interface for time series preprocessing algorithms in AutoPyTorch.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.preprocessor: Union[Dict[str, Optional[BaseEstimator]], BaseEstimator] = dict(
+            numerical=None, categorical=None)
+
+    def get_preprocessor_dict(self) -> Dict[str, BaseEstimator]:
+        """
+        Returns early_preprocessor dictionary containing the sklearn numerical
+        and categorical early_preprocessor with "numerical" and "categorical"
+        keys. May contain None for a key if early_preprocessor does not
+        handle the datatype defined by key
+
+        Returns:
+            Dict[str, BaseEstimator]: early_preprocessor dictionary
+        """
+        if (self.preprocessor['target_numerical'] and self.preprocessor['target_categorical']) is None:
             raise AttributeError("{} can't return early_preprocessor dict without fitting first"
                                  .format(self.__class__.__name__))
         return self.preprocessor

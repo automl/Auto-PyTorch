@@ -68,6 +68,7 @@ def compute_mase_coefficient(past_target: Union[List, np.ndarray], sp: int, n_pr
     Returns:
         mase_coefficient: inverse of mase_denominator
     """
+    past_target = np.nan_to_num(past_target)
     if sp >= len(past_target):
         # in this case, we simply consider the mean value of the entire sequence
         # TODO condsider if there is a better way of handling this

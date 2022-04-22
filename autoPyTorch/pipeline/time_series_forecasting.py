@@ -21,7 +21,12 @@ from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.TimeSeriesTransformer import (
     TimeSeriesTransformer
 )
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputation.SimpleImputer import SimpleImputer
+#from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.imputation.TimeSeriesFeatureImputer import (
+#    TimeSeriesFeatureImputer
+#)
+#from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.imputation.TimeSeriesTargetImputer import (
+#    TimeSeriesTargetImputer
+#)
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling import ScalerChoice
 from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing import EarlyPreprocessing
 from autoPyTorch.pipeline.components.setup.lr_scheduler import SchedulerChoice
@@ -32,7 +37,7 @@ from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head
 from autoPyTorch.pipeline.components.setup.network_initializer import (
     NetworkInitializerChoice
 )
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.targets_preprocessing.forecasting_target_scaling import \
+from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import \
     TargetScalerChoice
 from autoPyTorch.pipeline.components.setup.optimizer import OptimizerChoice
 from autoPyTorch.pipeline.components.setup.forecasting_training_loss import ForecastingLossChoices

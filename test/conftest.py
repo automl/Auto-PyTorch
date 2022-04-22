@@ -23,9 +23,7 @@ import torch
 
 from autoPyTorch.automl_common.common.utils.backend import create
 from autoPyTorch.data.tabular_validator import TabularInputValidator
-from autoPyTorch.data.time_series_validator import TimeSeriesInputValidator
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
-from autoPyTorch.datasets.time_series_dataset import TimeSeriesDataset
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.pipeline import get_dataset_requirements
 
@@ -276,42 +274,6 @@ def get_tabular_data(task):
 
     return X, y, validator
 
-
-def get_time_series_data(task):
-    length = 10
-    sin_wave = np.sin(np.arange(length))
-    cos_wave = np.cos(np.arange(length))
-    sin_waves = []
-    cos_waves = []
-    # create a dummy dataset with 100 sin and 100 cosine waves
-    for i in range(200):
-        # add some random noise so not every sample is equal
-        sin_waves.append(sin_wave + np.random.randn(length) * 0.1)
-        cos_waves.append(cos_wave + np.random.randn(length) * 0.1)
-    sin_waves = np.stack(sin_waves)[..., np.newaxis]
-    cos_waves = np.stack(cos_waves)[..., np.newaxis]
-
-    if task == "classification_numerical_only":
-        X = np.concatenate([sin_waves, cos_waves])
-        y = np.array([0] * len(sin_waves) + [1] * len(cos_waves))
-
-        validator = TimeSeriesInputValidator(is_classification=True).fit(X.copy(), y.copy())
-
-    elif task == "regression_numerical_only":
-        X = np.concatenate([sin_waves, cos_waves])
-
-        # use the last value of the time series as dummy regression target
-        y = X[:, -1, 0]
-        X = X[:, :-1, :]
-
-        validator = TimeSeriesInputValidator(is_classification=False).fit(X.copy(), y.copy())
-
-    else:
-        raise ValueError("Unsupported task {}".format(task))
-
-    return X, y, validator
-
-
 def get_fit_dictionary(datamanager, backend):
     info = datamanager.get_required_dataset_info()
 
@@ -348,15 +310,6 @@ def get_tabular_fit_dictionary(X, y, validator, backend):
     return get_fit_dictionary(datamanager, backend)
 
 
-def get_time_series_fit_dictionary(X, y, validator, backend):
-    datamanager = TimeSeriesDataset(
-        X=X, Y=y,
-        validator=validator,
-        X_test=X, Y_test=y,
-    )
-    return get_fit_dictionary(datamanager, backend)
-
-
 @pytest.fixture
 def fit_dictionary_tabular_dummy(request, backend):
     if request.param == "classification":
@@ -368,27 +321,11 @@ def fit_dictionary_tabular_dummy(request, backend):
     return get_tabular_fit_dictionary(X, y, validator, backend)
 
 
-@pytest.fixture
-def fit_dictionary_time_series_dummy(request, backend):
-    if request.param == "classification":
-        X, y, validator = get_time_series_data("classification_numerical_only")
-    elif request.param == "regression":
-        X, y, validator = get_time_series_data("regression_numerical_only")
-    else:
-        raise ValueError(f"Unsupported indirect fixture {request.param}")
-    return get_time_series_fit_dictionary(X, y, validator, backend)
-
 
 @pytest.fixture
 def fit_dictionary_tabular(request, backend):
     X, y, validator = get_tabular_data(request.param)
     return get_tabular_fit_dictionary(X, y, validator, backend)
-
-
-@pytest.fixture
-def fit_dictionary_time_series(request, backend):
-    X, y, validator = get_time_series_data(request.param)
-    return get_time_series_fit_dictionary(X, y, validator, backend)
 
 
 @pytest.fixture

@@ -28,6 +28,8 @@ class TargetScaler(BaseEstimator):
                 loc = torch.mean(past_targets, dim=1, keepdim=True)
                 scale = torch.std(past_targets, dim=1, keepdim=True)
 
+                offset_targets = past_targets - loc
+                scale = torch.where(torch.logical_or(scale == 0.0, scale == torch.nan), offset_targets[:, [-1]], scale)
                 scale[scale == 0.0] = 1.0
                 if future_targets is not None:
                     future_targets = (future_targets - loc) / scale
@@ -39,7 +41,7 @@ class TargetScaler(BaseEstimator):
 
                 diff_ = max_ - min_
                 loc = min_ - 1e-10
-                scale = diff_
+                scale = torch.where(diff_ == 0, past_targets[:, [-1]], diff_)
                 scale[scale == 0.0] = 1.0
                 if future_targets is not None:
                     future_targets = (future_targets - loc) / scale
@@ -55,8 +57,8 @@ class TargetScaler(BaseEstimator):
 
             elif self.mode == 'mean_abs':
                 mean_abs = torch.mean(torch.abs(past_targets), dim=1, keepdim=True)
-                mean_abs[mean_abs == 0.0] = 1.0
-                scale = mean_abs
+                scale = torch.where(mean_abs == 0.0, past_targets[:, [-1]], mean_abs)
+                scale[scale == 0.0] = 1.0
                 if future_targets is not None:
                     future_targets = future_targets / scale
                 return past_targets / scale, future_targets, None, scale
@@ -106,7 +108,8 @@ class TargetScaler(BaseEstimator):
 
             elif self.mode == "max_abs":
                 max_abs_ = torch.max(torch.abs(valid_past_targets), dim=1, keepdim=True)[0]
-                scale = torch.where(max_abs_ == 0, past_targets[:, [-1]], max_abs_)
+                max_abs_[max_abs_ == 0.0] = 1.0
+                scale = max_abs_
                 if future_targets is not None:
                     future_targets = future_targets / scale
                 return past_targets / scale, future_targets, None, scale

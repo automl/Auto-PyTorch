@@ -1,6 +1,8 @@
 from typing import Any, List, Callable, Optional, Union, Tuple
 
 import numpy as np
+import pandas as pd
+from pandas.core.groupby.generic import DataFrameGroupBy
 
 import sklearn
 from sklearn.base import BaseEstimator
@@ -14,30 +16,44 @@ class TimeSeriesScaler(BaseEstimator):
         #self.loc = 0.  # type: Union[np.ndarray, float]
         #self.scale = 1.  # type: Union[np.ndarray, float]
 
-    def fit(self, X: np.ndarray, y: Any = None) -> "TimeSeriesScaler":
+    def fit(self, X: pd.DataFrame, y: Any = None) -> "TimeSeriesScaler":
         """
         The transformer is transformed on the fly (for each batch)
         """
-        # we assuem that the last two dimensions are [seq, features]
         if self.mode == "standard":
-            self.loc = np.mean(X, axis=-2, keepdims=True)
-            self.scale = np.std(X, axis=-2, keepdims=True)
-            self.scale[self.scale == 0.0] = 1.0
+            X_grouped = X.groupby(X.index)
+
+            self.loc = X_grouped.agg("mean")
+            self.scale = X_grouped.agg("std")
+            # ensure that if all the values are the same in a group, we could still normalize them correctly
+            self.scale.mask(self.scale == 0.0, self.loc)
+            self.scale[self.scale == 0] = 1.
 
         elif self.mode == "min_max":
-            min_ = np.min(X, axis=-2, keepdims=True)
-            max_ = np.max(X, axis=-2, keepdims=True)
+            X_grouped = X.groupby(X.index)
+
+            min_ = X_grouped.agg("min")
+            max_ = X_grouped.agg("max")
 
             diff_ = max_ - min_
             self.loc = min_
             self.scale = diff_
+            self.scale.mask(self.scale == 0.0, self.loc)
             self.scale[self.scale == 0.0] = 1.0
 
         elif self.mode == "max_abs":
-            max_abs_ = np.max(np.abs(X), axis=-2, keepdims=True)
+            X_abs = X.transform("abs")
+            max_abs_ = X_abs.groupby(X_abs.index).transform("max")
             max_abs_[max_abs_ == 0.0] = 1.0
             self.loc = None
             self.scale = max_abs_
+
+        elif self.mode == 'mean_abs':
+            X_abs = X.transform("abs")
+            X_abs = X_abs.groupby(X_abs.index)
+            mean_abs_ = X_abs.agg("mean")
+            self.loc = None
+            self.scale = mean_abs_.mask(mean_abs_ == 0.0, X_abs.agg("max"))
 
         elif self.mode == "none":
             self.loc = None
@@ -58,9 +74,9 @@ class TimeSeriesScaler(BaseEstimator):
         ) # type: np.ndarray
         """
 
-        if self.mode in ['standard', 'min_max']:
+        if self.mode in {"standard", "min_max"}:
             return (X - self.loc) / self.scale
-        elif self.mode == "max_abs":
+        elif self.mode in {"max_abs", "mean_abs"}:
             return X / self.scale
         else:
             return X

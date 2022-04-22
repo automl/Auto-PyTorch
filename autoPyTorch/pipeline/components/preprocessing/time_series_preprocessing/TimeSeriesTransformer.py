@@ -1,16 +1,20 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Tuple
 
 import numpy as np
+import pandas as pd
 
+from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline, make_pipeline
-#from sktime.transformations.panel.compose import ColumnTransformer
-from sklearn.compose import ColumnTransformer
+from sktime.transformations.panel.compose import ColumnTransformer
 
-import torch
-
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.base_time_series_preprocessing import \
-    autoPyTorchTimeSeriesPreprocessingComponent
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.utils import get_time_series_preprocessers
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.base_time_series_preprocessing import (
+    autoPyTorchTimeSeriesPreprocessingComponent,
+    autoPyTorchTimeSeriesTargetPreprocessingComponent,
+)
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.utils import (
+    get_time_series_preprocessers,
+    get_time_series_target_preprocessers,
+)
 from autoPyTorch.utils.common import FitRequirement, subsampler
 
 
@@ -34,33 +38,35 @@ class TimeSeriesTransformer(autoPyTorchTimeSeriesPreprocessingComponent):
             "TabularColumnTransformer": an instance of self
         """
         self.check_requirements(X, y)
-        numerical_pipeline = 'drop'
-        categorical_pipeline = 'drop'
 
         preprocessors = get_time_series_preprocessers(X)
-
-        if len(X['dataset_properties']['numerical_columns']):
+        column_transformers: List[Tuple[str, BaseEstimator, List[int]]] = []
+        if len(preprocessors['numerical']) > 0:
             numerical_pipeline = make_pipeline(*preprocessors['numerical'])
-        if len(X['dataset_properties']['categorical_columns']):
+            column_transformers.append(
+                ('numerical_pipeline', numerical_pipeline, X['dataset_properties']['numerical_columns'])
+            )
+        if len(preprocessors['categorical']) > 0:
             categorical_pipeline = make_pipeline(*preprocessors['categorical'])
+            column_transformers.append(
+                ('categorical_pipeline', categorical_pipeline, X['dataset_properties']['categorical_columns'])
+            )
 
-        # as X_train is a 2d array here, we simply use ColumnTransformer from sklearn
-        self.preprocessor = ColumnTransformer([
-            ('numerical_pipeline', numerical_pipeline, X['dataset_properties']['numerical_columns']),
-            ('categorical_pipeline', categorical_pipeline, X['dataset_properties']['categorical_columns'])],
+        # in case the preprocessing steps are disabled
+        # i.e, NoEncoder for categorical, we want to
+        # let the data in categorical columns pass through
+        self.preprocessor = ColumnTransformer(
+            column_transformers,
             remainder='passthrough'
         )
 
-
-        """
         # Where to get the data -- Prioritize X_train if any else
         # get from backend
         if 'X_train' in X:
-            X_train = subsampler(X['X_train'], X['train_indices'])
+            X_train = X['X_train']
         else:
             X_train = X['backend'].load_datamanager().train_tensors[0]
-        """
-        X_train = X['backend'].load_datamanager().train_tensors[0]
+
         self.preprocessor.fit(X_train)
         return self
 
@@ -76,13 +82,96 @@ class TimeSeriesTransformer(autoPyTorchTimeSeriesPreprocessingComponent):
         X.update({'time_series_transformer': self})
         return X
 
-    def __call__(self, X: Union[np.ndarray, torch.tensor]) -> Union[np.ndarray, torch.tensor]:
+    def __call__(self, X: pd.DataFrame) -> pd.DataFrame:
 
         if self.preprocessor is None:
             raise ValueError("cant call {} without fitting the column transformer first."
                              .format(self.__class__.__name__))
 
-        #if len(X.shape) == 2:
-        #    # expand batch dimension when called on a single record
-        #    X = X[np.newaxis, ...]
         return self.preprocessor.transform(X)
+
+    def get_column_transformer(self) -> ColumnTransformer:
+        """
+        Get fitted column transformer that is wrapped around
+        the sklearn early_preprocessor. Can only be called if fit()
+        has been called on the object.
+        Returns:
+            BaseEstimator: Fitted sklearn column transformer
+        """
+        if self.preprocessor is None:
+            raise AttributeError("{} can't return column transformer before transform is called"
+                                 .format(self.__class__.__name__))
+        return self.preprocessor
+
+
+class TimeSeriesTargetTransformer(autoPyTorchTimeSeriesTargetPreprocessingComponent):
+    def fit(self, X: Dict[str, Any], y: Any = None) -> "TimeSeriesTransformer":
+        """
+        Creates a column transformer for the chosen tabular
+        preprocessors
+        Args:
+            X (Dict[str, Any]): fit dictionary
+
+        Returns:
+            "TabularColumnTransformer": an instance of self
+        """
+        self.check_requirements(X, y)
+
+        preprocessors = get_time_series_target_preprocessers(X)
+        column_transformers: List[Tuple[str, BaseEstimator, List[int]]] = []
+        if len(preprocessors['target_numerical']) > 0:
+            numerical_pipeline = make_pipeline(*preprocessors['target_numerical'])
+            # TODO the last item needs to be adapted accordingly!
+            column_transformers.append(
+                ('target_numerical_pipeline', numerical_pipeline, list(range(len(preprocessors['target_numerical']))))
+            )
+
+        # in case the preprocessing steps are disabled
+        # i.e, NoEncoder for categorical, we want to
+        # let the data in categorical columns pass through
+        self.preprocessor = ColumnTransformer(
+            column_transformers,
+            remainder='passthrough'
+        )
+
+        # Where to get the data -- Prioritize X_train if any else
+        # get from backend
+        if 'y_train' in X:
+            y_train = X['y_train']
+        else:
+            y_train = X['backend'].load_datamanager().train_tensors[1]
+
+        self.preprocessor.fit(y_train)
+        return self
+
+    def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Adds the time series transformer to fit dictionary
+        Args:
+            X (Dict[str, Any]): fit dictionary
+
+        Returns:
+            X (Dict[str, Any]): updated fit dictionary
+        """
+        X.update({'time_series_target_transformer': self})
+        return X
+
+    def __call__(self, y: pd.DataFrame) -> pd.DataFrame:
+        if self.preprocessor is None:
+            raise ValueError("cant call {} without fitting the column transformer first."
+                             .format(self.__class__.__name__))
+
+        return self.preprocessor.transform(y)
+
+    def get_target_transformer(self) -> ColumnTransformer:
+        """
+        Get fitted column transformer that is wrapped around
+        the sklearn early_preprocessor. Can only be called if fit()
+        has been called on the object.
+        Returns:
+            BaseEstimator: Fitted sklearn column transformer
+        """
+        if self.preprocessor is None:
+            raise AttributeError("{} can't return column transformer before transform is called"
+                                 .format(self.__class__.__name__))
+        return self.preprocessor

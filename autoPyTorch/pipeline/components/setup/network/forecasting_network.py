@@ -9,7 +9,7 @@ from torch import nn
 
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.targets_preprocessing.forecasting_target_scaling import BaseTargetScaler
+from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import BaseTargetScaler
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import (
     EncoderBlockInfo,
 )
