@@ -116,6 +116,7 @@ class TimeSeriesSequence(Dataset):
             else:
                 self.mase_coefficient = compute_mase_coefficient(self.Y[:-n_prediction_steps], sp=self.sp,
                                                                  n_prediction_steps=n_prediction_steps)
+
         else:
             self.mase_coefficient = 1.0
         self.only_has_past_targets = only_has_past_targets

@@ -7,10 +7,13 @@ import pandas as pd
 from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
 
+from scipy import sparse
+
 from autoPyTorch.data.utils import DatasetCompressionSpec
 from autoPyTorch.data.tabular_validator import TabularInputValidator
 from autoPyTorch.data.time_series_feature_validator import TimeSeriesFeatureValidator
 from autoPyTorch.data.time_series_target_validator import TimeSeriesTargetValidator
+from autoPyTorch.data.base_feature_validator import SupportedFeatTypes
 
 
 class TimeSeriesForecastingInputValidator(TabularInputValidator):
@@ -18,6 +21,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
     A validator designed for a time series forecasting dataset.
     As a time series forecasting dataset might contain several time sequence with different length, we will transform
     all the data to DataFrameGroupBy whereas each group represents a series
+    TODO for multiple output: target names and shapes
     """
 
     def __init__(self,
@@ -34,8 +38,8 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
         self.n_prediction_steps = 1
         self.start_times_train = None
         self.start_times_test = None
-        self.feature_shapes = {}
-        self.feature_names = []
+        self.feature_shapes: Dict[str, int] = {}
+        self.feature_names: List[str] = []
         self.series_idx = None
 
     def fit(
@@ -89,15 +93,16 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
             self._is_uni_variant = True
         if isinstance(y_train, List):
             # X_train and y_train are stored as lists
+            y_train_stacked = self.join_series(y_train)
+            y_test_stacked = self.join_series(y_test) if y_test is not None else None
+
             if self._is_uni_variant:
                 self.feature_validator.num_features = 0
                 self.feature_validator.numerical_columns = []
                 self.feature_validator.categorical_columns = []
 
-                if y_test is not None:
-                    self.target_validator.fit(y_train[0], y_test[0])
-                else:
-                    self.target_validator.fit(y_train[0])
+                self.target_validator.fit(y_train_stacked, y_test_stacked)
+
                 self._is_fitted = True
             else:
                 self.known_future_features = known_future_features
@@ -105,15 +110,16 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                 if len(X_train) != len(y_train):
                     raise ValueError("Inconsistent number of sequences for features and targets,"
                                      " {} for features and {} for targets".format(len(X_train), len(y_train), ))
-
+                X_train_stacked = self.join_series(X_train)
+                X_test_stacked = self.join_series(X_test) if X_test is not None else None
                 if X_test is not None:
                     if len(X_test) != len(y_test):
                         raise ValueError("Inconsistent number of test datapoints for features and targets,"
                                          " {} for features and {} for targets".format(len(X_test), len(y_test), ))
                     # TODO write a feature input validator to check X_test for known_future_features
                     super().fit(X_train[0], y_train[0], X_test[0], y_test[0])
-                self.feature_validator.fit(X_train[0], None if X_test is None else X_test[0], series_idx=series_idx)
-                self.target_validator.fit(y_train[0], None if y_test is None else y_test[0])
+                self.feature_validator.fit(X_train_stacked, X_test_stacked, series_idx=series_idx)
+                self.target_validator.fit(y_train_stacked, y_test_stacked)
 
                 if self.feature_validator.only_contain_series_idx:
                     self._is_uni_variant = True
@@ -126,13 +132,8 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
 
                 if X_test is not None:
                     self.check_input_shapes(X_test, y_test, is_training=False)
-                if hasattr(X_train[0], 'columns'):
-                    features = X_train[0].columns.values.tolist()
-                else:
-                    features = list(map(str, range(len(X_train[0]))))
-                for feature in features:
-                    self.feature_names.append(feature)
-                    self.feature_shapes[feature] = 1
+                self.feature_names = self.feature_validator.get_reordered_columns()
+                self.feature_shapes = {feature_name: 1 for feature_name in self.feature_names}
         else:
             # TODO X_train and y_train are pd.DataFrame
             raise NotImplementedError
@@ -187,33 +188,16 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                 sequence_lengths[seq_idx] = len(y[seq_idx])
             sequence_lengths = np.asarray(sequence_lengths)
 
-            num_targets = self.target_validator.out_dimensionality
+            y_stacked = self.join_series(y)
 
-            num_data = np.sum(sequence_lengths)
-
-            start_idx = 0
-
-            y_flat = np.empty([num_data, num_targets])
-
-            for seq_idx, seq_length in enumerate(sequence_lengths):
-                end_idx = start_idx + seq_length
-                y_flat[start_idx: end_idx] = np.array(y[seq_idx]).reshape([-1, num_targets])
-                start_idx = end_idx
-
-            y_transformed: np.ndarray = self.target_validator.transform(y_flat)
-            if y_transformed.ndim == 1:
-                y_transformed = np.expand_dims(y_transformed, -1)
+            y_transformed: pd.DataFrame = self.target_validator.transform(y_stacked)
 
             if self.series_idx is None:
                 series_number = np.arange(len(sequence_lengths)).repeat(sequence_lengths)
                 if not self._is_uni_variant:
-                    if isinstance(X[0], np.ndarray):
-                        x_flat: pd.DataFrame = pd.DataFrame(np.vstack(X))
-                    elif isinstance(X[0], pd.DataFrame):
-                        x_flat: pd.DataFrame = pd.concat(X)
-                    else:
-                        raise NotImplementedError(f'Cannot transform a List of {type(X[0])}')
-                    x_transformed = self.feature_validator.transform(x_flat)
+                    x_stacked = self.join_series(X)
+                    x_transformed = self.feature_validator.transform(x_stacked,
+                                                                     index=series_number)
 
             else:
                 # In this case X can only contain pd.DataFrame, see ```time_series_feature_validator.py```
@@ -226,17 +210,32 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                 series_number = pd.MultiIndex.from_frame(x_flat[self.series_idx])
 
                 if not self._is_uni_variant:
-                    x_transformed = self.feature_validator.transform(x_flat.drop(self.series_idx, axis=1))
-            y_transformed: pd.DataFrame = pd.DataFrame(y_transformed,
-                                                       index=pd.Index(series_number))
+                    x_transformed = self.feature_validator.transform(x_flat.drop(self.series_idx, axis=1),
+                                                                     index=series_number)
+
             if self._is_uni_variant:
                 return None, y_transformed, sequence_lengths
-
-            if x_transformed.ndim == 1:
-                x_transformed = np.expand_dims(x_transformed, -1)
-            x_transformed: pd.DataFrame = pd.DataFrame(x_transformed,
-                                                       index=series_number)
 
             return x_transformed, y_transformed, sequence_lengths
         else:
             raise NotImplementedError
+
+    @staticmethod
+    def join_series(input: List[SupportedFeatTypes]) -> SupportedFeatTypes:
+        """
+        join the series into one single value
+        """
+        if not isinstance(input, List):
+            raise ValueError(f'Input must be a list, but it is {type(input)}')
+        if isinstance(input[0], pd.DataFrame):
+            return pd.concat(input)
+        elif isinstance(input[0], sparse.spmatrix):
+            if len(input[0].shape) > 1:
+                return sparse.vstack(input)
+            else:
+                return sparse.hstack(input)
+        elif isinstance(input[0], (List, np.ndarray)):
+            return np.concatenate(input)
+        else:
+            raise NotImplementedError(f'Unsupported input type: List[{type(input[0])}]')
+

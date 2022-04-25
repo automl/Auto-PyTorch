@@ -6,7 +6,7 @@ import numpy as np
 import sklearn.utils
 from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
-from autoPyTorch.data.tabular_feature_validator import TabularFeatureValidator
+from autoPyTorch.data.tabular_feature_validator import TabularFeatureValidator, SupportedFeatTypes
 from autoPyTorch.utils.logging_ import PicklableClientLogger
 
 
@@ -17,6 +17,9 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
     ):
         super().__init__(logger)
         self.only_contain_series_idx = False
+
+    def get_reordered_columns(self):
+        return self.transformed_columns + list(set(self.column_order) - set(self.transformed_columns))
 
     def fit(self,
             X_train: Union[pd.DataFrame, np.ndarray],
@@ -67,4 +70,21 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
             super().fit(X_train, X_test)
 
         return self
+
+    def transform(
+        self,
+        X: SupportedFeatTypes,
+        index: Optional[Union[pd.Index, np.ndarray]] = None,
+    ) -> Union[pd.DataFrame]:
+        X = super(TimeSeriesFeatureValidator, self).transform(X)
+        if index is None:
+            index = np.array([0.] * len(X))
+        if X.ndim == 1:
+            X = np.expand_dims(X, -1)
+        X: pd.DataFrame = pd.DataFrame(X, columns=self.get_reordered_columns(),
+                                       index=index)
+        return X
+
+
+
 

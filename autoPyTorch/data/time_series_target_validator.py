@@ -44,7 +44,10 @@ def _modify_regression_target(y: ArrayType) -> ArrayType:
 
 
 class TimeSeriesTargetValidator(TabularTargetValidator):
-    def transform(self, y: SupportedTargetTypes) -> np.ndarray:
+    def transform(self,
+                  y: SupportedTargetTypes,
+                  index: Optional[Union[pd.Index, np.ndarray]] = None,
+                  ) ->pd.DataFrame:
         """
         Validates and fit a categorical encoder (if needed) to the features.
         The supported data types are List, numpy arrays and pandas DataFrames.
@@ -53,9 +56,11 @@ class TimeSeriesTargetValidator(TabularTargetValidator):
             y (SupportedTargetTypes)
                 A set of targets that are going to be encoded if the current task
                 is classification
+            index (Optional[Union[pd.Index], np.ndarray]):
+                index indentifying which series the data belongs to
 
         Returns:
-            np.ndarray:
+            pd.DataFrame:
                 The transformed array
         """
         if not self._is_fitted:
@@ -71,6 +76,13 @@ class TimeSeriesTargetValidator(TabularTargetValidator):
 
         if not self.is_classification and "continuous" not in type_of_target(np.nan_to_num(y)):
             y = _modify_regression_target(y)
+
+        if index is None:
+            index = np.array([0.] * len(y))
+        if y.ndim == 1:
+            y = np.expand_dims(y, -1)
+
+        y: pd.DataFrame = pd.DataFrame(y, index=index)
 
         return y
 
