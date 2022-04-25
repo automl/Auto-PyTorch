@@ -410,29 +410,30 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             deep_ar_hp = ':'.join([self.deepAR_decoder_prefix, self.deepAR_decoder_name, 'auto_regressive'])
             if deep_ar_hp in cs:
                 deep_ar_hp = cs.get_hyperparameter(deep_ar_hp)
-                forbidden_deep_ar = ForbiddenEqualsClause(deep_ar_hp, True)
-                if min_num_blocks == 1:
-                    if max_num_blocks > 1:
-                        if max_num_blocks - min_num_blocks > 1:
-                            forbidden = ForbiddenAndConjunction(
-                                ForbiddenInClause(num_blocks, list(range(1, max_num_blocks))),
+                if True in deep_ar_hp.choices:
+                    forbidden_deep_ar = ForbiddenEqualsClause(deep_ar_hp, True)
+                    if min_num_blocks == 1:
+                        if max_num_blocks > 1:
+                            if max_num_blocks - min_num_blocks > 1:
+                                forbidden = ForbiddenAndConjunction(
+                                    ForbiddenInClause(num_blocks, list(range(1, max_num_blocks))),
+                                    forbidden_deep_ar
+                                )
+                            else:
+                                forbidden = ForbiddenAndConjunction(ForbiddenEqualsClause(num_blocks, 2), forbidden_deep_ar)
+                            cs.add_forbidden_clause(forbidden)
+
+                    forbidden_deep_ars = []
+
+                    hps_forbidden_deep_ar = [variable_selection, use_temporal_fusion]
+                    for hp_forbidden_deep_ar in hps_forbidden_deep_ar:
+                        if True in hp_forbidden_deep_ar.choices:
+                            forbidden_deep_ars.append(ForbiddenAndConjunction(
+                                ForbiddenEqualsClause(hp_forbidden_deep_ar, True),
                                 forbidden_deep_ar
-                            )
-                        else:
-                            forbidden = ForbiddenAndConjunction(ForbiddenEqualsClause(num_blocks, 2), forbidden_deep_ar)
-                        cs.add_forbidden_clause(forbidden)
-
-                forbidden_deep_ars = []
-
-                hps_forbidden_deep_ar = [variable_selection, use_temporal_fusion]
-                for hp_forbidden_deep_ar in hps_forbidden_deep_ar:
-                    if True in hp_forbidden_deep_ar.choices:
-                        forbidden_deep_ars.append(ForbiddenAndConjunction(
-                            ForbiddenEqualsClause(hp_forbidden_deep_ar, True),
-                            forbidden_deep_ar
-                        ))
-                if forbidden_deep_ars:
-                    cs.add_forbidden_clauses(forbidden_deep_ars)
+                            ))
+                    if forbidden_deep_ars:
+                        cs.add_forbidden_clauses(forbidden_deep_ars)
 
         if True in skip_connection.choices:
             forbidden_mlp_skip = []

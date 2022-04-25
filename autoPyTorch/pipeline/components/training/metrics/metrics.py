@@ -79,11 +79,11 @@ def compute_mase_coefficient(past_target: Union[List, np.ndarray], sp: int, n_pr
         mase_denominator = forecasting_metrics.mean_absolute_error(past_target[sp:],
                                                                    past_target[:-sp],
                                                                    multioutput="raw_values")
-    if mase_denominator == 0.0:
-        # they will not be counter when computing MASE
-        return np.zeros_like(mase_denominator)
 
-    return 1.0 / np.maximum(mase_denominator, forecasting_metrics._functions.EPS)
+    return np.where(mase_denominator == 0.0,
+                    np.zeros_like(mase_denominator),
+                    1.0 / np.maximum(mase_denominator, forecasting_metrics._functions.EPS)
+                    )
 
 
 mean_MASE_forecasting = make_metric('mean_MASE_forecasting',

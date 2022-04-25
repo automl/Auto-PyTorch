@@ -1,9 +1,7 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict,  Optional
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter
-
-import numpy as np
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter

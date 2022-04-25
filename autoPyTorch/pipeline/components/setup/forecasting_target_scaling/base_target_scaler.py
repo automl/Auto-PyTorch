@@ -3,12 +3,13 @@ from typing import Any, Dict, Optional, Union
 import numpy as np
 
 from sklearn.pipeline import Pipeline
-#from sktime.transformations.panel.compose import ColumnTransformer
 
 import torch
 
-from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
+from ConfigSpace import ConfigurationSpace
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
+from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.utils import TargetScaler
 
 
@@ -65,3 +66,10 @@ class BaseTargetScaler(autoPyTorchComponent):
                                                                         past_observed_values,
                                                                         future_targets)
         return past_target, future_targets, loc, scale
+
+    @staticmethod
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+    ) -> ConfigurationSpace:
+        cs = ConfigurationSpace()
+        return cs

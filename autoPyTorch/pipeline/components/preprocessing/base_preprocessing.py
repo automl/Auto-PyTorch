@@ -78,7 +78,7 @@ class autoPyTorchTargetPreprocessingComponent(autoPyTorchComponent):
      preprocessor
     """
     def __init__(self) -> None:
-        autoPyTorchComponent.__init__()
+        super().__init__()
         self.add_fit_requirements([
             FitRequirement('y_train',
                            (pd.DataFrame, ),

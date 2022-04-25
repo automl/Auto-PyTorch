@@ -18,9 +18,9 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace
 
 
 class TimeSeriesFeatureImputer(BaseTimeSeriesImputer, autoPyTorchTimeSeriesPreprocessingComponent):
-    def __int__(self,
+    def __init__(self,
                 random_state: Optional[np.random.RandomState] = None,
-                imputation_strategy: str = 'mean',):
+                imputation_strategy: str = 'mean'):
         super().__init__()
         self.random_state = random_state
         self.imputation_strategy = imputation_strategy
@@ -49,7 +49,7 @@ class TimeSeriesFeatureImputer(BaseTimeSeriesImputer, autoPyTorchTimeSeriesPrepr
                 imputer = Imputer(method='constant', random_state=self.random_state, value=0)
                 self.preprocessor['numerical'] = imputer
             else:
-                imputer = Imputer(method=self.numerical_strategy, random_state=self.random_state, value=0)
+                imputer = Imputer(method=self.imputation_strategy, random_state=self.random_state, value=0)
                 self.preprocessor['numerical'] = imputer
 
         return self
@@ -86,7 +86,7 @@ class TimeSeriesFeatureImputer(BaseTimeSeriesImputer, autoPyTorchTimeSeriesPrepr
 
 
 class TimeSeriesTargetImputer(BaseTimeSeriesImputer, autoPyTorchTimeSeriesTargetPreprocessingComponent):
-    def __int__(self,
+    def __init__(self,
                 random_state: Optional[np.random.RandomState] = None,
                 imputation_strategy: str = 'mean',):
         super().__init__()
@@ -146,6 +146,7 @@ class TimeSeriesTargetImputer(BaseTimeSeriesImputer, autoPyTorchTimeSeriesTarget
         """
         Time series imputor, for the sake of speed, we only allow local imputation here (i.e., the filled value only
         depends on its neighbours)
+        # TODO: Transformer for mean and median: df.fillna(df.groupby(df.index).agg('mean'))...
         Args:
             dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]): dataset properties
             imputation_strategy: which strategy to use, its content is defined by

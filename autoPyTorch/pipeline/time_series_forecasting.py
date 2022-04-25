@@ -21,13 +21,14 @@ from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.TimeSeriesTransformer import (
     TimeSeriesTransformer
 )
-#from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.imputation.TimeSeriesFeatureImputer import (
-#    TimeSeriesFeatureImputer
-#)
-#from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.imputation.TimeSeriesTargetImputer import (
-#    TimeSeriesTargetImputer
-#)
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling import ScalerChoice
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.encoding import (
+    TimeSeriesEncoderChoice
+)
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.imputation.TimeSeriesImputer import (
+    TimeSeriesFeatureImputer,
+    TimeSeriesTargetImputer,
+)
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling import ScalerChoice
 from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing import EarlyPreprocessing
 from autoPyTorch.pipeline.components.setup.lr_scheduler import SchedulerChoice
 from autoPyTorch.pipeline.components.setup.network.forecasting_network import ForecastingNetworkComponent
@@ -223,9 +224,10 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             if losses_non_ar:
                 forbidden_hp_regression_loss = ForbiddenInClause(hp_loss, losses_non_ar)
                 for hp_ar in hp_deepAR:
-                    forbidden_hp_dist = ForbiddenEqualsClause(hp_ar, ar_forbidden)
-                    forbidden_hp_dist = ForbiddenAndConjunction(forbidden_hp_dist, forbidden_hp_regression_loss)
-                    forbidden_losses_all.append(forbidden_hp_dist)
+                    if True in hp_ar.choices:
+                        forbidden_hp_dist = ForbiddenEqualsClause(hp_ar, ar_forbidden)
+                        forbidden_hp_dist = ForbiddenAndConjunction(forbidden_hp_dist, forbidden_hp_regression_loss)
+                        forbidden_losses_all.append(forbidden_hp_dist)
 
             decoder_auto_regressive = cs.get_hyperparameter("network_backbone:seq_encoder:decoder_auto_regressive")
             forecast_strategy = cs.get_hyperparameter("loss:DistributionLoss:forecast_strategy")
@@ -246,19 +248,22 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                 forbidden = ['MLPEncoder']
                 forbidden_deepAREncoder = [forbid for forbid in forbidden if forbid in network_flat_encoder_hp.choices]
                 for hp_ar in hp_deepAR:
-                    forbidden_hp_ar = ForbiddenEqualsClause(hp_ar, ar_forbidden)
-                    forbidden_hp_mlpencoder = ForbiddenInClause(network_flat_encoder_hp, forbidden_deepAREncoder)
-                    forbidden_hp_ar_mlp = ForbiddenAndConjunction(forbidden_hp_ar, forbidden_hp_mlpencoder)
-                    forbidden_losses_all.append(forbidden_hp_ar_mlp)
+                    if True in hp_ar.choices:
+                        forbidden_hp_ar = ForbiddenEqualsClause(hp_ar, ar_forbidden)
+                        forbidden_hp_mlpencoder = ForbiddenInClause(network_flat_encoder_hp, forbidden_deepAREncoder)
+                        forbidden_hp_ar_mlp = ForbiddenAndConjunction(forbidden_hp_ar, forbidden_hp_mlpencoder)
+                        forbidden_losses_all.append(forbidden_hp_ar_mlp)
 
             forecast_strategy = cs.get_hyperparameter('loss:DistributionLoss:forecast_strategy')
             if 'mean' in forecast_strategy.choices:
                 for hp_ar in hp_deepAR:
-                    forbidden_hp_ar = ForbiddenEqualsClause(hp_ar, ar_forbidden)
-                    forbidden_hp_forecast_strategy = ForbiddenEqualsClause(forecast_strategy, 'mean')
-                    forbidden_hp_ar_forecast_strategy = ForbiddenAndConjunction(forbidden_hp_ar,
-                                                                                forbidden_hp_forecast_strategy)
-                    forbidden_losses_all.append(forbidden_hp_ar_forecast_strategy)
+                    if True in hp_ar.choices:
+
+                        forbidden_hp_ar = ForbiddenEqualsClause(hp_ar, ar_forbidden)
+                        forbidden_hp_forecast_strategy = ForbiddenEqualsClause(forecast_strategy, 'mean')
+                        forbidden_hp_ar_forecast_strategy = ForbiddenAndConjunction(forbidden_hp_ar,
+                                                                                    forbidden_hp_forecast_strategy)
+                        forbidden_losses_all.append(forbidden_hp_ar_forecast_strategy)
 
             cs.add_forbidden_clauses(forbidden_losses_all)
 
@@ -319,13 +324,16 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
 
         if not default_dataset_properties.get("uni_variant", False):
             steps.extend([("preprocessing", EarlyPreprocessing(random_state=self.random_state)),
-                          ("imputer", SimpleImputer(random_state=self.random_state)),
+                          ("imputer", TimeSeriesFeatureImputer(random_state=self.random_state)),
                           ("scaler", ScalerChoice(default_dataset_properties, random_state=self.random_state)),
+                          ('encoding', TimeSeriesEncoderChoice(default_dataset_properties,
+                                                               random_state=self.random_state)),
                           ("time_series_transformer", TimeSeriesTransformer(random_state=self.random_state)),
                           ])
 
         # TODO consider the correct way of doing imputer for time series forecasting tasks.
         steps.extend([
+            ("target_imputer", TimeSeriesTargetImputer(random_state=self.random_state)),
             ('loss', ForecastingLossChoices(default_dataset_properties, random_state=self.random_state)),
             ("target_scaler", TargetScalerChoice(default_dataset_properties,
                                                  random_state=self.random_state)),

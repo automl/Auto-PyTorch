@@ -15,7 +15,7 @@ class TargetScaler(BaseEstimator):
     def __init__(self, mode: str):
         self.mode = mode
 
-    def fit(self, X: Dict, y: Any = None) -> "TimeSeriesScalerBatch":
+    def fit(self, X: Dict, y: Any = None) -> "TargetScaler":
         return self
 
     def transform(self,

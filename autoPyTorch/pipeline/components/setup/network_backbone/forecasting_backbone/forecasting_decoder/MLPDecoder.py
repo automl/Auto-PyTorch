@@ -163,7 +163,9 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
             future_feature_shapes = dataset_properties.get('future_feature_shapes', (0,))
             if num_in_features[-1] != future_feature_shapes[-1]:
                 # deepAR model cannot be applied
-                auto_regressive.value_range = False
+                auto_regressive = HyperparameterSearchSpace(hyperparameter=auto_regressive.hyperparameter,
+                                                            value_range=[False],
+                                                            default_value=False,)
 
         cs = ConfigurationSpace()
 
