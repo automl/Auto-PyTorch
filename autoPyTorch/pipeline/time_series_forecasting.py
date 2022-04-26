@@ -29,7 +29,10 @@ from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.imp
     TimeSeriesTargetImputer,
 )
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling import ScalerChoice
-from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing import EarlyPreprocessing
+from autoPyTorch.pipeline.components.setup.early_preprocessor.TimeSeriesEarlyPreProcessing import (
+    TimeSeriesEarlyPreprocessing,
+    TimeSeriesTargetEarlyPreprocessing
+)
 from autoPyTorch.pipeline.components.setup.lr_scheduler import SchedulerChoice
 from autoPyTorch.pipeline.components.setup.network.forecasting_network import ForecastingNetworkComponent
 from autoPyTorch.pipeline.components.setup.network_embedding import NetworkEmbeddingChoice
@@ -323,7 +326,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             default_dataset_properties.update(dataset_properties)
 
         if not default_dataset_properties.get("uni_variant", False):
-            steps.extend([("preprocessing", EarlyPreprocessing(random_state=self.random_state)),
+            steps.extend([("preprocessing", TimeSeriesEarlyPreprocessing(random_state=self.random_state)),
                           ("imputer", TimeSeriesFeatureImputer(random_state=self.random_state)),
                           ("scaler", ScalerChoice(default_dataset_properties, random_state=self.random_state)),
                           ('encoding', TimeSeriesEncoderChoice(default_dataset_properties,
@@ -333,6 +336,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
 
         # TODO consider the correct way of doing imputer for time series forecasting tasks.
         steps.extend([
+            ("target_preprocessing", TimeSeriesTargetEarlyPreprocessing(random_state=self.random_state)),
             ("target_imputer", TimeSeriesTargetImputer(random_state=self.random_state)),
             ('loss', ForecastingLossChoices(default_dataset_properties, random_state=self.random_state)),
             ("target_scaler", TargetScalerChoice(default_dataset_properties,

@@ -18,7 +18,7 @@ from autoPyTorch.pipeline.components.setup.early_preprocessor.utils import (
 from autoPyTorch.utils.common import FitRequirement
 
 
-class TimeSeriesEarllyPreprocessing(EarlyPreprocessing):
+class TimeSeriesEarlyPreprocessing(EarlyPreprocessing):
 
     def __init__(self, random_state: Optional[np.random.RandomState] = None) -> None:
         super().__init__()

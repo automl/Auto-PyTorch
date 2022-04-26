@@ -49,7 +49,7 @@ class TimeSeriesFeatureImputer(BaseTimeSeriesImputer, autoPyTorchTimeSeriesPrepr
                 imputer = Imputer(method='constant', random_state=self.random_state, value=0)
                 self.preprocessor['numerical'] = imputer
             else:
-                imputer = Imputer(method=self.imputation_strategy, random_state=self.random_state, value=0)
+                imputer = Imputer(method=self.imputation_strategy, random_state=self.random_state)
                 self.preprocessor['numerical'] = imputer
 
         return self
@@ -114,7 +114,7 @@ class TimeSeriesTargetImputer(BaseTimeSeriesImputer, autoPyTorchTimeSeriesTarget
             imputer = Imputer(method='constant', random_state=self.random_state, value=0)
             self.preprocessor['target_numerical'] = imputer
         else:
-            imputer = Imputer(method=self.imputation_strategy, random_state=self.random_state, value=0)
+            imputer = Imputer(method=self.imputation_strategy, random_state=self.random_state)
             self.preprocessor['target_numerical'] = imputer
 
         return self
