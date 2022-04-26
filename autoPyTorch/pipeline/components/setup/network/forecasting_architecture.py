@@ -429,7 +429,7 @@ class ForecastingNet(AbstractForecastingNet):
         else:
             if past_features is not None:
                 past_features = past_features[:, -self.window_size:]
-                x_past = torch.cat([x_past, past_features], dim=-1)
+                x_past = torch.cat([past_features, x_past], dim=-1)
 
             x_past = x_past.to(device=self.device)
             if future_features is not None:
@@ -598,7 +598,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
             if self.network_structure.variable_selection:
                 x_future = self.decoder_select_variable(future_targets, future_features)
             else:
-                x_future = future_targets if future_features is None else torch.cat([future_targets, future_features],
+                x_future = future_targets if future_features is None else torch.cat([future_features, future_targets],
                                                                                     dim=-1)
             x_future = x_future.to(self.device)
 
@@ -645,8 +645,8 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                             future_features=future_features[:, [idx_pred]] if future_features is not None else None
                         )
                     else:
-                        x_future = x_future if future_features is None else torch.cat([x_future,
-                                                                                       future_features[:, [idx_pred]]],
+                        x_future = x_future if future_features is None else torch.cat([future_features[:, [idx_pred]],
+                                                                                       x_future],
                                                                                       dim=-1)
                         x_future = x_future.to(self.device)
 
@@ -736,7 +736,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                             future_features=None if repeated_time_feat is None else repeated_time_feat[:, [idx_pred]])
                     else:
                         x_future = x_future if repeated_time_feat is None else torch.cat(
-                            [x_future, repeated_time_feat[:, [idx_pred], :]], dim=-1)
+                            [repeated_time_feat[:, [idx_pred], :], x_future], dim=-1)
 
                         x_future = x_future.to(self.device)
 
@@ -890,7 +890,7 @@ class ForecastingDeepARNet(ForecastingSeq2SeqNet):
                 if past_features is not None:
                     past_features = past_features[:, -self.window_size:]
                     features_all = torch.cat([past_features[:, 1:], future_features], dim=1)
-                    x_input = torch.cat([targets_all, features_all], dim=-1)
+                    x_input = torch.cat([features_all, targets_all], dim=-1)
 
                 x_input = x_input.to(self.device)
 
@@ -958,7 +958,7 @@ class ForecastingDeepARNet(ForecastingSeq2SeqNet):
                         features_all = future_features
                 else:
                     features_all = None
-                x_past = x_past if features_all is None else torch.cat([x_past, features_all[:, :self.window_size]],
+                x_past = x_past if features_all is None else torch.cat([features_all[:, :self.window_size], x_past],
                                                                        dim=-1)
 
                 x_past = x_past.to(self.device)
@@ -1040,7 +1040,7 @@ class ForecastingDeepARNet(ForecastingSeq2SeqNet):
 
                 else:
                     if repeated_time_feat is not None:
-                        x_next = torch.cat([x_next, repeated_time_feat[:, [k - 1]]], dim=-1)
+                        x_next = torch.cat([repeated_time_feat[:, [k - 1]], x_next], dim=-1)
                     x_next = x_next.to(self.device)
                 encoder2decoder, _ = self.encoder(encoder_input=x_next,
                                                   additional_input=[None] * self.network_structure.num_blocks,

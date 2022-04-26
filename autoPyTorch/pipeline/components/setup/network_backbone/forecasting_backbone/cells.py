@@ -190,7 +190,7 @@ class TemporalFusionLayer(nn.Module):
 class VariableSelector(nn.Module):
     def __init__(self,
                  network_structure: NetworkStructure,
-                 dataset_properties: Dict,
+                 dataset_properties: Dict[str, Any],
                  network_encoder: Dict[str, EncoderBlockInfo],
                  auto_regressive: bool = False,
                  feature_names: Tuple[str] = (),
@@ -198,6 +198,24 @@ class VariableSelector(nn.Module):
                  feature_shapes: Dict[str, int] = {},
                  time_feature_names: Tuple[str] = (),
                  ):
+        """
+        Variable Selector. This models follows the implementation from
+        pytorch_forecasting.models.temporal_fusion_transformer.sub_modules.VariableSelectionNetwork
+        However, we adjust the structure to fit the data extracted from our dataloader: we record the feature index from
+        each feature names and break the input features on the fly.
+
+        The order of the input variables is as follows:
+        [features (from the dataset), time_features (from time feature transformers), targets]
+        Args:
+            network_structure (NetworkStructure): contains the information of the overall architecture information
+            dataset_properties (Dict): dataset properties
+            network_encoder(Dict[str, EncoderBlockInfo]): Network encoders
+            auto_regressive bool: if it belongs to an auto-regressive model
+            feature_names Tuple[str]: feature names, used to construct the selection network
+            known_future_features Tuple[str]: known future features
+            feature_shapes Dict[str, int]: shapes of each features
+            time_feature_names Tuple[str]: time feature names, used to complement feature_shapes
+        """
         super().__init__()
         first_encoder_output_shape = network_encoder['block_1'].encoder_output_shape[-1]
         static_input_sizes = dataset_properties['static_features_shape']
@@ -212,15 +230,6 @@ class VariableSelector(nn.Module):
         future_feature_name2tensor_idx = {}
         idx_tracker = 0
         idx_tracker_future = 0
-        if time_feature_names:
-            for name in time_feature_names:
-                feature_names2tensor_idx[name] = [idx_tracker, idx_tracker+1]
-                future_feature_name2tensor_idx[name] = [idx_tracker_future, idx_tracker_future + 1]
-                idx_tracker += 1
-                idx_tracker_future += 1
-                pre_scalar[name] = nn.Linear(1, self.hidden_size)
-                encoder_input_sizes[name] = self.hidden_size
-                decoder_input_sizes[name] = self.hidden_size
 
         if feature_names:
             for name in feature_names:
@@ -236,6 +245,16 @@ class VariableSelector(nn.Module):
             feature_shape = feature_shapes[future_name]
             future_feature_name2tensor_idx[future_name] = [idx_tracker_future, idx_tracker_future + feature_shape]
             idx_tracker_future += feature_shape
+
+        if time_feature_names:
+            for name in time_feature_names:
+                feature_names2tensor_idx[name] = [idx_tracker, idx_tracker+1]
+                future_feature_name2tensor_idx[name] = [idx_tracker_future, idx_tracker_future + 1]
+                idx_tracker += 1
+                idx_tracker_future += 1
+                pre_scalar[name] = nn.Linear(1, self.hidden_size)
+                encoder_input_sizes[name] = self.hidden_size
+                decoder_input_sizes[name] = self.hidden_size
 
         if not feature_names or not known_future_features:
             # Ensure that at least one feature is applied

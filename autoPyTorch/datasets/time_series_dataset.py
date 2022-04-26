@@ -151,8 +151,9 @@ class TimeSeriesSequence(Dataset):
                 past_features = self.X[:index + 1]
 
             if self.known_future_features:
-                future_features = self.X.iloc[index + 1: index + self.n_prediction_steps + 1,
-                                  self.known_future_features]
+                future_features = self.X.iloc[
+                                  index + 1: index + self.n_prediction_steps + 1, self.known_future_features
+                                  ]
             else:
                 future_features = None
         else:
@@ -164,13 +165,14 @@ class TimeSeriesSequence(Dataset):
                 self.compute_time_features()
 
                 if past_features:
-                    past_features = np.hstack([self._cached_time_features[:index + 1], past_features])
+                    past_features = np.hstack(past_features, [self._cached_time_features[:index + 1]])
                 else:
                     past_features = self._cached_time_features[:index + 1]
                 if future_features:
-                    future_features = np.hstack([self._cached_time_features[
-                                                 index + 1:index + self.n_prediction_steps + 1], past_features
-                                                 ])
+                    future_features = np.hstack([
+                        past_features,
+                        self._cached_time_features[index + 1:index + self.n_prediction_steps + 1]
+                    ])
                 else:
                     future_features = self._cached_time_features[index + 1:index + self.n_prediction_steps + 1]
 
@@ -215,7 +217,8 @@ class TimeSeriesSequence(Dataset):
                 "static_features": self.static_features,
                 "mase_coefficient": self.mase_coefficient,
                 'past_observed_targets': torch.from_numpy(self.observed_target[:index + 1]),
-                'decoder_lengths': 0 if future_targets is None else future_targets['future_targets'].shape[0]}, future_targets
+                'decoder_lengths': 0 if future_targets is None else future_targets['future_targets'].shape[
+                    0]}, future_targets
 
     def __len__(self) -> int:
         return self.Y.shape[0] if self.only_has_past_targets else self.Y.shape[0] - self.n_prediction_steps
