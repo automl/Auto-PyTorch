@@ -67,6 +67,10 @@ class ForecastingTrainerChoice(TrainerChoice):
             metrics.extend(get_metrics(dataset_properties=X['dataset_properties'], names=X['additional_metrics']))
         if 'optimize_metric' in X and X['optimize_metric'] not in [m.name for m in metrics]:
             metrics.extend(get_metrics(dataset_properties=X['dataset_properties'], names=[X['optimize_metric']]))
+        if hasattr(X['y_train'], "to_numpy"):
+            labels = X['y_train'].to_numpy()[X['backend'].load_datamanager().splits[X['split_id']][0]]
+        else:
+            labels = X['y_train'][X['backend'].load_datamanager().splits[X['split_id']][0]]
 
         self.choice.prepare(
             model=X['network'],
@@ -78,7 +82,7 @@ class ForecastingTrainerChoice(TrainerChoice):
             metrics_during_training=X['metrics_during_training'],
             scheduler=X['lr_scheduler'],
             task_type=STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']],
-            labels=X['y_train'][X['backend'].load_datamanager().splits[X['split_id']][0]],
+            labels=labels,
             step_interval=X['step_interval'],
             window_size=X['window_size'],
             dataset_properties=X['dataset_properties'],

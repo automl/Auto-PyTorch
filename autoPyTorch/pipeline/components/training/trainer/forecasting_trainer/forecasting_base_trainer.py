@@ -58,6 +58,13 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                         labels=labels,
                         step_interval=step_interval
                         )
+        # Weights for the loss function
+        kwargs = {}
+        if self.weighted_loss:
+            kwargs = self.get_class_weights(criterion, labels)
+        kwargs["reduction"] = 'none'
+        # Setup the loss function
+        self.criterion = criterion(**kwargs)
         metric_kwargs = {"sp": dataset_properties.get("sp", 1),
                          "n_prediction_steps": dataset_properties.get("n_prediction_steps", 1)}
         self.metrics_kwargs = metric_kwargs
@@ -139,7 +146,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             float: the loss incurred in the prediction
         """
         past_target = data['past_targets'].float()
-        past_observed_values = data['past_observed_values']
+        past_observed_targets = data['past_observed_targets']
 
         past_features = data["past_features"]
         if past_features is not None:
@@ -151,7 +158,10 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         if static_features is not None:
             static_features = static_features.float()
 
-        future_targets = self.cast_targets(future_targets)
+        future_observed_targets = future_targets["future_observed_targets"]
+        future_targets_values = future_targets["future_targets"]
+
+        future_targets_values = self.cast_targets(future_targets_values)
 
         if isinstance(self.criterion, MASELoss):
             self.criterion.set_mase_coefficient(data['mase_coefficient'].float().to(self.device))
@@ -161,11 +171,12 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
 
         if isinstance(self.model, NBEATSNet):
             past_target = past_target[:, -self.window_size:]
-            past_observed_values = past_observed_values[:, -self.window_size:]
+            past_observed_targets = past_observed_targets[:, -self.window_size:]
             past_target, criterion_kwargs_past = self.data_preparation(past_target,
                                                                        past_target.to(self.device))
-            past_target, criterion_kwargs_future = self.data_preparation(past_target, future_targets.to(self.device))
-            backcast, forecast = self.model(past_targets=past_target, past_observed_values=past_observed_values)
+            past_target, criterion_kwargs_future = self.data_preparation(past_target,
+                                                                         future_targets_values.to(self.device))
+            backcast, forecast = self.model(past_targets=past_target, past_observed_targets=past_observed_targets)
 
             loss_func_backcast = self.criterion_preparation(**criterion_kwargs_past)
             loss_func_forecast = self.criterion_preparation(**criterion_kwargs_future)
@@ -179,26 +190,28 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         else:
             if isinstance(self.model, ForecastingDeepARNet) and self.model.encoder_bijective_seq_output:
                 if self.window_size > past_target.shape[1]:
-                    all_targets = torch.cat([past_target[:, 1:, ], future_targets], dim=1)
+                    all_targets = torch.cat([past_target[:, 1:, ], future_targets_values], dim=1)
                 else:
                     if self.window_size == 1:
-                        all_targets = future_targets
+                        all_targets = future_targets_values
                     else:
-                        all_targets = torch.cat([past_target[:, 1 - self.window_size:, ], future_targets], dim=1)
+                        all_targets = torch.cat([past_target[:, 1 - self.window_size:, ],
+                                                 future_targets_values], dim=1)
                 past_target, criterion_kwargs = self.data_preparation(past_target, all_targets.to(self.device))
             else:
-                past_target, criterion_kwargs = self.data_preparation(past_target, future_targets.to(self.device))
+                past_target, criterion_kwargs = self.data_preparation(past_target,
+                                                                      future_targets_values.to(self.device))
 
             outputs = self.model(past_targets=past_target,
                                  past_features=past_features,
                                  future_features=future_features,
                                  static_features=static_features,
                                  future_targets=future_targets,
-                                 past_observed_values=past_observed_values)
+                                 past_observed_targets=past_observed_targets)
 
             loss_func = self.criterion_preparation(**criterion_kwargs)
 
-            loss = loss_func(self.criterion, outputs)
+            loss = torch.mean(loss_func(self.criterion, outputs) * future_observed_targets)
 
         loss.backward()
         self.optimizer.step()
@@ -236,7 +249,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         with torch.no_grad():
             for step, (data, future_targets) in enumerate(test_loader):
                 past_target = data['past_targets'].float()
-                past_observed_values = data['past_observed_values']
+                past_observed_targets = data['past_observed_targets']
 
                 past_features = data["past_features"]
                 if past_features is not None:
@@ -254,32 +267,35 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
 
                 batch_size = past_target.shape[0]
 
-                future_targets = self.cast_targets(future_targets)
+                future_observed_targets = future_targets["future_observed_targets"]
+                future_targets_values = future_targets["future_targets"]
 
-                past_target, criterion_kwargs = self.data_preparation(past_target, future_targets)
+                future_targets_values = self.cast_targets(future_targets_values)
+
+                past_target, criterion_kwargs = self.data_preparation(past_target, future_targets_values)
 
                 if isinstance(self.model, (ForecastingDeepARNet, ForecastingSeq2SeqNet)):
                     outputs = self.model(past_targets=past_target,
                                          past_features=past_features,
-                                         future_targets=future_targets,
+                                         future_targets=future_targets_values,
                                          future_features=future_features,
                                          static_features=static_features,
-                                         past_observed_values=past_observed_values)
+                                         past_observed_targets=past_observed_targets)
                 else:
                     outputs = self.model(past_targets=past_target,
                                          past_features=past_features,
                                          future_features=future_features,
                                          static_features=static_features,
-                                         past_observed_values=past_observed_values)
+                                         past_observed_targets=past_observed_targets)
 
                 # prepare
-                future_targets = future_targets.to(self.device)
+                future_targets_values = future_targets_values.to(self.device)
 
                 if isinstance(outputs, list) and self.model.output_type != 'quantile':
-                    loss = [self.criterion(output, future_targets) for output in outputs]
-                    loss = torch.mean(torch.Tensor(loss))
+                    loss = [self.criterion(output, future_targets_values) for output in outputs]
+                    loss = torch.mean(torch.Tensor(loss) * future_observed_targets)
                 else:
-                    loss = self.criterion(outputs, future_targets)
+                    loss = torch.mean(self.criterion(outputs, future_targets_values) * future_observed_targets)
                 outputs = self.model.pred_from_net_output(outputs)
                 outputs = outputs.detach().cpu()
 
@@ -287,7 +303,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                 N += batch_size
 
                 outputs_data.append(outputs)
-                targets_data.append(future_targets.detach().cpu())
+                targets_data.append(future_targets_values.detach().cpu())
 
                 if writer:
                     writer.add_scalar(

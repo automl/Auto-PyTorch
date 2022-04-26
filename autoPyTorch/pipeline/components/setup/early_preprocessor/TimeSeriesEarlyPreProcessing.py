@@ -21,7 +21,7 @@ from autoPyTorch.utils.common import FitRequirement
 class TimeSeriesEarlyPreprocessing(EarlyPreprocessing):
 
     def __init__(self, random_state: Optional[np.random.RandomState] = None) -> None:
-        super().__init__()
+        super(EarlyPreprocessing, self).__init__()
         self.random_state = random_state
         self.add_fit_requirements([
             FitRequirement('is_small_preprocess', (bool,), user_defined=True, dataset_property=True),
@@ -56,7 +56,7 @@ class TimeSeriesEarlyPreprocessing(EarlyPreprocessing):
 class TimeSeriesTargetEarlyPreprocessing(EarlyPreprocessing):
 
     def __init__(self, random_state: Optional[np.random.RandomState] = None) -> None:
-        super().__init__()
+        super(EarlyPreprocessing, self).__init__()
         self.random_state = random_state
         self.add_fit_requirements([
             FitRequirement('is_small_preprocess', (bool,), user_defined=True, dataset_property=True),

@@ -173,6 +173,7 @@ class TimeSeriesSequence(Dataset):
                                                  ])
                 else:
                     future_features = self._cached_time_features[index + 1:index + self.n_prediction_steps + 1]
+
         if future_features is not None and future_features.shape[0] == 0:
             future_features = None
 
@@ -194,7 +195,9 @@ class TimeSeriesSequence(Dataset):
             future_targets = torch.from_numpy(future_targets)
             future_targets = {
                 'future_targets': future_targets,
-                'future_observed_targets': self.observed_target[index + 1: index + self.n_prediction_steps + 1]
+                'future_observed_targets': torch.from_numpy(
+                    self.observed_target[index + 1: index + self.n_prediction_steps + 1]
+                )
             }
 
         if isinstance(past_features, np.ndarray):
@@ -206,16 +209,13 @@ class TimeSeriesSequence(Dataset):
         past_target = targets[:index + 1]
         past_target = torch.from_numpy(past_target)
 
-        # TODO combine with imputer!
-        past_observed_values = torch.ones([past_target.shape[0], 1], dtype=torch.bool)
-
         return {"past_targets": past_target,
                 "past_features": past_features,
                 "future_features": future_features,
                 "static_features": self.static_features,
                 "mase_coefficient": self.mase_coefficient,
-                'past_observed_targets': self.observed_target[:index + 1],
-                'decoder_lengths': None if future_targets is None else future_targets.shape[0]}, future_targets
+                'past_observed_targets': torch.from_numpy(self.observed_target[:index + 1]),
+                'decoder_lengths': 0 if future_targets is None else future_targets['future_targets'].shape[0]}, future_targets
 
     def __len__(self) -> int:
         return self.Y.shape[0] if self.only_has_past_targets else self.Y.shape[0] - self.n_prediction_steps
@@ -584,7 +584,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             time_features_train=time_features_train,
             time_features_test=time_features_test,
             **sequences_kwargs)
-
         self.normalize_y = normalize_y
 
         ConcatDataset.__init__(self, datasets=sequence_datasets)
@@ -824,6 +823,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
     def replace_data(self, X_train: pd.DataFrame, X_test: Optional[pd.DataFrame]) -> 'BaseDataset':
         super(TimeSeriesForecastingDataset, self).replace_data(X_train=X_train, X_test=X_test)
+        if X_train is None:
+            return self
         if X_test is not None:
             X_test_group = X_test.groupby(X_test.index)
         for seq, x in zip(self.datasets, X_train.groupby(X_train.index)):

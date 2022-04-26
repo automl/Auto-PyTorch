@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Tuple
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -94,22 +94,26 @@ class LearnedEntityEmbedding(NetworkEmbeddingComponent):
         super().__init__(random_state=random_state)
         self.config = kwargs
 
-    def build_embedding(self, num_input_features: np.ndarray, num_numerical_features: int) -> nn.Module:
-        return _LearnedEntityEmbedding(config=self.config,
-                                       num_input_features=num_input_features,
-                                       num_numerical_features=num_numerical_features)
+    def build_embedding(self,
+                        num_input_features: np.ndarray,
+                        num_numerical_features: int) -> Tuple[nn.Module, List[int]]:
+        embedding = _LearnedEntityEmbedding(config=self.config,
+                                            num_input_features=num_input_features,
+                                            num_numerical_features=num_numerical_features)
+        return embedding, embedding.num_output_dimensions
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
-        min_unique_values_for_embedding: HyperparameterSearchSpace = HyperparameterSearchSpace(
-            hyperparameter="min_unique_values_for_embedding",
-            value_range=(3, 7),
-            default_value=5,
-            log=True),
-        dimension_reduction: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="dimension_reduction",
-                                                                                   value_range=(0, 1),
-                                                                                   default_value=0.5),
+            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+            min_unique_values_for_embedding: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                hyperparameter="min_unique_values_for_embedding",
+                value_range=(3, 7),
+                default_value=5,
+                log=True),
+            dimension_reduction: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                hyperparameter="dimension_reduction",
+                value_range=(0, 1),
+                default_value=0.5),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         add_hyperparameter(cs, min_unique_values_for_embedding, UniformIntegerHyperparameter)

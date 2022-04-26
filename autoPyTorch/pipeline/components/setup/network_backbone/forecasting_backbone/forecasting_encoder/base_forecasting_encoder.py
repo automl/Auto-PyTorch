@@ -45,8 +45,6 @@ class BaseForecastingEncoder(autoPyTorchComponent):
     def _required_fit_arguments(self) -> List[FitRequirement]:
         return [
             FitRequirement('is_small_preprocess', (bool,), user_defined=True, dataset_property=True),
-            FitRequirement('X_train', (np.ndarray, pd.DataFrame, csr_matrix), user_defined=True,
-                           dataset_property=False),
             FitRequirement('y_train', (np.ndarray, pd.DataFrame, csr_matrix), user_defined=True,
                            dataset_property=False),
             FitRequirement('uni_variant', (bool,), user_defined=False, dataset_property=True),
@@ -60,7 +58,8 @@ class BaseForecastingEncoder(autoPyTorchComponent):
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         self.check_requirements(X, y)
-        X_train = X['X_train']
+
+        X_train = X.get('X_train', None)
         y_train = X['y_train']
 
         input_shape = X["dataset_properties"]['input_shape']

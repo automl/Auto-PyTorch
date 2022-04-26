@@ -190,8 +190,6 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
 
             y_stacked = self.join_series(y)
 
-            y_transformed: pd.DataFrame = self.target_validator.transform(y_stacked)
-
             if self.series_idx is None:
                 series_number = np.arange(len(sequence_lengths)).repeat(sequence_lengths)
                 if not self._is_uni_variant:
@@ -212,6 +210,8 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                 if not self._is_uni_variant:
                     x_transformed = self.feature_validator.transform(x_flat.drop(self.series_idx, axis=1),
                                                                      index=series_number)
+            y_transformed: pd.DataFrame = self.target_validator.transform(y_stacked, index=series_number)
+
 
             if self._is_uni_variant:
                 return None, y_transformed, sequence_lengths

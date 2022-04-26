@@ -5,8 +5,8 @@ import pandas as pd
 
 from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline, make_pipeline
-#from sktime.transformations.panel.compose import ColumnTransformer
 from sklearn.compose import ColumnTransformer
+
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.base_time_series_preprocessing import (
     autoPyTorchTimeSeriesPreprocessingComponent,
     autoPyTorchTimeSeriesTargetPreprocessingComponent,
@@ -15,7 +15,7 @@ from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.uti
     get_time_series_preprocessers,
     get_time_series_target_preprocessers,
 )
-from autoPyTorch.utils.common import FitRequirement, subsampler
+from autoPyTorch.utils.common import FitRequirement
 
 
 class TimeSeriesTransformer(autoPyTorchTimeSeriesPreprocessingComponent):

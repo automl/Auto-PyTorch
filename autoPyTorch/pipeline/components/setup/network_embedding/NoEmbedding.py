@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Union, Tuple, List
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 
@@ -24,8 +24,10 @@ class NoEmbedding(NetworkEmbeddingComponent):
     def __init__(self, random_state: Optional[Union[np.random.RandomState, int]] = None):
         super().__init__(random_state=random_state)
 
-    def build_embedding(self, num_input_features: np.ndarray, num_numerical_features: int) -> nn.Module:
-        return _NoEmbedding()
+    def build_embedding(self,
+                        num_input_features: np.ndarray,
+                        num_numerical_features: int) -> Tuple[nn.Module, List[int]]:
+        return _NoEmbedding(), list(num_input_features)
 
     @staticmethod
     def get_hyperparameter_search_space(

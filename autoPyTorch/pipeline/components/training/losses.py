@@ -29,7 +29,7 @@ class LogProbLoss(Loss):
     __constants__ = ['reduction']
 
     def __init__(self, reduction: str = 'mean') -> None:
-        super(LogProbLoss, self).__init__(reduction)
+        super(LogProbLoss, self).__init__(reduction=reduction)
 
     def forward(self, input_dist: torch.distributions.Distribution, target_tensor: torch.Tensor) -> torch.Tensor:
         scores = input_dist.log_prob(target_tensor)
@@ -45,7 +45,7 @@ class MAPELoss(Loss):
     __constants__ = ['reduction']
 
     def __init__(self, reduction: str = 'mean') -> None:
-        super(MAPELoss, self).__init__(reduction)
+        super(MAPELoss, self).__init__(reduction=reduction)
 
     def forward(self, input: torch.distributions.Distribution, target_tensor: torch.Tensor) -> torch.Tensor:
         # https://github.com/awslabs/gluon-ts/blob/master/src/gluonts/model/n_beats/_network.py
@@ -68,7 +68,7 @@ class MASELoss(Loss):
     __constants__ = ['reduction']
 
     def __init__(self, reduction: str = 'mean') -> None:
-        super(MASELoss, self).__init__(reduction)
+        super(MASELoss, self).__init__(reduce=reduction)
         self._mase_coefficient = 1.0
 
     def set_mase_coefficient(self, mase_coefficient: torch.Tensor) -> 'MASELoss':
@@ -93,7 +93,7 @@ class QuantileLoss(Loss):
     __constants__ = ['reduction']
 
     def __init__(self, reduction: str = 'mean', quantiles: List[float] = [0.5], loss_weights=None) -> None:
-        super(QuantileLoss, self).__init__(reduction)
+        super(QuantileLoss, self).__init__(reduction=reduction)
         self.quantiles = quantiles
 
     def set_quantiles(self, quantiles = List[float]):

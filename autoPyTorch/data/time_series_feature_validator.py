@@ -84,7 +84,3 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
         X: pd.DataFrame = pd.DataFrame(X, columns=self.get_reordered_columns(),
                                        index=index)
         return X
-
-
-
-
