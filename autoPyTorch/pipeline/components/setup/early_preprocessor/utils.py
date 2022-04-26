@@ -60,7 +60,9 @@ def time_series_preprocess(dataset: pd.DataFrame, transforms: torchvision.transf
     # TODO consider Numpy implementation
     composite_transforms = torchvision.transforms.Compose(transforms)
     if indices is None:
+        index = dataset.index
         dataset = composite_transforms(dataset)
+        dataset = pd.DataFrame(dataset, index=index)
     else:
         sub_dataset = dataset.iloc[:, indices]
         sub_dataset = composite_transforms(sub_dataset)

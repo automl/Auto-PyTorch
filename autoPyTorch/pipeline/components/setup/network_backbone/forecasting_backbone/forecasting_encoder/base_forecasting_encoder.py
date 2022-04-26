@@ -68,16 +68,20 @@ class BaseForecastingEncoder(autoPyTorchComponent):
 
         if self.block_number == 1:
             if not X["dataset_properties"]["uni_variant"]:
-                if not X["dataset_properties"]["is_small_preprocess"]:
+                if X["dataset_properties"]["is_small_preprocess"]:
+                    input_shape = X_train.shape[1:]
+                else:
                     # get input shape by transforming first two elements of the training set
                     transforms = torchvision.transforms.Compose(X['preprocess_transforms'])
                     X_train = X_train[:1, np.newaxis, ...]
                     X_train = transforms(X_train)
                     input_shape = np.concatenate(X_train).shape[1:]
+
             if X['transform_time_features']:
                 n_time_feature_transform = len(X['dataset_properties']['time_feature_transform'])
             else:
                 n_time_feature_transform = 0
+            input_shape = (*input_shape[:-1], input_shape[-1] + n_time_feature_transform)
 
             if 'network_embedding' in X.keys():
                 input_shape = get_output_shape(X['network_embedding'], input_shape=input_shape)

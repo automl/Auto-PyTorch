@@ -1,12 +1,8 @@
-from typing import Any, Dict, Optional, Union
-
-from ConfigSpace.configuration_space import ConfigurationSpace
+from typing import Any, Dict, Optional, Union, Tuple, List
 
 import numpy as np
 
 import pandas as pd
-
-from scipy.sparse import spmatrix
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.base_preprocessing import autoPyTorchTargetPreprocessingComponent
@@ -26,9 +22,26 @@ class TimeSeriesEarlyPreprocessing(EarlyPreprocessing):
         self.add_fit_requirements([
             FitRequirement('is_small_preprocess', (bool,), user_defined=True, dataset_property=True),
             FitRequirement('X_train', (pd.DataFrame, ), user_defined=True,
-                           dataset_property=False)])
+                           dataset_property=False),
+            FitRequirement('feature_names', (Tuple,), user_defined=True, dataset_property=True),
+            FitRequirement('numerical_columns', (List,), user_defined=True, dataset_property=True),
+            FitRequirement('categorical_columns', (List,), user_defined=True, dataset_property=True),
+        ])
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        if dataset is small process, we transform the entire dataset here.
+        Before transformation, the order of the dataset is:
+        [(unknown_columns), categorical_columns, numerical_columns]
+        While after transformation, the order of the dataset is:
+        [numerical_columns, categorical_columns, unknown_columns]
+        we need to change feature_names and feature_shapes accordingly
+        Args:
+            X(Dict): fit dictionary
+
+        Returns:
+            X_transformed(Dict): transformed fit dictionary
+        """
 
         transforms = get_preprocess_transforms(X)
         if X['dataset_properties']['is_small_preprocess']:
@@ -39,6 +52,16 @@ class TimeSeriesEarlyPreprocessing(EarlyPreprocessing):
                 X_train = X['backend'].load_datamanager().train_tensors[0]
 
             X['X_train'] = time_series_preprocess(dataset=X_train, transforms=transforms)
+        feature_names = X['dataset_properties']['feature_names']
+        numerical_columns = X['dataset_properties']['numerical_columns']
+        categorical_columns = X['dataset_properties']['categorical_columns']
+
+        # resort feature_names
+        new_feature_names = [feature_names[num_col] for num_col in numerical_columns]
+        new_feature_names += [feature_names[cat_col] for cat_col in categorical_columns]
+        if set(feature_names) != set(new_feature_names):
+            new_feature_names += list(set(feature_names) - set(new_feature_names))
+        X['dataset_properties']['feature_names'] = tuple(new_feature_names)
 
         # We need to also save the preprocess transforms for inference
         X.update({'preprocess_transforms': transforms})

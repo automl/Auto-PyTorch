@@ -21,10 +21,13 @@ class TimeSeriesOneHotEncoder(TimeSeriesBaseEncoder):
         categorical_columns = X['dataset_properties']['categorical_columns']
         n_features_cat = X['dataset_properties']['categories']
         feature_names = X['dataset_properties']['feature_names']
+        feature_shapes = X['dataset_properties']['feature_shapes']
+
         if len(n_features_cat) == 0:
             n_features_cat = self.preprocessor['categorical'].categories
         for cat_column in categorical_columns:
-            self.feature_shapes[feature_names[cat_column]] = len(n_features_cat[cat_column])
+            feature_shapes[feature_names[cat_column]] = len(n_features_cat[cat_column])
+        self.feature_shapes = feature_shapes
         return self
 
     @staticmethod

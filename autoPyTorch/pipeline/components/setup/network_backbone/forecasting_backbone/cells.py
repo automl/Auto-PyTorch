@@ -221,8 +221,9 @@ class VariableSelector(nn.Module):
         static_input_sizes = dataset_properties['static_features_shape']
         self.hidden_size = first_encoder_output_shape
 
-        assert set(feature_names) == set(feature_shapes.keys()), "feature_names and feature_shapes must have " \
-                                                                 "the same variable names"
+        assert set(feature_names) == set(feature_shapes.keys()), f"feature_names and feature_shapes must have " \
+                                                                 f"the same variable names but they are different" \
+                                                                 f"at {set(feature_names) ^ set(feature_shapes.keys())}"
         pre_scalar = {'past_targets': nn.Linear(dataset_properties['output_shape'][-1], self.hidden_size)}
         encoder_input_sizes = {'past_targets': self.hidden_size}
         decoder_input_sizes = {}

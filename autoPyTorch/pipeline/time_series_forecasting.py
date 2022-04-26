@@ -326,18 +326,18 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             default_dataset_properties.update(dataset_properties)
 
         if not default_dataset_properties.get("uni_variant", False):
-            steps.extend([("preprocessing", TimeSeriesEarlyPreprocessing(random_state=self.random_state)),
-                          ("imputer", TimeSeriesFeatureImputer(random_state=self.random_state)),
+            steps.extend([("imputer", TimeSeriesFeatureImputer(random_state=self.random_state)),
                           ("scaler", ScalerChoice(default_dataset_properties, random_state=self.random_state)),
                           ('encoding', TimeSeriesEncoderChoice(default_dataset_properties,
                                                                random_state=self.random_state)),
                           ("time_series_transformer", TimeSeriesTransformer(random_state=self.random_state)),
+                          ("preprocessing", TimeSeriesEarlyPreprocessing(random_state=self.random_state)),
                           ])
 
         # TODO consider the correct way of doing imputer for time series forecasting tasks.
         steps.extend([
-            ("target_preprocessing", TimeSeriesTargetEarlyPreprocessing(random_state=self.random_state)),
             ("target_imputer", TimeSeriesTargetImputer(random_state=self.random_state)),
+            ("target_preprocessing", TimeSeriesTargetEarlyPreprocessing(random_state=self.random_state)),
             ('loss', ForecastingLossChoices(default_dataset_properties, random_state=self.random_state)),
             ("target_scaler", TargetScalerChoice(default_dataset_properties,
                                                  random_state=self.random_state)),
