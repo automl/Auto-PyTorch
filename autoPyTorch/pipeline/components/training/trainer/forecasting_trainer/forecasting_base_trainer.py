@@ -154,9 +154,6 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         future_features = data['future_features']
         if future_features is not None:
             future_features = future_features.float()
-        static_features = data['static_features']
-        if static_features is not None:
-            static_features = static_features.float()
 
         future_observed_targets = future_targets["future_observed_targets"]
         future_targets_values = future_targets["future_targets"]
@@ -205,7 +202,6 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             outputs = self.model(past_targets=past_target,
                                  past_features=past_features,
                                  future_features=future_features,
-                                 static_features=static_features,
                                  future_targets=future_targets,
                                  past_observed_targets=past_observed_targets)
 
@@ -257,9 +253,6 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                 future_features = data['future_features']
                 if future_features is not None:
                     future_features = future_features.float()
-                static_features = data['static_features']
-                if static_features is not None:
-                    static_features = static_features.float()
 
                 mase_coefficients.append(data['mase_coefficient'])
                 if isinstance(self.criterion, MASELoss):
@@ -279,13 +272,11 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                                          past_features=past_features,
                                          future_targets=future_targets_values,
                                          future_features=future_features,
-                                         static_features=static_features,
                                          past_observed_targets=past_observed_targets)
                 else:
                     outputs = self.model(past_targets=past_target,
                                          past_features=past_features,
                                          future_features=future_features,
-                                         static_features=static_features,
                                          past_observed_targets=past_observed_targets)
 
                 # prepare

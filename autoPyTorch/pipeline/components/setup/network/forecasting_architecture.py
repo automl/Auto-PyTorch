@@ -312,7 +312,6 @@ class AbstractForecastingNet(nn.Module):
                 future_targets: Optional[torch.Tensor] = None,
                 past_features: Optional[torch.Tensor] = None,
                 future_features: Optional[torch.Tensor] = None,
-                static_features: Optional[torch.Tensor] = None,
                 past_observed_targets: Optional[torch.Tensor] = None,
                 decoder_observed_values: Optional[torch.Tensor] = None,
                 ):
@@ -327,7 +326,6 @@ class AbstractForecastingNet(nn.Module):
                 past_targets: torch.Tensor,
                 past_features: Optional[torch.Tensor] = None,
                 future_features: Optional[torch.Tensor] = None,
-                static_features: Optional[torch.Tensor] = None
                 ):
         raise NotImplementedError
 
@@ -352,7 +350,6 @@ class ForecastingNet(AbstractForecastingNet):
                        past_observed_targets: torch.BoolTensor,
                        past_features: Optional[torch.Tensor] = None,
                        future_features: Optional[torch.Tensor] = None,
-                       static_features: Optional[torch.Tensor] = None,
                        length_past: int = 0,
                        length_future: int = 0,
                        variable_selector_kwargs: Dict = {},
@@ -418,7 +415,6 @@ class ForecastingNet(AbstractForecastingNet):
             x_past, x_future, x_static, static_context_initial_hidden = self.variable_selector(
                 x_past=x_past,
                 x_future=x_future,
-                x_static=static_features,
                 batch_size=batch_size,
                 length_past=length_past,
                 length_future=length_future,
@@ -434,8 +430,6 @@ class ForecastingNet(AbstractForecastingNet):
             x_past = x_past.to(device=self.device)
             if future_features is not None:
                 future_features = future_features.to(self.device)
-            if static_features is not None:
-                static_features = static_features.to(self.device)
             x_past = self.embedding(x_past)  # TODO embedding for future features!
             return x_past, future_features, static_features, loc, scale, None, past_targets
 
@@ -444,7 +438,6 @@ class ForecastingNet(AbstractForecastingNet):
                 future_targets: Optional[torch.Tensor] = None,
                 past_features: Optional[torch.Tensor] = None,
                 future_features: Optional[torch.Tensor] = None,
-                static_features: Optional[torch.Tensor] = None,
                 past_observed_targets: Optional[torch.BoolTensor] = None,
                 decoder_observed_values: Optional[torch.Tensor] = None,
                 ):
@@ -453,7 +446,6 @@ class ForecastingNet(AbstractForecastingNet):
             past_observed_targets=past_observed_targets,
             past_features=past_features,
             future_features=future_features,
-            static_features=static_features,
             length_past=min(self.window_size, past_targets.shape[1]),
             length_future=self.n_prediction_steps
         )
@@ -508,13 +500,11 @@ class ForecastingNet(AbstractForecastingNet):
                 past_targets: torch.Tensor,
                 past_features: Optional[torch.Tensor] = None,
                 future_features: Optional[torch.Tensor] = None,
-                static_features: Optional[torch.Tensor] = None,
                 past_observed_targets: Optional[torch.BoolTensor] = None,
                 ):
         net_output = self(past_targets=past_targets,
                           past_features=past_features,
                           future_features=future_features,
-                          static_features=static_features,
                           past_observed_targets=past_observed_targets)
         return self.pred_from_net_output(net_output)
 
@@ -567,7 +557,6 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                 future_targets: Optional[torch.Tensor] = None,
                 past_features: Optional[torch.Tensor] = None,
                 future_features: Optional[torch.Tensor] = None,
-                static_features: Optional[torch.Tensor] = None,
                 past_observed_targets: Optional[torch.BoolTensor] = None,
                 decoder_observed_values: Optional[torch.Tensor] = None, ):
         x_past, x_future, x_static, loc, scale, static_context_initial_hidden, past_targets = self.pre_processing(
@@ -575,7 +564,6 @@ class ForecastingSeq2SeqNet(ForecastingNet):
             past_observed_targets=past_observed_targets,
             past_features=past_features,
             future_features=future_features,
-            static_features=static_features,
             length_past=min(self.window_size, past_targets.shape[1]),
             length_future=0,
             variable_selector_kwargs={'cache_static_contex': True}
@@ -709,10 +697,6 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                 repeated_predicted_target = repeated_past_target[:, [-1]]
                 repeated_past_target = repeated_past_target[:, :-1, ]
 
-                repeated_static_feat = static_features.repeat_interleave(
-                    repeats=self.num_samples, dim=0
-                ).unsqueeze(dim=1) if static_features is not None else None
-
                 repeated_time_feat = future_features.repeat_interleave(
                     repeats=self.num_samples, dim=0
                 ) if future_features is not None else None
@@ -777,13 +761,11 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                 past_targets: torch.Tensor,
                 past_features: Optional[torch.Tensor] = None,
                 future_features: Optional[torch.Tensor] = None,
-                static_features: Optional[torch.Tensor] = None,
                 past_observed_targets: Optional[torch.BoolTensor] = None,
                 ):
         net_output = self(past_targets=past_targets,
                           past_features=past_features,
                           future_features=future_features,
-                          static_features=static_features,
                           past_observed_targets=past_observed_targets)
         if self.output_type == 'regression':
             return self.pred_from_net_output(net_output)
@@ -845,7 +827,6 @@ class ForecastingDeepARNet(ForecastingSeq2SeqNet):
                 future_targets: Optional[torch.Tensor] = None,
                 past_features: Optional[torch.Tensor] = None,
                 future_features: Optional[torch.Tensor] = None,
-                static_features: Optional[torch.Tensor] = None,
                 past_observed_targets: Optional[torch.Tensor] = None,
                 decoder_observed_values: Optional[torch.Tensor] = None, ):
         if self.training:
@@ -1008,10 +989,6 @@ class ForecastingDeepARNet(ForecastingSeq2SeqNet):
                     repeats=self.num_samples,
                     dim=0).squeeze(1)
 
-                repeated_static_feat = static_features.repeat_interleave(
-                    repeats=self.num_samples, dim=0
-                ).unsqueeze(dim=1) if static_features is not None else None
-
                 if future_features is not None:
                     time_feature = future_features[:, 1:]
                 else:
@@ -1069,13 +1046,11 @@ class ForecastingDeepARNet(ForecastingSeq2SeqNet):
                 past_targets: torch.Tensor,
                 past_features: Optional[torch.Tensor] = None,
                 future_features: Optional[torch.Tensor] = None,
-                static_features: Optional[torch.Tensor] = None,
                 past_observed_targets: Optional[torch.BoolTensor] = None,
                 ):
         net_output = self(past_targets=past_targets,
                           past_features=past_features,
                           future_features=future_features,
-                          static_features=static_features,
                           past_observed_targets=past_observed_targets)
         return net_output
 
@@ -1088,7 +1063,6 @@ class NBEATSNet(ForecastingNet):
                 future_targets: Optional[torch.Tensor] = None,
                 past_features: Optional[torch.Tensor] = None,
                 future_features: Optional[torch.Tensor] = None,
-                static_features: Optional[torch.Tensor] = None,
                 past_observed_targets: Optional[torch.Tensor] = None,
                 decoder_observed_values: Optional[torch.Tensor] = None, ):
         if self.window_size < past_targets.shape[1]:
