@@ -7,6 +7,7 @@ from ConfigSpace.hyperparameters import UniformIntegerHyperparameter, Categorica
 from ConfigSpace.conditions import EqualsCondition
 
 import numpy as np
+import pandas as pd
 
 import torch
 from torch.utils.data.sampler import SubsetRandomSampler
@@ -83,6 +84,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         self.transform_time_features = transform_time_features
         self.freq = "1Y"
         self.time_feature_transform = []
+        self.dataset_columns = []
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> torch.utils.data.DataLoader:
         """
@@ -98,7 +100,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         self.check_requirements(X, y)
 
         # Incorporate the transform to the dataset
-        datamanager = X['backend'].load_datamanager()  # type: TimeSeriesForcecastingDataset
+        datamanager: TimeSeriesForecastingDataset = X['backend'].load_datamanager()
 
         self.n_prediction_steps = datamanager.n_prediction_steps
         if self.backcast:
@@ -119,6 +121,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         max_lagged_value = max(X['dataset_properties'].get('lagged_value', [np.inf]))
         max_lagged_value += self.window_size + self.n_prediction_steps
 
+        self.dataset_columns = datamanager.feature_names
 
         self.padding_collector = PadSequenceCollector(self.window_size, sample_interval, padding_value, max_lagged_value)
 
@@ -270,7 +273,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         #    candidate_transformations.extend(X['preprocess_transforms'])
 
         candidate_transformations.append(ExpandTransformTimeSeries())
-        if "test" in mode or not X['dataset_properties']['is_small_preprocess']:
+        if mode == 'test' or not X['dataset_properties']['is_small_preprocess']:
             if "preprocess_transforms" in X:
                 candidate_transformations.extend(X['preprocess_transforms'])
 
@@ -288,7 +291,20 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         if isinstance(X, TimeSeriesSequence):
             X = [X]
         if isinstance(X, List):
-            for x_seq in X:
+            if self.dataset_small_preprocess and not self._is_uni_variant:
+                num_sequences = len(X)
+                sequence_lengths = [0] * num_sequences
+                for seq_idx, x_seq in enumerate(X):
+                    sequence_lengths[seq_idx] = len(x_seq.X)
+                x_all = pd.DataFrame(np.concatenate([x_seq.X for x_seq in X]), columns=self.dataset_columns)
+                series_number = np.arange(len(sequence_lengths)).repeat(sequence_lengths)
+                x_all.index = series_number
+
+                x_all = pd.DataFrame(self.test_transform(x_all))
+                x_all.index = series_number
+                x_all = x_all.groupby(x_all.index)
+
+            for i, x_seq in enumerate(X):
                 if not isinstance(x_seq, TimeSeriesSequence):
                     raise NotImplementedError('Test Set must be a TimeSeriesSequence or a'
                                               ' list of time series objects!')
@@ -296,7 +312,9 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                     # WE need to recompute the cached time features (However, this should not happen)
                     x_seq._cached_time_features = None
 
-                x_seq.update_transform(self.test_transform, train=False)
+                if self.dataset_small_preprocess and not self._is_uni_variant:
+                    x_seq.X = x_all.get_group(i).transform(np.array).values
+
                 x_seq.update_attribute(freq=self.freq,
                                        transform_time_features=self.transform_time_features,
                                        time_feature_transform=self.time_feature_transform,
@@ -307,7 +325,8 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                     x_seq.compute_time_features()
 
                 x_seq.freq = self.freq
-                x_seq.update_transform(self.test_transform, train=False)
+                if not self.dataset_small_preprocess:
+                    x_seq.update_transform(self.test_transform, train=False)
         else:
             raise NotImplementedError('Unsupported data type for time series data loader!')
 

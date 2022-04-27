@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Iterable
+from typing import Any, Dict, Optional, Iterable, Tuple
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 
@@ -54,6 +54,7 @@ class ForecastingNetworkComponent(NetworkComponent):
             FitRequirement("feature_names", (Iterable,), user_defined=False, dataset_property=True),
             FitRequirement("feature_shapes", (Iterable,), user_defined=False, dataset_property=True),
             FitRequirement('transform_time_features', (bool,), user_defined=False, dataset_property=False),
+            FitRequirement('static_features', (Tuple,), user_defined=True, dataset_property=False),
             FitRequirement('time_feature_names', (Iterable,), user_defined=False, dataset_property=True)
         ]
 
@@ -92,6 +93,7 @@ class ForecastingNetworkComponent(NetworkComponent):
                                    feature_shapes=feature_shapes,
                                    known_future_features=known_future_features,
                                    time_feature_names=time_feature_names,
+                                   static_features=X['dataset_properties']['static_features']
                                    )
         if net_output_type == 'distribution':
             dist_forecasting_strategy = X['dist_forecasting_strategy']  # type: DisForecastingStrategy

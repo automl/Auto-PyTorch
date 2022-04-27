@@ -400,7 +400,9 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         """
         return "time_series_forecasting"
 
-    def predict(self, X: Union[Dict[str, np.ndarray], pd.DataFrame], batch_size: Optional[int] = None) -> np.ndarray:
+    def predict(self,
+                X: Union[Dict[str, np.ndarray], pd.DataFrame],
+                batch_size: Optional[int] = None) -> np.ndarray:
         """Predict the output using the selected model.
 
         Args:
@@ -408,6 +410,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             batch_size (Optional[int]): batch_size controls whether the pipeline will be
                 called on small chunks of the data. Useful when calling the
                 predict method on the whole array X results in a MemoryError.
+            transform_X (bool): if we want to transform
 
         Returns:
             np.ndarray: the predicted values given input X

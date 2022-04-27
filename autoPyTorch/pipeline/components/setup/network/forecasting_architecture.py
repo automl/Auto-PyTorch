@@ -163,6 +163,7 @@ class AbstractForecastingNet(nn.Module):
                  feature_names: Optional[Tuple[str]] = (),
                  known_future_features: Optional[Tuple[str]] = (),
                  feature_shapes: Optional[Dict[str, int]] = (),
+                 static_features: Tuple[Union[str, int]] = (),
                  time_feature_names: Optional[Tuple[str]] = (),
                  output_type: str = 'regression',
                  forecast_strategy: Optional[str] = 'mean',
@@ -182,12 +183,10 @@ class AbstractForecastingNet(nn.Module):
             network_head (nn.Module): network head, maps the output of decoder to the final output
             dataset_properties (Dict): dataset properties
             auto_regressive (bool): if the overall model is auto-regressive model
-            encoder_properties (Dict): encoder properties
-            decoder_properties: (Dict): decoder properties
             output_type (str): the form that the network outputs. It could be regression, distribution and
-            (TODO) quantile
+                quantile
             forecast_strategy (str): only valid if output_type is distribution or quantile, how the network transforms
-            its output to predicted values, could be mean or sample
+                its output to predicted values, could be mean or sample
             num_samples (int): only valid if output_type is not regression and forecast_strategy is sample. this
             indicates the number of the points to sample when doing prediction
             aggregation (str): how the samples are aggregated. We could take their mean or median values.
@@ -205,6 +204,7 @@ class AbstractForecastingNet(nn.Module):
                                                       feature_names=feature_names,
                                                       known_future_features=known_future_features,
                                                       feature_shapes=feature_shapes,
+                                                      static_features=static_features,
                                                       time_feature_names=time_feature_names,
                                                       )
             self.lazy_modules.append(self.variable_selector)
@@ -376,6 +376,7 @@ class ForecastingNet(AbstractForecastingNet):
 
         if self.network_structure.variable_selection:
             batch_size = x_past.shape[0]
+            x_static = {}
             if length_past > 0:
                 if past_features is not None:
                     past_features = past_features[:, -self.window_size:].to(self.device)
@@ -384,7 +385,12 @@ class ForecastingNet(AbstractForecastingNet):
                 if past_features is not None:
                     for feature_name in self.variable_selector.feature_names:
                         tensor_idx = self.variable_selector.feature_names2tensor_idx[feature_name]
-                        x_past[feature_name] = past_features[:, :, tensor_idx[0]: tensor_idx[1]]
+                        if feature_name not in self.variable_selector.static_features:
+                            x_past[feature_name] = past_features[:, :, tensor_idx[0]: tensor_idx[1]]
+                        else:
+                            static_feature = past_features[:, [0], tensor_idx[0]: tensor_idx[1]]
+                            static_feature = static_feature.repeat(1, length_past + length_future, 1)
+                            x_static[feature_name] = static_feature
 
                 if hasattr(self.variable_selector, 'placeholder_features'):
                     for placehold in self.variable_selector.placeholder_features:
@@ -408,13 +414,21 @@ class ForecastingNet(AbstractForecastingNet):
                 if future_features is not None:
                     for feature_name in self.variable_selector.known_future_features:
                         tensor_idx = self.variable_selector.future_feature_name2tensor_idx[feature_name]
-                        x_future[feature_name] = future_features[:, :, tensor_idx[0]: tensor_idx[1]]
+                        if feature_name not in self.variable_selector.static_features:
+                            x_future[feature_name] = future_features[:, :, tensor_idx[0]: tensor_idx[1]]
+                        else:
+                            if length_past == 0:
+                                static_feature = future_features[:, [0], tensor_idx[0]: tensor_idx[1]]
+                                static_feature = static_feature.repeat(1, length_past + length_future, 1)
+                                x_static[feature_name] = static_feature
+
             else:
                 x_future = None
 
             x_past, x_future, x_static, static_context_initial_hidden = self.variable_selector(
                 x_past=x_past,
                 x_future=x_future,
+                x_static=x_static,
                 batch_size=batch_size,
                 length_past=length_past,
                 length_future=length_future,
@@ -431,7 +445,7 @@ class ForecastingNet(AbstractForecastingNet):
             if future_features is not None:
                 future_features = future_features.to(self.device)
             x_past = self.embedding(x_past)  # TODO embedding for future features!
-            return x_past, future_features, static_features, loc, scale, None, past_targets
+            return x_past, future_features, None, loc, scale, None, past_targets
 
     def forward(self,
                 past_targets: torch.Tensor,
@@ -726,7 +740,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
 
                     decoder_output = self.decoder(x_future,
                                                   encoder_output=encoder2decoder,
-                                                  pos_idx=(x_past.shape[1]+idx_pred, x_past.shape[1] + idx_pred+1),
+                                                  pos_idx=(x_past.shape[1] + idx_pred, x_past.shape[1] + idx_pred + 1),
                                                   cache_intermediate_state=True,
                                                   incremental_update=idx_pred > 0)
                     if self.has_temporal_fusion:
@@ -840,7 +854,6 @@ class ForecastingDeepARNet(ForecastingSeq2SeqNet):
                     past_observed_targets[:, :-self.window_size],
                     self.scale_value(past_targets[:, :-self.window_size], loc, scale),
                     past_targets[:, :-self.window_size])
-
 
                 future_targets = self.scale_value(future_targets, loc, scale)
 

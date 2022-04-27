@@ -54,13 +54,13 @@ TIME_SERIES_CLASSIFICATION_INPUT = Tuple[np.ndarray, np.ndarray]
 
 class TimeSeriesSequence(Dataset):
     def __init__(self,
-                 X: Optional[Union[np.ndarray, pd.DataFrame]],
-                 Y: Union[np.ndarray, pd.Series],
+                 X: Optional[np.ndarray],
+                 Y: Union[np.ndarray],
                  start_time_train: Optional[pd.DatetimeIndex] = None,
                  freq: str = '1Y',
                  time_feature_transform: List[TimeFeature] = [],
-                 X_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
-                 Y_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
+                 X_test: Optional[np.ndarray] = None,
+                 Y_test: Optional[np.ndarray] = None,
                  start_time_test: Optional[pd.DatetimeIndex] = None,
                  train_transforms: Optional[torchvision.transforms.Compose] = None,
                  val_transforms: Optional[torchvision.transforms.Compose] = None,
@@ -164,13 +164,13 @@ class TimeSeriesSequence(Dataset):
             if self.time_feature_transform:
                 self.compute_time_features()
 
-                if past_features:
-                    past_features = np.hstack(past_features, [self._cached_time_features[:index + 1]])
+                if past_features is not None:
+                    past_features = np.hstack([past_features, self._cached_time_features[:index + 1]])
                 else:
                     past_features = self._cached_time_features[:index + 1]
-                if future_features:
+                if future_features is not None:
                     future_features = np.hstack([
-                        past_features,
+                        future_features,
                         self._cached_time_features[index + 1:index + self.n_prediction_steps + 1]
                     ])
                 else:

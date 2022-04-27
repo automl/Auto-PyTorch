@@ -1,6 +1,4 @@
-from pytorch_forecasting.utils import create_mask
-
-from typing import Any, Dict, Optional, List, Tuple, Set
+from typing import Any, Dict, Optional, List, Tuple, Set, Union
 
 import torch
 from torch import nn
@@ -196,6 +194,7 @@ class VariableSelector(nn.Module):
                  feature_names: Tuple[str] = (),
                  known_future_features: Tuple[str] = tuple(),
                  feature_shapes: Dict[str, int] = {},
+                 static_features: Tuple[Union[str, int]] = (),
                  time_feature_names: Tuple[str] = (),
                  ):
         """
@@ -226,10 +225,16 @@ class VariableSelector(nn.Module):
         pre_scalar = {'past_targets': nn.Linear(dataset_properties['output_shape'][-1], self.hidden_size)}
         encoder_input_sizes = {'past_targets': self.hidden_size}
         decoder_input_sizes = {}
-        feature_names2tensor_idx = {}
         future_feature_name2tensor_idx = {}
+        feature_names2tensor_idx = {}
         idx_tracker = 0
         idx_tracker_future = 0
+
+        static_features = set(static_features)
+        static_features_input_size = {}
+
+        # static_features should always be known beforehand
+        known_future_features = tuple(set(known_future_features) | static_features)
 
         if feature_names:
             for name in feature_names:
@@ -240,6 +245,8 @@ class VariableSelector(nn.Module):
                 encoder_input_sizes[name] = self.hidden_size
                 if name in known_future_features:
                     decoder_input_sizes[name] = self.hidden_size
+                if name in static_features:
+                    static_features_input_size[name] = self.hidden_size
 
         for future_name in known_future_features:
             feature_shape = feature_shapes[future_name]
@@ -294,12 +301,13 @@ class VariableSelector(nn.Module):
         if not dataset_properties['uni_variant']:
             # TODO
             self.static_variable_selection = VariableSelectionNetwork(
-                input_sizes=static_input_sizes,
+                input_sizes=static_features_input_size,
                 hidden_size=self.hidden_size,
                 input_embedding_flags={},
                 dropout=network_structure.grn_dropout_rate,
             )
-        self.static_input_sizes = static_input_sizes
+        self.static_input_sizes = static_features_input_size
+        self.static_features = static_features
 
         self.auto_regressive = auto_regressive
 
@@ -379,7 +387,7 @@ class VariableSelector(nn.Module):
     def forward(self,
                 x_past: Optional[Dict[str, torch.Tensor]],
                 x_future: Optional[Dict[str, torch.Tensor]],
-                x_static: Optional[Dict[str, torch.Tensor]] = None,
+                x_static: Optional[Dict[str, torch.Tensor]],
                 length_past: int = 0,
                 length_future: int = 0,
                 batch_size: int = 0,
@@ -391,8 +399,9 @@ class VariableSelector(nn.Module):
         if length_past == 0 and length_future == 0:
             raise ValueError("Either length_past or length_future must be given!")
         timesteps = length_past + length_future
+
         if not use_cached_static_contex:
-            if self.static_input_sizes > 0:
+            if len(self.static_input_sizes) > 0:
                 static_embedding, _ = self.static_variable_selection(x_static)
             else:
                 model_dtype = next(iter(x_past.values())).dtype if length_past > 0 else next(

@@ -87,6 +87,8 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             float: training loss
             Dict[str, float]: scores for each desired metric
         """
+        import time
+        time_start = time.time()
         loss_sum = 0.0
         N = 0
         self.model.train()
@@ -117,6 +119,8 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
 
         self._scheduler_step(step_interval=StepIntervalUnit.epoch, loss=loss_sum / N)
 
+        print(f'Time Used for training: {time.time() - time_start}')
+
         if self.metrics_during_training:
             return loss_sum / N, self.compute_metrics(outputs_data, targets_data)
         else:
@@ -132,7 +136,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             targets = targets.long()
         return targets
 
-    def train_step(self, data: Dict[str, torch.Tensor], future_targets: torch.Tensor) \
+    def train_step(self, data: Dict[str, torch.Tensor], future_targets: Dict[str, torch.Tensor]) \
             -> Tuple[float, torch.Tensor]:
         """
         Allows to train 1 step of gradient descent, given a batch of train/labels
@@ -202,7 +206,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             outputs = self.model(past_targets=past_target,
                                  past_features=past_features,
                                  future_features=future_features,
-                                 future_targets=future_targets,
+                                 future_targets=future_targets_values,
                                  past_observed_targets=past_observed_targets)
 
             loss_func = self.criterion_preparation(**criterion_kwargs)

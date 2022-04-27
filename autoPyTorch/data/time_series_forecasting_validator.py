@@ -220,30 +220,30 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
             raise NotImplementedError
 
     @staticmethod
-    def join_series(input: List[SupportedFeatTypes],
+    def join_series(X: List[SupportedFeatTypes],
                     return_seq_lengths: bool = False) -> Union[pd.DataFrame,
                                                                Tuple[pd.DataFrame, List[int]]]:
         """
         join the series into one single value
         """
-        num_sequences = len(input)
+        num_sequences = len(X)
         sequence_lengths = [0] * num_sequences
         for seq_idx in range(num_sequences):
-            sequence_lengths[seq_idx] = len(input[seq_idx])
+            sequence_lengths[seq_idx] = len(X[seq_idx])
         series_number = np.arange(len(sequence_lengths)).repeat(sequence_lengths)
-        if not isinstance(input, List):
-            raise ValueError(f'Input must be a list, but it is {type(input)}')
-        if isinstance(input[0], pd.DataFrame):
-            joint_input = pd.concat(input)
-        elif isinstance(input[0], sparse.spmatrix):
-            if len(input[0].shape) > 1:
-                joint_input = sparse.vstack(input)
+        if not isinstance(X, List):
+            raise ValueError(f'Input must be a list, but it is {type(X)}')
+        if isinstance(X[0], pd.DataFrame):
+            joint_input = pd.concat(X)
+        elif isinstance(X[0], sparse.spmatrix):
+            if len(X[0].shape) > 1:
+                joint_input = sparse.vstack(X)
             else:
-                joint_input = sparse.hstack(input)
-        elif isinstance(input[0], (List, np.ndarray)):
-            joint_input = np.concatenate(input)
+                joint_input = sparse.hstack(X)
+        elif isinstance(X[0], (List, np.ndarray)):
+            joint_input = np.concatenate(X)
         else:
-            raise NotImplementedError(f'Unsupported input type: List[{type(input[0])}]')
+            raise NotImplementedError(f'Unsupported input type: List[{type(X[0])}]')
         joint_input = pd.DataFrame(joint_input)
         joint_input.index = series_number
 

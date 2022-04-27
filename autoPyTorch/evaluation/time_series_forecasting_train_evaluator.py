@@ -106,7 +106,6 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
 
             self.Y_optimization = self.datamanager.get_test_target(test_split)
 
-
             # self.Y_actual_train = self.y_train[train_split]
             y_train_pred, y_opt_pred, y_valid_pred, y_test_pred = self._fit_and_predict(pipeline, split_id,
                                                                                         train_indices=train_split,
