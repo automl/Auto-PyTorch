@@ -166,7 +166,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
             self,
             X: Optional[Union[List, pd.DataFrame]],
             y: Optional[Union[List, pd.DataFrame]] = None,
-    ) -> Tuple[Optional[pd.DataFrame], pd.DataFrame, np.ndarray]:
+    ) -> Tuple[Optional[pd.DataFrame], pd.DataFrame, List[int]]:
         if not self._is_fitted:
             raise NotFittedError("Cannot call transform on a validator that is not fitted")
 
@@ -212,7 +212,6 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                                                                      index=series_number)
             y_transformed: pd.DataFrame = self.target_validator.transform(y_stacked, index=series_number)
 
-
             if self._is_uni_variant:
                 return None, y_transformed, sequence_lengths
 
@@ -221,21 +220,34 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
             raise NotImplementedError
 
     @staticmethod
-    def join_series(input: List[SupportedFeatTypes]) -> SupportedFeatTypes:
+    def join_series(input: List[SupportedFeatTypes],
+                    return_seq_lengths: bool = False) -> Union[pd.DataFrame,
+                                                               Tuple[pd.DataFrame, List[int]]]:
         """
         join the series into one single value
         """
+        num_sequences = len(input)
+        sequence_lengths = [0] * num_sequences
+        for seq_idx in range(num_sequences):
+            sequence_lengths[seq_idx] = len(input[seq_idx])
+        series_number = np.arange(len(sequence_lengths)).repeat(sequence_lengths)
         if not isinstance(input, List):
             raise ValueError(f'Input must be a list, but it is {type(input)}')
         if isinstance(input[0], pd.DataFrame):
-            return pd.concat(input)
+            joint_input = pd.concat(input)
         elif isinstance(input[0], sparse.spmatrix):
             if len(input[0].shape) > 1:
-                return sparse.vstack(input)
+                joint_input = sparse.vstack(input)
             else:
-                return sparse.hstack(input)
+                joint_input = sparse.hstack(input)
         elif isinstance(input[0], (List, np.ndarray)):
-            return np.concatenate(input)
+            joint_input = np.concatenate(input)
         else:
             raise NotImplementedError(f'Unsupported input type: List[{type(input[0])}]')
+        joint_input = pd.DataFrame(joint_input)
+        joint_input.index = series_number
 
+        if return_seq_lengths:
+            return joint_input, sequence_lengths
+        else:
+            return joint_input

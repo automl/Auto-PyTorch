@@ -12,11 +12,12 @@ from autoPyTorch.utils.logging_ import PicklableClientLogger
 
 class TimeSeriesFeatureValidator(TabularFeatureValidator):
     def __init__(
-        self,
-        logger: Optional[Union[PicklableClientLogger, logging.Logger]] = None,
+            self,
+            logger: Optional[Union[PicklableClientLogger, logging.Logger]] = None,
     ):
         super().__init__(logger)
         self.only_contain_series_idx = False
+        self.static_features = ()
 
     def get_reordered_columns(self):
         return self.transformed_columns + list(set(self.column_order) - set(self.transformed_columns))
@@ -58,29 +59,33 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
                     self.categorical_columns = []
                     return self
 
-                X_train_ = X_train.drop(series_idx, axis=1)
+                X_train = X_train.drop(series_idx, axis=1)
 
-                X_test_ = X_test.drop(series_idx, axis=1) if X_test is not None else None
+                X_test = X_test.drop(series_idx, axis=1) if X_test is not None else None
 
-                super().fit(X_train_, X_test_)
+                super().fit(X_train, X_test)
             else:
                 raise NotImplementedError(f"series idx only works with pandas.DataFrame but the type of "
                                           f"X_train is {type(X_train)} ")
         else:
             super().fit(X_train, X_test)
+        if isinstance(X_train, np.ndarray):
+            X_train = pd.DataFrame(X_train, index=[0] * len(X_train))
+        static_features: pd.Series = (X_train.groupby(X_train.index).nunique() <= 1).all()
+        self.static_features = (idx for idx in static_features.index if static_features[idx])
 
         return self
 
     def transform(
-        self,
-        X: SupportedFeatTypes,
-        index: Optional[Union[pd.Index, np.ndarray]] = None,
+            self,
+            X: SupportedFeatTypes,
+            index: Optional[Union[pd.Index, np.ndarray]] = None,
     ) -> Union[pd.DataFrame]:
         X = super(TimeSeriesFeatureValidator, self).transform(X)
         if index is None:
             index = np.array([0.] * len(X))
         if X.ndim == 1:
             X = np.expand_dims(X, -1)
-        X: pd.DataFrame = pd.DataFrame(X, columns=self.get_reordered_columns(),
-                                       index=index)
+        X: pd.DataFrame = pd.DataFrame(X, columns=self.get_reordered_columns())
+        X.index = index
         return X

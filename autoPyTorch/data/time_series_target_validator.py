@@ -82,7 +82,8 @@ class TimeSeriesTargetValidator(TabularTargetValidator):
         if y.ndim == 1:
             y = np.expand_dims(y, -1)
 
-        y: pd.DataFrame = pd.DataFrame(y, index=index)
+        y: pd.DataFrame = pd.DataFrame(y)
+        y.index = index
 
         return y
 

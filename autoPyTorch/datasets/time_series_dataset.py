@@ -351,7 +351,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                  n_prediction_steps: int = 1,
                  dataset_name: Optional[str] = None,
                  normalize_y: bool = False,
-                 static_features: Optional[np.ndarray] = None,
                  ):
         """
         :param target_variables:  Optional[Union[Tuple[int], int]] used for multi-variant forecasting
@@ -436,6 +435,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         self.start_times_train = self.validator.start_times_train
         self.start_times_test = self.validator.start_times_test
+
+        self.static_features = self.validator.feature_validator.static_features
 
         self._transform_time_feature = False
         if not time_feature_transform:
@@ -577,7 +578,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                             "n_prediction_steps": n_prediction_steps,
                             "sp": self.seasonality,
                             "known_future_features": known_future_features,
-                            "static_features": static_features}
+                            "static_features": self.static_features}
 
         sequence_datasets, train_tensors, test_tensors = self.make_sequences_datasets(
             X=X, Y=Y,
@@ -591,7 +592,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         ConcatDataset.__init__(self, datasets=sequence_datasets)
         self.known_future_features = known_future_features
-        self.static_features = static_features
 
         self.seq_length_min = int(np.min(self.sequence_lengths_train))
         self.seq_length_median = int(np.median(self.sequence_lengths_train))
@@ -611,10 +611,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.issparse: bool = issparse(self.train_tensors[0])
         # TODO find a way to edit input shape!
         self.input_shape: Tuple[int, int] = (self.seq_length_min, self.num_features)
-        if static_features is None:
-            self.static_features_shape: int = 0
-        else:
-            self.static_features_shape: int = static_features.size
 
         if known_future_features is None:
             self.future_feature_shapes: Tuple[int, int] = (self.seq_length_min, 0)
