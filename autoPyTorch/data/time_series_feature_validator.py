@@ -72,8 +72,8 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
         if isinstance(X_train, np.ndarray):
             X_train = pd.DataFrame(X_train, index=[0] * len(X_train))
         static_features: pd.Series = (X_train.groupby(X_train.index).nunique() <= 1).all()
-        self.static_features = (idx for idx in static_features.index if static_features[idx])
-
+        self.static_features = tuple(idx for idx in static_features.index if static_features[idx])
+        self.get_reordered_columns()
         return self
 
     def transform(

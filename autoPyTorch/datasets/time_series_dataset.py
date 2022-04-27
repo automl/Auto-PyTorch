@@ -64,7 +64,7 @@ class TimeSeriesSequence(Dataset):
                  start_time_test: Optional[pd.DatetimeIndex] = None,
                  train_transforms: Optional[torchvision.transforms.Compose] = None,
                  val_transforms: Optional[torchvision.transforms.Compose] = None,
-                 static_features: Optional[np.ndarray] = None,
+                 static_features: Tuple[Union[int, str]] = None,
                  n_prediction_steps: int = 0,
                  sp: int = 1,
                  known_future_features: Optional[Tuple[str]] = None,
@@ -214,7 +214,6 @@ class TimeSeriesSequence(Dataset):
         return {"past_targets": past_target,
                 "past_features": past_features,
                 "future_features": future_features,
-                "static_features": self.static_features,
                 "mase_coefficient": self.mase_coefficient,
                 'past_observed_targets': torch.from_numpy(self.observed_target[:index + 1]),
                 'decoder_lengths': 0 if future_targets is None else future_targets['future_targets'].shape[

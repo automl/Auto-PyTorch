@@ -28,7 +28,7 @@ from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.imp
     TimeSeriesFeatureImputer,
     TimeSeriesTargetImputer,
 )
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling import ScalerChoice
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.base_scaler import BaseScaler
 from autoPyTorch.pipeline.components.setup.early_preprocessor.TimeSeriesEarlyPreProcessing import (
     TimeSeriesEarlyPreprocessing,
     TimeSeriesTargetEarlyPreprocessing
@@ -327,7 +327,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
 
         if not default_dataset_properties.get("uni_variant", False):
             steps.extend([("imputer", TimeSeriesFeatureImputer(random_state=self.random_state)),
-                          ("scaler", ScalerChoice(default_dataset_properties, random_state=self.random_state)),
+                          ("scaler", BaseScaler(random_state=self.random_state)),
                           ('encoding', TimeSeriesEncoderChoice(default_dataset_properties,
                                                                random_state=self.random_state)),
                           ("time_series_transformer", TimeSeriesTransformer(random_state=self.random_state)),

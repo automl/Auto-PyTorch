@@ -67,7 +67,6 @@ class BaseForecastingDecoder(autoPyTorchComponent):
         """
         self.check_requirements(X, y)
         output_shape = X['dataset_properties']['output_shape']
-        static_features_shape = X["dataset_properties"]["static_features_shape"]
 
         encoder_output_shape = X['network_encoder'][f'block_{self.block_number}'].encoder_output_shape
 
@@ -92,7 +91,7 @@ class BaseForecastingDecoder(autoPyTorchComponent):
             if self.block_number == network_structure.num_blocks:
                 self.is_last_decoder = True
 
-            future_in_features = future_feature_shapes[-1] + static_features_shape
+            future_in_features = future_feature_shapes[-1]
             if variable_selection:
                 future_in_features = X['network_encoder']['block_1'].encoder_output_shape[-1]
             else:

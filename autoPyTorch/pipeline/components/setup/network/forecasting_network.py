@@ -142,7 +142,6 @@ class ForecastingNetworkComponent(NetworkComponent):
             past_targets = X_batch['past_targets']
             past_features = X_batch['past_features']
             future_features = X_batch["future_features"]
-            static_features = X_batch["static_features"]
             past_observed_targets = X_batch['past_observed_targets']
 
             if past_targets.ndim == 2:
@@ -150,8 +149,7 @@ class ForecastingNetworkComponent(NetworkComponent):
 
             pred_kwargs = {"past_targets": past_targets,
                            "past_features": past_features,
-                           "future_features": future_features,
-                           "static_features": static_features}
+                           "future_features": future_features}
 
             for key in pred_kwargs.keys():
                 if pred_kwargs[key] is not None:

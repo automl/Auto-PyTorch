@@ -1,20 +1,42 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, Optional, List, Union
 
+import numpy as np
+
+from ConfigSpace.configuration_space import ConfigurationSpace
+from ConfigSpace.hyperparameters import CategoricalHyperparameter
+
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.base_time_series_preprocessing import (
     autoPyTorchTimeSeriesPreprocessingComponent
 )
 from autoPyTorch.utils.common import FitRequirement
-
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.utils import TimeSeriesScaler
 
 class BaseScaler(autoPyTorchTimeSeriesPreprocessingComponent):
     """
     Provides abstract class interface for time series scalers in AutoPytorch
     """
 
-    def __init__(self) -> None:
+    def __init__(self,
+                 random_state: Optional[Union[np.random.RandomState, int]] = None,
+                 scaling_mode: str = 'standard'):
         super().__init__()
         self.add_fit_requirements([
-            FitRequirement('numerical_features', (List,), user_defined=True, dataset_property=True)])
+            FitRequirement('numerical_features', (List,), user_defined=True, dataset_property=True),
+            FitRequirement('is_small_preprocess', (bool,), user_defined=True, dataset_property=True)
+        ])
+        self.random_state = random_state
+        self.scaling_mode = scaling_mode
+
+    def fit(self, X: Dict[str, Any], y: Any = None) -> 'BaseScaler':
+        self.check_requirements(X, y)
+        dataset_is_small_preprocess = X["dataset_properties"]["is_small_preprocess"]
+        static_features = X['dataset_properties'].get('static_features', ())
+        self.preprocessor['numerical'] = TimeSeriesScaler(mode=self.scaling_mode,
+                                                          dataset_is_small_preprocess=dataset_is_small_preprocess,
+                                                          static_features=static_features)
+        return self
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -29,3 +51,29 @@ class BaseScaler(autoPyTorchTimeSeriesPreprocessingComponent):
             raise ValueError(f"can not call transform on {self.__class__.__name__} without fitting first.")
         X.update({'scaler': self.preprocessor})
         return X
+
+    @staticmethod
+    def get_hyperparameter_search_space(
+            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+            scaling_mode: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                hyperparameter='scaling_mode',
+                value_range=("standard", "min_max", "max_abs", "mean_abs", "none"),
+                default_value="standard",
+            ),
+    ) -> ConfigurationSpace:
+        """Get the hyperparameter search space for the Time Series Imputator
+
+        Args:
+            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]])
+                Properties that describe the dataset
+            scaling_mode (HyperparameterSearchSpace: default = ...)
+                The strategy to use for scaling, its hyperparameters are defined by sktime
+
+        Returns:
+            ConfigurationSpace
+                The space of possible configurations for a Time Series Imputor with the given
+                `dataset_properties`
+        """
+        cs = ConfigurationSpace()
+        add_hyperparameter(cs, scaling_mode, CategoricalHyperparameter)
+        return cs

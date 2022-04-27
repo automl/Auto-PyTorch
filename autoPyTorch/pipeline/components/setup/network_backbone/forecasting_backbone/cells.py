@@ -218,7 +218,6 @@ class VariableSelector(nn.Module):
         """
         super().__init__()
         first_encoder_output_shape = network_encoder['block_1'].encoder_output_shape[-1]
-        static_input_sizes = dataset_properties['static_features_shape']
         self.hidden_size = first_encoder_output_shape
 
         assert set(feature_names) == set(feature_shapes.keys()), f"feature_names and feature_shapes must have " \

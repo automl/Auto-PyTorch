@@ -50,7 +50,6 @@ class BaseForecastingEncoder(autoPyTorchComponent):
             FitRequirement('uni_variant', (bool,), user_defined=False, dataset_property=True),
             FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
             FitRequirement('output_shape', (Iterable,), user_defined=True, dataset_property=True),
-            FitRequirement('static_features_shape', (int,), user_defined=True, dataset_property=True),
             FitRequirement('network_structure', (NetworkStructure,),  user_defined=False, dataset_property=False),
             FitRequirement('transform_time_features', (bool,), user_defined=False, dataset_property=False),
             FitRequirement('time_feature_transform', (Iterable,), user_defined=False, dataset_property=True)
@@ -64,7 +63,6 @@ class BaseForecastingEncoder(autoPyTorchComponent):
 
         input_shape = X["dataset_properties"]['input_shape']
         output_shape = X["dataset_properties"]['output_shape']
-        static_features_shape = X["dataset_properties"]["static_features_shape"]
 
         if self.block_number == 1:
             if not X["dataset_properties"]["uni_variant"]:
@@ -91,9 +89,9 @@ class BaseForecastingEncoder(autoPyTorchComponent):
                 in_features = self.n_encoder_output_feature()
             elif self.encoder_properties().lagged_input and hasattr(self, 'lagged_value'):
                 in_features = len(self.lagged_value) * output_shape[-1] + \
-                              input_shape[-1] + static_features_shape + n_time_feature_transform
+                              input_shape[-1] + n_time_feature_transform
             else:
-                in_features = output_shape[-1] + input_shape[-1] + static_features_shape + n_time_feature_transform
+                in_features = output_shape[-1] + input_shape[-1] + n_time_feature_transform
 
             input_shape = (X['window_size'], in_features)
         else:
