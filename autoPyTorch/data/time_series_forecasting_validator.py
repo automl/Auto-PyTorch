@@ -50,7 +50,6 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
             X_test: Optional[Union[List, pd.DataFrame]] = None,
             y_test: Optional[Union[List, pd.DataFrame]] = None,
             start_times_train: Optional[List[pd.DatetimeIndex]] = None,
-            start_times_test: Optional[List[pd.DatetimeIndex]] = None,
             freq: str = '1Y',
             n_prediction_steps: int = 1,
             known_future_features: Optional[List[Union[int, str]]] = None,
@@ -71,23 +70,13 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
         self.series_idx = series_idx
         self.n_prediction_steps = n_prediction_steps
 
-        if y_test is not None and bool(start_times_test) != bool(start_times_train):
-            warnings.warn('One of start_times_test or start_times_train is missing! This might result in the '
-                          'risk of not proper evaluated ')
-
         if start_times_train is None:
             start_times_train = [pd.DatetimeIndex(pd.to_datetime(['2000-01-01']), freq=freq)] * len(y_train)
         else:
             assert len(start_times_train) == len(y_train), 'start_times_train must have the same length as y_train!'
 
-        if y_test is not None:
-            if start_times_test is None:
-                start_times_test = [pd.DatetimeIndex(pd.to_datetime(['1900-01-01']), freq=freq)] * len(y_test)
-            else:
-                assert len(start_times_train) == len(y_train), 'start_times_train must have the same length as y_train!'
 
         self.start_times_train = start_times_train
-        self.start_times_test = start_times_test
 
         if X_train is None:
             self._is_uni_variant = True
