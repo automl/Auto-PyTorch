@@ -19,13 +19,19 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparamet
 class _LearnedEntityEmbedding(nn.Module):
     """ Learned entity embedding module for categorical features"""
 
-    def __init__(self, config: Dict[str, Any], num_input_features: np.ndarray, num_numerical_features: int):
+    def __init__(self,
+                 config: Dict[str, Any],
+                 num_input_features: np.ndarray,
+                 num_numerical_features: int):
         """
         Args:
             config (Dict[str, Any]): The configuration sampled by the hyperparameter optimizer
             num_input_features (np.ndarray): column wise information of number of output columns after transformation
                 for each categorical column and 0 for numerical columns
             num_numerical_features (int): number of numerical features in X
+            num_output_dimensions Optional[List[int]]: number of output dimensions, this is applied to quickly
+                construct a new Embedding network
+            ee_layers (Optional[nn.Module])
         """
         super().__init__()
         self.config = config
@@ -48,9 +54,38 @@ class _LearnedEntityEmbedding(nn.Module):
         self.num_output_dimensions = [num_out if embed else num_in for num_out, embed, num_in in
                                       zip(self.num_output_dimensions, self.embed_features,
                                           self.num_input_features)]
+
         self.num_out_feats = self.num_numerical + sum(self.num_output_dimensions)
 
         self.ee_layers = self._create_ee_layers()
+
+    def get_partial_models(self, subset_features: List[int]) -> "_LearnedEntityEmbedding":
+        """
+        extract a partial models that only works on a subset of the data that ought to be passed to the embedding
+        network, this function is implemented for time series forecasting tasks where the known future features is only
+        a subset of the known past features
+        Args:
+            subset_features: a set of index identifying which features will pass through the partial model
+
+        Returns:
+            partial_model (_LearnedEntityEmbedding) a new partial model
+        """
+        num_input_features = self.num_input_features[subset_features]
+        num_numerical_features = sum([sf < self.num_numerical for sf in subset_features])
+
+        num_output_dimensions = [self.num_output_dimensions[sf] for sf in subset_features]
+        embed_features = [self.embed_features[sf] for sf in subset_features]
+
+        ee_layers = []
+        ee_layer_tracker = 0
+        for sf in subset_features:
+            if self.embed_features[sf]:
+                ee_layers.append(self.ee_layers[ee_layer_tracker])
+                ee_layer_tracker += 1
+        ee_layers = nn.ModuleList(ee_layers)
+
+        return PartialLearnedEntityEmbedding(num_input_features, num_numerical_features, embed_features,
+                                             num_output_dimensions, ee_layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # pass the columns of each categorical feature through entity embedding layer
@@ -64,15 +99,15 @@ class _LearnedEntityEmbedding(nn.Module):
                 x_pointer += 1
                 continue
             if x_pointer > last_concat:
-                concat_seq.append(x[:, last_concat: x_pointer])
-            categorical_feature_slice = x[:, x_pointer: x_pointer + num_in]
+                concat_seq.append(x[..., last_concat: x_pointer])
+            categorical_feature_slice = x[..., x_pointer: x_pointer + num_in]
             concat_seq.append(self.ee_layers[layer_pointer](categorical_feature_slice))
             layer_pointer += 1
             x_pointer += num_in
             last_concat = x_pointer
 
-        concat_seq.append(x[:, last_concat:])
-        return torch.cat(concat_seq, dim=1)
+        concat_seq.append(x[..., last_concat:])
+        return torch.cat(concat_seq, dim=-1)
 
     def _create_ee_layers(self) -> nn.ModuleList:
         # entity embeding layers are Linear Layers
@@ -83,6 +118,31 @@ class _LearnedEntityEmbedding(nn.Module):
                 continue
             layers.append(nn.Linear(num_in, num_out))
         return layers
+
+
+class PartialLearnedEntityEmbedding(_LearnedEntityEmbedding):
+    def __init__(self,
+                 num_input_features: np.ndarray,
+                 num_numerical_features: int,
+                 embed_features: List[bool],
+                 num_output_dimensions: Optional[List[int]],
+                 ee_layers: nn.Module
+                 ):
+        super(_LearnedEntityEmbedding, self).__init__()
+        self.num_numerical = num_numerical_features
+        # list of number of categories of categorical data
+        # or 0 for numerical data
+        self.num_input_features = num_input_features
+        categorical_features = self.num_input_features > 0
+
+        self.num_categorical_features = self.num_input_features[categorical_features]
+
+        self.embed_features = embed_features
+
+        self.num_output_dimensions = num_output_dimensions
+        self.num_out_feats = self.num_numerical + sum(self.num_output_dimensions)
+
+        self.ee_layers = ee_layers
 
 
 class LearnedEntityEmbedding(NetworkEmbeddingComponent):
@@ -97,6 +157,7 @@ class LearnedEntityEmbedding(NetworkEmbeddingComponent):
     def build_embedding(self,
                         num_input_features: np.ndarray,
                         num_numerical_features: int) -> Tuple[nn.Module, List[int]]:
+
         embedding = _LearnedEntityEmbedding(config=self.config,
                                             num_input_features=num_input_features,
                                             num_numerical_features=num_numerical_features)

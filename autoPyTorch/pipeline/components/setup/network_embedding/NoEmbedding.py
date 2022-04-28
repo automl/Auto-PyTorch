@@ -12,6 +12,9 @@ from autoPyTorch.pipeline.components.setup.network_embedding.base_network_embedd
 
 
 class _NoEmbedding(nn.Module):
+    def get_partial_models(self, subset_features: List[int]) -> "_NoEmbedding":
+        return self
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return x
 

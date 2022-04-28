@@ -20,7 +20,7 @@ from autoPyTorch.data.utils import (
     get_dataset_compression_mapping,
 )
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset
+from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset, TimeSeriesSequence
 from autoPyTorch.pipeline.time_series_forecasting import TimeSeriesForecastingPipeline
 from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
@@ -220,7 +220,7 @@ class TimeSeriesForecastingTask(BaseTask):
         # Also, an encoder is fit to both train and test data,
         # to prevent unseen categories during inference
         input_validator.fit(X_train=X_train, y_train=y_train, start_times_train=start_times_train,
-                                X_test=X_test, y_test=y_test, start_times_test=start_times_test)
+                            X_test=X_test, y_test=y_test, start_times_test=start_times_test)
 
         dataset = TimeSeriesForecastingDataset(
             X=X_train, Y=y_train,
@@ -452,22 +452,19 @@ class TimeSeriesForecastingTask(BaseTask):
 
     def predict(
             self,
-            X_test: Optional[Union[Union[List[np.ndarray]], pd.DataFrame, Dict]] = None,
+            X_test: Optional[List[Union[np.ndarray, pd.DataFrame, TimeSeriesSequence]], pd.DataFrame] = None,
             batch_size: Optional[int] = None,
             n_jobs: int = 1,
-            past_targets: Optional[List[np.ndarray]] = None,
+            targets_tests: Optional[List[np.ndarray]] = None,
+            start_times: List[pd.DatetimeIndex] = []
     ) -> np.ndarray:
         """
                     target_variables: Optional[Union[Tuple[int], Tuple[str], np.ndarray]] = None,
                 (used for multi-variable prediction), indicates which value needs to be predicted
         """
-        if not self.dataset.is_uni_variant:
-            if past_targets is None:
-                if not isinstance(X_test, Dict) or "past_targets" not in X_test:
-                    raise ValueError("Past Targets must be given")
-            else:
-                X_test = {"features": X_test,
-                          "past_targets": past_targets}
+        if not isinstance(X_test[0], TimeSeriesSequence):
+            # Validate and construct TimeSeriesSequence TODO
+            pass
         flattened_res = super(TimeSeriesForecastingTask, self).predict(X_test, batch_size, n_jobs)
         if self.dataset.num_target == 1:
             return flattened_res.reshape([-1, self.dataset.n_prediction_steps])

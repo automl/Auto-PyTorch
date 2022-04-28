@@ -12,6 +12,7 @@ from torch.distributions import (
 )
 
 from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import BaseTargetScaler
+from autoPyTorch.pipeline.components.setup.network_embedding.NoEmbedding import _NoEmbedding
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import NetworkStructure
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import (
     EncoderNetwork,
@@ -194,6 +195,11 @@ class AbstractForecastingNet(nn.Module):
         super().__init__()
         self.network_structure = network_structure
         self.embedding = network_embedding
+        if len(known_future_features) > 0:
+            known_future_features_idx = [feature_names.index(kff) for kff in known_future_features]
+            self.embedding_future = self.embedding.get_partial_models(known_future_features_idx)
+        else:
+            self.embedding_future = _NoEmbedding()
         # modules that generate tensors while doing forward pass
         self.lazy_modules = []
         if network_structure.variable_selection:
@@ -379,7 +385,7 @@ class ForecastingNet(AbstractForecastingNet):
             x_static = {}
             if length_past > 0:
                 if past_features is not None:
-                    past_features = past_features[:, -self.window_size:].to(self.device)
+                    past_features = self.embedding(past_features[:, -self.window_size:].to(self.device))
                 x_past = {'past_targets': x_past.to(device=self.device)}
 
                 if past_features is not None:
@@ -388,8 +394,7 @@ class ForecastingNet(AbstractForecastingNet):
                         if feature_name not in self.variable_selector.static_features:
                             x_past[feature_name] = past_features[:, :, tensor_idx[0]: tensor_idx[1]]
                         else:
-                            static_feature = past_features[:, [0], tensor_idx[0]: tensor_idx[1]]
-                            static_feature = static_feature.repeat(1, length_past + length_future, 1)
+                            static_feature = past_features[:, 0, tensor_idx[0]: tensor_idx[1]]
                             x_static[feature_name] = static_feature
 
                 if hasattr(self.variable_selector, 'placeholder_features'):
@@ -401,7 +406,7 @@ class ForecastingNet(AbstractForecastingNet):
                 x_past = None
             if length_future > 0:
                 if future_features is not None:
-                    future_features = future_features.to(self.device)
+                    future_features = self.embedding_future(future_features.to(self.device))
                 x_future = {}
                 if hasattr(self.variable_selector, 'placeholder_features'):
                     for placehold in self.variable_selector.placeholder_features:
@@ -418,8 +423,7 @@ class ForecastingNet(AbstractForecastingNet):
                             x_future[feature_name] = future_features[:, :, tensor_idx[0]: tensor_idx[1]]
                         else:
                             if length_past == 0:
-                                static_feature = future_features[:, [0], tensor_idx[0]: tensor_idx[1]]
-                                static_feature = static_feature.repeat(1, length_past + length_future, 1)
+                                static_feature = future_features[:, 0, tensor_idx[0]: tensor_idx[1]]
                                 x_static[feature_name] = static_feature
 
             else:
@@ -444,7 +448,6 @@ class ForecastingNet(AbstractForecastingNet):
             x_past = x_past.to(device=self.device)
             if future_features is not None:
                 future_features = future_features.to(self.device)
-            x_past = self.embedding(x_past)  # TODO embedding for future features!
             return x_past, future_features, None, loc, scale, None, past_targets
 
     def forward(self,
@@ -544,7 +547,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
         length_future = future_targets.shape[1]
         future_targets = future_targets.to(self.device)
         if future_features is not None:
-            future_features = future_features.to(self.device)
+            future_features = self.embedding_future(future_features.to(self.device))
         x_future = {}
         if hasattr(self.variable_selector, 'placeholder_features'):
             for placeholder in self.variable_selector.placeholder_features:

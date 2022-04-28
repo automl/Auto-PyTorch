@@ -52,6 +52,28 @@ TIME_SERIES_REGRESSION_INPUT = Tuple[np.ndarray, np.ndarray]
 TIME_SERIES_CLASSIFICATION_INPUT = Tuple[np.ndarray, np.ndarray]
 
 
+def extract_feature_index(feature_shapes: Dict[str, int],
+                          feature_names: Tuple[str],
+                          queried_features: Tuple[str]) -> Tuple[int]:
+    """
+    extract the index of a set of queried_features from the extracted feature_shapes
+    Args:
+        feature_shapes (dict): feature_shapes recoding the shape of each features
+        feature_names (List[str]): names of the features
+        queried_features (Tuple[str]): names of the features that we expect their index
+
+    Returns:
+        feature_index (Tuple[int]):
+    """
+    df_range = pd.DataFrame(feature_shapes, columns=feature_names, index=[0])
+    df_range_end = df_range.cumsum(axis=1)
+    df_range = pd.concat([df_range_end - df_range, df_range_end])
+    value_ranges = df_range[list(queried_features)].T.values
+    feature_index: List[int] = sum([list(range(*value_r)) for value_r in value_ranges], [])
+    feature_index.sort()
+    return tuple(feature_index)
+
+
 class TimeSeriesSequence(Dataset):
     def __init__(self,
                  X: Optional[np.ndarray],
@@ -64,10 +86,9 @@ class TimeSeriesSequence(Dataset):
                  start_time_test: Optional[pd.DatetimeIndex] = None,
                  train_transforms: Optional[torchvision.transforms.Compose] = None,
                  val_transforms: Optional[torchvision.transforms.Compose] = None,
-                 static_features: Tuple[Union[int, str]] = None,
                  n_prediction_steps: int = 0,
                  sp: int = 1,
-                 known_future_features: Optional[Tuple[str]] = None,
+                 known_future_features_index: Optional[List[int]] = None,
                  only_has_past_targets: bool = False,
                  compute_mase_coefficient_value: bool = True,
                  time_features=None,
@@ -100,7 +121,6 @@ class TimeSeriesSequence(Dataset):
         self.start_time_test = start_time_test
 
         self.time_feature_transform = time_feature_transform
-        self.static_features = static_features
 
         self.freq = freq
 
@@ -120,7 +140,7 @@ class TimeSeriesSequence(Dataset):
         else:
             self.mase_coefficient = 1.0
         self.only_has_past_targets = only_has_past_targets
-        self.known_future_features = known_future_features
+        self.known_future_features_index = known_future_features_index
 
         self.transform_time_features = False
         self._cached_time_features: Optional[np.ndarray] = time_features
@@ -145,15 +165,14 @@ class TimeSeriesSequence(Dataset):
             index = self.__len__() + index
 
         if self.X is not None:
-            if hasattr(self.X, 'loc'):
+            if hasattr(self.X, 'iloc'):
                 past_features = self.X.iloc[:index + 1]
             else:
                 past_features = self.X[:index + 1]
 
-            if self.known_future_features:
-                future_features = self.X.iloc[
-                                  index + 1: index + self.n_prediction_steps + 1, self.known_future_features
-                                  ]
+            if self.known_future_features_index:
+                future_features = self.X[index + 1: index + self.n_prediction_steps + 1,
+                                  self.known_future_features_index]
             else:
                 future_features = None
         else:
@@ -169,10 +188,15 @@ class TimeSeriesSequence(Dataset):
                 else:
                     past_features = self._cached_time_features[:index + 1]
                 if future_features is not None:
-                    future_features = np.hstack([
-                        future_features,
-                        self._cached_time_features[index + 1:index + self.n_prediction_steps + 1]
-                    ])
+                    try:
+                        future_features = np.hstack([
+                            future_features,
+                            self._cached_time_features[index + 1:index + self.n_prediction_steps + 1]
+                        ])
+                    except Exception:
+                        import pdb
+
+                        pdb.set_trace()
                 else:
                     future_features = self._cached_time_features[index + 1:index + self.n_prediction_steps + 1]
 
@@ -302,8 +326,7 @@ class TimeSeriesSequence(Dataset):
                                       train_transforms=self.train_transform,
                                       val_transforms=self.val_transform,
                                       n_prediction_steps=self.n_prediction_steps,
-                                      static_features=self.static_features,
-                                      known_future_features=self.known_future_features,
+                                      known_future_features_index=self.known_future_features_index,
                                       sp=self.sp,
                                       only_has_past_targets=True,
                                       compute_mase_coefficient_value=False,
@@ -568,6 +591,9 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         if known_future_features is None:
             known_future_features = tuple()
+        known_future_features_index = extract_feature_index(self.feature_shapes,
+                                                            self.feature_names,
+                                                            queried_features=known_future_features)
 
         # initialize datasets
         sequences_kwargs = {"freq": self.freq,
@@ -576,8 +602,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                             "val_transforms": self.val_transform,
                             "n_prediction_steps": n_prediction_steps,
                             "sp": self.seasonality,
-                            "known_future_features": known_future_features,
-                            "static_features": self.static_features}
+                            "known_future_features_index": known_future_features_index}
 
         sequence_datasets, train_tensors, test_tensors = self.make_sequences_datasets(
             X=X, Y=Y,
@@ -819,7 +844,10 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         return sequence_datasets, train_tensors, test_tensors
 
-    def replace_data(self, X_train: pd.DataFrame, X_test: Optional[pd.DataFrame]) -> 'BaseDataset':
+    def replace_data(self,
+                     X_train: pd.DataFrame,
+                     X_test: Optional[pd.DataFrame],
+                     known_future_features_index: List[int] = []) -> 'BaseDataset':
         super(TimeSeriesForecastingDataset, self).replace_data(X_train=X_train, X_test=X_test)
         if X_train is None:
             return self
@@ -831,6 +859,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             seq.X = x_ser
             if X_test is not None:
                 seq.X_test = X_test_group.get_group(ser_id).transform(np.array).values
+            seq.known_future_features_index = known_future_features_index
 
         return self
 

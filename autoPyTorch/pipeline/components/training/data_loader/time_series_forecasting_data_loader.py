@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Union, Sequence, List, Iterator, Sized
+from typing import Any, Dict, Optional, Union, Tuple, List
 import warnings
 from functools import partial
 
@@ -14,8 +14,12 @@ from torch.utils.data.sampler import SubsetRandomSampler
 
 import torchvision
 
-from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset, TimeSeriesSequence
+from autoPyTorch.datasets.time_series_dataset import (
+    TimeSeriesForecastingDataset,
+    TimeSeriesSequence,
+    extract_feature_index)
 from autoPyTorch.utils.common import (
+    FitRequirement,
     HyperparameterSearchSpace,
     custom_collate_fn,
     add_hyperparameter,
@@ -77,14 +81,18 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         self.num_batches_per_epoch = num_batches_per_epoch if num_batches_per_epoch is not None else np.inf
         self.padding_collector = None
 
-        self.static_features = None
-        self.known_future_features = None
+        self.known_future_features_index = None
         self._is_uni_variant = False
 
         self.transform_time_features = transform_time_features
         self.freq = "1Y"
         self.time_feature_transform = []
         self.dataset_columns = []
+
+        self.add_fit_requirements(
+            [FitRequirement("known_future_features", (Tuple,), user_defined=True, dataset_property=True),
+             FitRequirement("feature_shapes", (Dict,), user_defined=True, dataset_property=True),
+             FitRequirement("feature_names", (Tuple, ), user_defined=True, dataset_property=True)])
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> torch.utils.data.DataLoader:
         """
@@ -106,13 +114,9 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         if self.backcast:
             self.window_size = self.backcast_period * self.n_prediction_steps
 
-        self.static_features = datamanager.static_features
-        self.known_future_features = datamanager.known_future_features
-
         # this value corresponds to budget type resolution
         sample_interval = X.get('sample_interval', 1)
         padding_value = X.get('required_padding_value', 0.0)
-
 
         if sample_interval > 1:
             # for lower resolution, window_size should be smaller
@@ -123,7 +127,15 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
 
         self.dataset_columns = datamanager.feature_names
 
-        self.padding_collector = PadSequenceCollector(self.window_size, sample_interval, padding_value, max_lagged_value)
+        known_future_features_index = extract_feature_index(
+            feature_shapes=X['dataset_properties']['feature_shapes'],
+            feature_names=X['dataset_properties']['feature_names'],
+            queried_features=X['dataset_properties']['known_future_features']
+        )
+        self.known_future_features_index = tuple(known_future_features_index)
+
+        self.padding_collector = PadSequenceCollector(self.window_size, sample_interval, padding_value,
+                                                      max_lagged_value)
 
         # this value corresponds to budget type num_sequence
         fraction_seq = X.get('fraction_seq', 1.0)
@@ -143,11 +155,14 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             self.val_transform,
             train=False,
         )
+
         datamanager.transform_time_features = self.transform_time_features
         if X['dataset_properties']["is_small_preprocess"]:
             # This parameter indicates that the data has been pre-processed for speed
             # Overwrite the datamanager with the pre-processes data
-            datamanager.replace_data(X['X_train'], X['X_test'] if 'X_test' in X else None)
+            datamanager.replace_data(X['X_train'],
+                                     X['X_test'] if 'X_test' in X else None,
+                                     known_future_features_index=known_future_features_index)
             self.dataset_small_preprocess = True
         else:
             self.dataset_small_preprocess = False
@@ -183,7 +198,8 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         # create masks for masking
         seq_idx_inactivate = np.where(self.random_state.rand(seq_train_length.size) > fraction_seq)[0]
         if len(seq_idx_inactivate) == seq_train_length.size:
-            seq_idx_inactivate = self.random_state.choice(seq_idx_inactivate, len(seq_idx_inactivate)-1, replace=False )
+            seq_idx_inactivate = self.random_state.choice(seq_idx_inactivate, len(seq_idx_inactivate) - 1,
+                                                          replace=False)
         # this budget will reduce the number of samples inside each sequence, e.g., the samples becomes more sparse
 
         """
@@ -314,13 +330,14 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
 
                 if self.dataset_small_preprocess and not self._is_uni_variant:
                     x_seq.X = x_all.get_group(i).transform(np.array).values
+                    update_dict = {"known_future_features_index": self.known_future_features_index}
+                else:
+                    update_dict = {}
+                update_dict.update(dict(freq=self.freq,
+                                        transform_time_features=self.transform_time_features,
+                                        time_feature_transform=self.time_feature_transform, ))
 
-                x_seq.update_attribute(freq=self.freq,
-                                       transform_time_features=self.transform_time_features,
-                                       time_feature_transform=self.time_feature_transform,
-                                       static_features=self.static_features,
-                                       known_future_features=self.known_future_features,
-                                       )
+                x_seq.update_attribute(**update_dict)
                 if self.transform_time_features:
                     x_seq.compute_time_features()
 
@@ -435,8 +452,8 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             if seq_length_max <= window_size.value_range[0]:
                 warnings.warn('The base window_size is larger than the maximal sequence length in the dataset,'
                               'we simply set it as a constant value with maximal sequence length')
-                window_size = HyperparameterSearchSpace(hyperparameter=window_size.hyperparameter, 
-                                                        value_range=(seq_length_max, ),
+                window_size = HyperparameterSearchSpace(hyperparameter=window_size.hyperparameter,
+                                                        value_range=(seq_length_max,),
                                                         default_value=seq_length_max)
                 window_size = get_hyperparameter(window_size, Constant)
             else:

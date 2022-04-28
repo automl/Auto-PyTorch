@@ -234,7 +234,7 @@ class VariableSelector(nn.Module):
         static_features_input_size = {}
 
         # static_features should always be known beforehand
-        known_future_features = tuple(set(known_future_features) | static_features)
+        known_future_features = tuple(known_future_features)
 
         if feature_names:
             for name in feature_names:
@@ -242,16 +242,18 @@ class VariableSelector(nn.Module):
                 feature_names2tensor_idx[name] = [idx_tracker, idx_tracker + feature_shape]
                 idx_tracker += feature_shape
                 pre_scalar[name] = nn.Linear(feature_shape, self.hidden_size)
-                encoder_input_sizes[name] = self.hidden_size
-                if name in known_future_features:
-                    decoder_input_sizes[name] = self.hidden_size
                 if name in static_features:
                     static_features_input_size[name] = self.hidden_size
+                else:
+                    encoder_input_sizes[name] = self.hidden_size
+                    if name in known_future_features:
+                        decoder_input_sizes[name] = self.hidden_size
 
         for future_name in known_future_features:
             feature_shape = feature_shapes[future_name]
             future_feature_name2tensor_idx[future_name] = [idx_tracker_future, idx_tracker_future + feature_shape]
             idx_tracker_future += feature_shape
+
 
         if time_feature_names:
             for name in time_feature_names:
@@ -294,17 +296,17 @@ class VariableSelector(nn.Module):
             pre_scalar.update({'future_prediction': nn.Linear(dataset_properties['output_shape'][-1],
                                                               self.hidden_size)})
             decoder_input_sizes.update({'future_prediction': self.hidden_size})
-        self.pre_scalars = {nn.ModuleDict(pre_scalar)}
+        self.pre_scalars = nn.ModuleDict(pre_scalar)
 
         self._device = torch.device('cpu')
 
         if not dataset_properties['uni_variant']:
-            # TODO
             self.static_variable_selection = VariableSelectionNetwork(
                 input_sizes=static_features_input_size,
                 hidden_size=self.hidden_size,
                 input_embedding_flags={},
                 dropout=network_structure.grn_dropout_rate,
+                prescalers=self.pre_scalars
             )
         self.static_input_sizes = static_features_input_size
         self.static_features = static_features
