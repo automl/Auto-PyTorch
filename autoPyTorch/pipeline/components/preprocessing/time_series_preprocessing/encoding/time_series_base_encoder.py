@@ -32,4 +32,3 @@ class TimeSeriesBaseEncoder(autoPyTorchTimeSeriesPreprocessingComponent):
         """
         X['dataset_properties'].update({'feature_shapes': self.feature_shapes})
         return BaseEncoder.transform(self, X)
-

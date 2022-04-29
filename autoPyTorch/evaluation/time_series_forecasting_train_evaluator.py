@@ -1,28 +1,20 @@
-from autoPyTorch.evaluation.train_evaluator import TrainEvaluator
-from autoPyTorch.evaluation.abstract_evaluator import DummyClassificationPipeline
-
 from multiprocessing.queues import Queue
-from typing import Any, Dict, List, Optional, Tuple, Union, no_type_check, ClassVar, Sequence
-from functools import partial
-import warnings
+from typing import Any, Dict, List, Optional, Tuple, Union, Sequence
 
 from ConfigSpace.configuration_space import Configuration
 
 import numpy as np
-import pandas as pd
 
 from sklearn.base import BaseEstimator
 
 from smac.tae import StatusType
 
+from autoPyTorch.evaluation.train_evaluator import TrainEvaluator
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.pipeline.components.training.metrics.metrics import MASE_LOSSES
 from autoPyTorch.automl_common.common.utils.backend import Backend
-from autoPyTorch.utils.common import subsampler
 from autoPyTorch.evaluation.abstract_evaluator import DummyTimeSeriesForecastingPipeline
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
-from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset
-from autoPyTorch.pipeline.time_series_forecasting import TimeSeriesForecastingPipeline
 from autoPyTorch.constants_forecasting import SEASONALITY_MAP
 
 
@@ -141,7 +133,6 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             )
 
         else:
-            Y_train_pred: List[Optional[np.ndarray]] = [None] * self.num_folds
             Y_optimization_pred: List[Optional[np.ndarray]] = [None] * self.num_folds
             Y_valid_pred: List[Optional[np.ndarray]] = [None] * self.num_folds
             Y_test_pred: List[Optional[np.ndarray]] = [None] * self.num_folds
@@ -149,8 +140,8 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
 
             self.pipelines = [self._get_pipeline() for _ in range(self.num_folds)]
 
-            # stores train loss of each fold.
-            train_losses = [np.NaN] * self.num_folds
+            # Train losses is not applied here as it might become too expensive
+
             # used as weights when averaging train losses.
             train_fold_weights = [np.NaN] * self.num_folds
             # stores opt (validation) loss of each fold.

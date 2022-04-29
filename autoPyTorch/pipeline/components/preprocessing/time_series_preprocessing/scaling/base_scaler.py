@@ -13,6 +13,7 @@ from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.bas
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.utils import TimeSeriesScaler
 
+
 class BaseScaler(autoPyTorchTimeSeriesPreprocessingComponent):
     """
     Provides abstract class interface for time series scalers in AutoPytorch

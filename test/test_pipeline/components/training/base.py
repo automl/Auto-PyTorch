@@ -21,14 +21,9 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encodin
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputation.SimpleImputer import SimpleImputer
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling import ScalerChoice as\
     TabularScalerChoice
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.TimeSeriesTransformer import \
-    TimeSeriesTransformer
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.base_scaler_choice import \
-    ScalerChoice as TimeSeriesScalerChoice
 from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent, BudgetTracker
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
-from autoPyTorch.pipeline.time_series_classification import TimeSeriesClassificationPipeline
 
 
 
@@ -164,30 +159,6 @@ class TabularPipeline(TabularClassificationPipeline):
             ("encoder", EncoderChoice(default_dataset_properties)),
             ("scaler", TabularScalerChoice(default_dataset_properties)),
             ("tabular_transformer", TabularColumnTransformer()),
-        ])
-        return steps
-
-
-class TimeSeriesPipeline(TimeSeriesClassificationPipeline):
-    def _get_pipeline_steps(self, dataset_properties: Optional[Dict[str, Any]],
-                            ) -> List[Tuple[str, autoPyTorchChoice]]:
-        """
-        Defines what steps a pipeline should follow.
-        The step itself has choices given via autoPyTorchChoice.
-
-        Returns:
-            List[Tuple[str, autoPyTorchChoice]]: list of steps sequentially exercised
-                by the pipeline.
-        """
-        steps = []  # type: List[Tuple[str, autoPyTorchChoice]]
-
-        default_dataset_properties = {'target_type': 'time_series_classification'}
-        if dataset_properties is not None:
-            default_dataset_properties.update(dataset_properties)
-
-        steps.extend([
-            ("scaler", TimeSeriesScalerChoice(default_dataset_properties)),
-            ("time_series_transformer", TimeSeriesTransformer()),
         ])
         return steps
 

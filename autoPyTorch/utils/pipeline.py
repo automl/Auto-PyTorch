@@ -15,8 +15,6 @@ from autoPyTorch.constants import (
 from autoPyTorch.pipeline.image_classification import ImageClassificationPipeline
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 from autoPyTorch.pipeline.tabular_regression import TabularRegressionPipeline
-from autoPyTorch.pipeline.time_series_classification import TimeSeriesClassificationPipeline
-from autoPyTorch.pipeline.time_series_regression import TimeSeriesRegressionPipeline
 from autoPyTorch.pipeline.time_series_forecasting import TimeSeriesForecastingPipeline
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
@@ -93,16 +91,10 @@ def _get_regression_dataset_requirements(info: Dict[str, Any],
         return TabularRegressionPipeline(
             dataset_properties=info,
             include=include,
-            exclude=exclude
-        ).get_dataset_requirements()
-
-    elif task_type in TIMESERIES_TASKS:
-        return TimeSeriesRegressionPipeline(
-            dataset_properties=info,
-            include=include,
             exclude=exclude,
             search_space_updates=search_space_updates
         ).get_dataset_requirements()
+
     else:
         raise ValueError("Task_type not supported")
 
@@ -131,9 +123,9 @@ def _get_classification_dataset_requirements(info: Dict[str, Any],
 
 
 def _get_forecasting_dataset_requirements(info: Dict[str, Any],
-                                             include: Optional[Dict] = None,
-                                             exclude: Optional[Dict] = None,
-                                             search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+                                          include: Optional[Dict] = None,
+                                          exclude: Optional[Dict] = None,
+                                          search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
                                           ) -> List[FitRequirement]:
     task_type = STRING_TO_TASK_TYPES[info['task_type']]
 

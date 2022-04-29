@@ -1,7 +1,5 @@
 from multiprocessing.queues import Queue
-from typing import Any, Dict, List, Optional, Tuple, Union, no_type_check, ClassVar
-
-import warnings
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration
 
@@ -25,7 +23,6 @@ from autoPyTorch.evaluation.utils import DisableFileOutputParameters
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.utils.common import dict_repr, subsampler
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
-
 
 __all__ = ['TrainEvaluator', 'eval_train_function']
 
@@ -118,6 +115,7 @@ class TrainEvaluator(AbstractEvaluator):
         search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
             An object used to fine tune the hyperparameter search space of the pipeline
     """
+
     def __init__(self, backend: Backend, queue: Queue,
                  metric: autoPyTorchMetric,
                  budget: float,
@@ -234,7 +232,6 @@ class TrainEvaluator(AbstractEvaluator):
             additional_run_info = {}
 
             for i, (train_split, test_split) in enumerate(self.splits):
-
                 pipeline = self.pipelines[i]
                 train_pred, opt_pred, valid_pred, test_pred = self._fit_and_predict(pipeline, i,
                                                                                     train_indices=train_split,
@@ -393,8 +390,7 @@ class TrainEvaluator(AbstractEvaluator):
                                            self.y_train[train_indices])
 
         opt_pred = self.predict_function(subsampler(self.X_train, test_indices), pipeline,
-                                            self.y_train[train_indices])
-
+                                         self.y_train[train_indices])
 
         if self.X_valid is not None:
             valid_pred = self.predict_function(self.X_valid, pipeline,
@@ -413,26 +409,26 @@ class TrainEvaluator(AbstractEvaluator):
 
 # create closure for evaluating an algorithm
 def eval_train_function(
-    backend: Backend,
-    queue: Queue,
-    metric: autoPyTorchMetric,
-    budget: float,
-    config: Optional[Configuration],
-    seed: int,
-    output_y_hat_optimization: bool,
-    num_run: int,
-    include: Optional[Dict[str, Any]],
-    exclude: Optional[Dict[str, Any]],
-    disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
-    pipeline_config: Optional[Dict[str, Any]] = None,
-    budget_type: str = None,
-    init_params: Optional[Dict[str, Any]] = None,
-    logger_port: Optional[int] = None,
-    all_supported_metrics: bool = True,
-    search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
-    instance: str = None,
-    evaluator_class: Optional[AbstractEvaluator] = None,
-    **evaluator_kwargs,
+        backend: Backend,
+        queue: Queue,
+        metric: autoPyTorchMetric,
+        budget: float,
+        config: Optional[Configuration],
+        seed: int,
+        output_y_hat_optimization: bool,
+        num_run: int,
+        include: Optional[Dict[str, Any]],
+        exclude: Optional[Dict[str, Any]],
+        disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
+        pipeline_config: Optional[Dict[str, Any]] = None,
+        budget_type: str = None,
+        init_params: Optional[Dict[str, Any]] = None,
+        logger_port: Optional[int] = None,
+        all_supported_metrics: bool = True,
+        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
+        instance: str = None,
+        evaluator_class: Optional[AbstractEvaluator] = None,
+        **evaluator_kwargs,
 ) -> None:
     """
     This closure allows the communication between the ExecuteTaFuncWithQueue and the

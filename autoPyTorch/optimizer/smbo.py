@@ -267,7 +267,7 @@ class AutoMLSMBO(object):
         initial_configurations = []
         if portfolio_selection is not None:
             initial_configurations = read_return_initial_configurations(config_space=config_space,
-                                                                             portfolio_selection=portfolio_selection)
+                                                                        portfolio_selection=portfolio_selection)
 
         suggested_init_models: Optional[List[str]] = kwargs.get('suggested_init_models', None)
         custom_init_setting_path: Optional[str] = kwargs.get('custom_init_setting_path', None)
@@ -395,7 +395,6 @@ class AutoMLSMBO(object):
             ta_kwargs["evaluator_class"] = TimeSeriesForecastingTrainEvaluator
             ta_kwargs['max_budget'] = self.max_budget
             ta_kwargs['min_num_test_instances'] = self.min_num_test_instances
-
 
         if self.get_smac_object_callback is not None:
             smac = self.get_smac_object_callback(scenario_dict=scenario_dict,

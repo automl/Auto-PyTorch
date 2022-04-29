@@ -3,7 +3,6 @@ import time
 import warnings
 from multiprocessing.queues import Queue
 from typing import Any, Dict, List, Optional, Tuple, Union, no_type_check
-from functools import partial
 
 from ConfigSpace import Configuration
 
@@ -20,7 +19,6 @@ from smac.tae import StatusType
 import autoPyTorch.pipeline.image_classification
 import autoPyTorch.pipeline.tabular_classification
 import autoPyTorch.pipeline.tabular_regression
-import autoPyTorch.pipeline.time_series_classification
 import autoPyTorch.pipeline.traditional_tabular_classification
 import autoPyTorch.pipeline.time_series_forecasting
 import autoPyTorch.pipeline.traditional_tabular_regression
@@ -327,7 +325,7 @@ class DummyTimeSeriesForecastingPipeline(DummyClassificationPipeline):
             sample_weight: Optional[np.ndarray] = None) -> object:
         self.n_prediction_steps = X['dataset_properties']['n_prediction_steps']
         y_train = subsampler(X['y_train'], X['train_indices'])
-        return DummyClassifier.fit(self, np.ones((y_train.shape[0], 1)), y_train,sample_weight)
+        return DummyClassifier.fit(self, np.ones((y_train.shape[0], 1)), y_train, sample_weight)
 
     def _genreate_dummy_forecasting(self, X):
         if isinstance(X[0], TimeSeriesSequence):
@@ -528,9 +526,6 @@ class AbstractEvaluator(object):
                     self.pipeline_class = autoPyTorch.pipeline.tabular_classification.TabularClassificationPipeline
                 elif self.task_type in IMAGE_TASKS:
                     self.pipeline_class = autoPyTorch.pipeline.image_classification.ImageClassificationPipeline
-                elif self.task_type in TIMESERIES_TASKS:
-                    self.pipeline_class = \
-                        autoPyTorch.pipeline.time_series_classification.TimeSeriesClassificationPipeline
                 else:
                     raise ValueError('task {} not available'.format(self.task_type))
             self.predict_function = self._predict_proba

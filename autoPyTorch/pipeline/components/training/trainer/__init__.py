@@ -205,8 +205,7 @@ class TrainerChoice(autoPyTorchChoice):
         self.logger = get_named_client_logger(
             name=f"{X['num_run']}_{time.time()}",
             # Log to a user provided port else to the default logging port
-            port=X['logger_port'
-            ] if 'logger_port' in X else logging.handlers.DEFAULT_TCP_LOGGING_PORT,
+            port=X['logger_port'] if 'logger_port' in X else logging.handlers.DEFAULT_TCP_LOGGING_PORT,
         )
 
         # Call the actual fit function.

@@ -3,17 +3,14 @@ from typing import List, Optional, Union, cast
 import numpy as np
 
 import pandas as pd
-from pandas.api.types import is_numeric_dtype
 
 from scipy.sparse import issparse, spmatrix
 
 import sklearn.utils
-from sklearn import preprocessing
-from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
 from sklearn.utils.multiclass import type_of_target
 
-from autoPyTorch.data.base_target_validator import BaseTargetValidator, SupportedTargetTypes
+from autoPyTorch.data.base_target_validator import SupportedTargetTypes
 from autoPyTorch.utils.common import ispandas
 from autoPyTorch.data.tabular_target_validator import TabularTargetValidator, ArrayType
 

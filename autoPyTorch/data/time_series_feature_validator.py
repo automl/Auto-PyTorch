@@ -1,11 +1,9 @@
 import logging
-from typing import Optional, Union, Tuple, Sequence
+from typing import Optional, Union, Tuple
 import pandas as pd
 import numpy as np
 
-import sklearn.utils
 from sklearn.base import BaseEstimator
-from sklearn.exceptions import NotFittedError
 from autoPyTorch.data.tabular_feature_validator import TabularFeatureValidator, SupportedFeatTypes
 from autoPyTorch.utils.logging_ import PicklableClientLogger
 

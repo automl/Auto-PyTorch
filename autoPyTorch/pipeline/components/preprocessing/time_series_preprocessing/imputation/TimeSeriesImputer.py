@@ -6,7 +6,7 @@ from sktime.transformations.series.impute import Imputer
 from ConfigSpace import ConfigurationSpace
 from autoPyTorch.utils.common import FitRequirement
 
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.imputation.\
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.imputation. \
     base_time_series_imputer import BaseTimeSeriesImputer
 
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.base_time_series_preprocessing import (
@@ -19,8 +19,8 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace
 
 class TimeSeriesFeatureImputer(BaseTimeSeriesImputer, autoPyTorchTimeSeriesPreprocessingComponent):
     def __init__(self,
-                random_state: Optional[np.random.RandomState] = None,
-                imputation_strategy: str = 'mean'):
+                 random_state: Optional[np.random.RandomState] = None,
+                 imputation_strategy: str = 'mean'):
         super().__init__()
         self.random_state = random_state
         self.imputation_strategy = imputation_strategy
@@ -71,12 +71,12 @@ class TimeSeriesFeatureImputer(BaseTimeSeriesImputer, autoPyTorchTimeSeriesPrepr
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
-        imputation_strategy: HyperparameterSearchSpace = HyperparameterSearchSpace(
-            hyperparameter='imputation_strategy',
-            value_range=("drift", "linear", "nearest", "constant_zero", "mean", "median", "bfill", "ffill"),
-            default_value="drift",
-        ),
+            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+            imputation_strategy: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                hyperparameter='imputation_strategy',
+                value_range=("drift", "linear", "nearest", "constant_zero", "mean", "median", "bfill", "ffill"),
+                default_value="drift",
+            ),
     ) -> ConfigurationSpace:
         if dataset_properties.get('features_have_missing_values', False):
             cs = super().get_hyperparameter_search_space(dataset_properties, imputation_strategy)
@@ -87,8 +87,8 @@ class TimeSeriesFeatureImputer(BaseTimeSeriesImputer, autoPyTorchTimeSeriesPrepr
 
 class TimeSeriesTargetImputer(BaseTimeSeriesImputer, autoPyTorchTimeSeriesTargetPreprocessingComponent):
     def __init__(self,
-                random_state: Optional[np.random.RandomState] = None,
-                imputation_strategy: str = 'mean',):
+                 random_state: Optional[np.random.RandomState] = None,
+                 imputation_strategy: str = 'mean', ):
         super().__init__()
         self.random_state = random_state
         self.imputation_strategy = imputation_strategy
@@ -136,12 +136,12 @@ class TimeSeriesTargetImputer(BaseTimeSeriesImputer, autoPyTorchTimeSeriesTarget
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
-        imputation_strategy: HyperparameterSearchSpace = HyperparameterSearchSpace(
-            hyperparameter='imputation_strategy',
-            value_range=("linear", "nearest", "constant_zero", "bfill", "ffill"),
-            default_value="linear",
-        ),
+            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+            imputation_strategy: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                hyperparameter='imputation_strategy',
+                value_range=("linear", "nearest", "constant_zero", "bfill", "ffill"),
+                default_value="linear",
+            ),
     ) -> ConfigurationSpace:
         """
         Time series imputor, for the sake of speed, we only allow local imputation here (i.e., the filled value only

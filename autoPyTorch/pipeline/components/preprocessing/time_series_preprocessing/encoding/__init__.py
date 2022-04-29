@@ -1,12 +1,7 @@
 import os
 from collections import OrderedDict
-from typing import Dict, List, Optional
+from typing import Dict
 
-import ConfigSpace.hyperparameters as CSH
-from ConfigSpace.configuration_space import ConfigurationSpace
-
-from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import (
     ThirdPartyComponents,
     autoPyTorchComponent,

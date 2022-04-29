@@ -13,7 +13,7 @@ from pandas._libs.tslibs.np_datetime import OutOfBoundsDatetime
 from scipy.sparse import issparse
 
 import torch
-from torch.utils.data.dataset import Dataset, Subset, ConcatDataset
+from torch.utils.data.dataset import Dataset, ConcatDataset
 
 import torchvision.transforms
 
@@ -38,11 +38,8 @@ from gluonts.time_feature import (
     TimeFeature,
     time_features_from_frequency_str,
 )
-from autoPyTorch.utils.forecasting_time_features import FREQUENCY_MAP
 
 from autoPyTorch.data.time_series_forecasting_validator import TimeSeriesForecastingInputValidator
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.TimeSeriesTransformer import \
-    TimeSeriesTransformer
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.constants_forecasting import SEASONALITY_MAP, MAX_WINDOW_SIZE_BASE
 from autoPyTorch.pipeline.components.training.metrics.metrics import compute_mase_coefficient
@@ -166,8 +163,9 @@ class TimeSeriesSequence(Dataset):
                 past_features = self.X[:index + 1]
 
             if self.known_future_features_index:
-                future_features = self.X[index + 1: index + self.n_prediction_steps + 1,
-                                  self.known_future_features_index]
+                future_features = self.X[
+                                  index + 1: index + self.n_prediction_steps + 1, self.known_future_features_index
+                                  ]
             else:
                 future_features = None
         else:
@@ -432,7 +430,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         if not self.validator._is_fitted:
             self.validator.fit(X_train=X, y_train=Y, X_test=X_test, y_test=Y_test,
-                               start_times=start_times, start_times_test=start_times_test,
+                               start_times=start_times,
                                n_prediction_steps=n_prediction_steps)
 
         self.is_uni_variant = self.validator._is_uni_variant
@@ -612,7 +610,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                      if not isinstance(transform, ConstantTransform) else transform(date_info)
                      for transform in time_feature_transform]
                 ).T
-            except OutOfBoundsDatetime as e:
+            except OutOfBoundsDatetime:
                 series_time_features[start_t] = np.zeros([max_l, len(time_feature_transform)])
         return series_time_features
 

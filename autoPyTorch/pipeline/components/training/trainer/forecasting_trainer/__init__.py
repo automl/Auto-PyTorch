@@ -42,8 +42,8 @@ class ForecastingTrainerChoice(TrainerChoice):
     def _fit_requirements(self) -> Optional[List[FitRequirement]]:
         fit_requirements = super()._fit_requirements
         fit_requirements.extend([FitRequirement("target_scaler", (BaseTargetScaler,),
-                                               user_defined=False, dataset_property=False),
-                                FitRequirement("window_size", (int,), user_defined=False, dataset_property=False)]
+                                                user_defined=False, dataset_property=False),
+                                 FitRequirement("window_size", (int,), user_defined=False, dataset_property=False)]
                                 )
         return fit_requirements
 
@@ -89,7 +89,6 @@ class ForecastingTrainerChoice(TrainerChoice):
             target_scaler=X['target_scaler'],
             backcast_loss_ratio=X.get('backcast_loss_ratio', 0.0)
         )
-
 
     def get_components(self) -> Dict[str, autoPyTorchComponent]:
         """Returns the available trainer components

@@ -47,10 +47,10 @@ class MAPELoss(Loss):
     def __init__(self, reduction: str = 'mean') -> None:
         super(MAPELoss, self).__init__(reduction=reduction)
 
-    def forward(self, input: torch.distributions.Distribution, target_tensor: torch.Tensor) -> torch.Tensor:
+    def forward(self, predictions: torch.distributions.Distribution, target_tensor: torch.Tensor) -> torch.Tensor:
         # https://github.com/awslabs/gluon-ts/blob/master/src/gluonts/model/n_beats/_network.py
         denominator = torch.abs(target_tensor)
-        diff = torch.abs(input - target_tensor)
+        diff = torch.abs(predictions - target_tensor)
 
         flag = (denominator == 0).float()
 
@@ -78,9 +78,9 @@ class MASELoss(Loss):
         return self
 
     def forward(self,
-                input: torch.distributions.Distribution,
+                predictions: torch.distributions.Distribution,
                 target_tensor: torch.Tensor) -> torch.Tensor:
-        loss = torch.abs(input - target_tensor) * self._mase_coefficient
+        loss = torch.abs(predictions - target_tensor) * self._mase_coefficient
         if self.reduction == 'mean':
             return loss.mean()
         elif self.reduction == 'sum':
@@ -96,15 +96,15 @@ class QuantileLoss(Loss):
         super(QuantileLoss, self).__init__(reduction=reduction)
         self.quantiles = quantiles
 
-    def set_quantiles(self, quantiles = List[float]):
+    def set_quantiles(self, quantiles=List[float]):
         self.quantiles = quantiles
 
     def forward(self,
-                input: List[torch.Tensor],
+                predictions: List[torch.Tensor],
                 target_tensor: torch.Tensor) -> torch.Tensor:
-        assert len(self.quantiles) == len(input)
+        assert len(self.quantiles) == len(predictions)
         losses_all = []
-        for q, y_pred in zip(self.quantiles, input):
+        for q, y_pred in zip(self.quantiles, predictions):
             diff = target_tensor - y_pred
 
             loss_q = torch.max(q * diff, (q - 1) * diff)

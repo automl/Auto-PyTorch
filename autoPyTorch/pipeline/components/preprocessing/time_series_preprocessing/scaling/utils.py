@@ -1,10 +1,8 @@
-from typing import Any, List, Callable, Optional, Union, Tuple
+from typing import Any, Union, Tuple
 
 import numpy as np
 import pandas as pd
-from pandas.core.groupby.generic import DataFrameGroupBy
 
-import sklearn
 from sklearn.base import BaseEstimator
 
 
@@ -112,5 +110,3 @@ class TimeSeriesScaler(BaseEstimator):
             return X
         else:
             raise ValueError(f"Unknown mode {self.mode} for time series scaler")
-
-

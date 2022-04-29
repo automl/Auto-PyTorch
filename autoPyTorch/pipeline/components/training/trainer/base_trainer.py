@@ -12,7 +12,6 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
-
 from autoPyTorch.constants import REGRESSION_TASKS, FORECASTING_TASKS
 from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
@@ -61,10 +60,10 @@ class BudgetTracker(object):
 
 class RunSummary(object):
     def __init__(
-        self,
-        total_parameter_count: float,
-        trainable_parameter_count: float,
-        optimize_metric: Optional[str] = None,
+            self,
+            total_parameter_count: float,
+            trainable_parameter_count: float,
+            optimize_metric: Optional[str] = None,
     ):
         """
         A useful object to track performance per epoch.
@@ -124,7 +123,6 @@ class RunSummary(object):
         # If we compute for optimization, prefer the performance
         # metric to the loss
         if self.optimize_metric is not None:
-
 
             metrics_type = f"{split_type}_metrics"
             if self.optimize_metric in CLASSIFICATION_METRICS:
@@ -211,19 +209,19 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         self.weighted_loss: bool = False
 
     def prepare(
-        self,
-        metrics: List[Any],
-        model: torch.nn.Module,
-        criterion: Type[torch.nn.Module],
-        budget_tracker: BudgetTracker,
-        optimizer: Optimizer,
-        device: torch.device,
-        metrics_during_training: bool,
-        scheduler: _LRScheduler,
-        task_type: int,
-        labels: Union[np.ndarray, torch.Tensor, pd.DataFrame],
-        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.batch,
-        **kwargs: Dict
+            self,
+            metrics: List[Any],
+            model: torch.nn.Module,
+            criterion: Type[torch.nn.Module],
+            budget_tracker: BudgetTracker,
+            optimizer: Optimizer,
+            device: torch.device,
+            metrics_during_training: bool,
+            scheduler: _LRScheduler,
+            task_type: int,
+            labels: Union[np.ndarray, torch.Tensor, pd.DataFrame],
+            step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.batch,
+            **kwargs: Dict
     ) -> None:
 
         # Save the device to be used
@@ -276,9 +274,9 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         return False
 
     def _scheduler_step(
-        self,
-        step_interval: StepIntervalUnit,
-        loss: Optional[float] = None
+            self,
+            step_interval: StepIntervalUnit,
+            loss: Optional[float] = None
     ) -> None:
 
         if self.step_interval != step_interval:

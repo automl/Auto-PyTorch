@@ -236,7 +236,8 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             forecast_strategy = cs.get_hyperparameter("loss:DistributionLoss:forecast_strategy")
             use_tf = cs.get_hyperparameter("network_backbone:seq_encoder:use_temporal_fusion")
 
-            if True in decoder_auto_regressive.choices and 'sample' in forecast_strategy.choices and True in use_tf.choices:
+            if True in decoder_auto_regressive.choices and\
+                    'sample' in forecast_strategy.choices and True in use_tf.choices:
                 cs.add_forbidden_clause(
                     ForbiddenAndConjunction(
                         ForbiddenEqualsClause(decoder_auto_regressive, True),
