@@ -20,7 +20,6 @@ from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone
     PositionalEncoding, build_transformer_layers
 
 
-
 class _TransformerEncoder(EncoderNetwork):
     def __init__(self,
                  in_features: int,

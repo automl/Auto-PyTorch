@@ -89,13 +89,14 @@ class BaseForecastingEncoder(autoPyTorchComponent):
                 in_features = self.n_encoder_output_feature()
             elif self.encoder_properties().lagged_input and hasattr(self, 'lagged_value'):
                 in_features = len(self.lagged_value) * output_shape[-1] + \
-                              input_shape[-1] + n_time_feature_transform
+                              input_shape[-1]
             else:
-                in_features = output_shape[-1] + input_shape[-1] + n_time_feature_transform
+                in_features = output_shape[-1] + input_shape[-1]
 
             input_shape = (X['window_size'], in_features)
         else:
             input_shape = X['encoder_output_shape']
+
 
         self.encoder = self.build_encoder(
             input_shape=input_shape,

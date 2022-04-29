@@ -39,7 +39,8 @@ class BaseForecastingDecoder(autoPyTorchComponent):
     def _required_fit_requirements(self) -> List[FitRequirement]:
         return [
             FitRequirement('task_type', (str,), user_defined=True, dataset_property=True),
-            FitRequirement('future_feature_shapes', (Tuple,), user_defined=False, dataset_property=True),
+            FitRequirement('known_future_features', (Tuple,), user_defined=False, dataset_property=True),
+            FitRequirement('feature_shapes', (Dict,), user_defined=False, dataset_property=True),
             FitRequirement('window_size', (int,), user_defined=False, dataset_property=False),
             FitRequirement('network_encoder', (OrderedDict,), user_defined=False, dataset_property=False),
             FitRequirement('network_structure', (NetworkStructure,), user_defined=False, dataset_property=False),
@@ -81,7 +82,9 @@ class BaseForecastingDecoder(autoPyTorchComponent):
         variable_selection = network_structure.variable_selection
 
         if 'n_decoder_output_features' not in X:
-            future_feature_shapes = X['dataset_properties']['future_feature_shapes']
+            future_features = X['dataset_properties']['known_future_features']
+            feature_shapes = X['dataset_properties']['feature_shapes']
+            future_in_features = sum([feature_shapes[fu_feat] for fu_feat in future_features]).item()
 
             if X['transform_time_features']:
                 n_time_feature_transform = len(X['dataset_properties']['time_feature_transform'])
@@ -91,7 +94,6 @@ class BaseForecastingDecoder(autoPyTorchComponent):
             if self.block_number == network_structure.num_blocks:
                 self.is_last_decoder = True
 
-            future_in_features = future_feature_shapes[-1]
             if variable_selection:
                 future_in_features = X['network_encoder']['block_1'].encoder_output_shape[-1]
             else:

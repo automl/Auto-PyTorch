@@ -7,6 +7,7 @@ from ConfigSpace import ConfigurationSpace
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.base_forecasting_encoder import (
     BaseForecastingEncoder, EncoderProperties
 )
+from autoPyTorch.pipeline.components.setup.network_backbone.utils import get_output_shape
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.utils.common import FitRequirement
@@ -40,8 +41,23 @@ class NBEATSEncoder(BaseForecastingEncoder):
         return requirements_list
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
+        self.check_requirements(X, y)
         self.window_size = X["window_size"]
-        return super().fit(X, y)
+
+        input_shape = X["dataset_properties"]['input_shape']
+        # n-BEATS only requires targets as its input
+        # TODO add support for multi-variant
+        output_shape = X["dataset_properties"]['output_shape']
+
+        self.encoder = self.build_encoder(
+            input_shape=output_shape,
+        )
+
+        self.input_shape = [self.window_size, output_shape[-1]]
+
+        has_hidden_states = self.encoder_properties().has_hidden_states
+        self.encoder_output_shape = get_output_shape(self.encoder, self.input_shape, has_hidden_states)
+        return self
 
     def n_encoder_output_feature(self):
         # THIS function should never be called!!!

@@ -10,7 +10,6 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
-
 from autoPyTorch.constants import REGRESSION_TASKS, FORECASTING_TASKS
 from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import BaseTargetScaler
 from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.TargetNoScaler import TargetNoScaler
@@ -18,7 +17,6 @@ from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepInt
 from autoPyTorch.pipeline.components.setup.network.forecasting_network import ForecastingNet, ForecastingDeepARNet, \
     NBEATSNet, ForecastingSeq2SeqNet
 from autoPyTorch.pipeline.components.training.losses import MASELoss
-
 
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
 
@@ -87,8 +85,6 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             float: training loss
             Dict[str, float]: scores for each desired metric
         """
-        import time
-        time_start = time.time()
         loss_sum = 0.0
         N = 0
         self.model.train()
@@ -118,8 +114,6 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                 )
 
         self._scheduler_step(step_interval=StepIntervalUnit.epoch, loss=loss_sum / N)
-
-        print(f'Time Used for training: {time.time() - time_start}')
 
         if self.metrics_during_training:
             return loss_sum / N, self.compute_metrics(outputs_data, targets_data)
@@ -182,10 +176,10 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             loss_func_backcast = self.criterion_preparation(**criterion_kwargs_past)
             loss_func_forecast = self.criterion_preparation(**criterion_kwargs_future)
 
-            loss_backcast = loss_func_backcast(self.criterion, backcast)
-            loss_forecast = loss_func_forecast(self.criterion, forecast)
+            loss_backcast = loss_func_backcast(self.criterion, backcast) * past_observed_targets
+            loss_forecast = loss_func_forecast(self.criterion, forecast) * future_observed_targets
 
-            loss = loss_forecast + loss_backcast * self.backcast_loss_ratio
+            loss = loss_forecast.mean() + loss_backcast.mean() * self.backcast_loss_ratio
 
             outputs = forecast
         else:
@@ -198,6 +192,8 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                     else:
                         all_targets = torch.cat([past_target[:, 1 - self.window_size:, ],
                                                  future_targets_values], dim=1)
+                        future_observed_targets = torch.cat([past_observed_targets[:, 1 - self.window_size:, ],
+                                                             future_observed_targets], dim=1)
                 past_target, criterion_kwargs = self.data_preparation(past_target, all_targets.to(self.device))
             else:
                 past_target, criterion_kwargs = self.data_preparation(past_target,

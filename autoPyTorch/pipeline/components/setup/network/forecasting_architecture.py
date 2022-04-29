@@ -443,11 +443,11 @@ class ForecastingNet(AbstractForecastingNet):
         else:
             if past_features is not None:
                 past_features = past_features[:, -self.window_size:]
-                x_past = torch.cat([past_features, x_past], dim=-1)
+                x_past = torch.cat([x_past, past_features], dim=-1)
 
-            x_past = x_past.to(device=self.device)
+            x_past = self.embedding(x_past.to(device=self.device))
             if future_features is not None:
-                future_features = future_features.to(self.device)
+                future_features = self.embedding_future(future_features.to(self.device))
             return x_past, future_features, None, loc, scale, None, past_targets
 
     def forward(self,
@@ -605,7 +605,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
             else:
                 x_future = future_targets if future_features is None else torch.cat([future_features, future_targets],
                                                                                     dim=-1)
-            x_future = x_future.to(self.device)
+                x_future = self.embedding_future(x_future.to(self.device))
 
             encoder2decoder, encoder_output = self.encoder(encoder_input=x_past,
                                                            additional_input=encoder_additional)
@@ -650,10 +650,13 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                             future_features=future_features[:, [idx_pred]] if future_features is not None else None
                         )
                     else:
-                        x_future = x_future if future_features is None else torch.cat([future_features[:, [idx_pred]],
-                                                                                       x_future],
+                        x_future = x_future if future_features is None else torch.cat([x_future,
+                                                                                       future_features[:, [idx_pred]],
+                                                                                       ],
                                                                                       dim=-1)
                         x_future = x_future.to(self.device)
+
+                    x_future = self.embedding_future(x_future)
 
                     decoder_output = self.decoder(x_future,
                                                   encoder_output=encoder2decoder,
@@ -740,6 +743,8 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                             [repeated_time_feat[:, [idx_pred], :], x_future], dim=-1)
 
                         x_future = x_future.to(self.device)
+
+                    x_future = self.embedding_future(x_future)
 
                     decoder_output = self.decoder(x_future,
                                                   encoder_output=encoder2decoder,
@@ -1035,6 +1040,9 @@ class ForecastingDeepARNet(ForecastingSeq2SeqNet):
                     if repeated_time_feat is not None:
                         x_next = torch.cat([repeated_time_feat[:, [k - 1]], x_next], dim=-1)
                     x_next = x_next.to(self.device)
+
+                x_next = self.embedding(x_next)
+
                 encoder2decoder, _ = self.encoder(encoder_input=x_next,
                                                   additional_input=[None] * self.network_structure.num_blocks,
                                                   output_seq=False, cache_intermediate_state=True,

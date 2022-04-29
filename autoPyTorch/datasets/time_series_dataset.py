@@ -496,7 +496,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         ConcatDataset.__init__(self, datasets=sequence_datasets)
 
-        self.known_future_features = known_future_features
+        self.known_future_features = tuple(known_future_features)
 
         self.num_sequences = len(Y)
         self.sequence_lengths_train = np.asarray(sequence_lengths) - n_prediction_steps
