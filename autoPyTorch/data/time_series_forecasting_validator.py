@@ -155,58 +155,87 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
             self,
             X: Optional[Union[List, pd.DataFrame]],
             y: Optional[Union[List, pd.DataFrame]] = None,
-    ) -> Tuple[Optional[pd.DataFrame], pd.DataFrame, List[int]]:
+            validate_for_future_features: bool = False
+    ) -> Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame], List[int]]:
+        """
+        transform the data with the fitted validator
+        Args:
+            validate_for_future_features: bool
+                if the validator is applied to transform future features (for test sets), in this case we only validate
+                X
+        """
         if not self._is_fitted:
             raise NotFittedError("Cannot call transform on a validator that is not fitted")
-
-        if y is None:
-            raise ValueError('Targets must be given!')
-
-        if isinstance(y, List):
-            num_sequences = len(y)
-            sequence_lengths = [0] * num_sequences
-            if self._is_uni_variant:
-                num_features = 0
+        if validate_for_future_features:
+            if X is None:
+                return None, None, []
+            if isinstance(X, List):
+                num_sequences = len(X)
+                sequence_lengths = [0] * num_sequences
+                for seq_idx in range(num_sequences):
+                    sequence_lengths[seq_idx] = len(X[seq_idx])
+                sequence_lengths = np.asarray(sequence_lengths)
+                x_transformed, _ = self._transform_X(X, sequence_lengths)
+                return x_transformed, None, sequence_lengths
             else:
-                if X is None:
-                    raise ValueError('Multi Variant dataset requires X as input!')
-                num_features = self.feature_validator.num_features
-                assert len(X) == len(y), "Length of features must equal to length of targets!"
+                raise NotImplementedError
 
-            for seq_idx in range(num_sequences):
-                sequence_lengths[seq_idx] = len(y[seq_idx])
-            sequence_lengths = np.asarray(sequence_lengths)
-
-            y_stacked = self.join_series(y)
-
-            if self.series_idx is None:
-                series_number = np.arange(len(sequence_lengths)).repeat(sequence_lengths)
-                if not self._is_uni_variant:
-                    x_stacked = self.join_series(X)
-                    x_transformed = self.feature_validator.transform(x_stacked,
-                                                                     index=series_number)
-
-            else:
-                # In this case X can only contain pd.DataFrame, see ```time_series_feature_validator.py```
-                x_flat = pd.concat(X)
-                x_columns = x_flat.columns
-                for ser_id in self.series_idx:
-                    if ser_id not in x_columns:
-                        raise ValueError(f'{ser_id} does not exist in input feature X')
-
-                series_number = pd.MultiIndex.from_frame(x_flat[self.series_idx])
-
-                if not self._is_uni_variant:
-                    x_transformed = self.feature_validator.transform(x_flat.drop(self.series_idx, axis=1),
-                                                                     index=series_number)
-            y_transformed: pd.DataFrame = self.target_validator.transform(y_stacked, index=series_number)
-
-            if self._is_uni_variant:
-                return None, y_transformed, sequence_lengths
-
-            return x_transformed, y_transformed, sequence_lengths
         else:
-            raise NotImplementedError
+            if y is None:
+                raise ValueError('Targets must be given!')
+
+            if isinstance(y, List):
+                num_sequences = len(y)
+                sequence_lengths = [0] * num_sequences
+                if not self._is_uni_variant:
+                    if X is None:
+                        raise ValueError('Multi Variant dataset requires X as input!')
+                    assert len(X) == len(y), "Length of features must equal to length of targets!"
+
+                for seq_idx in range(num_sequences):
+                    sequence_lengths[seq_idx] = len(y[seq_idx])
+                sequence_lengths = np.asarray(sequence_lengths)
+
+                y_stacked = self.join_series(y)
+
+                x_transformed, series_number = self._transform_X(X, sequence_lengths)
+                y_transformed: pd.DataFrame = self.target_validator.transform(y_stacked, index=series_number)
+
+                if self._is_uni_variant:
+                    return None, y_transformed, sequence_lengths
+
+                return x_transformed, y_transformed, sequence_lengths
+            else:
+                raise NotImplementedError
+
+    def _transform_X(self,
+                     X: Optional[Union[List, pd.DataFrame]],
+                     sequence_lengths: np.ndarray) -> Tuple[pd.DataFrame, Union[np.ndarray, pd.Index]]:
+        if self.series_idx is None:
+            series_number = np.arange(len(sequence_lengths)).repeat(sequence_lengths)
+            if not self._is_uni_variant:
+                x_stacked = self.join_series(X)
+                x_transformed = self.feature_validator.transform(x_stacked,
+                                                                 index=series_number)
+            else:
+                x_transformed = None
+        else:
+            # In this case X can only contain pd.DataFrame, see ```time_series_feature_validator.py```
+            x_stacked = pd.concat(X)
+            x_columns = x_stacked.columns
+            for ser_id in self.series_idx:
+                if ser_id not in x_columns:
+                    raise ValueError(f'{ser_id} does not exist in input feature X')
+
+            series_number = pd.MultiIndex.from_frame(x_stacked[self.series_idx])
+
+            if not self._is_uni_variant:
+                x_transformed = self.feature_validator.transform(x_stacked.drop(self.series_idx, axis=1),
+                                                                 index=series_number)
+            else:
+                x_transformed = None
+
+        return x_transformed, series_number
 
     @staticmethod
     def join_series(X: List[SupportedFeatTypes],

@@ -1,5 +1,6 @@
 import os
-from typing import Any, Dict, List, Optional, Tuple, Union, cast, Set
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from numbers import Real
 import uuid
 import bisect
 import copy
@@ -8,7 +9,6 @@ import warnings
 import numpy as np
 
 import pandas as pd
-from pandas._libs.tslibs import to_offset
 from pandas._libs.tslibs.np_datetime import OutOfBoundsDatetime
 from scipy.sparse import issparse
 
@@ -23,7 +23,7 @@ from autoPyTorch.constants import (
     TASK_TYPES_TO_STRING,
     TIMESERIES_FORECASTING,
 )
-from autoPyTorch.datasets.base_dataset import BaseDataset, BaseDatasetInputType, type_of_target
+from autoPyTorch.datasets.base_dataset import BaseDataset, type_of_target
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValFuncs,
     CrossValTypes,
@@ -88,7 +88,6 @@ class TimeSeriesSequence(Dataset):
                  n_prediction_steps: int = 0,
                  sp: int = 1,
                  known_future_features_index: Optional[List[int]] = None,
-                 only_has_past_targets: bool = False,
                  compute_mase_coefficient_value: bool = True,
                  time_features=None,
                  is_test_set=False,
@@ -127,7 +126,7 @@ class TimeSeriesSequence(Dataset):
         self.val_transform = val_transforms
         self.sp = sp
         if compute_mase_coefficient_value:
-            if only_has_past_targets:
+            if is_test_set:
                 self.mase_coefficient = compute_mase_coefficient(self.Y, sp=self.sp,
                                                                  n_prediction_steps=n_prediction_steps)
             else:
@@ -136,7 +135,6 @@ class TimeSeriesSequence(Dataset):
 
         else:
             self.mase_coefficient = 1.0
-        self.only_has_past_targets = only_has_past_targets
         self.known_future_features_index = known_future_features_index
 
         self.transform_time_features = False
@@ -372,14 +370,11 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                  normalize_y: bool = False,
                  ):
         """
-        :param target_variables:  Optional[Union[Tuple[int], int]] used for multi-variant forecasting
         tasks, the target_variables indicates which values in X corresponds to Y.
-        TODO add supports on X for pandas and target variables can be str or Tuple[str]
         :param freq: Optional[Union[str, int]] frequency of the series sequences, used to determine the (possible)
         period
         :param lagged_value: lagged values applied to RNN and Transformer that allows them to use previous data
         :param n_prediction_steps: The number of steps you want to forecast into the future
-        :param shift_input_data: bool
         if the input X and targets needs to be shifted to be aligned:
         such that the data until X[t] is applied to predict the value y[t+n_prediction_steps]
         :param normalize_y: bool
@@ -468,15 +463,34 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.time_feature_transform = time_feature_transform
         self.time_feature_names = tuple([f'time_feature_{t.__class__.__name__}' for t in self.time_feature_transform])
 
-        # Time features are lazily generated, we do not count them as either numerical_columns or categorical columns
+        # We also need to be able to transform the data, be it for pre-processing
+        # or for augmentation
+        self.train_transform = train_transforms
+        self.val_transform = val_transforms
+
+        if known_future_features is None:
+            known_future_features = tuple()
+        known_future_features_index = extract_feature_index(self.feature_shapes,
+                                                            self.feature_names,
+                                                            queried_features=known_future_features)
+
+        # initialize datasets
+        self.sequences_builder_kwargs = {"freq": self.freq,
+                                         "time_feature_transform": self.time_feature_transform,
+                                         "train_transforms": self.train_transform,
+                                         "val_transforms": self.val_transform,
+                                         "n_prediction_steps": n_prediction_steps,
+                                         "sp": self.seasonality,
+                                         "known_future_features_index": known_future_features_index}
 
         X, Y, sequence_lengths = self.validator.transform(X, Y)
-        time_features_train = self.compute_time_features(self.start_times_train, sequence_lengths)
+        time_features_train = self.compute_time_features(self.start_times_train,
+                                                         sequence_lengths,
+                                                         self.freq,
+                                                         self.time_feature_transform)
 
         if Y_test is not None:
-            X_test, Y_test, self.sequence_lengths_tests = self.validator.transform(X_test, Y_test)
-        else:
-            self.sequence_lengths_tests = None
+            X_test, Y_test, _ = self.validator.transform(X_test, Y_test)
 
         y_groups = Y.groupby(Y.index)
         if normalize_y:
@@ -492,124 +506,28 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 std[std == 0] = 1.
                 Y_test = (Y_test[mean.columns] - mean) / std
 
-        self.shuffle = shuffle
-        self.random_state = np.random.RandomState(seed=seed)
-
-        # check if dataset could be split with cross validation
-        minimal_seq_length = np.min(sequence_lengths) - n_prediction_steps
-        if isinstance(resampling_strategy, CrossValTypes):
-            num_splits = DEFAULT_RESAMPLING_PARAMETERS[resampling_strategy].get(
-                'num_splits', None)
-            if resampling_strategy_args is not None:
-                num_splits = resampling_strategy_args.get('num_split', num_splits)
-
-            if resampling_strategy != CrossValTypes.time_series_ts_cross_validation:
-                while minimal_seq_length - n_prediction_steps * num_splits <= 0:
-                    num_splits -= 1
-
-                if num_splits >= 2:
-                    resampling_strategy = CrossValTypes.time_series_cross_validation
-                    if resampling_strategy_args is None:
-                        resampling_strategy_args = {'num_splits': num_splits}
-                    else:
-                        resampling_strategy_args.update({'num_splits': num_splits})
-                else:
-                    warnings.warn('The dataset is not suitable for cross validation, we will apply holdout instead')
-
-                    resampling_strategy = HoldoutValTypes.time_series_hold_out_validation
-                    resampling_strategy_args = None
-            else:
-                seasonality_h_value = int(
-                    np.round((self.n_prediction_steps // int(self.freq_value) + 1) * self.freq_value))
-
-                while minimal_seq_length < (num_splits - 1) * freq_value + seasonality_h_value - n_prediction_steps:
-                    if num_splits <= 2:
-                        break
-                    num_splits -= 1
-                if resampling_strategy_args is None:
-                    resampling_strategy_args = {'num_splits': num_splits}
-                else:
-                    resampling_strategy_args.update({'num_splits': num_splits})
-
-        num_seqs = len(sequence_lengths)
-
-        if resampling_strategy_args is not None and "n_repeat" not in resampling_strategy_args:
-            n_repeat = resampling_strategy_args["n_repeat"]
-        else:
-            n_repeat = None
-        if (num_seqs < 100 and minimal_seq_length > 10 * n_prediction_steps) or \
-                minimal_seq_length > 50 * n_prediction_steps:
-            if n_repeat is None:
-                if num_seqs < 100:
-                    n_repeat = int(np.ceil(100.0 / num_seqs))
-                else:
-                    n_repeat = int(np.round(minimal_seq_length / (50 * n_prediction_steps)))
-
-            if resampling_strategy == CrossValTypes.time_series_cross_validation:
-                n_repeat = min(n_repeat, minimal_seq_length // (5 * n_prediction_steps * num_splits))
-            elif resampling_strategy == CrossValTypes.time_series_ts_cross_validation:
-                seasonality_h_value = int(np.round(
-                    (self.n_prediction_steps * n_repeat // int(self.freq_value) + 1) * self.freq_value)
-                )
-
-                while minimal_seq_length // 5 < (num_splits - 1) * n_repeat * freq_value \
-                        + seasonality_h_value - n_repeat * n_prediction_steps:
-                    n_repeat -= 1
-                    seasonality_h_value = int(np.round(
-                        (self.n_prediction_steps * n_repeat // int(self.freq_value) + 1) * self.freq_value)
-                    )
-            elif resampling_strategy == HoldoutValTypes.time_series_hold_out_validation:
-                n_repeat = min(n_repeat, minimal_seq_length // (5 * n_prediction_steps) - 1)
-
-            else:
-                n_repeat = 1
-
-            n_repeat = max(n_repeat, 1)
-        if n_repeat is None:
-            n_repeat = 1
-
-        if resampling_strategy_args is None:
-            resampling_strategy_args = {'n_repeat': n_repeat}
-        else:
-            resampling_strategy_args.update({'n_repeat': n_repeat})
-
-        self.resampling_strategy = resampling_strategy
-        self.resampling_strategy_args = resampling_strategy_args
-
-        # We also need to be able to transform the data, be it for pre-processing
-        # or for augmentation
-        self.train_transform = train_transforms
-        self.val_transform = val_transforms
-
-        self.num_sequences = len(Y)
-        self.sequence_lengths_train = np.asarray(sequence_lengths) - n_prediction_steps
-
-        if known_future_features is None:
-            known_future_features = tuple()
-        known_future_features_index = extract_feature_index(self.feature_shapes,
-                                                            self.feature_names,
-                                                            queried_features=known_future_features)
-
-        # initialize datasets
-        sequences_kwargs = {"freq": self.freq,
-                            "time_feature_transform": self.time_feature_transform,
-                            "train_transforms": self.train_transform,
-                            "val_transforms": self.val_transform,
-                            "n_prediction_steps": n_prediction_steps,
-                            "sp": self.seasonality,
-                            "known_future_features_index": known_future_features_index}
-
         sequence_datasets, train_tensors = self.make_sequences_datasets(
             X=X, Y=Y,
             X_test=X_test, Y_test=Y_test,
             start_times_train=self.start_times_train,
             start_times_test=self.start_times_test,
             time_features_train=time_features_train,
-            **sequences_kwargs)
+            **self.sequences_builder_kwargs)
+
         self.normalize_y = normalize_y
 
+        sequence_datasets, train_tensors = self.transform_data_into_time_series_sequence(X,
+                                                                                         Y, X_test,
+                                                                                         Y_test,
+
+                                                                                         self.normalize_y)
+
         ConcatDataset.__init__(self, datasets=sequence_datasets)
+
         self.known_future_features = known_future_features
+
+        self.num_sequences = len(Y)
+        self.sequence_lengths_train = np.asarray(sequence_lengths) - n_prediction_steps
 
         self.seq_length_min = int(np.min(self.sequence_lengths_train))
         self.seq_length_median = int(np.median(self.sequence_lengths_train))
@@ -627,7 +545,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         self.task_type: Optional[str] = None
         self.issparse: bool = issparse(self.train_tensors[0])
-        # TODO find a way to edit input shape!
+
         self.input_shape: Tuple[int, int] = (self.seq_length_min, self.num_features)
 
         if known_future_features is None:
@@ -659,12 +577,26 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.numerical_features: List[int] = self.numerical_columns
         self.categorical_features: List[int] = self.categorical_columns
 
-        if isinstance(resampling_strategy, CrossValTypes):
-            self.cross_validators = CrossValFuncs.get_cross_validators(resampling_strategy)
+        self.shuffle = shuffle
+        self.random_state = np.random.RandomState(seed=seed)
+
+        resampling_strategy, resampling_strategy_args = self.get_split_strategy(
+            sequence_lengths=sequence_lengths,
+            n_prediction_steps=n_prediction_steps,
+            freq_value=self.freq_valueq,
+            resampling_strategy=resampling_strategy,
+            resampling_strategy_args=resampling_strategy_args
+        )
+
+        self.resampling_strategy = resampling_strategy
+        self.resampling_strategy_args = resampling_strategy_args
+
+        if isinstance(self.resampling_strategy, CrossValTypes):
+            self.cross_validators = CrossValFuncs.get_cross_validators(self.resampling_strategy)
         else:
             self.cross_validators = CrossValFuncs.get_cross_validators(CrossValTypes.time_series_cross_validation)
-        if isinstance(resampling_strategy, HoldoutValTypes):
-            self.holdout_validators = HoldOutFuncs.get_holdout_validators(resampling_strategy)
+        if isinstance(self.resampling_strategy, HoldoutValTypes):
+            self.holdout_validators = HoldOutFuncs.get_holdout_validators(self.resampling_strategy)
 
         else:
             self.holdout_validators = HoldOutFuncs.get_holdout_validators(
@@ -681,9 +613,11 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         self.lagged_value = lagged_value
 
-    def compute_time_features(self,
-                              start_times: List[pd.DatetimeIndex],
-                              seq_lengths: List[int]) -> Dict[pd.DatetimeIndex, np.ndarray]:
+    @staticmethod
+    def compute_time_features(start_times: List[pd.DatetimeIndex],
+                              seq_lengths: List[int],
+                              freq: Union[str, pd.DateOffset],
+                              time_feature_transform: List[TimeFeature]) -> Dict[pd.DatetimeIndex, np.ndarray]:
         """
         compute the max series length for each start_time and compute their corresponding time_features. As lots of
         series in a dataset share the same start time, we could only compute the features for longest possible series
@@ -698,14 +632,14 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             try:
                 date_info = pd.date_range(start=start_t,
                                           periods=max_l,
-                                          freq=self.freq)
+                                          freq=freq)
                 series_time_features[start_t] = np.vstack(
                     [transform(date_info).to_numpy(float)
                      if not isinstance(transform, ConstantTransform) else transform(date_info)
-                     for transform in self.time_feature_transform]
+                     for transform in time_feature_transform]
                 ).T
             except OutOfBoundsDatetime as e:
-                series_time_features[start_t] = np.zeros([max_l, len(self.time_feature_transform)])
+                series_time_features[start_t] = np.zeros([max_l, len(time_feature_transform)])
         return series_time_features
 
     def _get_dataset_indices(self, idx: int, only_dataset_idx: bool = False) -> Union[int, Tuple[int, int]]:
@@ -750,14 +684,85 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         return y_test.reshape([-1, self.num_target])
 
-    def make_sequences_datasets(self,
-                                X: pd.DataFrame,
+    def transform_data_into_time_series_sequence(self,
+                                                 X: Optional[Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]],
+                                                 Y: Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]],
+                                                 start_times: List[pd.DatetimeIndex],
+                                                 X_test: Optional[
+                                                     Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]] = None,
+                                                 Y_test: Optional[
+                                                     Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]] = None,
+                                                 is_test_set: bool = False):
+        """
+        Transform the raw data into a list of TimeSeriesSequence that can be processed by AutoPyTorch Time Series
+                build a series time sequence datasets
+        Args:
+            X: Optional[Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]]
+                features, if is_test_set is True, then its length of
+            Y: pd.DataFrame (N_all, N_target)
+                flattened train target array with size N_all (the sum of all the series sequences) and number of targets
+            start_times: List[pd.DatetimeIndex]
+                start time of each training series
+            time_features_train: Dict[pd.Timestamp, np.ndarray]:
+                time features for each possible start training times
+            X_test: Optional[np.ndarray (N_all_test, N_feature)]
+                flattened test feature array with size N_all_test (the sum of all the series sequences) and N_feature,
+                number of features
+            Y_test: np.ndarray (N_all_test, N_target)
+                flattened test target array with size N_all (the sum of all the series sequences) and number of targets
+            is_test_set: Optional[List[pd.DatetimeIndex]]
+                if the genereated sequecne used for test
+            sequences_kwargs: Dict
+                additional arguments for test sets
+        Returns:
+            sequence_datasets : List[TimeSeriesSequence]
+                a list of datasets
+            train_tensors: Tuple[List[np.ndarray], List[np.ndarray]]
+                training tensors
+        """
+        dataset_with_future_features = is_test_set and X is not None and len(self.known_future_features) > 0
+        if dataset_with_future_features and X_test is None:
+            raise ValueError('When constructing test sets and known future features exist, X_test must be given!')
+        X, Y, sequence_lengths = self.validator.transform(X, Y)
+        time_features = self.compute_time_features(start_times,
+                                                   sequence_lengths,
+                                                   self.freq,
+                                                   self.time_feature_transform)
+
+        if Y_test is not None:
+            X_test, Y_test, _ = self.validator.transform(X_test, Y_test,
+                                                         validate_for_future_features=dataset_with_future_features)
+
+        y_groups = Y.groupby(Y.index)
+        if self.normalize_y:
+            mean = y_groups.agg("mean")
+            std = y_groups.agg("std")
+            std[std == 0] = 1.
+            Y = (Y[mean] - mean) / std
+            self.y_mean = mean
+            self.y_std = std
+            if Y_test is not None:
+                Y_test = (Y_test[mean.columns] - mean) / std
+
+        sequence_datasets, train_tensors = self.make_sequences_datasets(
+            X=X, Y=Y,
+            X_test=X_test, Y_test=Y_test,
+            start_times=start_times,
+            time_features=time_features,
+            is_test_set=is_test_set,
+            dataset_with_future_features=dataset_with_future_features,
+            **self.sequences_builder_kwargs)
+        return sequence_datasets, train_tensors
+
+    @staticmethod
+    def make_sequences_datasets(X: pd.DataFrame,
                                 Y: pd.DataFrame,
-                                start_times_train: List[pd.DatetimeIndex],
-                                time_features_train: Optional[Dict[pd.Timestamp, np.ndarray]] = None,
+                                start_times: List[pd.DatetimeIndex],
+                                time_features: Optional[Dict[pd.Timestamp, np.ndarray]] = None,
                                 X_test: Optional[pd.DataFrame] = None,
                                 Y_test: Optional[pd.DataFrame] = None,
-                                start_times_test: Optional[List[pd.DatetimeIndex]] = None,
+                                is_test_set: bool = False,
+                                dataset_with_future_features: bool = False,
                                 **sequences_kwargs: Optional[Dict]) -> Tuple[
         List[TimeSeriesSequence],
         Tuple[Optional[pd.DataFrame], pd.DataFrame]
@@ -770,24 +775,24 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 number of features, X's index should contain the information identifying its series number
             Y: pd.DataFrame (N_all, N_target)
                 flattened train target array with size N_all (the sum of all the series sequences) and number of targets
-            start_times_train: List[pd.DatetimeIndex]
+            start_times: List[pd.DatetimeIndex]
                 start time of each training series
-            time_features_train: Dict[pd.Timestamp, np.ndarray]:
+            time_features: Dict[pd.Timestamp, np.ndarray]:
                 time features for each possible start training times
             X_test: Optional[np.ndarray (N_all_test, N_feature)]
                 flattened test feature array with size N_all_test (the sum of all the series sequences) and N_feature,
                 number of features
             Y_test: np.ndarray (N_all_test, N_target)
                 flattened test target array with size N_all (the sum of all the series sequences) and number of targets
-            start_times_test: Optional[List[pd.DatetimeIndex]]
-                start time for each test series
-            time_features_test:Optional[Dict[pd.Timestamp, np.ndarray]]
-                time features for each possible start test times.
+            is_test_set (bool):
+                if the generated sequence used for test
+            dataset_with_future_features (bool):
+                if we want to create a dataset with future features (that contained in X)
             sequences_kwargs: Dict
                 additional arguments for test sets
         Returns:
             sequence_datasets : List[TimeSeriesSequence]
-                a
+                a list of datasets
             train_tensors: Tuple[List[np.ndarray], List[np.ndarray]]
                 training tensors
 
@@ -802,7 +807,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         if X_test is not None:
             x_test_group = X_test.groupby(X_test.index)
 
-        for i_ser, (start_train, y) in enumerate(zip(start_times_train, y_group)):
+        for i_ser, (start_train, y) in enumerate(zip(start_times, y_group)):
             ser_id = y[0]
             y_ser = y[1].transform(np.array).values
             x_ser = x_group.get_group(ser_id).transform(np.array).values if X is not None else None
@@ -810,7 +815,9 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             y_test_ser = y_test_group.get_group(ser_id).transform(np.array).values if Y_test is not None else None
             x_test_ser = x_test_group.get_group(ser_id).transform(np.array).values if X_test is not None else None
 
-            start_test = None if start_times_test is None else start_times_test[i_ser]
+            if dataset_with_future_features:
+                x_ser = np.concatenate([x_ser, x_test_ser])
+                x_test_ser = None
 
             sequence = TimeSeriesSequence(
                 X=x_ser,
@@ -818,7 +825,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 start_time_train=start_train,
                 X_test=x_test_ser,
                 Y_test=y_test_ser,
-                time_features=time_features_train[start_train][:len(y_ser)],
+                time_features=time_features[start_train][:len(y_ser)],
+                is_test_set=is_test_set,
                 **sequences_kwargs)
             sequence_datasets.append(sequence)
 
@@ -959,6 +967,106 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                                    else self.train_tensors[0].isnull().values.any()})
         return dataset_properties
 
+    @staticmethod
+    def get_split_strategy(sequence_lengths: List[int],
+                           n_prediction_steps: int,
+                           freq_value: Real,
+                           resampling_strategy: Optional[Union[
+                               CrossValTypes, HoldoutValTypes]] = HoldoutValTypes.time_series_hold_out_validation,
+                           resampling_strategy_args: Optional[Dict[str, Any]] = None, ) -> \
+            Tuple[Union[CrossValTypes, HoldoutValTypes], Optional[Dict[str, Any]]]:
+        """
+        Determines the most possible sampling strategy for the datasets: the lengths of each sequence might not be long
+        enough to support cross-validation split, thus we need to carefully compute the number of folds
+        Args:
+            sequence_lengths (List[int]): lengths of each sequence
+            n_prediction_steps (int): forecasting horizon
+            freq_value (Real): period of the dataset, determined by its sampling frequency
+            resampling_strategy(Optional[Union[CrossValTypes, HoldoutValTypes]]): resampling strategy to be checked
+            resampling_strategy_args (Optional[Dict[str, Any]]): resampling strategy arguments to be checked
+        Returns:
+            resampling_strategy(Optional[Union[CrossValTypes, HoldoutValTypes]]): resampling strategy
+            resampling_strategy_args (Optional[Dict[str, Any]]): resampling strategy arguments
+        """
+        # check if dataset could be split with cross validation
+        minimal_seq_length = np.min(sequence_lengths) - n_prediction_steps
+        if isinstance(resampling_strategy, CrossValTypes):
+            num_splits = DEFAULT_RESAMPLING_PARAMETERS[resampling_strategy].get(
+                'num_splits', None)
+            if resampling_strategy_args is not None:
+                num_splits = resampling_strategy_args.get('num_split', num_splits)
+
+            if resampling_strategy != CrossValTypes.time_series_ts_cross_validation:
+                while minimal_seq_length - n_prediction_steps * num_splits <= 0:
+                    num_splits -= 1
+
+                if num_splits >= 2:
+                    resampling_strategy = CrossValTypes.time_series_cross_validation
+                    if resampling_strategy_args is None:
+                        resampling_strategy_args = {'num_splits': num_splits}
+                    else:
+                        resampling_strategy_args.update({'num_splits': num_splits})
+                else:
+                    warnings.warn('The dataset is not suitable for cross validation, we will apply holdout instead')
+
+                    resampling_strategy = HoldoutValTypes.time_series_hold_out_validation
+                    resampling_strategy_args = None
+            else:
+                seasonality_h_value = int(
+                    np.round((n_prediction_steps // int(freq_value) + 1) * freq_value))
+
+                while minimal_seq_length < (num_splits - 1) * freq_value + seasonality_h_value - n_prediction_steps:
+                    if num_splits <= 2:
+                        break
+                    num_splits -= 1
+                if resampling_strategy_args is None:
+                    resampling_strategy_args = {'num_splits': num_splits}
+                else:
+                    resampling_strategy_args.update({'num_splits': num_splits})
+
+        num_seqs = len(sequence_lengths)
+
+        if resampling_strategy_args is not None and "n_repeat" not in resampling_strategy_args:
+            n_repeat = resampling_strategy_args["n_repeat"]
+        else:
+            n_repeat = None
+        if (num_seqs < 100 and minimal_seq_length > 10 * n_prediction_steps) or \
+                minimal_seq_length > 50 * n_prediction_steps:
+            if n_repeat is None:
+                if num_seqs < 100:
+                    n_repeat = int(np.ceil(100.0 / num_seqs))
+                else:
+                    n_repeat = int(np.round(minimal_seq_length / (50 * n_prediction_steps)))
+
+            if resampling_strategy == CrossValTypes.time_series_cross_validation:
+                n_repeat = min(n_repeat, minimal_seq_length // (5 * n_prediction_steps * num_splits))
+            elif resampling_strategy == CrossValTypes.time_series_ts_cross_validation:
+                seasonality_h_value = int(np.round(
+                    (n_prediction_steps * n_repeat // int(freq_value) + 1) * freq_value)
+                )
+
+                while minimal_seq_length // 5 < (num_splits - 1) * n_repeat * freq_value \
+                        + seasonality_h_value - n_repeat * n_prediction_steps:
+                    n_repeat -= 1
+                    seasonality_h_value = int(np.round(
+                        (n_prediction_steps * n_repeat // int(freq_value) + 1) * freq_value)
+                    )
+            elif resampling_strategy == HoldoutValTypes.time_series_hold_out_validation:
+                n_repeat = min(n_repeat, minimal_seq_length // (5 * n_prediction_steps) - 1)
+
+            else:
+                n_repeat = 1
+
+            n_repeat = max(n_repeat, 1)
+        if n_repeat is None:
+            n_repeat = 1
+
+        if resampling_strategy_args is None:
+            resampling_strategy_args = {'n_repeat': n_repeat}
+        else:
+            resampling_strategy_args.update({'n_repeat': n_repeat})
+        return resampling_strategy, resampling_strategy_args
+
     def create_cross_val_splits(
             self,
             cross_val_type: CrossValTypes,
@@ -1077,8 +1185,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         Returns:
             (Tuple[np.ndarray, np.ndarray]): Tuple containing (train_indices, val_indices)
         """
-        kwargs = {"n_prediction_steps": self.n_prediction_steps}
-
         splits = [[() for _ in range(len(self.datasets))] for _ in range(2)]
         idx_start = 0
         for idx_seq, dataset in enumerate(self.datasets):
@@ -1103,7 +1209,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         test_sets = copy.deepcopy(self.datasets)
         for test_seq in test_sets:
             test_seq.is_test_set = True
-            test_seq.only_has_past_targets = True
             if len(self.known_future_features) > 0 and test_seq.X_test is None:
                 raise ValueError("If future features are required, X_test must be given!")
             test_seq.X = np.concatenate([test_seq.X, test_seq.X_test])

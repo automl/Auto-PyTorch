@@ -455,7 +455,8 @@ class TimeSeriesForecastingTask(BaseTask):
             X_test: Optional[List[Union[np.ndarray, pd.DataFrame, TimeSeriesSequence]], pd.DataFrame] = None,
             batch_size: Optional[int] = None,
             n_jobs: int = 1,
-            targets_tests: Optional[List[np.ndarray]] = None,
+            past_targets: Optional[List[np.ndarray]] = None,
+            future_targets: Optional[List[Union[np.ndarray, pd.DataFrame, TimeSeriesSequence]], pd.DataFrame] = None,
             start_times: List[pd.DatetimeIndex] = []
     ) -> np.ndarray:
         """
@@ -463,9 +464,20 @@ class TimeSeriesForecastingTask(BaseTask):
                 (used for multi-variable prediction), indicates which value needs to be predicted
         """
         if not isinstance(X_test[0], TimeSeriesSequence):
-            # Validate and construct TimeSeriesSequence TODO
-            pass
+            # Validate and construct TimeSeriesSequence
+            X_test, _ = self.dataset.transform_data_into_time_series_sequence(X=X_test,
+                                                                              Y=past_targets,
+                                                                              X_test=future_targets,
+                                                                              start_times=start_times,
+                                                                              is_test_set=True
+                                                                              )
         flattened_res = super(TimeSeriesForecastingTask, self).predict(X_test, batch_size, n_jobs)
         if self.dataset.num_target == 1:
-            return flattened_res.reshape([-1, self.dataset.n_prediction_steps])
-        return flattened_res.reshape([-1, self.dataset.n_prediction_steps, self.dataset.num_target])
+            forecasting = flattened_res.reshape([-1, self.dataset.n_prediction_steps])
+        else:
+            forecasting = flattened_res.reshape([-1, self.dataset.n_prediction_steps, self.dataset.num_target])
+        if self.dataset.normalize_y:
+            mean = np.repeat(self.dataset.y_mean.values(), self.dataset.n_prediction_steps)
+            std = np.repeat(self.dataset.y_std.values(), self.dataset.n_prediction_steps)
+            return forecasting * std + mean
+        return forecasting
