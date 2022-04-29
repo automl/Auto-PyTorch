@@ -465,7 +465,7 @@ class TimeSeriesForecastingTask(BaseTask):
         """
         if not isinstance(X_test[0], TimeSeriesSequence):
             # Validate and construct TimeSeriesSequence
-            X_test, _ = self.dataset.transform_data_into_time_series_sequence(X=X_test,
+            X_test, _, _ = self.dataset.transform_data_into_time_series_sequence(X=X_test,
                                                                               Y=past_targets,
                                                                               X_test=future_targets,
                                                                               start_times=start_times,
