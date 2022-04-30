@@ -120,8 +120,8 @@ def get_search_updates(categorical_indicator: List[bool]):
         The search space updates like setting different hps to different values or ranges.
     """
 
-    has_cat_features = any(categorical_indicator)
-    has_numerical_features = not all(categorical_indicator)
+    # has_cat_features = any(categorical_indicator)
+    # has_numerical_features = not all(categorical_indicator)
 
     search_space_updates = HyperparameterSearchSpaceUpdates()
 
@@ -988,7 +988,8 @@ class BaseTask(ABC):
         disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
         load_models: bool = True,
         portfolio_selection: Optional[str] = None,
-        dask_client: Optional[dask.distributed.Client] = None
+        dask_client: Optional[dask.distributed.Client] = None,
+        min_configs_search: int = 100
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -1218,15 +1219,16 @@ class BaseTask(ABC):
 
         # Make sure that at least 2 models are created for the ensemble process
         num_models = time_left_for_modelfit // func_eval_time_limit_secs
-        if num_models < 2 and self.ensemble_size > 0:
-            func_eval_time_limit_secs = time_left_for_modelfit // 2
+        if num_models < min_configs_search:
+            func_eval_time_limit_secs = time_left_for_modelfit // min_configs_search
             self._logger.warning(
                 "Capping the func_eval_time_limit_secs to {} to have "
-                "time for a least 2 models to ensemble.".format(
-                    func_eval_time_limit_secs
+                "time for a least {} models to ensemble.".format(
+                    func_eval_time_limit_secs, min_configs_search
                 )
             )
 
+        self.pipeline_options['func_eval_time_limit_secs'] = func_eval_time_limit_secs
         # ============> Run dummy predictions
         # We only want to run dummy predictions in case we want to build an ensemble
         if self.ensemble_size > 0:
@@ -1637,6 +1639,8 @@ class BaseTask(ABC):
             budget_type = pipeline_options['budget_type']
 
         budget = budget if budget is not None else pipeline_options[budget_type]
+
+        self.pipeline_options['func_eval_time_limit_secs'] = run_time_limit_secs
 
         if disable_file_output is None:
             disable_file_output = getattr(self, '_disable_file_output', [])

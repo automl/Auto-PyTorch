@@ -458,9 +458,7 @@ def _subsample_by_indices(
         y = y[indices_to_keep]
     return X, y
 
-
-def megabytes(arr: DatasetCompressionInputType) -> float:
-
+def get_raw_memory_usage(arr: DatasetCompressionInputType) -> float:
     if isinstance(arr, np.ndarray):
         memory_in_bytes = arr.nbytes
     elif issparse(arr):
@@ -471,7 +469,24 @@ def megabytes(arr: DatasetCompressionInputType) -> float:
         raise ValueError(f"Unrecognised data type of X, expected data type to "
                          f"be in (np.ndarray, spmatrix, pd.DataFrame) but got :{type(arr)}")
 
-    return float(memory_in_bytes / (2**20))
+    return memory_in_bytes
+
+def get_approximate_mem_usage_in_mb(
+    arr: DatasetCompressionInputType,
+    categorical_columns: List,
+    n_categories_per_cat_column: Optional[List[int]] = None
+) -> float:
+
+    multiplier = np.zeros(1, dtype=arr.dtype).itemsize
+    width = arr.shape[1] - len(categorical_columns)
+    # multiply num categories with the size of the column to capture memory after one hot encoding
+    if len(categorical_columns) > 0:
+        if n_categories_per_cat_column is None:
+            raise ValueError("Value number of categories per categorical is required when the data has categorical columns")
+    
+        width += sum(n_categories_per_cat_column)
+
+    return float(multiplier * arr.shape[0] * width / (2**20))
 
 
 def reduce_dataset_size_if_too_large(
@@ -479,6 +494,8 @@ def reduce_dataset_size_if_too_large(
     memory_allocation: Union[int, float],
     is_classification: bool,
     random_state: Union[int, np.random.RandomState],
+    categorical_columns: List,
+    n_categories_per_cat_column: Optional[List[int]] = None,
     y: Optional[SupportedTargetTypes] = None,
     methods: List[str] = ['precision', 'subsample'],
 ) -> DatasetCompressionInputType:
@@ -524,7 +541,7 @@ def reduce_dataset_size_if_too_large(
     """
 
     for method in methods:
-        if megabytes(X) <= memory_allocation:
+        if get_approximate_mem_usage_in_mb(X, categorical_columns, n_categories_per_cat_column) <= memory_allocation:
             break
 
         if method == 'precision':
@@ -540,7 +557,8 @@ def reduce_dataset_size_if_too_large(
             # into the allocated memory, we subsample it so that it does
 
             n_samples_before = X.shape[0]
-            sample_percentage = memory_allocation / megabytes(X)
+            sample_percentage = memory_allocation / get_approximate_mem_usage_in_mb(
+                X, categorical_columns, n_categories_per_cat_column)
 
             # NOTE: type ignore
             #

@@ -383,6 +383,7 @@ class TrainEvaluator(AbstractEvaluator):
              'val_indices': test_indices,
              'split_id': fold,
              'num_run': self.num_run,
+             'start_time': self.starttime,
              **self.fit_dictionary}  # fit dictionary
         y = None
         fit_and_suppress_warnings(self.logger, pipeline, X, y)
@@ -412,10 +413,10 @@ class TrainEvaluator(AbstractEvaluator):
 
         train_pred = self.predict_function(subsampler(self.X_train, train_indices), pipeline,
                                            self.y_train[train_indices])
-
+        self.logger.debug("finished predicting on train set in tae")
         opt_pred = self.predict_function(subsampler(self.X_train, test_indices), pipeline,
                                          self.y_train[train_indices])
-
+        self.logger.debug("finished predicting on opt set in tae")
         if self.X_valid is not None:
             valid_pred = self.predict_function(self.X_valid, pipeline,
                                                self.y_valid)
@@ -427,7 +428,7 @@ class TrainEvaluator(AbstractEvaluator):
                                               self.y_train[train_indices])
         else:
             test_pred = None
-
+        self.logger.debug("finished predicting on val/test set in tae")
         return train_pred, opt_pred, valid_pred, test_pred
 
 

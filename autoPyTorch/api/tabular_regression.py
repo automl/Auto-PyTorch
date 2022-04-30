@@ -252,6 +252,7 @@ class TabularRegressionTask(BaseTask):
         load_models: bool = True,
         portfolio_selection: Optional[str] = None,
         dataset_compression: Union[Mapping[str, Any], bool] = False,
+        min_configs_search: int = 100
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -452,6 +453,7 @@ class TabularRegressionTask(BaseTask):
             disable_file_output=disable_file_output,
             load_models=load_models,
             portfolio_selection=portfolio_selection,
+            min_configs_search=min_configs_search
         )
 
     def predict(

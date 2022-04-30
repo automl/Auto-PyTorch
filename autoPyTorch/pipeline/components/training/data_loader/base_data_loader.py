@@ -69,7 +69,8 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
         Returns:
             (Dict[str, Any]): the updated fit dictionary
         """
-        X.update({'train_data_loader': self.train_data_loader,
+        X.update({'total_num_steps': len(X['train_indices'])//self.batch_size,
+                  'train_data_loader': self.train_data_loader,
                   'val_data_loader': self.val_data_loader,
                   'test_data_loader': self.test_data_loader})
         return X

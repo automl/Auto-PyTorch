@@ -264,8 +264,10 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         scheduler: _LRScheduler,
         task_type: int,
         labels: Union[np.ndarray, torch.Tensor, pd.DataFrame],
+        func_eval_time_limit_secs: int,
         step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.batch,
-        numerical_columns: Optional[List[int]] = None
+        numerical_columns: Optional[List[int]] = None,
+        start_time = None
     ) -> None:
 
         # Save the device to be used
@@ -313,6 +315,9 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         # The budget tracker
         self.budget_tracker = budget_tracker
 
+        # information for managing n batches trained
+        self.per_epoch_timelimit = (0.75*func_eval_time_limit_secs)/self.budget_tracker.max_epochs
+ 
         # For best performance, we allow option to prevent comparing metrics every time
         self.metrics_during_training = metrics_during_training
 
@@ -322,7 +327,10 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
         # task type (used for calculating metrics)
         self.task_type = task_type
-
+        self.entered_train_epoch_loop = False
+        self.is_early_stopped = None
+        self.start_time = start_time
+        self.last_step = 0
         # for cutout trainer, we need the list of numerical columns
         self.numerical_columns = numerical_columns
 
@@ -428,11 +436,15 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         targets_data = list()
 
         for step, (data, targets) in enumerate(train_loader):
+            self.entered_train_epoch_loop = True
+            if time.time() - self.start_time >= self.per_epoch_timelimit:
+                self.is_early_stopped = step
+                break
             if self.budget_tracker.is_max_time_reached():
                 break
 
             loss, outputs = self.train_step(data, targets)
-
+            self.last_step += 1
             # save for metric evaluation
             outputs_data.append(outputs.detach().cpu())
             targets_data.append(targets.detach().cpu())

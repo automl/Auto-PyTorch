@@ -353,7 +353,9 @@ class TrainerChoice(autoPyTorchChoice):
             labels=labels,
             step_interval=X['step_interval'],
             numerical_columns=X['dataset_properties']['numerical_columns'] if 'numerical_columns' in X[
-                'dataset_properties'] else None
+                'dataset_properties'] else None,
+            func_eval_time_limit_secs=X['func_eval_time_limit_secs'],
+            start_time=X['start_time']
         )
         total_parameter_count, trainable_parameter_count = self.count_parameters(X['network'])
         self.run_summary = RunSummary(
@@ -375,14 +377,14 @@ class TrainerChoice(autoPyTorchChoice):
             start_time = time.time()
 
             self.choice.on_epoch_start(X=X, epoch=epoch)
-
+            self.logger.debug(f" 1 epoch fit time: {self.choice.per_epoch_timelimit}, is_early_stopped : {self.choice.is_early_stopped} entered_train_epoch_loop: {self.choice.entered_train_epoch_loop}, total_num_steps: {X['total_num_steps']}")
             # training
             train_loss, train_metrics = self.choice.train_epoch(
                 train_loader=X['train_data_loader'],
                 epoch=epoch,
                 writer=writer,
             )
-
+            self.logger.debug(f" epoch fit time: {self.choice.per_epoch_timelimit}, is_early_stopped : {self.choice.is_early_stopped} entered_train_epoch_loop: {self.choice.entered_train_epoch_loop}, last_step: {self.choice.last_step}")
             # its fine if train_loss is None due to `is_max_time_reached()`
             if train_loss is None:
                 if self.budget_tracker.is_max_time_reached():
@@ -394,9 +396,11 @@ class TrainerChoice(autoPyTorchChoice):
             if self.eval_valid_each_epoch(X):
                 if 'val_data_loader' in X and X['val_data_loader']:
                     val_loss, val_metrics = self.choice.evaluate(X['val_data_loader'], epoch, writer)
+                    self.logger.debug("Finished predicting validation inside base trainer choice")
                 if 'test_data_loader' in X and X['test_data_loader']:
                     test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'], epoch, writer)
 
+            self.logger.debug("Finished predicting inside base trsiner choice")
             # Save training information
             self.run_summary.add_performance(
                 epoch=epoch,
@@ -481,7 +485,7 @@ class TrainerChoice(autoPyTorchChoice):
         Verifies and validates the labels from train split.
         """
         # Ensure that the split is not missing any class.
-        labels: List[int] = X['y_train'][X['backend'].load_datamanager().splits[X['split_id']][0]]
+        labels: List[int] = X['y_train'][X['train_indices']]
         if STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']] in CLASSIFICATION_TASKS:
             unique_labels = len(np.unique(labels))
             if unique_labels < X['dataset_properties']['output_shape']:

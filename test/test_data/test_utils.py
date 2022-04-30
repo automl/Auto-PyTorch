@@ -25,7 +25,7 @@ from autoPyTorch.constants import (
 from autoPyTorch.data.utils import (
     default_dataset_compression_arg,
     get_dataset_compression_mapping,
-    megabytes,
+    get_approximate_mem_usage_in_mb,
     reduce_dataset_size_if_too_large,
     reduce_precision,
     subsample,
@@ -51,7 +51,7 @@ def test_reduce_dataset_if_too_large(openmlid, as_frame, n_samples):
     assert X_converted.shape[0] < X.shape[0]
     assert y_converted.shape[0] < y.shape[0]
 
-    assert megabytes(X_converted) < megabytes(X)
+    assert get_approximate_mem_usage_in_mb(X_converted) < get_approximate_mem_usage_in_mb(X)
 
 
 @pytest.mark.parametrize("X", [np.asarray([[1, 1, 1]] * 30)])
