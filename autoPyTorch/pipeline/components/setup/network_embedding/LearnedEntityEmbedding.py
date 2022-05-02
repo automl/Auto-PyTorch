@@ -19,19 +19,13 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparamet
 class _LearnedEntityEmbedding(nn.Module):
     """ Learned entity embedding module for categorical features"""
 
-    def __init__(self,
-                 config: Dict[str, Any],
-                 num_input_features: np.ndarray,
-                 num_numerical_features: int):
+    def __init__(self, config: Dict[str, Any], num_input_features: np.ndarray, num_numerical_features: int):
         """
         Args:
             config (Dict[str, Any]): The configuration sampled by the hyperparameter optimizer
             num_input_features (np.ndarray): column wise information of number of output columns after transformation
                 for each categorical column and 0 for numerical columns
             num_numerical_features (int): number of numerical features in X
-            num_output_dimensions Optional[List[int]]: number of output dimensions, this is applied to quickly
-                construct a new Embedding network
-            ee_layers (Optional[nn.Module])
         """
         super().__init__()
         self.config = config

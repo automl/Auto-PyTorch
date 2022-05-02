@@ -71,7 +71,6 @@ setuptools.setup(
             "jupyter",
             "notebook",
             "seaborn",
-            "sktime"
         ],
         "docs": ["sphinx", "sphinx-gallery", "sphinx_bootstrap_theme", "numpydoc"],
     },

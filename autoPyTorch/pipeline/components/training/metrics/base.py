@@ -37,9 +37,9 @@ class autoPyTorchMetric(object, metaclass=ABCMeta):
         return self.name
 
 
-# This is a mixin for computing time series forecasting losses, the  parameters are defined at:
+# This is a mixin for computing time series forecasting losses, the  parameters are defined by:
 # https://www.sktime.org/en/stable/api_reference/performance_metrics.html
-# TODO considering adding more arguments to this function to allow more advanced loss function, e.g. asymmetric_error
+# TODO considering adding more arguments to this function to allow advanced loss functions, e.g. asymmetric_error
 class ForecastingMetricMixin:
     def __call__(self,
                  y_true: np.ndarray,

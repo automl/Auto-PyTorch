@@ -189,8 +189,11 @@ class NetworkBackboneChoice(autoPyTorchChoice):
 
     @property
     def _defaults_network(self):
-        return ['ShapedMLPBackbone',
-                'MLPBackbone']
+        return [
+            'ShapedMLPBackbone',
+            'MLPBackbone',
+            'ConvNetImageBackbone',
+        ]
 
     def transform(self, X: np.ndarray) -> np.ndarray:
         assert self.choice is not None, "Cannot call transform before the object is initialized"

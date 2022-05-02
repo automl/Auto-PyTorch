@@ -265,26 +265,26 @@ class AutoMLSMBO(object):
         self.logger.info("initialised {}".format(self.__class__.__name__))
 
         initial_configurations = []
-        if portfolio_selection is not None:
-            initial_configurations = read_return_initial_configurations(config_space=config_space,
-                                                                        portfolio_selection=portfolio_selection)
-
-        suggested_init_models: Optional[List[str]] = kwargs.get('suggested_init_models', None)
-        custom_init_setting_path: Optional[str] = kwargs.get('custom_init_setting_path', None)
-
-        # if suggested_init_models is an empty list, and  custom_init_setting_path is not provided, we
-        # do not provide any initial configurations
-        if suggested_init_models is None or suggested_init_models or custom_init_setting_path is not None:
-            initial_configurations = read_forecasting_init_configurations(
-                config_space=config_space,
-                suggested_init_models=suggested_init_models,
-                custom_init_setting_path=custom_init_setting_path)
-
-        self.initial_configurations = initial_configurations \
-            if len(initial_configurations) > 0 else None
 
         if self.time_series_forecasting:
+            suggested_init_models: Optional[List[str]] = kwargs.get('suggested_init_models', None)
+            custom_init_setting_path: Optional[str] = kwargs.get('custom_init_setting_path', None)
+            # if suggested_init_models is an empty list, and  custom_init_setting_path is not provided, we
+            # do not provide any initial configurations
+            if suggested_init_models is None or suggested_init_models or custom_init_setting_path is not None:
+                initial_configurations = read_forecasting_init_configurations(
+                    config_space=config_space,
+                    suggested_init_models=suggested_init_models,
+                    custom_init_setting_path=custom_init_setting_path)
+            # proxy-validation sets
             self.min_num_test_instances = kwargs.get('min_num_test_instances', None)
+        else:
+            if portfolio_selection is not None:
+                initial_configurations = read_return_initial_configurations(config_space=config_space,
+                                                                            portfolio_selection=portfolio_selection)
+
+        self.initial_configurations = initial_configurations if len(initial_configurations) > 0 else None
+
 
     def reset_data_manager(self) -> None:
         if self.datamanager is not None:

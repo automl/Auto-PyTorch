@@ -317,7 +317,7 @@ class TestNetworkBackbone:
     def test_all_backbones_available(self):
         backbone_choice = NetworkBackboneChoice(dataset_properties={})
 
-        assert len(backbone_choice.get_components().keys()) == 9
+        assert len(backbone_choice.get_components().keys()) == 8
 
     @pytest.mark.parametrize('task_type_input_shape', [(constants.IMAGE_CLASSIFICATION, (3, 64, 64)),
                                                        (constants.IMAGE_REGRESSION, (3, 64, 64)),
@@ -370,7 +370,7 @@ class TestNetworkBackbone:
     def test_every_backbone_is_valid(self):
         backbone_choice = NetworkBackboneChoice(dataset_properties={})
 
-        assert len(backbone_choice.get_components().keys()) == 9
+        assert len(backbone_choice.get_components().keys()) == 8
 
         for name, backbone in backbone_choice.get_components().items():
             config = backbone.get_hyperparameter_search_space().sample_configuration()

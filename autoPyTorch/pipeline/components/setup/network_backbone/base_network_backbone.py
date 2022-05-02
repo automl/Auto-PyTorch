@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Any, Dict, Iterable, Optional, Tuple, List
+from typing import Any, Dict, Iterable, Optional, Tuple
 
 import numpy as np
 
@@ -10,15 +10,12 @@ from scipy.sparse import spmatrix
 import torch
 from torch import nn
 
-import torchvision
-
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.pipeline.components.base_component import (
     autoPyTorchComponent,
 )
 from autoPyTorch.pipeline.components.setup.network_backbone.utils import get_output_shape
 from autoPyTorch.utils.common import FitRequirement
-from autoPyTorch.constants import TIMESERIES_FORECASTING, TASK_TYPES_TO_STRING
 
 
 class NetworkBackboneComponent(autoPyTorchComponent):

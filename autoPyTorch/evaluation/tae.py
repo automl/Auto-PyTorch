@@ -213,7 +213,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
 
         budget_choices_forecasting = {budget_type: 1.0 for budget_type in FORECASTING_BUDGET_TYPE}
         budget_choices.update(budget_choices_forecasting)
-        budget_type_choices = (*budget_type_choices, *FORECASTING_BUDGET_TYPE)
+        budget_type_choices = budget_type_choices + FORECASTING_BUDGET_TYPE
 
         # budget is defined by epochs by default
         budget_type = str(self.pipeline_config.get('budget_type', 'epochs'))

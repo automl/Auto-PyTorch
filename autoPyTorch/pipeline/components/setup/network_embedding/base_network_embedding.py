@@ -71,5 +71,5 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
         categories = X['dataset_properties']['categories']
 
         for i, category in enumerate(categories):
-            num_input_features[num_numerical_columns + i,] = len(category)
+            num_input_features[num_numerical_columns + i, ] = len(category)
         return num_numerical_columns, num_input_features

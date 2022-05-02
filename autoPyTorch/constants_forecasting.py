@@ -2,7 +2,7 @@
 # https://github.com/rakshitha123/TSForecasting/blob/master/experiments/deep_learning_experiments.py
 # seasonality map, maps a frequency value to a number
 
-FORECASTING_BUDGET_TYPE = ['resolution', 'num_seq', 'num_sample_per_seq']
+FORECASTING_BUDGET_TYPE = ('resolution', 'num_seq', 'num_sample_per_seq')
 
 SEASONALITY_MAP = {
     "1min": [1440, 10080, 525960],

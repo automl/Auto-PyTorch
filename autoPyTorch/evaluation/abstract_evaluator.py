@@ -506,10 +506,7 @@ class AbstractEvaluator(object):
             elif isinstance(self.configuration, str):
                 self.pipeline_class = MyTraditionalTabularRegressionPipeline
             elif isinstance(self.configuration, Configuration):
-                if self.task_type in TABULAR_TASKS:
-                    self.pipeline_class = autoPyTorch.pipeline.tabular_regression.TabularRegressionPipeline
-                elif self.task_type in FORECASTING_TASKS:
-                    self.pipeline_class = autoPyTorch.pipeline.time_series_forecasting.TimeSeriesForecastingPipeline
+                self.pipeline_class = autoPyTorch.pipeline.tabular_regression.TabularRegressionPipeline
             else:
                 raise ValueError('task {} not available'.format(self.task_type))
             self.predict_function = self._predict_regression

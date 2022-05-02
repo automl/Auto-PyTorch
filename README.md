@@ -49,8 +49,6 @@ Then API starts the following procedures:
 
 pip install autoPyTorch
 
-```sh
-$ git checkout development
 ```
 
 ### Manual Installation
@@ -147,31 +145,12 @@ Please refer to the branch `TPAMI.2021.3067763` to reproduce the paper *Auto-PyT
   title = {Auto-PyTorch Tabular: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL},
   journal = {IEEE Transactions on Pattern Analysis and Machine Intelligence},
   year = {2021},
-<<<<<<< HEAD
-  note = {IEEE early access; also available under https://arxiv.org/abs/2006.13799},
-  pages = {1-12}
-=======
   note = {also available under https://arxiv.org/abs/2006.13799},
   pages = {3079 - 3090}
->>>>>>> upstream/master
 }
 ```
 
 ```bibtex
-<<<<<<< HEAD
-  @article{zimmer-tpami21a,
-  author = {Lucas Zimmer and Marius Lindauer and Frank Hutter},
-  title = {Auto-PyTorch Tabular: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL},
-  journal = {IEEE Transactions on Pattern Analysis and Machine Intelligence},
-  year = {2021},
-  note = {IEEE early access; also available under https://arxiv.org/abs/2006.13799},
-  pages = {1-12}
-}
-```
-
-```bibtex
-=======
->>>>>>> upstream/master
 @incollection{mendoza-automlbook18a,
   author    = {Hector Mendoza and Aaron Klein and Matthias Feurer and Jost Tobias Springenberg and Matthias Urban and Michael Burkart and Max Dippel and Marius Lindauer and Frank Hutter},
   title     = {Towards Automatically-Tuned Deep Neural Networks},

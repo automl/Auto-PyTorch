@@ -27,7 +27,6 @@ from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.pipeline import get_dataset_requirements
 
-
 N_SAMPLES = 300
 
 
@@ -41,19 +40,19 @@ def callattr_ahead_of_alltests(request):
     """
     tasks_used = [
         146818,  # Australian
-        2295,    # cholesterol
-        2075,    # abalone
-        2071,    # adult
-        3,       # kr-vs-kp
-        9981,    # cnae-9
+        2295,  # cholesterol
+        2075,  # abalone
+        2071,  # adult
+        3,  # kr-vs-kp
+        9981,  # cnae-9
         146821,  # car
         146822,  # Segment
-        2,       # anneal
-        53,      # vehicle
-        5136,    # tecator
-        4871,    # sensory
-        4857,    # boston
-        3916,    # kc1
+        2,  # anneal
+        53,  # vehicle
+        5136,  # tecator
+        4871,  # sensory
+        4857,  # boston
+        3916,  # kc1
     ]
 
     # Populate the cache
@@ -274,7 +273,14 @@ def get_tabular_data(task):
 
     return X, y, validator
 
-def get_fit_dictionary(datamanager, backend):
+
+def get_fit_dictionary(X, y, validator, backend):
+    datamanager = TabularDataset(
+        X=X, Y=y,
+        validator=validator,
+        X_test=X, Y_test=y,
+    )
+
     info = datamanager.get_required_dataset_info()
 
     dataset_properties = datamanager.get_dataset_properties(get_dataset_requirements(info))
@@ -301,15 +307,6 @@ def get_fit_dictionary(datamanager, backend):
     return fit_dictionary
 
 
-def get_tabular_fit_dictionary(X, y, validator, backend):
-    datamanager = TabularDataset(
-        X=X, Y=y,
-        validator=validator,
-        X_test=X, Y_test=y,
-    )
-    return get_fit_dictionary(datamanager, backend)
-
-
 @pytest.fixture
 def fit_dictionary_tabular_dummy(request, backend):
     if request.param == "classification":
@@ -317,15 +314,14 @@ def fit_dictionary_tabular_dummy(request, backend):
     elif request.param == "regression":
         X, y, validator = get_tabular_data("regression_numerical_only")
     else:
-        raise ValueError(f"Unsupported indirect fixture {request.param}")
-    return get_tabular_fit_dictionary(X, y, validator, backend)
-
+        raise ValueError("Unsupported indirect fixture {}".format(request.param))
+    return get_fit_dictionary(X, y, validator, backend)
 
 
 @pytest.fixture
 def fit_dictionary_tabular(request, backend):
     X, y, validator = get_tabular_data(request.param)
-    return get_tabular_fit_dictionary(X, y, validator, backend)
+    return get_fit_dictionary(X, y, validator, backend)
 
 
 @pytest.fixture
@@ -369,6 +365,10 @@ def dataset_traditional_classifier_num_categorical():
 @pytest.fixture
 def search_space_updates():
     updates = HyperparameterSearchSpaceUpdates()
+    updates.append(node_name="imputer",
+                   hyperparameter="numerical_strategy",
+                   value_range=("mean", "most_frequent"),
+                   default_value="mean")
     updates.append(node_name="data_loader",
                    hyperparameter="batch_size",
                    value_range=[16, 512],
@@ -377,16 +377,20 @@ def search_space_updates():
                    hyperparameter="CosineAnnealingLR:T_max",
                    value_range=[50, 60],
                    default_value=55)
-    updates.append(node_name="optimizer",
-                   hyperparameter="AdamOptimizer:lr",
-                   value_range=[0.0001, 0.001],
-                   default_value=0.001)
+    updates.append(node_name='network_backbone',
+                   hyperparameter='ResNetBackbone:dropout',
+                   value_range=[0, 0.5],
+                   default_value=0.2)
     return updates
 
 
 @pytest.fixture
 def error_search_space_updates():
     updates = HyperparameterSearchSpaceUpdates()
+    updates.append(node_name="imputer",
+                   hyperparameter="num_str",
+                   value_range=("mean", "most_frequent"),
+                   default_value="mean")
     updates.append(node_name="data_loader",
                    hyperparameter="batch_size",
                    value_range=[16, 512],

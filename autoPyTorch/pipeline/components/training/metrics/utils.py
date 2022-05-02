@@ -11,8 +11,12 @@ from autoPyTorch.constants import (
     TASK_TYPES,
 )
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
-from autoPyTorch.pipeline.components.training.metrics.metrics import CLASSIFICATION_METRICS, \
-    REGRESSION_METRICS, FORECASTING_METRICS, MASE_LOSSES
+from autoPyTorch.pipeline.components.training.metrics.metrics import (
+    CLASSIFICATION_METRICS,
+    REGRESSION_METRICS,
+    FORECASTING_METRICS,
+    MASE_LOSSES
+)
 
 
 def sanitize_array(array: np.ndarray) -> np.ndarray:

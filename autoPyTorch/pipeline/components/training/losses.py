@@ -9,6 +9,12 @@ Regression:
             MSELoss: supports continuous output types
             L1Loss: supports continuous output types
         Default: MSELoss
+Forecasting:
+            LogProbLoss: supports distribution output types
+            QuantileLoss: supports quantile output type
+            MAPELoss: supports continuous output types
+            MASELoss: supports continuous output types
+            L1Loss: supports continuous output types
 """
 from typing import Any, Dict, Optional, Type, List
 
@@ -119,7 +125,6 @@ class QuantileLoss(Loss):
         else:
             return losses_all
 
-
 losses = dict(
     classification=dict(
         CrossEntropyLoss=dict(
@@ -147,7 +152,7 @@ losses = dict(
 
 default_losses: Dict[str, Type[Loss]] = dict(classification=CrossEntropyLoss,
                                              regression=MSELoss,
-                                             forecasting=LogProbLoss)
+                                             forecasting=MASELoss)
 
 LOSS_TYPES = ['regression', 'distribution']
 

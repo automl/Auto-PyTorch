@@ -21,7 +21,10 @@ class SparseInit(BaseNetworkInitializerComponent):
         """
 
         def initialization(m: torch.nn.Module) -> None:
-            if isinstance(m, torch.nn.Linear):
+            if isinstance(m, (torch.nn.Conv1d,
+                              torch.nn.Conv2d,
+                              torch.nn.Conv3d,
+                              torch.nn.Linear)):
                 torch.nn.init.sparse_(m.weight.data, 0.9)
                 if m.bias is not None and self.bias_strategy == 'Zero':
                     torch.nn.init.constant_(m.bias.data, 0.0)
