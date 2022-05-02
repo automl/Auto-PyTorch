@@ -649,7 +649,7 @@ def test_build_pipeline(api_type, fit_dictionary_tabular):
 @pytest.mark.parametrize("disable_file_output", [['all'], None])
 @pytest.mark.parametrize('openml_id', (40984,))
 @pytest.mark.parametrize('resampling_strategy,resampling_strategy_args',
-                         (#(HoldoutValTypes.holdout_validation, {'val_share': 0.8}),
+                         ((HoldoutValTypes.holdout_validation, {'val_share': 0.8}),
                           (CrossValTypes.k_fold_cross_validation, {'num_splits': 2}),
                           (NoResamplingStrategyTypes.no_resampling, {})
                           )
