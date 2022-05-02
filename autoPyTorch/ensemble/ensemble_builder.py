@@ -66,7 +66,7 @@ class EnsembleBuilderManager(IncorporateRunResultCallback):
         random_state: int,
         logger_port: int = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
         pynisher_context: str = 'fork',
-        metrics_kwargs: Optional[Dict] = None,
+        metrics_kwargs: Dict = {},
     ):
         """ SMAC callback to handle ensemble building
         Args:
