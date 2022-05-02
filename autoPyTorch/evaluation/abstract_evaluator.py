@@ -671,7 +671,7 @@ class AbstractEvaluator(object):
         elif self.budget_type == 'runtime':
             self.fit_dictionary['runtime'] = self.budget
             self.fit_dictionary.pop('epochs', None)
-        elif self.budget_type == 'resolution' and self.task_type in TIMESERIES_TASKS:
+        elif self.budget_type == 'resolution' and self.task_type in FORECASTING_TASKS:
             self.fit_dictionary['sample_interval'] = int(np.ceil(1.0 / self.budget))
             self.fit_dictionary.pop('epochs', None)
             self.fit_dictionary.pop('runtime', None)
