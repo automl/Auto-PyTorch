@@ -120,16 +120,6 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         else:
             return loss_sum / N, {}
 
-    def cast_targets(self, targets: torch.Tensor) -> torch.Tensor:
-        if self.task_type in REGRESSION_TASKS or FORECASTING_TASKS:
-            targets = targets.float()
-            # make sure that targets will have same shape as outputs (really important for mse loss for example)
-            if targets.ndim == 1:
-                targets = targets.unsqueeze(1)
-        else:
-            targets = targets.long()
-        return targets
-
     def train_step(self, data: Dict[str, torch.Tensor], future_targets: Dict[str, torch.Tensor]) \
             -> Tuple[float, torch.Tensor]:
         """

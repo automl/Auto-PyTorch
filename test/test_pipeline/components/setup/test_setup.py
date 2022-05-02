@@ -321,8 +321,6 @@ class TestNetworkBackbone:
 
     @pytest.mark.parametrize('task_type_input_shape', [(constants.IMAGE_CLASSIFICATION, (3, 64, 64)),
                                                        (constants.IMAGE_REGRESSION, (3, 64, 64)),
-                                                       (constants.TIMESERIES_CLASSIFICATION, (32, 6)),
-                                                       (constants.TIMESERIES_REGRESSION, (32, 6)),
                                                        (constants.TABULAR_CLASSIFICATION, (100,)),
                                                        (constants.TABULAR_REGRESSION, (100,))])
     def test_dummy_forward_backward_pass(self, task_type_input_shape):
@@ -506,8 +504,6 @@ class TestNetworkHead:
 
     @pytest.mark.parametrize('task_type_input_output_shape', [(constants.IMAGE_CLASSIFICATION, (3, 64, 64), (5,)),
                                                               (constants.IMAGE_REGRESSION, (3, 64, 64), (1,)),
-                                                              (constants.TIMESERIES_CLASSIFICATION, (32, 6), (5,)),
-                                                              (constants.TIMESERIES_REGRESSION, (32, 6), (1,)),
                                                               (constants.TABULAR_CLASSIFICATION, (100,), (5,)),
                                                               (constants.TABULAR_REGRESSION, (100,), (1,))])
     def test_dummy_forward_backward_pass(self, task_type_input_output_shape):

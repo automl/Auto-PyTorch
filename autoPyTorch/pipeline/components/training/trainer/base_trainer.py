@@ -345,7 +345,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
             return loss_sum / N, {}
 
     def cast_targets(self, targets: torch.Tensor) -> torch.Tensor:
-        if self.task_type in REGRESSION_TASKS or FORECASTING_TASKS:
+        if self.task_type in (REGRESSION_TASKS + FORECASTING_TASKS):
             targets = targets.float().to(self.device)
             # make sure that targets will have same shape as outputs (really important for mse loss for example)
             if targets.ndim == 1:
