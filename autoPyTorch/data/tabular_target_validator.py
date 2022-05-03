@@ -15,19 +15,25 @@ from sklearn.utils.multiclass import type_of_target
 
 from autoPyTorch.data.base_target_validator import BaseTargetValidator, SupportedTargetTypes
 from autoPyTorch.utils.common import ispandas
-
+import numpy.ma as ma
 
 ArrayType = Union[np.ndarray, spmatrix]
 
 
-def _check_and_to_array(y: SupportedTargetTypes) -> ArrayType:
+def _check_and_to_array(y: SupportedTargetTypes, allow_nan=False) -> ArrayType:
     """ sklearn check array will make sure we have the correct numerical features for the array """
-    return sklearn.utils.check_array(y, force_all_finite=True, accept_sparse='csr', ensure_2d=False)
+    if allow_nan:
+        return sklearn.utils.check_array(y, force_all_finite=False, accept_sparse='csr', ensure_2d=False)
+    else:
+        return sklearn.utils.check_array(y, force_all_finite=True, accept_sparse='csr', ensure_2d=False)
 
 
-def _modify_regression_target(y: ArrayType) -> ArrayType:
+def _modify_regression_target(y: ArrayType, allow_nan=False) -> ArrayType:
     # Regression targets must have numbers after a decimal point.
     # Ref: https://github.com/scikit-learn/scikit-learn/issues/8952
+    if allow_nan:
+        y = ma.masked_where(np.isnan(y), y, 1e12)
+
     y_min = np.abs(y).min()
     offset = max(y_min, 1e-13) * 1e-13  # Sufficiently small number
     if y_min > 1e12:
@@ -41,15 +47,16 @@ def _modify_regression_target(y: ArrayType) -> ArrayType:
         y = y.astype(dtype=np.float64) + offset
     else:
         y.data = y.data.astype(dtype=np.float64) + offset
-
+    if allow_nan:
+        return y.data
     return y
 
 
 class TabularTargetValidator(BaseTargetValidator):
     def _fit(
-        self,
-        y_train: SupportedTargetTypes,
-        y_test: Optional[SupportedTargetTypes] = None,
+            self,
+            y_train: SupportedTargetTypes,
+            y_test: Optional[SupportedTargetTypes] = None,
     ) -> BaseEstimator:
         """
         If dealing with classification, this utility encodes the targets.
@@ -89,9 +96,9 @@ class TabularTargetValidator(BaseTargetValidator):
             raise ValueError("Multi-dimensional classification is not yet supported. "
                              "Encoding multidimensional data converts multiple columns "
                              "to a 1 dimensional encoding. Data involved = {}/{}".format(
-                                 np.shape(y_train),
-                                 self.type_of_target
-                             ))
+                np.shape(y_train),
+                self.type_of_target
+            ))
 
         # Mypy redefinition
         assert self.encoder is not None
@@ -114,8 +121,8 @@ class TabularTargetValidator(BaseTargetValidator):
             if is_numeric_dtype(y_train.dtype):
                 self.dtype = y_train.dtype
         elif (
-            hasattr(y_train, 'dtypes')
-            and is_numeric_dtype(cast(pd.DataFrame, y_train).dtypes[0])
+                hasattr(y_train, 'dtypes')
+                and is_numeric_dtype(cast(pd.DataFrame, y_train).dtypes[0])
         ):
             # This case is for pandas array with a single column
             y_train = cast(pd.DataFrame, y_train)
@@ -125,7 +132,7 @@ class TabularTargetValidator(BaseTargetValidator):
 
     def _transform_by_encoder(self, y: SupportedTargetTypes) -> np.ndarray:
         if self.encoder is None:
-            return _check_and_to_array(y)
+            return _check_and_to_array(y, self.allow_missing_values)
 
         # remove ravel warning from pandas Series
         shape = np.shape(y)
@@ -139,7 +146,7 @@ class TabularTargetValidator(BaseTargetValidator):
         else:
             y = self.encoder.transform(np.array(y).reshape(-1, 1)).reshape(-1)
 
-        return _check_and_to_array(y)
+        return _check_and_to_array(y, self.allow_missing_values)
 
     def transform(self, y: SupportedTargetTypes) -> np.ndarray:
         """
@@ -166,8 +173,13 @@ class TabularTargetValidator(BaseTargetValidator):
         if y.ndim == 2 and y.shape[1] == 1:
             y = np.ravel(y)
 
-        if not self.is_classification and "continuous" not in type_of_target(y):
-            y = _modify_regression_target(y)
+        if self.allow_missing_values:
+            func_fill_na = np.nan_to_num
+        else:
+            func_fill_na = lambda x: x
+
+        if not self.is_classification and "continuous" not in type_of_target(func_fill_na(y)):
+            y = _modify_regression_target(y, self.allow_missing_values)
 
         return y
 
@@ -213,15 +225,14 @@ class TabularTargetValidator(BaseTargetValidator):
             y (SupportedTargetTypes):
                 A set of features whose dimensionality and data type is going to be checked
         """
-
         if not isinstance(y, (np.ndarray, pd.DataFrame,
                               List, pd.Series)) \
                 and not issparse(y):  # type: ignore[misc]
             raise ValueError("AutoPyTorch only supports Numpy arrays, Pandas DataFrames,"
                              " pd.Series, sparse data and Python Lists as targets, yet, "
                              "the provided input is of type {}".format(
-                                 type(y)
-                             ))
+                type(y)
+            ))
 
         # Sparse data muss be numerical
         # Type ignore on attribute because sparse targets have a dtype
@@ -245,17 +256,25 @@ class TabularTargetValidator(BaseTargetValidator):
 
         # No Nan is supported
         has_nan_values = False
+        sparse_has_nan = False
         if ispandas(y):
             has_nan_values = cast(pd.DataFrame, y).isnull().values.any()
+            if has_nan_values and self.allow_missing_values:
+                # if missing value is allowed, we simply fill the missing values to pass 'type_of_target'
+                y = cast(pd.DataFrame, y).fillna(method='pad')
         if issparse(y):
             y = cast(spmatrix, y)
             has_nan_values = not np.array_equal(y.data, y.data)
+            if has_nan_values and self.allow_missing_values:
+                sparse_has_nan = True
         else:
             # List and array like values are considered here
             # np.isnan cannot work on strings, so we have to check for every element
             # but NaN, are not equal to themselves:
             has_nan_values = not np.array_equal(y, y)
-        if has_nan_values:
+            if has_nan_values and self.allow_missing_values:
+                y = np.nan_to_num(y)
+        if sparse_has_nan or has_nan_values and not self.allow_missing_values:
             raise ValueError("Target values cannot contain missing/NaN values. "
                              "This is not supported by scikit-learn. "
                              )
@@ -281,6 +300,6 @@ class TabularTargetValidator(BaseTargetValidator):
         if self.type_of_target not in supported_output_types:
             raise ValueError("Provided targets are not supported by AutoPyTorch. "
                              "Provided type is {} whereas supported types are {}.".format(
-                                 self.type_of_target,
-                                 supported_output_types
-                             ))
+                self.type_of_target,
+                supported_output_types
+            ))

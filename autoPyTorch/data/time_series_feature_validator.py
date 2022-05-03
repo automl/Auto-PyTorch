@@ -16,6 +16,7 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
         super().__init__(logger)
         self.only_contain_series_idx = False
         self.static_features = ()
+        self.series_idx: Optional[Union[Tuple[Union[str, int]]]] = None
 
     def get_reordered_columns(self):
         return self.transformed_columns + list(set(self.column_order) - set(self.transformed_columns))
@@ -42,6 +43,7 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
                 The fitted base estimator
         """
         if series_idx is not None:
+            self.series_idx = series_idx
             # remove series idx as they are not part of features
             if isinstance(X_train, pd.DataFrame):
                 for series_id in series_idx:
@@ -71,7 +73,6 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
             X_train = pd.DataFrame(X_train, index=[0] * len(X_train))
         static_features: pd.Series = (X_train.groupby(X_train.index).nunique() <= 1).all()
         self.static_features = tuple(idx for idx in static_features.index if static_features[idx])
-        self.get_reordered_columns()
         return self
 
     def transform(
@@ -79,6 +80,14 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
             X: SupportedFeatTypes,
             index: Optional[Union[pd.Index, np.ndarray]] = None,
     ) -> Union[pd.DataFrame]:
+        if self.series_idx is not None:
+            if isinstance(X, pd.DataFrame):
+                if self.only_contain_series_idx:
+                    return None
+                X = X.drop(self.series_idx, axis=1)
+            else:
+                raise NotImplementedError(f"series idx only works with pandas.DataFrame but the type of "
+                                          f"X_train is {type(X)} ")
         X = super(TimeSeriesFeatureValidator, self).transform(X)
         if index is None:
             index = np.array([0.] * len(X))

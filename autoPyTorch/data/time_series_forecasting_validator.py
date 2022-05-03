@@ -50,16 +50,22 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
             freq: str = '1Y',
             n_prediction_steps: int = 1,
             known_future_features: Optional[List[Union[int, str]]] = None,
-            use_time_features: bool = False
     ) -> BaseEstimator:
         """
         fit the validator with the training data, (optionally) start times and other information
         Args:
             X_train (Optional[Union[List, pd.DataFrame]]): training features, could be None for "pure" forecasting tasks
             y_train (Union[List, pd.DataFrame]), training targets
-            series_idx (Optional[Union[List[Union[str, int]], str, int]]): which columns of the data are considered to
-                identify the
-
+            series_idx (Optional[Union[List[Union[str, int]], str, int]]): which columns of features are applied to
+                identify the series
+            X_test (Optional[Union[List, pd.DataFrame]]): test features. For forecasting tasks, test features indicates
+                known future features after the forecasting timestep\
+            y_test (Optional[Union[List, pd.DataFrame]]): target in the future
+            start_times (Optional[List[pd.DatetimeIndex]]): start times on which the first element of each series is
+                sampled
+            freq (str): the frequency that the data is sampled
+            n_prediction_steps (int): number of prediction steps (forecast horizon)
+            known_future_features (Optional[List[Union[int, str]]]): which features are known even in the future
 
         """
         if isinstance(series_idx, (str, int)):
@@ -110,8 +116,6 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                     self._is_uni_variant = True
 
                 self._is_fitted = True
-
-                # In this case we don't assign series index to the data, we manually assigne
 
                 self.check_input_shapes(X_train, y_train, is_training=True)
 
