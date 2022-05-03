@@ -40,6 +40,12 @@ def test_forecasting_target_transform():
     assert isinstance(y_transformed_3.index, pd.MultiIndex)
     assert np.all(y_transformed_3.index == index_3)
 
+    validator2 = TimeSeriesTargetValidator(is_classification=False)
+    target_2 = sparse.csr_matrix(np.array([1, 1, 1]))
+    with pytest.raises(NotImplementedError, match=r"Sparse Target is unsupported for forecasting task!"):
+        # sparse matrix is unsupported for nan filling
+        validator2.fit(target_2)
+
 
 def test_forecasting_target_missing_values():
     """
@@ -51,9 +57,4 @@ def test_forecasting_target_missing_values():
     validator1.fit(target_1)
     assert validator1.transform(target_1).isnull().values.sum() == 1
 
-    validator2 = TimeSeriesTargetValidator(is_classification=False)
-    target_2 = sparse.csr_matrix(np.array([1, np.nan, np.nan]))
-    with pytest.raises(ValueError, match=r"arget values cannot contain missing/NaN values"):
-        # sparse matrix is unsupported for nan filling
-        validator2.fit(target_2)
 

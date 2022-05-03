@@ -4,6 +4,7 @@ from typing import Optional, Union
 import pandas as pd
 import numpy as np
 from scipy.sparse import issparse
+from sklearn.base import BaseEstimator
 
 from autoPyTorch.utils.logging_ import PicklableClientLogger
 from autoPyTorch.data.base_target_validator import SupportedTargetTypes
@@ -20,6 +21,17 @@ class TimeSeriesTargetValidator(TabularTargetValidator):
         if is_classification:
             raise NotImplementedError("Classification is currently not supported for forecasting tasks!")
         super().__init__(is_classification, logger)
+
+    def fit(
+            self,
+            y_train: SupportedTargetTypes,
+            y_test: Optional[SupportedTargetTypes] = None,
+    ) -> BaseEstimator:
+        if issparse(y_train):
+            # TODO fix this
+            raise NotImplementedError("Sparse Target is unsupported for forecasting task!")
+        return super().fit(y_train, y_test)
+
 
     def transform(self,
                   y: SupportedTargetTypes,
@@ -46,13 +58,11 @@ class TimeSeriesTargetValidator(TabularTargetValidator):
             index = np.array([0] * y.shape[0])
         if y.ndim == 1:
             y = np.expand_dims(y, -1)
-        if isinstance(y, np.ndarray):
-            y: pd.DataFrame = pd.DataFrame(y)
-        else:
-            y: pd.DataFrame = pd.DataFrame.sparse.from_spmatrix(y)
+        y: pd.DataFrame = pd.DataFrame(y)
         y.index = index
         return y
 
     @property
     def allow_missing_values(self) -> bool:
         return True
+
