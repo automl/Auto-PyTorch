@@ -377,14 +377,14 @@ class TrainerChoice(autoPyTorchChoice):
             start_time = time.time()
 
             self.choice.on_epoch_start(X=X, epoch=epoch)
-            self.logger.debug(f" 1 epoch fit time: {self.choice.per_epoch_timelimit}, is_early_stopped : {self.choice.is_early_stopped} entered_train_epoch_loop: {self.choice.entered_train_epoch_loop}, total_num_steps: {X['total_num_steps']}")
+            self.logger.debug(f" Time limit to fit one epoch: {self.choice.per_epoch_timelimit}")
             # training
             train_loss, train_metrics = self.choice.train_epoch(
                 train_loader=X['train_data_loader'],
                 epoch=epoch,
                 writer=writer,
             )
-            self.logger.debug(f" epoch fit time: {self.choice.per_epoch_timelimit}, is_early_stopped : {self.choice.is_early_stopped} entered_train_epoch_loop: {self.choice.entered_train_epoch_loop}, last_step: {self.choice.last_step}")
+            self.logger.debug(f"Finished training for an epoch.")
             # its fine if train_loss is None due to `is_max_time_reached()`
             if train_loss is None:
                 if self.budget_tracker.is_max_time_reached():
@@ -400,7 +400,7 @@ class TrainerChoice(autoPyTorchChoice):
                 if 'test_data_loader' in X and X['test_data_loader']:
                     test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'], epoch, writer)
 
-            self.logger.debug("Finished predicting inside base trsiner choice")
+            self.logger.debug("Finished predicting inside base trainer choice")
             # Save training information
             self.run_summary.add_performance(
                 epoch=epoch,

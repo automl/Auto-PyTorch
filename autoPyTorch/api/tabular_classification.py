@@ -255,7 +255,7 @@ class TabularClassificationTask(BaseTask):
         load_models: bool = True,
         portfolio_selection: Optional[str] = None,
         dataset_compression: Union[Mapping[str, Any], bool] = False,
-        min_configs_search: int = 100
+        min_configs_search: int = 2
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.

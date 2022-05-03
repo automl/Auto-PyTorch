@@ -989,7 +989,7 @@ class BaseTask(ABC):
         load_models: bool = True,
         portfolio_selection: Optional[str] = None,
         dask_client: Optional[dask.distributed.Client] = None,
-        min_configs_search: int = 100
+        min_configs_search: int = 2
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.

@@ -327,10 +327,10 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
         # task type (used for calculating metrics)
         self.task_type = task_type
-        self.entered_train_epoch_loop = False
-        self.is_early_stopped = None
+
+        # self.is_early_stopped = None
         self.start_time = start_time
-        self.last_step = 0
+
         # for cutout trainer, we need the list of numerical columns
         self.numerical_columns = numerical_columns
 
@@ -436,15 +436,14 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         targets_data = list()
 
         for step, (data, targets) in enumerate(train_loader):
-            self.entered_train_epoch_loop = True
-            if time.time() - self.start_time >= self.per_epoch_timelimit:
-                self.is_early_stopped = step
-                break
+            # if time.time() - self.start_time >= self.per_epoch_timelimit:
+            #     self.is_early_stopped = step
+            #     break
             if self.budget_tracker.is_max_time_reached():
                 break
 
             loss, outputs = self.train_step(data, targets)
-            self.last_step += 1
+
             # save for metric evaluation
             outputs_data.append(outputs.detach().cpu())
             targets_data.append(targets.detach().cpu())
