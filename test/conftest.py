@@ -736,6 +736,58 @@ def get_forecasting_fit_dictionary(X, y, validator, backend, budget_type='epochs
     return fit_dictionary
 
 
+# Fixtures for forecasting input validators
+@pytest.fixture
+def input_data_forecastingfeaturetest(request):
+    if request.param == 'numpy_nonan':
+        return np.random.uniform(10, size=(100, 10)), None, None
+    elif request.param == 'numpy_with_static':
+        return np.zeros([2, 3], dtype=np.int), None, None
+    elif request.param == 'numpy_with_seq_length':
+        return np.zeros([5, 3], dtype=np.int), None, [2, 3]
+    elif request.param == 'pandas_wo_seriesid':
+        return pd.DataFrame([
+            {'A': 1, 'B': 2},
+            {'A': 3, 'B': 4},
+        ], dtype='category'), None, [2]
+    elif request.param == 'pandas_w_seriesid':
+        return pd.DataFrame([
+            {'A': 1, 'B': 0},
+            {'A': 0, 'B': 1},
+        ], dtype='category'), 'A', [2]
+    elif request.param == 'pandas_only_seriesid':
+        return pd.DataFrame([
+            {'A': 1, 'B': 0},
+            {'A': 0, 'B': 1},
+        ], dtype='category'), ['A', 'B'], [2]
+    elif request.param == 'pandas_without_seriesid':
+        return pd.DataFrame([
+            {'A': 1, 'B': 2},
+            {'A': 3, 'B': 4},
+        ], dtype='category'), None, [2]
+    elif request.param == 'pandas_with_static_features':
+        return pd.DataFrame([
+            {'A': 1, 'B': 2},
+            {'A': 1, 'B': 4},
+        ], dtype='category'), None, [2]
+    elif request.param == 'pandas_multi_seq':
+        return pd.DataFrame([
+            {'A': 1, 'B': 2},
+            {'A': 1, 'B': 4},
+            {'A': 3, 'B': 2},
+            {'A': 2, 'B': 4},
+        ], dtype='category'), None, [2, 2]
+    elif request.param == 'pandas_with_static_features_multi_series':
+        return pd.DataFrame([
+            {'A': 1, 'B': 2},
+            {'A': 1, 'B': 2},
+            {'A': 2, 'B': 3},
+            {'A': 2, 'B': 3},
+        ], dtype='category'), 'A', None
+    else:
+        ValueError("Unsupported indirect fixture {}".format(request.param))
+
+
 @pytest.fixture
 def fit_dictionary_uni_variant_wo_missing():
     x, y, validator = get_forecasting_data(uni_variant=True, with_missing_value=False)

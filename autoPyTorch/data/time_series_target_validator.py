@@ -32,7 +32,6 @@ class TimeSeriesTargetValidator(TabularTargetValidator):
             raise NotImplementedError("Sparse Target is unsupported for forecasting task!")
         return super().fit(y_train, y_test)
 
-
     def transform(self,
                   y: SupportedTargetTypes,
                   index: Optional[Union[pd.Index, np.ndarray]] = None,
@@ -56,6 +55,9 @@ class TimeSeriesTargetValidator(TabularTargetValidator):
 
         if index is None:
             index = np.array([0] * y.shape[0])
+        else:
+            if len(index) != y.shape[0]:
+                raise ValueError('Index must have length as the input targets!')
         if y.ndim == 1:
             y = np.expand_dims(y, -1)
         y: pd.DataFrame = pd.DataFrame(y)

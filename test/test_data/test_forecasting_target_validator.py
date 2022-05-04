@@ -1,17 +1,10 @@
 import numpy as np
 
 import pandas as pd
-from pandas.api.types import is_numeric_dtype
-
 import pytest
 
 from scipy import sparse
 
-import sklearn.datasets
-import sklearn.model_selection
-from sklearn.utils.multiclass import type_of_target
-
-from autoPyTorch.data.tabular_target_validator import TabularTargetValidator
 from autoPyTorch.data.time_series_target_validator import TimeSeriesTargetValidator
 
 
@@ -40,11 +33,19 @@ def test_forecasting_target_transform():
     assert isinstance(y_transformed_3.index, pd.MultiIndex)
     assert np.all(y_transformed_3.index == index_3)
 
-    validator2 = TimeSeriesTargetValidator(is_classification=False)
-    target_2 = sparse.csr_matrix(np.array([1, 1, 1]))
+
+def test_forecasting_target_handle_exception():
+    validator = TimeSeriesTargetValidator(is_classification=False)
+    target_sparse = sparse.csr_matrix(np.array([1, 1, 1]))
     with pytest.raises(NotImplementedError, match=r"Sparse Target is unsupported for forecasting task!"):
         # sparse matrix is unsupported for nan filling
-        validator2.fit(target_2)
+        validator.fit(target_sparse)
+
+    series_length = 10
+    y = np.ones(series_length)
+    validator.fit(y)
+    with pytest.raises(ValueError, match=r"Index must have length as the input targets!"):
+        validator.transform(y, np.asarray([1, 2, 3]))
 
 
 def test_forecasting_target_missing_values():
@@ -56,5 +57,3 @@ def test_forecasting_target_missing_values():
     target_1 = np.array([np.nan, 1, 2])
     validator1.fit(target_1)
     assert validator1.transform(target_1).isnull().values.sum() == 1
-
-
