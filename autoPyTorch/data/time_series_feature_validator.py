@@ -63,6 +63,7 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
                     raise ValueError('NaN should not exit in Series ID!')
                 index = pd.MultiIndex.from_frame(pd.DataFrame(X_train[series_idx]))
                 self.only_contain_series_idx = len(X_train.columns) == len(series_idx)
+
                 if self.only_contain_series_idx:
                     self._is_fitted = True
 

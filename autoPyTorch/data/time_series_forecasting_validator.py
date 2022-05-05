@@ -99,9 +99,10 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                 X_train_stacked, sequence_lengths = self.join_series(X_train, return_seq_lengths=True)
                 X_test_stacked = self.join_series(X_test) if X_test is not None else None
                 if X_test_stacked is not None and y_test_stacked is not None:
-                    if X_test_stacked.shape != y_test_stacked.shape:
+                    if len(X_test_stacked) != len(y_test_stacked):
                         raise ValueError("Inconsistent number of test datapoints for features and targets,"
                                          " {} for features and {} for targets".format(len(X_test), len(y_test), ))
+
                 self.feature_validator.fit(X_train_stacked, X_test_stacked,
                                            series_idx=series_idx, sequence_lengths=sequence_lengths)
                 self.target_validator.fit(y_train_stacked, y_test_stacked)
@@ -159,6 +160,8 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                     if X is None:
                         raise ValueError('Multi Variant dataset requires X as input!')
                     assert len(X) == len(y), "Length of features must equal to length of targets!"
+                if self.series_idx is not None and X is None:
+                    raise ValueError('X must be given as series_idx!')
 
                 for seq_idx in range(num_sequences):
                     sequence_lengths[seq_idx] = len(y[seq_idx])
@@ -191,10 +194,10 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
             # In this case X can only contain pd.DataFrame, see ```time_series_feature_validator.py```
             x_stacked = pd.concat(X)
 
-            series_number = pd.MultiIndex.from_frame(x_stacked[self.series_idx])
+            series_number = pd.MultiIndex.from_frame(pd.DataFrame(x_stacked[self.series_idx]))
 
             if not self._is_uni_variant:
-                x_transformed = self.feature_validator.transform(x_stacked.drop(self.series_idx, axis=1),
+                x_transformed = self.feature_validator.transform(x_stacked,
                                                                  index=series_number)
             else:
                 x_transformed = None
