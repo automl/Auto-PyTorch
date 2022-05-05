@@ -104,11 +104,11 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                                                                                         test_indices=test_split,
                                                                                         add_pipeline_to_self=True)
 
-            mase_cofficient = self.generate_mase_coefficient_for_validation(test_split)
+            mase_coefficient = self.generate_mase_coefficient_for_validation(test_split)
 
             forecasting_kwargs = {'sp': self.seasonality,
                                   'n_prediction_steps': self.n_prediction_steps,
-                                  'mase_cofficient': mase_cofficient,
+                                  'mase_coefficient': mase_coefficient,
                                   }
 
             train_loss = None
@@ -119,12 +119,12 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
 
             status = StatusType.SUCCESS
 
-            self.Y_optimization *= mase_cofficient
+            self.Y_optimization *= mase_coefficient
 
             self.finish_up(
                 loss=loss,
                 train_loss=train_loss,
-                opt_pred=y_opt_pred * mase_cofficient,
+                opt_pred=y_opt_pred * mase_coefficient,
                 valid_pred=y_valid_pred,
                 test_pred=y_test_pred,
                 additional_run_info=additional_run_info,
@@ -175,7 +175,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                 # the average.
                 train_fold_weights[i] = len(train_split)
 
-                forecasting_kwargs = {'mase_cofficient': mase_coefficient_all[i],
+                forecasting_kwargs = {'mase_coefficient': mase_coefficient_all[i],
                                       'sp': self.seasonality,
                                       'n_prediction_steps': self.n_prediction_steps,
                                       }

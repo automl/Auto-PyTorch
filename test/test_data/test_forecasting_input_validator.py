@@ -97,7 +97,7 @@ def test_forecasting_validator():
     assert len(x_transformed) == sum(sequence_lengths)
 
     # y is only allowed to be None if validate_for_future_features is True
-    x_transformed, y_transformed, sequence_lengths = validator.transform(x, None, validate_for_future_features=True)
+    _ = validator.transform(x, None, validate_for_future_features=True)
     with pytest.raises(ValueError, match=r"Targets must be given!"):
         validator.transform(x)
     with pytest.raises(ValueError, match=r"Multi Variant dataset requires X as input!"):

@@ -296,7 +296,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         # mase_coefficent has the shape [B, 1, 1]
         # to be compatible with outputs_data with shape [B, n_prediction_steps, num_output]
         mase_coefficients = np.expand_dims(torch.cat(mase_coefficients, dim=0).numpy(), axis=[1])
-        self.metrics_kwargs.update({'mase_cofficient': mase_coefficients})
+        self.metrics_kwargs.update({'mase_coefficient': mase_coefficients})
 
         self._scheduler_step(step_interval=StepIntervalUnit.valid, loss=loss_sum / N)
 

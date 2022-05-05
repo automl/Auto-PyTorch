@@ -57,7 +57,7 @@ f1 = make_metric('f1',
 # To avoid storing unnecessary scale values here, we scale all the values under
 # AutoPytorch.evaluation.time_series_forecasting_train_evaluator
 
-def compute_mase_coefficient(past_target: Union[List, np.ndarray], sp: int, n_prediction_steps: int) -> float:
+def compute_mase_coefficient(past_target: Union[List, np.ndarray], sp: int) -> float:
     """
     compute mase coefficient, then mase value is computed as mase_coefficient * mse_error,
     this function aims at reducing the memroy requirement
@@ -72,9 +72,13 @@ def compute_mase_coefficient(past_target: Union[List, np.ndarray], sp: int, n_pr
     if sp >= len(past_target):
         # in this case, we simply consider the mean value of the entire sequence
         # TODO condsider if there is a better way of handling this
-        mase_denominator = forecasting_metrics.mean_absolute_error(past_target,
-                                                                   np.zeros_like(past_target),
-                                                                   multioutput="raw_values")
+        try:
+            mase_denominator = forecasting_metrics.mean_absolute_error(past_target,
+                                                                       np.zeros_like(past_target),
+                                                                       multioutput="raw_values")
+        except ValueError:
+            return 1
+
     else:
         mase_denominator = forecasting_metrics.mean_absolute_error(past_target[sp:],
                                                                    past_target[:-sp],

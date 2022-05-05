@@ -181,7 +181,6 @@ class HoldOutFuncs():
         """
         n_prediction_steps = kwargs['n_prediction_steps']
         n_repeat = kwargs['n_repeat']
-        # TODO consider how we handle test size properly
         # Time Series prediction only requires on set of prediction for each
         # This implement needs to be combined with time series forecasting dataloader, where each time an entire
         # time series is used for prediction

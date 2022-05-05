@@ -30,7 +30,7 @@ from autoPyTorch.constants import (
     REGRESSION_TASKS,
     STRING_TO_OUTPUT_TYPES,
     STRING_TO_TASK_TYPES,
-    TABULAR_TASKS, TIMESERIES_TASKS,
+    TABULAR_TASKS,
     FORECASTING_TASKS,
 )
 from autoPyTorch.datasets.base_dataset import BaseDataset, BaseDatasetPropertiesType

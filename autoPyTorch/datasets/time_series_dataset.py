@@ -71,11 +71,31 @@ def extract_feature_index(feature_shapes: Dict[str, int],
     return tuple(feature_index)
 
 
+def compute_time_features(start_time: pd.Timestamp,
+                          date_period_length: int,
+                          time_feature_length: int,
+                          freq: str,
+                          time_feature_transforms: List[TimeFeature]) -> np.ndarray:
+    date_info = pd.date_range(start=start_time,
+                              periods=date_period_length,
+                              freq=freq)[-time_feature_length:]
+    try:
+        time_features = np.vstack(
+            [transform(date_info).to_numpy(float)
+             if not isinstance(transform, ConstantTransform) else transform(date_info)
+             for transform in time_feature_transforms]
+        ).T
+    except OutOfBoundsDatetime:
+        # This is only a temporal solution TODO consider how to solve this!
+        time_features = np.zeros([time_feature_length, len(time_feature_transforms)])
+    return time_features
+
+
 class TimeSeriesSequence(Dataset):
     def __init__(self,
                  X: Optional[np.ndarray],
-                 Y: Union[np.ndarray],
-                 start_time_train: Optional[pd.DatetimeIndex] = None,
+                 Y: np.ndarray,
+                 start_time: Optional[pd.DatetimeIndex] = None,
                  freq: str = '1Y',
                  time_feature_transform: List[TimeFeature] = [],
                  X_test: Optional[np.ndarray] = None,
@@ -103,9 +123,9 @@ class TimeSeriesSequence(Dataset):
         self.Y = Y
 
         self.observed_target = ~np.isnan(self.Y)
-        if start_time_train is None:
-            start_time_train = pd.DatetimeIndex(pd.to_datetime(['1900-01-01']), freq=freq)
-        self.start_time_train = start_time_train
+        if start_time is None:
+            start_time = pd.Timestamp('1900-01-01')
+        self.start_time = start_time
 
         self.X_val = None
         self.Y_val = None
@@ -122,13 +142,12 @@ class TimeSeriesSequence(Dataset):
         self.train_transform = train_transforms
         self.val_transform = val_transforms
         self.sp = sp
+
         if compute_mase_coefficient_value:
             if is_test_set:
-                self.mase_coefficient = compute_mase_coefficient(self.Y, sp=self.sp,
-                                                                 n_prediction_steps=n_prediction_steps)
+                self.mase_coefficient = compute_mase_coefficient(self.Y, sp=self.sp)
             else:
-                self.mase_coefficient = compute_mase_coefficient(self.Y[:-n_prediction_steps], sp=self.sp,
-                                                                 n_prediction_steps=n_prediction_steps)
+                self.mase_coefficient = compute_mase_coefficient(self.Y[:-n_prediction_steps], sp=self.sp)
 
         else:
             self.mase_coefficient = 1.0
@@ -136,7 +155,24 @@ class TimeSeriesSequence(Dataset):
 
         self.transform_time_features = False
         self._cached_time_features: Optional[np.ndarray] = time_features
+        self._is_test_set = is_test_set
         self.is_test_set = is_test_set
+
+    @property
+    def is_test_set(self):
+        return self._is_test_set
+
+    @is_test_set.setter
+    def is_test_set(self, value: bool):
+        if value != self._is_test_set and self.known_future_features_index:
+            if self.X_test is None:
+                raise ValueError("If future features are required, X_test must be given for"
+                                 " setting TimeSeriesSequence as test set!")
+            if value is True:
+                self.X = np.concatenate([self.X, self.X_test])
+            else:
+                self.X = self.X[:-len(self.X_test)]
+        self._is_test_set = value
 
     def __getitem__(self, index: int, train: bool = True) \
             -> Tuple[Dict[str, torch.Tensor], Optional[Dict[str, torch.Tensor]]]:
@@ -157,10 +193,7 @@ class TimeSeriesSequence(Dataset):
             index = self.__len__() + index
 
         if self.X is not None:
-            if hasattr(self.X, 'iloc'):
-                past_features = self.X.iloc[:index + 1]
-            else:
-                past_features = self.X[:index + 1]
+            past_features = self.X[:index + 1]
 
             if self.known_future_features_index:
                 future_features = self.X[
@@ -172,6 +205,15 @@ class TimeSeriesSequence(Dataset):
             past_features = None
             future_features = None
 
+        if self.train_transform is not None and train and past_features is not None:
+            past_features = self.train_transform(past_features)
+            if future_features is not None:
+                future_features = self.train_transform(future_features)
+        elif self.val_transform is not None and not train and past_features is not None:
+            past_features = self.val_transform(past_features)
+            if future_features is not None:
+                future_features = self.val_transform(future_features)
+
         if self.transform_time_features:
             if self.time_feature_transform:
                 self.compute_time_features()
@@ -181,29 +223,15 @@ class TimeSeriesSequence(Dataset):
                 else:
                     past_features = self._cached_time_features[:index + 1]
                 if future_features is not None:
-                    try:
-                        future_features = np.hstack([
-                            future_features,
-                            self._cached_time_features[index + 1:index + self.n_prediction_steps + 1]
-                        ])
-                    except Exception:
-                        import pdb
-
-                        pdb.set_trace()
+                    future_features = np.hstack([
+                        future_features,
+                        self._cached_time_features[index + 1:index + self.n_prediction_steps + 1]
+                    ])
                 else:
                     future_features = self._cached_time_features[index + 1:index + self.n_prediction_steps + 1]
 
         if future_features is not None and future_features.shape[0] == 0:
             future_features = None
-
-        if self.train_transform is not None and train and past_features is not None:
-            past_features = self.train_transform(past_features)
-            if future_features is not None:
-                future_features = self.train_transform(future_features)
-        elif self.val_transform is not None and not train and past_features is not None:
-            past_features = self.val_transform(past_features)
-            if future_features is not None:
-                future_features = self.val_transform(future_features)
 
         # In case of prediction, the targets are not provided
         targets = self.Y
@@ -244,29 +272,16 @@ class TimeSeriesSequence(Dataset):
             periods = self.Y.shape[0]
             if self.is_test_set:
                 periods += self.n_prediction_steps
+            self._cached_time_features = compute_time_features(self.start_time, periods,
+                                                               periods, self.freq, self.time_feature_transform)
 
-            date_info = pd.date_range(start=self.start_time_train,
-                                      periods=periods,
-                                      freq=self.freq)
-
-            self._cached_time_features = np.vstack(
-                [transform(date_info).to_numpy(float) for transform in self.time_feature_transform]
-            ).T
         else:
             if self.is_test_set:
                 if self._cached_time_features.shape[0] == self.Y.shape[0]:
-                    try:
-                        date_info = pd.date_range(start=self.start_time_train,
-                                                  periods=self.n_prediction_steps + self.Y.shape[0],
-                                                  freq=self.freq)
-                        time_feature_future = np.vstack(
-                            [transform(date_info).to_numpy(float)
-                             if not isinstance(transform, ConstantTransform) else transform(date_info)
-                             for transform in self.time_feature_transform]
-                        ).T
-                    except OutOfBoundsDatetime:
-                        # This is only a temporal solution TODO consider how to solve this!
-                        time_feature_future = np.zeros([self.n_prediction_steps, len(self.time_feature_transform)])
+                    time_feature_future = compute_time_features(self.start_time,
+                                                                self.n_prediction_steps + self.Y.shape[0],
+                                                                self.n_prediction_steps,
+                                                                self.freq, self.time_feature_transform)
 
                     self._cached_time_features = np.concatenate([self._cached_time_features, time_feature_future])
 
@@ -299,7 +314,7 @@ class TimeSeriesSequence(Dataset):
             raise ValueError("get_val_seq_set is not supported for the test sequences!")
         if index < 0:
             index = self.__len__() + index
-        if index == self.__len__() - 1:
+        if index >= self.__len__() - 1:
             return copy.copy(self)
         else:
             if self.X is not None:
@@ -312,8 +327,8 @@ class TimeSeriesSequence(Dataset):
                 cached_time_features = self._cached_time_features[:index + 1 + self.n_prediction_steps]
 
             return TimeSeriesSequence(X=X,
-                                      Y=self.Y[:index + 1],
-                                      start_time_train=self.start_time_train,
+                                      Y=self.Y[:index + 1 + self.n_prediction_steps],
+                                      start_time=self.start_time,
                                       freq=self.freq,
                                       time_feature_transform=self.time_feature_transform,
                                       train_transforms=self.train_transform,
@@ -321,7 +336,6 @@ class TimeSeriesSequence(Dataset):
                                       n_prediction_steps=self.n_prediction_steps,
                                       known_future_features_index=self.known_future_features_index,
                                       sp=self.sp,
-                                      only_has_past_targets=True,
                                       compute_mase_coefficient_value=False,
                                       time_features=cached_time_features)
 
@@ -336,7 +350,7 @@ class TimeSeriesSequence(Dataset):
     def update_attribute(self, **kwargs):
         for key, value in kwargs.items():
             if not hasattr(self, key):
-                raise ValueError('Trying to update invalid attribute for TimeSeriesSequence!!!')
+                raise ValueError('Trying to update invalid attribute for TimeSeriesSequence!')
             setattr(self, key, value)
 
 
@@ -378,7 +392,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         if y values needs to be normalized with mean 0 and variance 1
         if the dataset is trained with log_prob losses, this needs to be specified in the very beginning such that the
         header's configspace can be built beforehand.
-        :param static_features: statistic features, invariant across different
         """
         # Preprocess time series data information
         assert X is not Y, "Training and Test data needs to belong two different object!!!"
@@ -601,17 +614,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 series_lengths_max[start_t] = seq_l
         series_time_features = {}
         for start_t, max_l in series_lengths_max.items():
-            try:
-                date_info = pd.date_range(start=start_t,
-                                          periods=max_l,
-                                          freq=freq)
-                series_time_features[start_t] = np.vstack(
-                    [transform(date_info).to_numpy(float)
-                     if not isinstance(transform, ConstantTransform) else transform(date_info)
-                     for transform in time_feature_transform]
-                ).T
-            except OutOfBoundsDatetime:
-                series_time_features[start_t] = np.zeros([max_l, len(time_feature_transform)])
+            series_time_features[start_t] = compute_time_features(start_t, max_l, max_l, freq, time_feature_transform)
         return series_time_features
 
     def _get_dataset_indices(self, idx: int, only_dataset_idx: bool = False) -> Union[int, Tuple[int, int]]:
@@ -779,7 +782,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         if X_test is not None:
             x_test_group = X_test.groupby(X_test.index)
 
-        for i_ser, (start_train, y) in enumerate(zip(start_times, y_group)):
+        for i_ser, (start_time, y) in enumerate(zip(start_times, y_group)):
             ser_id = y[0]
             y_ser = y[1].transform(np.array).values
             x_ser = x_group.get_group(ser_id).transform(np.array).values if X is not None else None
@@ -794,10 +797,10 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             sequence = TimeSeriesSequence(
                 X=x_ser,
                 Y=y_ser,
-                start_time_train=start_train,
+                start_time=start_time,
                 X_test=x_test_ser,
                 Y_test=y_test_ser,
-                time_features=time_features[start_train][:len(y_ser)],
+                time_features=time_features[start_time][:len(y_ser)],
                 is_test_set=is_test_set,
                 **sequences_kwargs)
             sequence_datasets.append(sequence)

@@ -84,7 +84,8 @@ class BaseForecastingDecoder(autoPyTorchComponent):
         if 'n_decoder_output_features' not in X:
             future_features = X['dataset_properties']['known_future_features']
             feature_shapes = X['dataset_properties']['feature_shapes']
-            future_in_features = sum([feature_shapes[fu_feat] for fu_feat in future_features]).item()
+
+            future_in_features = sum([feature_shapes[fu_feat] for fu_feat in future_features])
 
             if X['transform_time_features']:
                 n_time_feature_transform = len(X['dataset_properties']['time_feature_transform'])
