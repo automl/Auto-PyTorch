@@ -70,8 +70,10 @@ class TestTimeSeriesSequence(unittest.TestCase):
         val_seq = self.seq_uni.get_val_seq_set(-1)
         self.assertEqual(len(val_seq), len(self.seq_uni))
 
+        self.seq_uni.compute_time_features()
         val_seq = self.seq_uni.get_val_seq_set(5)
         self.assertEqual(len(val_seq), 5 + 1)
+        self.assertEqual(len(val_seq._cached_time_features), 5+1 + self.n_prediction_steps)
 
         test_targets = self.seq_uni.get_test_target(-1)
         self.assertTrue(np.all(self.y[-self.n_prediction_steps:] == test_targets))
@@ -79,7 +81,7 @@ class TestTimeSeriesSequence(unittest.TestCase):
         test_targets = self.seq_uni.get_test_target(5)
         self.assertTrue(np.all(self.y[5 + 1: 5 + 1 + self.n_prediction_steps] == test_targets))
 
-    def test_uni_get_update_time_faetures(self):
+    def test_uni_get_update_time_features(self):
         self.seq_uni.update_attribute(transform_time_features=True)
 
         data, target = self.seq_uni[3]
@@ -93,11 +95,12 @@ class TestTimeSeriesSequence(unittest.TestCase):
         self.assertTrue(torch.all(future_features[:, 1] == 10.))
 
     def test_uni_to_test_set(self):
+        self.seq_uni.transform_time_features = True
+        self.seq_uni.compute_time_features()
         # For test set, its length should equal to y's length
         self.seq_uni.is_test_set = True
         self.assertEqual(len(self.seq_uni), len(self.y))
 
-        self.seq_uni.transform_time_features = True
 
         data, target = self.seq_uni[-1]
         self.assertTrue(target is None)

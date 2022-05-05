@@ -282,7 +282,6 @@ class TimeSeriesSequence(Dataset):
                                                                 self.n_prediction_steps + self.Y.shape[0],
                                                                 self.n_prediction_steps,
                                                                 self.freq, self.time_feature_transform)
-
                     self._cached_time_features = np.concatenate([self._cached_time_features, time_feature_future])
 
     def update_transform(self, transform: Optional[torchvision.transforms.Compose],
