@@ -326,7 +326,6 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
 
         opt_pred = opt_pred.reshape(-1, self.num_targets)
 
-        # TODO we consider X_valid and X_test as a multiple sequences???
         if self.X_valid is not None:
             valid_sets = []
             for val_seq in enumerate(self.datamanager.datasets):

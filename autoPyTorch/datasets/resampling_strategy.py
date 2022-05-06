@@ -48,7 +48,7 @@ def holdout_split_forecasting(holdout: TimeSeriesSplit, indices: np.ndarray, n_p
     try:
         train, val = list(holdout.split(indices))[-1]
         val = [val[-1 - i * n_prediction_steps] for i in reversed(range(n_repeat))]
-    except ValueError:
+    except (ValueError, IndexError):
         train = np.array([], dtype=indices.dtype)
         val = [-1]
     return indices[train], indices[val]
@@ -267,6 +267,9 @@ class CrossValFuncs():
         Args:
             indices (np.ndarray): array of indices to be split
             num_splits (int): number of cross validation splits
+            n_prediction_steps(int): forecsting horizon, to ensure that there is no overlapping between splits
+            n_repeat (int): number of sequences inside each split, e.g., inside each split, we could ask the model to
+                predict n_reapet times
 
         Returns:
             splits (List[Tuple[List, List]]): list of tuples of training and validation indices
@@ -298,12 +301,14 @@ class CrossValFuncs():
         The first holdout setting: trend setting, simply consider the tail of the sequence as validation sets and the
         part before as training set
         The second holdout setting: seasonality setting, ensures that the distance between validation sets and test sets
-        is the multiple of seasonality period. Thus we could ensure that validation and test sets are at the same
+        is a multiple of seasonality period. We could thus ensure that validation and test sets are at the same
         position of the period
 
         Args:
             indices (np.ndarray): array of indices to be split
             num_splits (int): number of cross validation splits
+            seasonality_h_value (int): distance between the start of the validation set and the test set, this value
+                need to be (roughly) a multiple of freq_value
 
         Returns:
             splits (List[Tuple[List, List]]): list of tuples of training and validation indices
@@ -311,8 +316,9 @@ class CrossValFuncs():
         n_prediction_steps = kwargs['n_prediction_steps']
         seasonality_h_value = kwargs['seasonality_h_value']
         n_repeat = kwargs["n_repeat"]
+
         assert seasonality_h_value >= n_prediction_steps
-        cv = TimeSeriesSplit(n_splits=2, test_size=1, gap=n_prediction_steps - 1)
+        cv = TimeSeriesSplit(n_splits=num_splits, test_size=n_prediction_steps * n_repeat, gap=0)
 
         train_t, val_t = holdout_split_forecasting(holdout=cv,
                                                    indices=indices,
@@ -320,25 +326,16 @@ class CrossValFuncs():
                                                    n_repeat=n_repeat)
 
         splits = [(train_t, val_t)]
-        if len(indices) < seasonality_h_value - n_prediction_steps:
-            if len(indices) == 1:
-                train_s = train_t
-                val_s = val_t
-            else:
-                train_s, val_s = holdout_split_forecasting(cv, indices[:-1],
-                                                           n_prediction_steps=n_prediction_steps,
-                                                           n_repeat=n_repeat)
-        else:
-            train_s, val_s = holdout_split_forecasting(cv, indices[:-seasonality_h_value + n_prediction_steps],
-                                                       n_prediction_steps=n_prediction_steps,
-                                                       n_repeat=n_repeat)
-        splits.append((train_s, val_s))
-        if num_splits > 2:
-            freq_value = int(kwargs['freq_value'])
-            for i_split in range(2, num_splits):
-                n_tail = (i_split - 1) * freq_value + seasonality_h_value - n_prediction_steps
-                train_s, val_s = holdout_split_forecasting(cv, indices[:-n_tail],
-                                                           n_prediction_steps=n_prediction_steps,
+        if num_splits > 1:
+            for i_split in range(1, num_splits):
+                n_tail = i_split * seasonality_h_value
+                if n_tail > len(indices):
+                    # normally this should not happen as seasonality_h_value is carefully computed by ForecastingDataset
+                    indices_split = indices
+                else:
+                    indices_split = indices[:-n_tail]
+                train_s, val_s = holdout_split_forecasting(cv, indices_split,
+                                                           n_prediction_steps=seasonality_h_value,
                                                            n_repeat=n_repeat)
                 splits.append((train_s, val_s))
         return splits

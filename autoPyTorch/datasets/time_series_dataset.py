@@ -989,7 +989,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 seasonality_h_value = int(
                     np.round((n_prediction_steps // int(freq_value) + 1) * freq_value))
 
-                while minimal_seq_length < (num_splits - 1) * freq_value + seasonality_h_value - n_prediction_steps:
+                while minimal_seq_length < (num_splits - 1) * seasonality_h_value:
                     if num_splits <= 2:
                         break
                     num_splits -= 1
@@ -1016,15 +1016,11 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 n_repeat = min(n_repeat, minimal_seq_length // (5 * n_prediction_steps * num_splits))
             elif resampling_strategy == CrossValTypes.time_series_ts_cross_validation:
                 seasonality_h_value = int(np.round(
-                    (n_prediction_steps * n_repeat // int(freq_value) + 1) * freq_value)
+                    (n_prediction_steps // int(freq_value) + 1) * freq_value)
                 )
-
-                while minimal_seq_length // 5 < (num_splits - 1) * n_repeat * freq_value \
-                        + seasonality_h_value - n_repeat * n_prediction_steps:
+                while minimal_seq_length // 5 < (num_splits - 1) * n_repeat * seasonality_h_value:
                     n_repeat -= 1
-                    seasonality_h_value = int(np.round(
-                        (n_prediction_steps * n_repeat // int(freq_value) + 1) * freq_value)
-                    )
+
             elif resampling_strategy == HoldoutValTypes.time_series_hold_out_validation:
                 n_repeat = min(n_repeat, minimal_seq_length // (5 * n_prediction_steps) - 1)
 

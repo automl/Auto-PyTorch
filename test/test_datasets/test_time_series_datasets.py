@@ -101,7 +101,6 @@ class TestTimeSeriesSequence(unittest.TestCase):
         self.seq_uni.is_test_set = True
         self.assertEqual(len(self.seq_uni), len(self.y))
 
-
         data, target = self.seq_uni[-1]
         self.assertTrue(target is None)
         self.assertEqual(len(data["past_targets"]), len(self.y))
@@ -199,3 +198,5 @@ class TestTimeSeriesSequence(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             seq_2.get_test_target(5)
+
+
