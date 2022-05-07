@@ -621,7 +621,23 @@ def input_data_featuretest(request):
 
 
 # Forecasting tasks
-def get_forecasting_data(uni_variant, with_missing_value=False, type_X='pd', with_series_id=False):
+def get_forecasting_data(request):
+    uni_variant = False
+    targets_with_missing_value = False
+    features_with_missing_value = False
+    type_X = 'pd'
+    with_series_id = False
+    if request == 'uni_variant_wo_missing':
+        uni_variant = True
+    elif request == 'uni_variant_w_missing':
+        uni_variant = True
+        targets_with_missing_value = True
+    elif request == 'multi_variant_wo_missing':
+        with_missing_value = False
+    elif request == 'multi_variant_w_missing':
+        features_with_missing_value = True
+    else:
+        raise NotImplementedError
     generator = check_random_state(0)
     n_seq = 10
     base_length = 50
@@ -635,9 +651,9 @@ def get_forecasting_data(uni_variant, with_missing_value=False, type_X='pd', wit
     # for categorical features, the following character indicate how the feature is stored:
     # s: stored as string; n: stored as
     if type_X == 'pd':
-        feature_columns = ['n1', 'cs2_10', 'f3', 'cn4_5', 's5']
+        feature_columns = ['n1', 'cs2_10', 'n3', 'cn4_5', 'n5']
     else:
-        feature_columns = ['n1', 'cn2_5', 'f3', 'cn4_5', 's5']
+        feature_columns = ['n1', 'cn2_5', 'n3', 'cn4_5', 'n5']
 
     def generate_forecasting_features(feature_type, length):
         feature_type_content = list(feature_type)
@@ -645,7 +661,7 @@ def get_forecasting_data(uni_variant, with_missing_value=False, type_X='pd', wit
             # numerical features
             return generator.rand(length)
         elif feature_type_content[0] == 'c':
-            num_class = int(feature_type.split("_"))
+            num_class = int(feature_type.split("_")[-1])
             if feature_type_content[1] == 's':
                 return generator.choice([f'value_{feature_id}' for feature_id in range(num_class)],
                                         size=length, replace=True)
@@ -656,34 +672,43 @@ def get_forecasting_data(uni_variant, with_missing_value=False, type_X='pd', wit
         else:
             raise NotImplementedError
 
+    features = []
     for i in range(n_seq):
-        new_seq = np.arange(i * 1000, base_length + i * 1010)
+        new_seq = np.arange(i * 1000, base_length + i * 1010).astype(np.float)
         series_length = base_length + i * 10
 
         targets.append(np.arange(i * 1000, series_length + i * 1000))
         if not uni_variant:
             if type_X == 'np':
-                features = np.asarray([generate_forecasting_features(col, series_length) for col in feature_columns])
+                feature = np.asarray([generate_forecasting_features(col, series_length) for col in feature_columns])
             elif type_X == 'pd':
-                features = {col: generate_forecasting_features(col, series_length) for col in feature_columns}
+                feature = {col: generate_forecasting_features(col, series_length) for col in feature_columns}
                 if with_series_id:
-                    features["series_id"] = [i] * series_length
-                features = pd.DataFrame(
-                    features
+                    feature["series_id"] = [i] * series_length
+                feature = pd.DataFrame(
+                    feature
                 )
+
+                for col in feature.columns:
+                    if col.startswith("n"):
+                        feature[col] = feature[col].astype('float')
+                    elif col.startswith("cs"):
+                        feature[col] = feature[col].astype('category')
+                    elif col.startswith("cn"):
+                        feature[col] = feature[col].astype('int')
             else:
                 raise NotImplementedError
-            features.append(features)
+            features.append(feature)
 
-        if with_missing_value:
+        if targets_with_missing_value:
             new_seq[5] = np.NAN
             new_seq[-5] = np.NAN
 
-        start_time = datetime.strptime(f'1900{i // 5}-01-01 00-00-00', '%Y-%m-%d %H-%M-%S')
+        start_time = datetime.datetime.strptime(f'190{i // 5}-01-01 00-00-00', '%Y-%m-%d %H-%M-%S')
         start_times.append(start_time)
     input_validator = TimeSeriesForecastingInputValidator(is_classification=False)
-    features = features if features else None
-    return features, targets, input_validator.fit(features, targets, start_times=start_times), feature_columns
+    features = features if len(features) > 0 else None
+    return features, targets, input_validator.fit(features, targets, start_times=start_times)
 
 
 def get_forecasting_fit_dictionary(X, y, validator, backend, budget_type='epochs', forecast_horizon=5, freq='1D'):
@@ -789,21 +814,9 @@ def input_data_forecastingfeaturetest(request):
 
 
 @pytest.fixture
-def fit_dictionary_uni_variant_wo_missing():
-    x, y, validator = get_forecasting_data(uni_variant=True, with_missing_value=False)
-    return get_forecasting_fit_dictionary(x, y, validator)
-
-
-@pytest.fixture
-def fit_dictionary_uni_variant_w_missing():
-    x, y, validator = get_forecasting_data(uni_variant=True, with_missing_value=True)
-    return get_forecasting_fit_dictionary(x, y, validator)
-
-
-@pytest.fixture
-def fit_dictionary_uni_variant_wo_missing():
-    x, y, validator = get_forecasting_data(uni_variant=False, with_missing_value=False)
-    return get_forecasting_fit_dictionary(x, y, validator)
+def get_fit_dictionary_forecasting(request, backend):
+    X, y, validator = get_forecasting_data(request.param)
+    return get_forecasting_fit_dictionary(X, y, validator, backend)
 
 
 # Fixtures for forecasting validators.

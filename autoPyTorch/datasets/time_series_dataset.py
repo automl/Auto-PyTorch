@@ -216,7 +216,7 @@ class TimeSeriesSequence(Dataset):
 
         if self.transform_time_features:
             if self.time_feature_transform:
-                self.compute_time_features()
+                self.cache_time_features()
 
                 if past_features is not None:
                     past_features = np.hstack([past_features, self._cached_time_features[:index + 1]])
@@ -267,7 +267,7 @@ class TimeSeriesSequence(Dataset):
     def __len__(self) -> int:
         return self.Y.shape[0] if self.is_test_set else self.Y.shape[0] - self.n_prediction_steps
 
-    def compute_time_features(self, ):
+    def cache_time_features(self, ):
         if self._cached_time_features is None:
             periods = self.Y.shape[0]
             if self.is_test_set:
@@ -395,35 +395,11 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         # Preprocess time series data information
         assert X is not Y, "Training and Test data needs to belong two different object!!!"
 
-        if freq is None:
-            self.freq = None
-            self.freq_value = None
-
-        if isinstance(freq, str):
-            if freq not in SEASONALITY_MAP:
-                Warning("The given freq name is not supported by our dataset, we will use the default "
-                        "configuration space on the hyperparameter window_size, if you want to adapt this value"
-                        "you could pass freq with a numerical value")
-            freq_value = SEASONALITY_MAP.get(freq, None)
-        else:
-            freq_value = freq
-
-        if isinstance(freq_value, list):
-            min_base_size = min(n_prediction_steps, MAX_WINDOW_SIZE_BASE)
-            if np.max(freq_value) < min_base_size:
-                tmp_freq = max(freq_value)
-            else:
-                tmp_freq = min([freq_value_item for
-                                freq_value_item in freq_value if freq_value_item >= min_base_size])
-            freq_value = tmp_freq
-
-        seasonality = SEASONALITY_MAP.get(freq, 1)
-        if isinstance(seasonality, list):
-            seasonality = min(seasonality)  # Use to calculate MASE
+        seasonality, freq, freq_value = self.compute_freq_values(freq, n_prediction_steps)
         self.seasonality = int(seasonality)
 
-        self.freq: Optional[str] = freq
-        self.freq_value: Optional[int] = freq_value
+        self.freq: str = freq
+        self.freq_value: int = freq_value
 
         self.n_prediction_steps = n_prediction_steps
 
@@ -442,8 +418,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         if not self.validator._is_fitted:
             self.validator.fit(X_train=X, y_train=Y, X_test=X_test, y_test=Y_test,
-                               start_times=start_times,
-                               n_prediction_steps=n_prediction_steps)
+                               start_times=start_times)
 
         self.is_uni_variant = self.validator._is_uni_variant
 
@@ -498,7 +473,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         sequence_datasets, train_tensors, sequence_lengths = self.transform_data_into_time_series_sequence(
             X, Y,
-            start_times=start_times,
+            start_times=self.start_times,
             X_test=X_test,
             Y_test=Y_test, )
 
@@ -596,6 +571,39 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 lagged_value = list(range(8))
 
         self.lagged_value = lagged_value
+
+    def compute_freq_values(self,
+                            freq: Optional[Union[str, int, List[int]]],
+                            n_prediction_steps: int) -> Tuple[Real, str, Real]:
+        """
+        Compute frequency related values
+        """
+        if freq is None:
+            freq = '1Y'
+
+        if isinstance(freq, str):
+            if freq not in SEASONALITY_MAP:
+                Warning("The given freq name is not supported by our dataset, we will use the default "
+                        "configuration space on the hyperparameter window_size, if you want to adapt this value"
+                        "you could pass freq with a numerical value")
+            freq_value = SEASONALITY_MAP.get(freq, None)
+        else:
+            freq_value = freq
+            freq = '1Y'
+
+        if isinstance(freq_value, list):
+            min_base_size = min(n_prediction_steps, MAX_WINDOW_SIZE_BASE)
+            if np.max(freq_value) < min_base_size:
+                tmp_freq = max(freq_value)
+            else:
+                tmp_freq = min([freq_value_item for
+                                freq_value_item in freq_value if freq_value_item >= min_base_size])
+            freq_value = tmp_freq
+
+        seasonality = SEASONALITY_MAP.get(freq, 1)
+        if isinstance(seasonality, list):
+            seasonality = min(seasonality)  # Use to calculate MASE
+        return seasonality, freq, freq_value
 
     @staticmethod
     def compute_time_features(start_times: List[pd.DatetimeIndex],
@@ -729,7 +737,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         return sequence_datasets, train_tensors, sequence_lengths
 
     @staticmethod
-    def make_sequences_datasets(X: pd.DataFrame,
+    def make_sequences_datasets(X: Optional[pd.DataFrame],
                                 Y: pd.DataFrame,
                                 start_times: List[pd.DatetimeIndex],
                                 time_features: Optional[Dict[pd.Timestamp, np.ndarray]] = None,
@@ -923,18 +931,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         dataset_properties = super().get_dataset_properties(dataset_requirements=dataset_requirements)
         dataset_properties.update({'n_prediction_steps': self.n_prediction_steps,
                                    'sp': self.seasonality,  # For metric computation,
-                                   'freq': self.freq,
-                                   'sequence_lengths_train': self.sequence_lengths_train,
-                                   'seq_length_max': self.seq_length_max,
                                    'input_shape': self.input_shape,
-                                   'lagged_value': self.lagged_value,
-                                   'feature_names': self.feature_names,
-                                   'feature_shapes': self.feature_shapes,
-                                   'known_future_features': self.known_future_features,
-                                   'static_features': self.static_features,
                                    'time_feature_transform': self.time_feature_transform,
-                                   'time_feature_names': self.time_feature_names,
-                                   'future_feature_shapes': self.future_feature_shapes,
                                    'uni_variant': self.is_uni_variant,
                                    'targets_have_missing_values': self.train_tensors[1].isnull().values.any(),
                                    'features_have_missing_values': False if self.train_tensors[0] is None

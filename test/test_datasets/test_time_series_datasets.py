@@ -1,3 +1,5 @@
+from typing import List, Callable, Tuple
+
 import numpy as np
 import torch
 import pandas as pd
@@ -5,6 +7,7 @@ import pytest
 import unittest
 from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset, TimeSeriesSequence
 from gluonts.time_feature import Constant as ConstantTransform, DayOfMonth
+from autoPyTorch.utils.pipeline import get_dataset_requirements
 
 
 class ZeroTransformer:
@@ -70,7 +73,7 @@ class TestTimeSeriesSequence(unittest.TestCase):
         val_seq = self.seq_uni.get_val_seq_set(-1)
         self.assertEqual(len(val_seq), len(self.seq_uni))
 
-        self.seq_uni.compute_time_features()
+        self.seq_uni.cache_time_features()
         val_seq = self.seq_uni.get_val_seq_set(5)
         self.assertEqual(len(val_seq), 5 + 1)
         self.assertEqual(len(val_seq._cached_time_features), 5+1 + self.n_prediction_steps)
@@ -96,7 +99,7 @@ class TestTimeSeriesSequence(unittest.TestCase):
 
     def test_uni_to_test_set(self):
         self.seq_uni.transform_time_features = True
-        self.seq_uni.compute_time_features()
+        self.seq_uni.cache_time_features()
         # For test set, its length should equal to y's length
         self.seq_uni.is_test_set = True
         self.assertEqual(len(self.seq_uni), len(self.y))
@@ -200,3 +203,33 @@ class TestTimeSeriesSequence(unittest.TestCase):
             seq_2.get_test_target(5)
 
 
+@pytest.mark.parametrize("get_fit_dictionary_forecasting", ['uni_variant_wo_missing',
+                                                        'uni_variant_w_missing',
+                                                        'multi_variant_wo_missing',
+                                                        'uni_variant_w_missing'], indirect=True)
+def test_dataset_properties(backend, get_fit_dictionary_forecasting):
+    # The fixture creates a datamanager by itself
+    datamanager: TimeSeriesForecastingDataset = backend.load_datamanager()
+    info = {'task_type': datamanager.task_type,
+            'numerical_features': datamanager.numerical_features,
+            'categorical_features': datamanager.categorical_features,
+            'output_type': datamanager.output_type,
+            'numerical_columns': datamanager.numerical_columns,
+            'categorical_columns': datamanager.categorical_columns,
+            'target_columns': (1,),
+            'issparse': False}
+
+    dataset_properties = datamanager.get_dataset_properties(get_dataset_requirements(info))
+    assert dataset_properties['n_prediction_steps'] == datamanager.n_prediction_steps
+    assert dataset_properties['sp'] == datamanager.seasonality
+    assert dataset_properties['freq'] == datamanager.freq
+    assert isinstance(dataset_properties['input_shape'], Tuple)
+    assert isinstance(dataset_properties['time_feature_transform'], List)
+    for item in dataset_properties['time_feature_transform']:
+        assert isinstance(item, Callable)
+    assert dataset_properties['uni_variant'] == (get_fit_dictionary_forecasting['X_train'] is None)
+    assert dataset_properties['targets_have_missing_values'] == \
+           get_fit_dictionary_forecasting['y_train'].isnull().values.any()
+    if get_fit_dictionary_forecasting['X_train'] is not None:
+        assert dataset_properties['features_have_missing_values'] == \
+               get_fit_dictionary_forecasting['X_train'].isnull().values.any()

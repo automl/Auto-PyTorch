@@ -92,7 +92,9 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         self.add_fit_requirements(
             [FitRequirement("known_future_features", (Tuple,), user_defined=True, dataset_property=True),
              FitRequirement("feature_shapes", (Dict,), user_defined=True, dataset_property=True),
-             FitRequirement("feature_names", (Tuple, ), user_defined=True, dataset_property=True)])
+             FitRequirement("feature_names", (Tuple, ), user_defined=True, dataset_property=True),
+             FitRequirement("sequence_lengths_train", (List,), user_defined=True, dataset_property=True),
+             FitRequirement("freq", (str, ), user_defined=True, dataset_property=True)])
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> torch.utils.data.DataLoader:
         """
@@ -339,7 +341,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
 
                 x_seq.update_attribute(**update_dict)
                 if self.transform_time_features:
-                    x_seq.compute_time_features()
+                    x_seq.cache_time_features()
 
                 x_seq.freq = self.freq
                 if not self.dataset_small_preprocess:
