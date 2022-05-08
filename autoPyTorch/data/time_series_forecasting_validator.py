@@ -135,7 +135,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
         """
         if not self._is_fitted:
             raise NotFittedError("Cannot call transform on a validator that is not fitted")
-        if validate_for_future_features:
+        if validate_for_future_features and y is None:
             if X is None:
                 return None, None, []
             if isinstance(X, List):

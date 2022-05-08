@@ -633,7 +633,7 @@ def get_forecasting_data(request):
         uni_variant = True
         targets_with_missing_value = True
     elif request == 'multi_variant_wo_missing':
-        with_missing_value = False
+        targets_with_missing_value = False
     elif request == 'multi_variant_w_missing':
         features_with_missing_value = True
     else:
@@ -712,11 +712,25 @@ def get_forecasting_data(request):
 
 
 def get_forecasting_fit_dictionary(X, y, validator, backend, budget_type='epochs', forecast_horizon=5, freq='1D'):
+    if X is not None:
+        X_test = []
+        for x in X:
+            if hasattr(x, 'iloc'):
+                X_test.append(x.iloc[-forecast_horizon:].copy())
+            else:
+                X_test.append(x[-forecast_horizon:].copy())
+        known_future_features = tuple(X[0].columns) if isinstance(X[0], pd.DataFrame) else \
+            np.arange(X[0].shape[-1]).tolist()
+    else:
+        X_test = None
+        known_future_features = None
     datamanager = TimeSeriesForecastingDataset(
         X=X, Y=y,
+        X_test=X_test,
         validator=validator,
         freq=freq,
         n_prediction_steps=forecast_horizon,
+        known_future_features=known_future_features
     )
 
     info = datamanager.get_required_dataset_info()

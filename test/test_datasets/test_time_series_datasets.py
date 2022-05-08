@@ -5,8 +5,12 @@ import torch
 import pandas as pd
 import pytest
 import unittest
-from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset, TimeSeriesSequence
 from gluonts.time_feature import Constant as ConstantTransform, DayOfMonth
+from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset, TimeSeriesSequence
+from autoPyTorch.datasets.resampling_strategy import (
+    CrossValTypes,
+    HoldoutValTypes
+)
 from autoPyTorch.utils.pipeline import get_dataset_requirements
 
 
@@ -76,7 +80,7 @@ class TestTimeSeriesSequence(unittest.TestCase):
         self.seq_uni.cache_time_features()
         val_seq = self.seq_uni.get_val_seq_set(5)
         self.assertEqual(len(val_seq), 5 + 1)
-        self.assertEqual(len(val_seq._cached_time_features), 5+1 + self.n_prediction_steps)
+        self.assertEqual(len(val_seq._cached_time_features), 5 + 1 + self.n_prediction_steps)
 
         test_targets = self.seq_uni.get_test_target(-1)
         self.assertTrue(np.all(self.y[-self.n_prediction_steps:] == test_targets))
@@ -204,9 +208,9 @@ class TestTimeSeriesSequence(unittest.TestCase):
 
 
 @pytest.mark.parametrize("get_fit_dictionary_forecasting", ['uni_variant_wo_missing',
-                                                        'uni_variant_w_missing',
-                                                        'multi_variant_wo_missing',
-                                                        'uni_variant_w_missing'], indirect=True)
+                                                            'uni_variant_w_missing',
+                                                            'multi_variant_wo_missing',
+                                                            'uni_variant_w_missing'], indirect=True)
 def test_dataset_properties(backend, get_fit_dictionary_forecasting):
     # The fixture creates a datamanager by itself
     datamanager: TimeSeriesForecastingDataset = backend.load_datamanager()
@@ -233,3 +237,175 @@ def test_dataset_properties(backend, get_fit_dictionary_forecasting):
     if get_fit_dictionary_forecasting['X_train'] is not None:
         assert dataset_properties['features_have_missing_values'] == \
                get_fit_dictionary_forecasting['X_train'].isnull().values.any()
+
+
+def test_freq_valeus():
+    freq = '1H'
+    n_prediction_steps = 12
+
+    seasonality, freq, freq_value = TimeSeriesForecastingDataset.compute_freq_values(freq, n_prediction_steps)
+    assert seasonality == 24
+    assert freq == '1H'
+    assert freq_value == 24
+
+    n_prediction_steps = 36
+    seasonality, freq, freq_value = TimeSeriesForecastingDataset.compute_freq_values(freq, n_prediction_steps)
+    assert seasonality == 24
+    assert freq_value == 168
+
+    freq = [2, 3, 4]
+    n_prediction_steps = 10
+    seasonality, freq, freq_value = TimeSeriesForecastingDataset.compute_freq_values(freq, n_prediction_steps)
+    assert seasonality == 2
+    assert freq == '1Y'
+    assert freq_value == 4
+
+
+def test_target_normalization():
+    Y = [[1, 2], [3, 4, 5]]
+    dataset = TimeSeriesForecastingDataset(None, Y, normalize_y=True)
+
+    assert np.allclose(dataset.y_mean.values, np.vstack([np.mean(y) for y in Y]))
+    assert np.allclose(dataset.y_std.values, np.vstack([np.std(y, ddof=1) for y in Y]))
+    assert np.allclose(dataset.train_tensors[1].values.flatten(),
+                       np.hstack([(y - np.mean(y))/np.std(y, ddof=1) for y in Y]))
+
+
+@pytest.mark.parametrize("get_fit_dictionary_forecasting", ['uni_variant_wo_missing'], indirect=True)
+def test_dataset_index(backend, get_fit_dictionary_forecasting):
+    datamanager: TimeSeriesForecastingDataset = backend.load_datamanager()
+    assert np.allclose(datamanager[5][0]['past_targets'][-1].numpy(), 5.0)
+    assert np.allclose(datamanager[50][0]['past_targets'][-1].numpy(), 1005.0)
+    assert np.allclose(datamanager[150][0]['past_targets'][-1].numpy(), 2050.0)
+    assert np.allclose(datamanager[-1][0]['past_targets'][-1].numpy(), 9134.0)
+
+    assert datamanager.get_time_series_seq(50) == datamanager.datasets[1]
+
+    # test for validation indices
+    val_indices = datamanager.splits[0][1]
+    val_set = [datamanager.get_validation_set(val_idx) for val_idx in val_indices]
+    val_targets = np.concatenate([val_seq[-1][1]['future_targets'].numpy() for val_seq in val_set])
+    assert np.allclose(val_targets, datamanager.get_test_target(val_indices))
+
+
+@pytest.mark.parametrize("get_fit_dictionary_forecasting", ['multi_variant_wo_missing'], indirect=True)
+def test_update_dataset(backend, get_fit_dictionary_forecasting):
+    datamanager: TimeSeriesForecastingDataset = backend.load_datamanager()
+    X = datamanager.train_tensors[0]
+    for col in X.columns:
+        X[col] = X.index
+    datamanager.replace_data(X, None)
+    for i, data in enumerate(datamanager.datasets):
+        assert np.allclose(data.X, np.ones_like(data.X) * i)
+
+    datamanager.update_transform(ZeroTransformer(), train=True)
+    assert np.allclose(datamanager[0][0]['past_features'].numpy(), np.zeros(len(X.columns)))
+    assert datamanager.transform_time_features is False
+
+    datamanager.transform_time_features = True
+    for dataset in datamanager.datasets:
+        assert dataset.transform_time_features is True
+    seq_lengths = datamanager.sequence_lengths_train
+    new_test_seq = datamanager.generate_test_seqs()
+    for seq_len, test_seq in zip(seq_lengths, new_test_seq):
+        # seq_len is len(y) - n_prediction_steps, here we expand X_test with another n_prediction_steps
+        assert test_seq.X.shape[0] - seq_len == 2 * datamanager.n_prediction_steps
+
+
+def test_splits():
+
+    y = [np.arange(100 + i * 10) for i in range(10)]
+    resampling_strategy_args = {'num_splits': 5}
+    dataset = TimeSeriesForecastingDataset(None, y,
+                                           resampling_strategy=CrossValTypes.time_series_ts_cross_validation,
+                                           resampling_strategy_args=resampling_strategy_args,
+                                           n_prediction_steps=10,
+                                           freq='1M')
+    assert len(dataset.splits) == 5
+    assert dataset.splits[0][1][0] == (100 - 10 - 1)
+    for split in dataset.splits:
+        # We need to ensure that the training indices only interrupt at where the validation sets start, e.g.,
+        #  the tail of each sequence
+        assert len(np.unique(split[0] - np.arange(len(split[0])))) == len(y)
+        assert np.all(split[1][1:] - split[1][:-1] == [100 + i * 10 for i in range(9)])
+        assert len(split[1]) == len(y)
+
+    y = [np.arange(100) for _ in range(10)]
+    resampling_strategy_args = {'num_splits': 5,
+                                'n_repeats': 2}
+    dataset = TimeSeriesForecastingDataset(None, y,
+                                           resampling_strategy=CrossValTypes.time_series_ts_cross_validation,
+                                           resampling_strategy_args=resampling_strategy_args,
+                                           n_prediction_steps=10,
+                                           freq='1M')
+    assert len(dataset.splits) == 5
+    for split in dataset.splits:
+        assert len(split[1]) == len(y) * 1
+
+    y = [np.arange(40) for _ in range(10)]
+    resampling_strategy_args = {'num_splits': 5}
+    dataset = TimeSeriesForecastingDataset(None, y,
+                                           resampling_strategy=CrossValTypes.time_series_ts_cross_validation,
+                                           resampling_strategy_args=resampling_strategy_args,
+                                           n_prediction_steps=10,
+                                           freq='1M')
+    # the length of each sequence does not support 5 splitions
+    assert len(dataset.splits) == 3
+
+    # datasets with long but little sequence
+    y = [np.arange(4000) for _ in range(2)]
+    dataset = TimeSeriesForecastingDataset(None, y,
+                                           resampling_strategy=CrossValTypes.time_series_ts_cross_validation,
+                                           n_prediction_steps=10,
+                                           freq='1M')
+    # the length of each sequence does not support 5 splits
+    assert len(dataset.splits) == 2
+    for split in dataset.splits:
+        assert len(split[1]) == len(y) * 50
+
+    resampling_strategy = CrossValTypes.time_series_cross_validation
+
+    y = [np.arange(40) for _ in range(10)]
+    resampling_strategy_args = {'num_splits': 5,
+                                'n_repeats': 5}
+
+    resampling_strategy, resampling_strategy_args = TimeSeriesForecastingDataset.get_split_strategy(
+        [60] * 10,
+        10,
+        25,
+        CrossValTypes.time_series_ts_cross_validation,
+        resampling_strategy_args=resampling_strategy_args,
+    )
+    assert resampling_strategy_args['num_splits'] == 3
+    assert resampling_strategy_args['n_repeats'] == 1
+
+    resampling_strategy, resampling_strategy_args = TimeSeriesForecastingDataset.get_split_strategy(
+        [15] * 10,
+        10,
+        25,
+        CrossValTypes.time_series_cross_validation,
+    )
+    assert resampling_strategy == HoldoutValTypes.time_series_hold_out_validation
+
+    resampling_strategy_args = {'num_splits': 5,
+                                'n_repeats': 5}
+    resampling_strategy, resampling_strategy_args = TimeSeriesForecastingDataset.get_split_strategy(
+        [60] * 10,
+        10,
+        25,
+        CrossValTypes.time_series_cross_validation,
+        resampling_strategy_args=resampling_strategy_args,
+    )
+    assert resampling_strategy_args['num_splits'] == 4
+    assert resampling_strategy_args['n_repeats'] == 1
+
+    y = [np.arange(60) for _ in range(10)]
+    dataset = TimeSeriesForecastingDataset(None, y,
+                                           resampling_strategy=CrossValTypes.time_series_cross_validation,
+                                           resampling_strategy_args=resampling_strategy_args,
+                                           n_prediction_steps=10,
+                                           freq='1M')
+    assert len(dataset.splits) == 4
+
+    refit_set = dataset.create_refit_set()
+    assert len(refit_set.splits[0][0]) == len(refit_set)

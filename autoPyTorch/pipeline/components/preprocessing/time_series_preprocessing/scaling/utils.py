@@ -40,7 +40,7 @@ class TimeSeriesScaler(BaseEstimator):
                 X_grouped = X.groupby(X.index)
 
                 self.loc = X_grouped.agg("mean")
-                self.scale = X_grouped.agg("std")
+                self.scale = X_grouped.agg("std").fillna(0.0)
 
                 # for static features, if we do normalization w.r.t. each group, then they will become the same values,
                 # thus we treat them differently: normalize with the entire dataset
