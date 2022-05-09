@@ -1,3 +1,4 @@
+import warnings
 from multiprocessing.queues import Queue
 from typing import Any, Dict, List, Optional, Tuple, Union, Sequence
 
@@ -222,24 +223,12 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             ])
 
             if self.X_valid is not None:
-                Y_valid_preds = np.array([Y_valid_pred[i]
-                                          for i in range(self.num_folds)
-                                          if Y_valid_pred[i] is not None])
-                # Average the predictions of several pipelines
-                if len(Y_valid_preds.shape) == 3:
-                    Y_valid_preds = np.nanmean(Y_valid_preds, axis=0)
-            else:
-                Y_valid_preds = None
+                warnings.warn('valid_pred is current unsuported for fore casting tasks!')
+            Y_valid_preds = None
 
             if self.X_test is not None:
-                Y_test_preds = np.array([Y_test_pred[i]
-                                         for i in range(self.num_folds)
-                                         if Y_test_pred[i] is not None])
-                # Average the predictions of several pipelines
-                if len(Y_test_preds.shape) == 3:
-                    Y_test_preds = np.nanmean(Y_test_preds, axis=0)
-            else:
-                Y_test_preds = None
+                warnings.warn('test_pred is current unsuported for fore casting tasks!')
+            Y_test_preds = None
 
             self.Y_optimization = Y_targets
             self.Y_actual_train = Y_train_targets
@@ -329,23 +318,11 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
         opt_pred = opt_pred.reshape(-1, self.num_targets)
 
         if self.X_valid is not None:
-            valid_sets = []
-            for val_seq in enumerate(self.datamanager.datasets):
-                valid_sets.append(val_seq.X_val)
-            valid_pred = self.predict_function(valid_sets, pipeline).flatten()
-
-            valid_pred = valid_pred.reshape(-1, self.num_targets)
-
-        else:
-            valid_pred = None
+            warnings.warn('valid_pred is current unsuported for fore casting tasks!')
+        valid_pred = None
 
         if self.X_test is not None:
-            test_sets = []
-            for test_seq in enumerate(self.datamanager.datasets):
-                test_sets.append(test_seq.X_test)
-            test_pred = self.predict_function(valid_sets, pipeline).flatten()
-            test_pred = test_pred.reshape(-1, self.num_targets)
-        else:
-            test_pred = None
+            warnings.warn('test_pred is current unsuported for fore casting tasks!')
+        test_pred = None
 
         return np.empty(1), opt_pred, valid_pred, test_pred
