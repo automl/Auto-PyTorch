@@ -623,8 +623,7 @@ def input_data_featuretest(request):
 # Forecasting tasks
 def get_forecasting_data(request):
     uni_variant = False
-    targets_with_missing_value = False
-    features_with_missing_value = False
+    with_missing_values = False
     type_X = 'pd'
     with_series_id = False
     if request == 'uni_variant_wo_missing':
@@ -633,17 +632,15 @@ def get_forecasting_data(request):
         uni_variant = True
         targets_with_missing_value = True
     elif request == 'multi_variant_wo_missing':
-        targets_with_missing_value = False
+        with_missing_values = False
     elif request == 'multi_variant_w_missing':
-        features_with_missing_value = True
+        with_missing_values = True
     else:
         raise NotImplementedError
     generator = check_random_state(0)
     n_seq = 10
     base_length = 50
     targets = []
-
-    features = []
 
     start_times = []
     # the first character indicates the type of the feature:
@@ -700,7 +697,7 @@ def get_forecasting_data(request):
                 raise NotImplementedError
             features.append(feature)
 
-        if targets_with_missing_value:
+        if with_missing_values:
             new_seq[5] = np.NAN
             new_seq[-5] = np.NAN
 
@@ -711,7 +708,7 @@ def get_forecasting_data(request):
     return features, targets, input_validator.fit(features, targets, start_times=start_times)
 
 
-def get_forecasting_fit_dictionary(X, y, validator, backend, budget_type='epochs', forecast_horizon=5, freq='1D'):
+def get_forecasting_datamangaer(X, y, validator, forecast_horizon=5, freq='1D'):
     if X is not None:
         X_test = []
         for x in X:
@@ -732,7 +729,10 @@ def get_forecasting_fit_dictionary(X, y, validator, backend, budget_type='epochs
         n_prediction_steps=forecast_horizon,
         known_future_features=known_future_features
     )
+    return datamanager
 
+
+def get_forecasting_fit_dictionary(datamanager, backend, budget_type='epochs'):
     info = datamanager.get_required_dataset_info()
 
     dataset_properties = datamanager.get_dataset_properties(get_dataset_requirements(info))
@@ -827,10 +827,18 @@ def input_data_forecastingfeaturetest(request):
         ValueError("Unsupported indirect fixture {}".format(request.param))
 
 
+@pytest.fixture(scope="class")
+def get_forecasting_datamanager(request):
+    X, y, validator = get_forecasting_data(request.param)
+    datamanager = get_forecasting_datamangaer(X, y, validator)
+    return datamanager
+
+
 @pytest.fixture
 def get_fit_dictionary_forecasting(request, backend):
     X, y, validator = get_forecasting_data(request.param)
-    return get_forecasting_fit_dictionary(X, y, validator, backend)
+    datamanager = get_forecasting_datamangaer(X, y, validator)
+    return get_forecasting_fit_dictionary(datamanager, backend)
 
 
 # Fixtures for forecasting validators.

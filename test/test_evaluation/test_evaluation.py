@@ -18,6 +18,7 @@ from smac.tae import StatusType
 from smac.utils.constants import MAXINT
 
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
+from autoPyTorch.evaluation.time_series_forecasting_train_evaluator import TimeSeriesForecastingTrainEvaluator
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy, log_loss
 
 this_directory = os.path.dirname(__file__)
@@ -420,6 +421,35 @@ class EvaluationTest(unittest.TestCase):
                                     pynisher_context='fork',
                                     budget_type='runtime'
                                     )
+        ta.pynisher_logger = unittest.mock.Mock()
+        run_info = RunInfo(config=config, cutoff=3000, instance=None,
+                           instance_specific=None, seed=1, capped=False)
+
+        for budget in [0.0, 50.0]:
+            # Simple intensification always returns budget = 0
+            # Other intensifications return a non-zero value
+            self.stats.submitted_ta_runs += 1
+            run_info = run_info._replace(budget=budget)
+            run_info_out, _ = ta.run_wrapper(run_info)
+            self.assertEqual(run_info_out.budget, budget)
+
+    def test_eval_with_addition_eval_func_kwargs(self):
+        config = unittest.mock.Mock(spec=int)
+        config.config_id = 198
+
+        ta = ExecuteTaFuncWithQueue(backend=BackendMock(), seed=1,
+                                    stats=self.stats,
+                                    memory_limit=3072,
+                                    multi_objectives=["cost"],
+                                    metric=accuracy,
+                                    cost_for_crash=get_cost_of_crash(accuracy),
+                                    abort_on_first_run_crash=False,
+                                    logger_port=self.logger_port,
+                                    pynisher_context='fork',
+                                    budget_type='runtime',
+                                    evaluator_class=TimeSeriesForecastingTrainEvaluator
+                                    )
+
         ta.pynisher_logger = unittest.mock.Mock()
         run_info = RunInfo(config=config, cutoff=3000, instance=None,
                            instance_specific=None, seed=1, capped=False)

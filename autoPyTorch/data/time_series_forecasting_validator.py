@@ -32,7 +32,6 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
         self.target_validator = TimeSeriesTargetValidator(is_classification=self.is_classification,
                                                           logger=self.logger)
         self._is_uni_variant = False
-        self.known_future_features = None
         self.start_times = None
         self.feature_shapes: Dict[str, int] = {}
         self.feature_names: List[str] = []
@@ -46,7 +45,6 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
             X_test: Optional[Union[List, pd.DataFrame]] = None,
             y_test: Optional[Union[List, pd.DataFrame]] = None,
             start_times: Optional[List[pd.DatetimeIndex]] = None,
-            known_future_features: Optional[List[Union[int, str]]] = None,
     ) -> BaseEstimator:
         """
         fit the validator with the training data, (optionally) start times and other information
@@ -60,7 +58,6 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
             y_test (Optional[Union[List, pd.DataFrame]]): target in the future
             start_times (Optional[List[pd.DatetimeIndex]]): start times on which the first element of each series is
                 sampled
-            known_future_features (Optional[List[Union[int, str]]]): which features are known even in the future
 
         """
         self.series_idx = series_idx
@@ -91,7 +88,6 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
 
                 self._is_fitted = True
             else:
-                self.known_future_features = known_future_features
                 # Check that the data is valid
                 if len(X_train) != len(y_train):
                     raise ValueError("Inconsistent number of sequences for features and targets,"

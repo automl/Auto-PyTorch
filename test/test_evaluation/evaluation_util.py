@@ -1,6 +1,7 @@
 import functools
 import traceback
 import unittest
+import pytest
 
 import numpy as np
 from numpy.linalg import LinAlgError
@@ -12,8 +13,11 @@ import sklearn.model_selection
 from sklearn import preprocessing
 
 from autoPyTorch.data.tabular_validator import TabularInputValidator
+from autoPyTorch.data.time_series_forecasting_validator import TimeSeriesForecastingInputValidator
 from autoPyTorch.datasets.resampling_strategy import HoldoutValTypes
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
+from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset
+
 from autoPyTorch.pipeline.components.training.metrics.metrics import (
     accuracy,
     balanced_accuracy,
@@ -241,9 +245,34 @@ def get_500_classes_datamanager(resampling_strategy=HoldoutValTypes.holdout_vali
     return dataset
 
 
+def get_forecasting_dataset(n_seq=10,
+                            n_prediction_steps=5,
+                            resampling_strategy=HoldoutValTypes.time_series_hold_out_validation):
+    base_length = 50
+    X = []
+    targets = []
+    X_test = []
+
+    for i in range(n_seq):
+        series_length = base_length + i * 10
+
+        targets.append(np.arange(i * 1000, series_length + i * 1000))
+        X.append(targets[-1] - 1)
+        X_test.append(np.arange(X[-1][-1] + 1, X[-1][-1] + 1 + n_prediction_steps))
+    input_validator = TimeSeriesForecastingInputValidator(is_classification=False).fit(X, targets)
+    return TimeSeriesForecastingDataset(X=X, Y=targets, X_test=X_test,
+                                        known_future_features=(0,),
+                                        validator=input_validator,
+                                        resampling_strategy=resampling_strategy,
+                                        n_prediction_steps=n_prediction_steps
+                                        )
+
+
 def get_dataset_getters():
     return [get_binary_classification_datamanager,
             get_multiclass_classification_datamanager,
             get_500_classes_datamanager,
             get_abalone_datamanager,
-            get_regression_datamanager]
+            get_regression_datamanager,
+            get_forecasting_dataset]
+

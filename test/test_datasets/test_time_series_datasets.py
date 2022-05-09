@@ -6,7 +6,11 @@ import pandas as pd
 import pytest
 import unittest
 from gluonts.time_feature import Constant as ConstantTransform, DayOfMonth
-from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset, TimeSeriesSequence
+from autoPyTorch.datasets.time_series_dataset import (
+    TimeSeriesForecastingDataset,
+    TimeSeriesSequence,
+    extract_feature_index
+)
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes
@@ -409,3 +413,21 @@ def test_splits():
 
     refit_set = dataset.create_refit_set()
     assert len(refit_set.splits[0][0]) == len(refit_set)
+
+
+def test_extract_time_features():
+    feature_shapes = {'b': 5, 'a': 3, 'c': 7, 'd': 12}
+    feature_names = ['a', 'b', 'c', 'd']
+    queried_features = ('b', 'd')
+    feature_index = extract_feature_index(feature_shapes, feature_names, queried_features)
+    feature_index2 = []
+    idx_tracker = 0
+    for fea_name in feature_names:
+        feature_s = feature_shapes[fea_name]
+        if fea_name in queried_features:
+            feature_index2.append(list(range(idx_tracker, idx_tracker + feature_s)))
+        idx_tracker += feature_s
+
+    assert feature_index == tuple(sum(feature_index2, []))
+    # the value should not be relevant with the order of queried_features
+    assert feature_index == extract_feature_index(feature_shapes, feature_names, ('d', 'b'))

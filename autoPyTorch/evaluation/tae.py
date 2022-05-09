@@ -28,7 +28,6 @@ from autoPyTorch.datasets.resampling_strategy import (
     HoldoutValTypes,
     NoResamplingStrategyTypes
 )
-from autoPyTorch.evaluation.test_evaluator import eval_test_function
 from autoPyTorch.evaluation.train_evaluator import eval_train_function
 from autoPyTorch.evaluation.utils import (
     DisableFileOutputParameters,
@@ -150,8 +149,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             eval_function = functools.partial(eval_train_function, **eval_func_kwargs)
             self.output_y_hat_optimization = output_y_hat_optimization
         elif isinstance(self.resampling_strategy, NoResamplingStrategyTypes):
-            # TODO check eval_test for forecasting tasks
-            eval_function = eval_test_function
+            eval_function = functools.partial(eval_train_function, **eval_func_kwargs)
             self.output_y_hat_optimization = False
 
         self.worst_possible_result = cost_for_crash

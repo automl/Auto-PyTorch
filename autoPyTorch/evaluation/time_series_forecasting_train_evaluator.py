@@ -10,6 +10,7 @@ from sklearn.base import BaseEstimator
 from smac.tae import StatusType
 
 from autoPyTorch.evaluation.train_evaluator import TrainEvaluator
+from autoPyTorch.evaluation.utils import DisableFileOutputParameters
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.pipeline.components.training.metrics.metrics import MASE_LOSSES
 from autoPyTorch.automl_common.common.utils.backend import Backend
@@ -30,7 +31,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                  num_run: Optional[int] = None,
                  include: Optional[Dict[str, Any]] = None,
                  exclude: Optional[Dict[str, Any]] = None,
-                 disable_file_output: Union[bool, List] = False,
+                 disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
                  init_params: Optional[Dict[str, Any]] = None,
                  logger_port: Optional[int] = None,
                  keep_models: Optional[bool] = None,
@@ -322,6 +323,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                                                                                             self.n_prediction_steps,
                                                                                             self.num_targets])
             y_opt_full[test_split_subset_idx] = opt_pred.reshape([-1, self.n_prediction_steps, self.num_targets])
+
             opt_pred = y_opt_full
 
         opt_pred = opt_pred.reshape(-1, self.num_targets)

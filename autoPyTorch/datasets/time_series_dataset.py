@@ -364,7 +364,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                  X_test: Optional[Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]] = None,
                  Y_test: Optional[Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]] = None,
                  start_times: Optional[List[pd.DatetimeIndex]] = None,
-                 known_future_features: Optional[Tuple[str]] = None,
+                 known_future_features: Optional[Tuple[Union[str, int]]] = None,
                  time_feature_transform: Optional[List[TimeFeature]] = None,
                  freq: Optional[Union[str, int, List[int]]] = None,
                  resampling_strategy: Optional[Union[
