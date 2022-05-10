@@ -25,8 +25,8 @@ class TimeSeriesOneHotEncoder(TimeSeriesBaseEncoder):
 
         if len(n_features_cat) == 0:
             n_features_cat = self.preprocessor['categorical'].categories
-        for cat_column in categorical_columns:
-            feature_shapes[feature_names[cat_column]] = len(n_features_cat[cat_column])
+        for i, cat_column in enumerate(categorical_columns):
+            feature_shapes[feature_names[cat_column]] = len(n_features_cat[i])
         self.feature_shapes = feature_shapes
         return self
 

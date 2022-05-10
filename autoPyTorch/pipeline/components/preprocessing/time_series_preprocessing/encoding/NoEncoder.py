@@ -30,3 +30,15 @@ class TimeSeriesNoEncoder(TimeSeriesBaseEncoder):
             'name': 'Time Series No Encoder',
             'handles_sparse': True
         }
+
+    def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Adds the self into the 'X' dictionary and returns it.
+        Args:
+            X (Dict[str, Any]): 'X' dictionary
+
+        Returns:
+            (Dict[str, Any]): the updated 'X' dictionary
+        """
+        return NoEncoder.transform(self, X)
+

@@ -640,7 +640,7 @@ def get_forecasting_data(request):
         uni_variant = True
     elif request == 'uni_variant_w_missing':
         uni_variant = True
-        targets_with_missing_value = True
+        with_missing_values = True
     elif request == 'multi_variant_wo_missing':
         with_missing_values = False
     elif request == 'multi_variant_w_missing':

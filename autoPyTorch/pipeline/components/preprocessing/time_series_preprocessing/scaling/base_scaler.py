@@ -24,7 +24,7 @@ class BaseScaler(autoPyTorchTimeSeriesPreprocessingComponent):
                  scaling_mode: str = 'standard'):
         super().__init__()
         self.add_fit_requirements([
-            FitRequirement('numerical_features', (List,), user_defined=True, dataset_property=True),
+            FitRequirement('numerical_columns', (List,), user_defined=True, dataset_property=True),
             FitRequirement('is_small_preprocess', (bool,), user_defined=True, dataset_property=True)
         ])
         self.random_state = random_state
