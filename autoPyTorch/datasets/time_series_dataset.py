@@ -516,13 +516,13 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             self.output_type: str = type_of_target(self.train_tensors[1][0].fillna(method="pad"))
 
             if self.output_type in ["binary", "multiclass"]:
+                # TODO in the future we also want forecasting classification task, we need to find a way to distinguish
+                # TODO these tasks with the integral forecasting tasks!
                 self.output_type = "continuous"
 
             if STRING_TO_OUTPUT_TYPES[self.output_type] in CLASSIFICATION_OUTPUTS:
                 num_targets = len(np.unique(Y))
-                # self.output_shape = len(np.unique(Y))
             else:
-                # self.output_shape = self.train_tensors[1].shape[-1] if self.train_tensors[1].ndim > 1 else 1
                 num_targets = Y.shape[-1] if Y.ndim > 1 else 1
             self.output_shape = [self.n_prediction_steps, num_targets]
         else:

@@ -464,6 +464,16 @@ def loss_mse():
 
 
 @pytest.fixture
+def loss_mape():
+    dataset_properties = {'task_type': 'time_series_forecasting', 'output_type': 'continuous'}
+    predictions = torch.randn(4)
+    name = 'MAPELoss'
+    targets = torch.randn(4)
+    labels = None
+    return dataset_properties, predictions, name, targets, labels
+
+
+@pytest.fixture
 def loss_details(request):
     return request.getfixturevalue(request.param)
 

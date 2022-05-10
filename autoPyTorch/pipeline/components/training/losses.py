@@ -16,7 +16,7 @@ Forecasting:
             MASELoss: supports continuous output types
             L1Loss: supports continuous output types
 """
-from typing import Any, Dict, Optional, Type, List
+from typing import Any, Dict, Optional, Type, List, Union
 
 import torch
 from torch.nn.modules.loss import (
@@ -31,73 +31,77 @@ from autoPyTorch.constants import BINARY, CLASSIFICATION_TASKS, CONTINUOUS, MULT
     FORECASTING_TASKS, STRING_TO_OUTPUT_TYPES, STRING_TO_TASK_TYPES, TASK_TYPES_TO_STRING
 
 
-class LogProbLoss(Loss):
+class AbstractForecastingLoss(Loss):
     __constants__ = ['reduction']
 
     def __init__(self, reduction: str = 'mean') -> None:
-        super(LogProbLoss, self).__init__(reduction=reduction)
+        super(AbstractForecastingLoss, self).__init__(reduction=reduction)
 
+    def aggregate_loss(self, loss_values: torch.Tensor) -> torch.Tensor:
+        if self.reduction == 'mean':
+            return loss_values.mean()
+        elif self.reduction == 'sum':
+            return loss_values.sum()
+        else:
+            return loss_values
+
+
+class LogProbLoss(AbstractForecastingLoss):
     def forward(self, input_dist: torch.distributions.Distribution, target_tensor: torch.Tensor) -> torch.Tensor:
         scores = input_dist.log_prob(target_tensor)
-        if self.reduction == 'mean':
-            return - scores.mean()
-        elif self.reduction == 'sum':
-            return - scores.sum()
-        else:
-            return -scores
+        return self.aggregate_loss(-scores)
 
 
-class MAPELoss(Loss):
-    __constants__ = ['reduction']
-
-    def __init__(self, reduction: str = 'mean') -> None:
-        super(MAPELoss, self).__init__(reduction=reduction)
-
-    def forward(self, predictions: torch.distributions.Distribution, target_tensor: torch.Tensor) -> torch.Tensor:
+class MAPELoss(AbstractForecastingLoss):
+    def forward(self, predictions: torch.Tensor, target_tensor: torch.Tensor) -> torch.Tensor:
         # https://github.com/awslabs/gluon-ts/blob/master/src/gluonts/model/n_beats/_network.py
         denominator = torch.abs(target_tensor)
         diff = torch.abs(predictions - target_tensor)
 
         flag = (denominator == 0).float()
 
-        loss = (diff * (1 - flag)) / (denominator + flag)
+        mape = (diff * (1 - flag)) / (denominator + flag)
 
-        if self.reduction == 'mean':
-            return loss.mean()
-        elif self.reduction == 'sum':
-            return loss.sum()
-        else:
-            return loss
+        return self.aggregate_loss(mape)
 
 
-class MASELoss(Loss):
-    __constants__ = ['reduction']
-
+class MASELoss(AbstractForecastingLoss):
     def __init__(self, reduction: str = 'mean') -> None:
-        super(MASELoss, self).__init__(reduce=reduction)
-        self._mase_coefficient = 1.0
+        super(MASELoss, self).__init__(reduction=reduction)
+        self._mase_coefficient: Union[float, torch.Tensor] = 1.0
 
     def set_mase_coefficient(self, mase_coefficient: torch.Tensor) -> 'MASELoss':
+        """
+        set mase coefficient for computing MASE losses
+        Args:
+            mase_coefficient (torch.Tensor): mase coefficient, its dimensions corresponds to [B, L, N] and can be
+                broadcasted
+
+        Returns:
+
+        """
         if len(mase_coefficient.shape) == 2:
             mase_coefficient = mase_coefficient.unsqueeze(1)
+
         self._mase_coefficient = mase_coefficient
         return self
 
     def forward(self,
-                predictions: torch.distributions.Distribution,
+                predictions: torch.Tensor,
                 target_tensor: torch.Tensor) -> torch.Tensor:
-        loss = torch.abs(predictions - target_tensor) * self._mase_coefficient
-        if self.reduction == 'mean':
-            return loss.mean()
-        elif self.reduction == 'sum':
-            return loss.sum()
-        else:
-            return loss
+        if isinstance(self._mase_coefficient, torch.Tensor):
+            mase_shape = self._mase_coefficient.shape
+            pred_shape = predictions.shape
+            if len(mase_shape) == len(pred_shape):
+                if mase_shape[0] != pred_shape[0] or mase_shape[-1] != pred_shape[-1]:
+                    raise ValueError(f"If self._mase_coefficient is a Tensor, it must have the same batch size and "
+                                     f"num_targets as the predictions, However, their shapes are {mase_shape}"
+                                     f"(self._mase_coefficient) and {pred_shape}(pred_shape)")
+        loss_values = torch.abs(predictions - target_tensor) * self._mase_coefficient
+        return self.aggregate_loss(loss_values)
 
 
-class QuantileLoss(Loss):
-    __constants__ = ['reduction']
-
+class QuantileLoss(AbstractForecastingLoss):
     def __init__(self, reduction: str = 'mean', quantiles: List[float] = [0.5], loss_weights=None) -> None:
         super(QuantileLoss, self).__init__(reduction=reduction)
         self.quantiles = quantiles
@@ -118,12 +122,8 @@ class QuantileLoss(Loss):
 
         losses_all = torch.mean(torch.concat(losses_all, dim=-1), dim=-1)
 
-        if self.reduction == 'mean':
-            return losses_all.mean()
-        elif self.reduction == 'sum':
-            return losses_all.sum()
-        else:
-            return losses_all
+        return self.aggregate_loss(losses_all)
+
 
 losses = dict(
     classification=dict(
