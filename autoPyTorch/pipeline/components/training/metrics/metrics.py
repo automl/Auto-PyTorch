@@ -53,11 +53,10 @@ f1 = make_metric('f1',
 
 # Standard Forecasting Scores
 
-
 # To avoid storing unnecessary scale values here, we scale all the values under
 # AutoPytorch.evaluation.time_series_forecasting_train_evaluator
 
-def compute_mase_coefficient(past_target: Union[List, np.ndarray], sp: int) -> float:
+def compute_mase_coefficient(past_target: Union[List, np.ndarray], sp: int) -> np.ndarray:
     """
     compute mase coefficient, then mase value is computed as mase_coefficient * mse_error,
     this function aims at reducing the memroy requirement
@@ -69,15 +68,18 @@ def compute_mase_coefficient(past_target: Union[List, np.ndarray], sp: int) -> f
         mase_coefficient: inverse of mase_denominator
     """
     past_target = np.nan_to_num(past_target)
+    max_past_target_abs = np.max(np.abs(past_target))
+    if max_past_target_abs == 0.:
+        return np.asarray(1.)
     if sp >= len(past_target):
         # in this case, we simply consider the mean value of the entire sequence
-        # TODO condsider if there is a better way of handling this
+        # TODO consider if there is a better way of handling this
         try:
             mase_denominator = forecasting_metrics.mean_absolute_error(past_target,
                                                                        np.zeros_like(past_target),
                                                                        multioutput="raw_values")
         except ValueError:
-            return 1
+            return np.asarray(1.)
 
     else:
         mase_denominator = forecasting_metrics.mean_absolute_error(past_target[sp:],
@@ -85,7 +87,7 @@ def compute_mase_coefficient(past_target: Union[List, np.ndarray], sp: int) -> f
                                                                    multioutput="raw_values")
 
     return np.where(mase_denominator == 0.0,
-                    np.zeros_like(mase_denominator),
+                    np.min([1., 1. / max_past_target_abs]),
                     1.0 / np.maximum(mase_denominator, forecasting_metrics._functions.EPS)
                     )
 

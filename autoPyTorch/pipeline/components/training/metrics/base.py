@@ -201,16 +201,16 @@ class _ForecastingMetric(ForecastingMetricMixin, autoPyTorchMetric):
             sample_weight: Optional[List[float]] = None,
             **kwarg: Dict,
     ) -> float:
-        """Evaluate time series forecastin losses given input data
+        """Evaluate time series forecasting losses given input data
         The description is nearly the same as the one defined under
         https://www.sktime.org/en/stable/api_reference/performance_metrics.html
 
         Parameters
         ----------
-        y_true : array-like
+        y_true : array-like, [n_seq x n_prediction_steps, n_output]
             Ground truth (correct) target values.
 
-        y_pred : array-like, [n_samples x n_classes]
+        y_pred : array-like, [n_seq x n_prediction_steps, n_output]
             Forecasted values.
 
         sp: int
@@ -271,7 +271,7 @@ class _ForecastingMetric(ForecastingMetricMixin, autoPyTorchMetric):
         elif agg == 'median':
             return self._sign * np.median(losses_all)
         else:
-            raise ValueError(f'Unsupported aggregation type {agg}')
+            raise NotImplementedError(f'Unsupported aggregation type {agg}')
 
 
 def make_metric(

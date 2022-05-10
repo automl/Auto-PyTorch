@@ -127,6 +127,12 @@ def calculate_score(
         cprediction = sanitize_array(prediction)
         for metric_ in metrics:
             if metric_ in MASE_LOSSES and 'mase_coefficient' in score_kwargs:
+                mase_coe_shape = score_kwargs['mase_coefficient'].shape
+                target_shape = target.shape
+                if mase_coe_shape[0] != target_shape[0] or mase_coe_shape[-1] != target_shape[-1]:
+                    raise ValueError(f"the shape of MASE coefficient and target_shape must be consistent in the "
+                                     f"first and last dimension. However, their shapes are {mase_coe_shape}"
+                                     f"(MASE coefficient) and {target_shape} (targets)")
                 target_scaled = target * score_kwargs['mase_coefficient']
                 cprediction_scaled = cprediction * score_kwargs['mase_coefficient']
                 score_dict[metric_.name] = metric_._sign * metric_(target_scaled, cprediction_scaled, **score_kwargs)
