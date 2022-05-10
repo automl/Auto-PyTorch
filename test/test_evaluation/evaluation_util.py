@@ -252,6 +252,7 @@ def get_forecasting_dataset(n_seq=10,
     X = []
     targets = []
     X_test = []
+    Y_test = []
 
     for i in range(n_seq):
         series_length = base_length + i * 10
@@ -259,8 +260,11 @@ def get_forecasting_dataset(n_seq=10,
         targets.append(np.arange(i * 1000, series_length + i * 1000))
         X.append(targets[-1] - 1)
         X_test.append(np.arange(X[-1][-1] + 1, X[-1][-1] + 1 + n_prediction_steps))
+        Y_test.append(np.arange(targets[-1][-1] + 1, targets[-1][-1] + 1 + n_prediction_steps))
+
     input_validator = TimeSeriesForecastingInputValidator(is_classification=False).fit(X, targets)
     return TimeSeriesForecastingDataset(X=X, Y=targets, X_test=X_test,
+                                        Y_test=Y_test,
                                         known_future_features=(0,),
                                         validator=input_validator,
                                         resampling_strategy=resampling_strategy,

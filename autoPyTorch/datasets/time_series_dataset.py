@@ -427,7 +427,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.categorical_columns = self.validator.feature_validator.categorical_columns
 
         self.num_features = self.validator.feature_validator.num_features  # type: int
-        self.num_target = self.validator.target_validator.out_dimensionality  # type: int
+        self.num_targets = self.validator.target_validator.out_dimensionality  # type: int
 
         self.categories = self.validator.feature_validator.categories
 
@@ -474,7 +474,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         self.normalize_y = normalize_y
 
-        sequence_datasets, train_tensors, sequence_lengths = self.transform_data_into_time_series_sequence(
+        sequence_datasets, train_tensors, test_tensors, sequence_lengths = self.transform_data_into_time_series_sequence(
             X, Y,
             start_times=self.start_times,
             X_test=X_test,
@@ -498,7 +498,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         self.train_tensors = train_tensors
 
-        self.test_tensors = None  # Test tensor is not applied to forecasting tasks
+        self.test_tensors = test_tensors
         self.val_tensors = None
 
         self.task_type: Optional[str] = None
@@ -519,12 +519,12 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 self.output_type = "continuous"
 
             if STRING_TO_OUTPUT_TYPES[self.output_type] in CLASSIFICATION_OUTPUTS:
-                num_target = len(np.unique(Y))
+                num_targets = len(np.unique(Y))
                 # self.output_shape = len(np.unique(Y))
             else:
                 # self.output_shape = self.train_tensors[1].shape[-1] if self.train_tensors[1].ndim > 1 else 1
-                num_target = Y.shape[-1] if Y.ndim > 1 else 1
-            self.output_shape = [self.n_prediction_steps, num_target]
+                num_targets = Y.shape[-1] if Y.ndim > 1 else 1
+            self.output_shape = [self.n_prediction_steps, num_targets]
         else:
             raise ValueError('Forecasting dataset must contain target values!')
 
@@ -656,7 +656,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
     def get_test_target(self, test_indices: np.ndarray) -> np.ndarray:
         test_indices = np.where(test_indices < 0, test_indices + len(self), test_indices)
-        y_test = np.ones([len(test_indices), self.n_prediction_steps, self.num_target])
+        y_test = np.ones([len(test_indices), self.n_prediction_steps, self.num_targets])
         y_test_argsort = np.argsort(test_indices)
         dataset_idx = self._get_dataset_indices(test_indices[y_test_argsort[0]], only_dataset_idx=True)
 
@@ -668,7 +668,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 test_idx = test_idx - self.cumulative_sizes[dataset_idx - 1]
             y_test[y_i] = self.datasets[dataset_idx].get_test_target(test_idx)
 
-        return y_test.reshape([-1, self.num_target])
+        return y_test.reshape([-1, self.num_targets])
 
     def transform_data_into_time_series_sequence(self,
                                                  X: Optional[Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]],
@@ -678,7 +678,9 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                                                      Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]] = None,
                                                  Y_test: Optional[
                                                      Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]] = None,
-                                                 is_test_set: bool = False):
+                                                 is_test_set: bool = False) ->[
+
+    ]:
         """
         Transform the raw data into a list of TimeSeriesSequence that can be processed by AutoPyTorch Time Series
                 build a series time sequence datasets
@@ -689,8 +691,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 flattened train target array with size N_all (the sum of all the series sequences) and number of targets
             start_times: List[pd.DatetimeIndex]
                 start time of each training series
-            time_features_train: Dict[pd.Timestamp, np.ndarray]:
-                time features for each possible start training times
             X_test: Optional[np.ndarray (N_all_test, N_feature)]
                 flattened test feature array with size N_all_test (the sum of all the series sequences) and N_feature,
                 number of features
@@ -731,7 +731,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             if Y_test is not None:
                 Y_test = (Y_test[mean.columns] - mean) / std
 
-        sequence_datasets, train_tensors = self.make_sequences_datasets(
+        sequence_datasets, train_tensors, test_tensors = self.make_sequences_datasets(
             X=X, Y=Y,
             X_test=X_test, Y_test=Y_test,
             start_times=start_times,
@@ -739,7 +739,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             is_test_set=is_test_set,
             dataset_with_future_features=dataset_with_future_features,
             **self.sequences_builder_kwargs)
-        return sequence_datasets, train_tensors, sequence_lengths
+        return sequence_datasets, train_tensors, test_tensors, sequence_lengths
 
     @staticmethod
     def make_sequences_datasets(X: Optional[pd.DataFrame],
@@ -752,7 +752,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                                 dataset_with_future_features: bool = False,
                                 **sequences_kwargs: Optional[Dict]) -> Tuple[
         List[TimeSeriesSequence],
-        Tuple[Optional[pd.DataFrame], pd.DataFrame]
+        Tuple[Optional[pd.DataFrame], pd.DataFrame],
+        Optional[Tuple[Optional[pd.DataFrame], pd.DataFrame]]
     ]:
         """
         build a series time sequence datasets
@@ -780,7 +781,9 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         Returns:
             sequence_datasets : List[TimeSeriesSequence]
                 a list of datasets
-            train_tensors: Tuple[List[np.ndarray], List[np.ndarray]]
+            train_tensors: Tuple[pd.DataFrame, pd.DataFrame]
+                training tensors
+            train_tensors: Optional[Tuple[pd.DataFrame, pd.DataFrame]]
                 training tensors
 
         """
@@ -791,6 +794,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             x_group = X.groupby(X.index)
         if Y_test is not None:
             y_test_group = Y_test.groupby(Y_test.index)
+
         if X_test is not None:
             x_test_group = X_test.groupby(X_test.index)
 
@@ -814,8 +818,10 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             sequence_datasets.append(sequence)
 
         train_tensors = (X, Y)
+        # we could guarantee that Y_test has shape [len(seq) * n_prediction_steps, num_targets]
+        test_tensors = (None, Y_test.values) if Y_test is not None else None
 
-        return sequence_datasets, train_tensors
+        return sequence_datasets, train_tensors, test_tensors
 
     def replace_data(self,
                      X_train: pd.DataFrame,

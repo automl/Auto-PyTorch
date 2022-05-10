@@ -727,7 +727,7 @@ class AbstractEvaluator(object):
             raise ValueError("Invalid configuration entered")
         return pipeline
 
-    def _loss(self, y_true: np.ndarray, y_hat: np.ndarray, **loss_kwargs: Dict) -> Dict[str, float]:
+    def _loss(self, y_true: np.ndarray, y_hat: np.ndarray, **metric_kwargs: Dict) -> Dict[str, float]:
         """SMAC follows a minimization goal, so the make_scorer
         sign is used as a guide to obtain the value to reduce.
         The calculate_loss internally translate a score function to
@@ -753,12 +753,12 @@ class AbstractEvaluator(object):
         else:
             metrics = [self.metric]
         return calculate_loss(
-            y_true, y_hat, self.task_type, metrics, **loss_kwargs)
+            y_true, y_hat, self.task_type, metrics, **metric_kwargs)
 
     def finish_up(self, loss: Dict[str, float], train_loss: Dict[str, float],
                   opt_pred: np.ndarray, valid_pred: Optional[np.ndarray],
                   test_pred: Optional[np.ndarray], additional_run_info: Optional[Dict],
-                  file_output: bool, status: StatusType
+                  file_output: bool, status: StatusType, **metric_kwargs: Dict
                   ) -> Optional[Tuple[float, float, int, Dict]]:
         """This function does everything necessary after the fitting is done:
 
@@ -788,6 +788,8 @@ class AbstractEvaluator(object):
                 Whether or not this pipeline should output information to disk
             status (StatusType)
                 The status of the run, following SMAC StatusType syntax.
+            metric_kwargs (Dict)
+                Additional arguments for computing metrics
 
         Returns:
             duration (float):
@@ -810,7 +812,7 @@ class AbstractEvaluator(object):
             additional_run_info_ = {}
 
         validation_loss, test_loss = self.calculate_auxiliary_losses(
-            valid_pred, test_pred
+            valid_pred, test_pred, **metric_kwargs
         )
 
         if loss_ is not None:
@@ -842,6 +844,7 @@ class AbstractEvaluator(object):
         self,
         Y_valid_pred: np.ndarray,
         Y_test_pred: np.ndarray,
+        **metric_kwargs: Dict
     ) -> Tuple[Optional[Dict[str, float]], Optional[Dict[str, float]]]:
         """
         A helper function to calculate the performance estimate of the
@@ -854,6 +857,8 @@ class AbstractEvaluator(object):
             Y_test_pred (np.ndarray):
                 predictions on a test set provided by the user,
                 matching self.y_test
+            metric_kwargs (Dict)
+                additional argument for evaluating the loss metric
 
         Returns:
             validation_loss_dict (Optional[Dict[str, float]]):
@@ -866,12 +871,12 @@ class AbstractEvaluator(object):
 
         if Y_valid_pred is not None:
             if self.y_valid is not None:
-                validation_loss_dict = self._loss(self.y_valid, Y_valid_pred)
+                validation_loss_dict = self._loss(self.y_valid, Y_valid_pred, **metric_kwargs)
 
         test_loss_dict: Optional[Dict[str, float]] = None
         if Y_test_pred is not None:
             if self.y_test is not None:
-                test_loss_dict = self._loss(self.y_test, Y_test_pred)
+                test_loss_dict = self._loss(self.y_test, Y_test_pred, **metric_kwargs)
 
         return validation_loss_dict, test_loss_dict
 

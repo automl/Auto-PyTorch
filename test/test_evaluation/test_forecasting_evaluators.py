@@ -1,25 +1,19 @@
 import multiprocessing
 import os
 import queue
-import shutil
 import sys
 import unittest
 import unittest.mock
-import pytest
 
 from ConfigSpace import Configuration
 
 import numpy as np
 
-from sklearn.base import BaseEstimator
-
-from smac.tae import StatusType
 
 from autoPyTorch.automl_common.common.utils.backend import create
-from autoPyTorch.datasets.resampling_strategy import CrossValTypes, NoResamplingStrategyTypes
+from autoPyTorch.datasets.resampling_strategy import CrossValTypes
 from autoPyTorch.evaluation.time_series_forecasting_train_evaluator import TimeSeriesForecastingTrainEvaluator
 from autoPyTorch.evaluation.utils import read_queue
-from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.training.metrics.metrics import mean_MASE_forecasting
 
 this_directory = os.path.dirname(__file__)
@@ -33,6 +27,7 @@ from evaluation_util import (  # noqa (E402: module level import not at top of f
 )  # noqa (E402: module level import not at top of file)
 
 from test_evaluators import TestTrainEvaluator
+
 
 class BackendMock(object):
     def load_datamanager(self):
@@ -77,24 +72,25 @@ class TestTimeSeriesForecastingTrainEvaluator(unittest.TestCase):
         self.assertEqual(len(rval), 1)
         result = rval[0]['loss']
         self.assertEqual(len(rval[0]), 3)
+
         self.assertRaises(queue.Empty, evaluator.queue.get, timeout=1)
 
         self.assertEqual(evaluator.file_output.call_count, 1)
         self.assertEqual(result, 4592.0)
         self.assertEqual(pipeline_mock.fit.call_count, 1)
-        # As forecasting inference could be quite expensive, we only allow one validation prediction
-        self.assertEqual(pipeline_mock.predict.call_count, 1)
+        # As forecasting inference could be quite expensive, we only allow one opt prediction and test prediction
+        self.assertEqual(pipeline_mock.predict.call_count, 2)
 
         self.assertEqual(evaluator.file_output.call_count, 1)
         self.assertEqual(evaluator.file_output.call_args[0][0].shape[0], len(D.splits[0][1]) * n_prediction_steps)
         self.assertIsNone(evaluator.file_output.call_args[0][1])
-        self.assertIsNone(evaluator.file_output.call_args[0][2])
+
+        self.assertEqual(evaluator.file_output.call_args[0][2].shape[0],
+                         D.test_tensors[1].shape[0])
         self.assertEqual(evaluator.pipeline.fit.call_count, 1)
 
         res = evaluator.file_output.call_args[0][0].reshape(-1, n_prediction_steps, evaluator.num_targets)
         assert np.all(res == 0.)
-
-
 
     @unittest.mock.patch('autoPyTorch.pipeline.time_series_forecasting.TimeSeriesForecastingPipeline')
     def test_cv(self, pipeline_mock):
@@ -134,15 +130,16 @@ class TestTimeSeriesForecastingTrainEvaluator(unittest.TestCase):
         self.assertEqual(evaluator.file_output.call_count, 1)
         self.assertAlmostEqual(result, 4587.208333333334)
         self.assertEqual(pipeline_mock.fit.call_count, 3)
-        # 3 calls because of the 3 times validation evaluations
-        self.assertEqual(pipeline_mock.predict.call_count, 3)
-        # as the optimisation preds in cv is concatenation of the 5 folds,
-        # so it is 5*splits
+        # 3 calls because of the 3 times validation evaluations, however, we only evaluate test target once
+        self.assertEqual(pipeline_mock.predict.call_count, 4)
+        # as the optimisation preds in cv is concatenation of the 3 folds,
+        # so it is 3*splits
         self.assertEqual(evaluator.file_output.call_args[0][0].shape[0],
                          3 * len(D.splits[0][1]) * n_prediction_steps, evaluator.file_output.call_args)
         self.assertIsNone(evaluator.file_output.call_args[0][1])
         # we do not have test sets
-        self.assertIsNone(evaluator.file_output.call_args[0][2])
+        self.assertEqual(evaluator.file_output.call_args[0][2].shape[0],
+                         D.test_tensors[1].shape[0])
 
         res = evaluator.file_output.call_args[0][0].reshape(-1, n_prediction_steps, evaluator.num_targets)
         assert np.all(res == 0.)

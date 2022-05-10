@@ -316,8 +316,20 @@ def test_update_dataset(backend, get_fit_dictionary_forecasting):
         assert test_seq.X.shape[0] - seq_len == 2 * datamanager.n_prediction_steps
 
 
-def test_splits():
+@pytest.mark.parametrize("get_fit_dictionary_forecasting", ['multi_variant_wo_missing'], indirect=True)
+def test_test_tensors(backend, get_fit_dictionary_forecasting):
+    datamanager: TimeSeriesForecastingDataset = backend.load_datamanager()
+    test_tensors = datamanager.test_tensors
+    forecast_horizon = datamanager.n_prediction_steps
+    n_seq = len(datamanager.datasets)
+    assert test_tensors[0] is None
+    assert test_tensors[1].shape == (n_seq * forecast_horizon, datamanager.num_targets)
 
+    datamanager2 = TimeSeriesForecastingDataset(X=None, Y=[[1, 2]])
+    assert datamanager2.test_tensors is None
+
+
+def test_splits():
     y = [np.arange(100 + i * 10) for i in range(10)]
     resampling_strategy_args = {'num_splits': 5}
     dataset = TimeSeriesForecastingDataset(None, y,

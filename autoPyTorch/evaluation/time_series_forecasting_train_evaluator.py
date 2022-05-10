@@ -73,7 +73,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
         self.datamanager = backend.load_datamanager()
         self.n_prediction_steps = self.datamanager.n_prediction_steps
         self.num_sequences = self.datamanager.num_sequences
-        self.num_targets = self.datamanager.num_target
+        self.num_targets = self.datamanager.num_targets
         self.seq_length_min = np.min(self.num_sequences)
         seasonality = SEASONALITY_MAP.get(self.datamanager.freq, 1)
         if isinstance(seasonality, list):
@@ -82,6 +82,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
 
         self.max_budget = max_budget
         self.min_num_test_instances = min_num_test_instances
+        self.eval_test_tensors = True
 
     def fit_predict_and_loss(self) -> None:
         """Fit, predict and compute the loss for cross-validation and
@@ -132,6 +133,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                 additional_run_info=additional_run_info,
                 file_output=True,
                 status=status,
+                **forecasting_kwargs
             )
 
         else:
@@ -157,6 +159,8 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                 mase_coefficient_all.append(mase_coefficient)
 
             for i, (train_split, test_split) in enumerate(self.splits):
+                if i > 0:
+                    self.eval_test_tensors = False
                 pipeline = self.pipelines[i]
 
                 train_pred, opt_pred, valid_pred, test_pred = self._fit_and_predict(pipeline, i,
@@ -222,13 +226,19 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                 if Y_targets[i] is not None
             ])
 
-            if self.X_valid is not None:
+            if self.y_valid is not None:
                 warnings.warn('valid_pred is current unsuported for fore casting tasks!')
             Y_valid_preds = None
 
-            if self.X_test is not None:
-                warnings.warn('test_pred is current unsuported for fore casting tasks!')
-            Y_test_preds = None
+            if self.y_test is not None:
+                Y_test_preds = np.array([Y_test_pred[i] * mase_coefficient_all[0]
+                                         for i in range(self.num_folds)
+                                         if Y_test_pred[i] is not None])
+                # Average the predictions of several pipelines
+                if len(Y_test_preds.shape) == 3:
+                    Y_test_preds = np.nanmean(Y_test_preds, axis=0)
+            else:
+                Y_test_preds = None
 
             self.Y_optimization = Y_targets
             self.Y_actual_train = Y_train_targets
@@ -246,6 +256,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                 additional_run_info=additional_run_info,
                 file_output=True,
                 status=status,
+                **forecasting_kwargs,
             )
 
     def generate_mase_coefficient_for_validation(self, test_split: Sequence) -> np.ndarray:
@@ -317,12 +328,14 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
 
         opt_pred = opt_pred.reshape(-1, self.num_targets)
 
-        if self.X_valid is not None:
+        if self.y_valid is not None:
             warnings.warn('valid_pred is current unsuported for fore casting tasks!')
         valid_pred = None
 
-        if self.X_test is not None:
-            warnings.warn('test_pred is current unsuported for fore casting tasks!')
-        test_pred = None
+        if self.y_test is not None and self.eval_test_tensors:
+            test_seq = self.datamanager.generate_test_seqs()
+            test_pred = self.predict_function(test_seq, pipeline).reshape(-1, self.num_targets)
+        else:
+            test_pred = None
 
         return np.empty(1), opt_pred, valid_pred, test_pred

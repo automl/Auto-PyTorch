@@ -708,7 +708,7 @@ def get_forecasting_data(request):
     return features, targets, input_validator.fit(features, targets, start_times=start_times)
 
 
-def get_forecasting_datamangaer(X, y, validator, forecast_horizon=5, freq='1D'):
+def get_forecasting_datamangaer(X, y, validator, with_y_test=True, forecast_horizon=5, freq='1D'):
     if X is not None:
         X_test = []
         for x in X:
@@ -721,9 +721,19 @@ def get_forecasting_datamangaer(X, y, validator, forecast_horizon=5, freq='1D'):
     else:
         X_test = None
         known_future_features = None
+    if with_y_test:
+        y_test = []
+        for y_seq in y:
+            if hasattr(y_seq, 'iloc'):
+                y_test.append(y_seq.iloc[-forecast_horizon:].copy() + 1)
+            else:
+                y_test.append(y_seq[-forecast_horizon:].copy() + 1)
+    else:
+        y_test = None
     datamanager = TimeSeriesForecastingDataset(
         X=X, Y=y,
         X_test=X_test,
+        Y_test=y_test,
         validator=validator,
         freq=freq,
         n_prediction_steps=forecast_horizon,
