@@ -10,7 +10,6 @@ from torch.utils.data._utils.collate import np_str_obj_array_pattern, default_co
 
 from autoPyTorch.datasets.base_dataset import TransformSubset
 from autoPyTorch.datasets.time_series_dataset import TimeSeriesSequence
-from torch.nn.utils.rnn import pad_sequence
 
 
 class TestSequenceDataset(TransformSubset):

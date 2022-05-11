@@ -3,7 +3,7 @@ import warnings
 from functools import partial
 
 from ConfigSpace.configuration_space import ConfigurationSpace
-from ConfigSpace.hyperparameters import UniformIntegerHyperparameter, CategoricalHyperparameter, Constant
+from ConfigSpace.hyperparameters import UniformIntegerHyperparameter, CategoricalHyperparameter
 from ConfigSpace.conditions import EqualsCondition
 
 import numpy as np
@@ -17,7 +17,8 @@ import torchvision
 from autoPyTorch.datasets.time_series_dataset import (
     TimeSeriesForecastingDataset,
     TimeSeriesSequence,
-    extract_feature_index)
+    extract_feature_index
+)
 from autoPyTorch.utils.common import (
     FitRequirement,
     HyperparameterSearchSpace,
@@ -77,7 +78,6 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         # the time sequence should look like: [X, y, X, y, y] [test_data](values in tail is marked with X)
         # self.subseq_length = self.sample_interval * (self.window_size - 1) + 1
         self.sample_strategy = sample_strategy
-        self.subseq_length = self.window_size
         self.num_batches_per_epoch = num_batches_per_epoch if num_batches_per_epoch is not None else np.inf
         self.padding_collector = None
 
@@ -386,7 +386,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         return self.test_data_loader
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = None,
+    def get_hyperparameter_search_space(dataset_properties: Optional[Dict] = {},
                                         batch_size: HyperparameterSearchSpace =
                                         HyperparameterSearchSpace(hyperparameter="batch_size",
                                                                   value_range=(32, 320),
@@ -448,6 +448,9 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         add_hyperparameter(cs, num_batch_per_epoch, UniformIntegerHyperparameter)
         add_hyperparameter(cs, sample_strategy, CategoricalHyperparameter)
 
+        if dataset_properties is None:
+            dataset_properties = {}
+
         seq_length_max = dataset_properties.get('seq_length_max', np.inf)
 
         if seq_length_max <= window_size.value_range[1]:
@@ -455,9 +458,9 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                 warnings.warn('The base window_size is larger than the maximal sequence length in the dataset,'
                               'we simply set it as a constant value with maximal sequence length')
                 window_size = HyperparameterSearchSpace(hyperparameter=window_size.hyperparameter,
-                                                        value_range=(seq_length_max,),
+                                                        value_range=(1, seq_length_max),
                                                         default_value=seq_length_max)
-                window_size = get_hyperparameter(window_size, Constant)
+                window_size = get_hyperparameter(window_size, UniformIntegerHyperparameter)
             else:
                 window_size_value_range = window_size.value_range
                 window_size = HyperparameterSearchSpace(hyperparameter='window_size',

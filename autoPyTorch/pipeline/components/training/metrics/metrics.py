@@ -70,7 +70,7 @@ def compute_mase_coefficient(past_target: Union[List, np.ndarray], sp: int) -> n
     past_target = np.nan_to_num(past_target)
     max_past_target_abs = np.max(np.abs(past_target))
     if max_past_target_abs == 0.:
-        return np.asarray(1.)
+        return np.asarray([1.])
     if sp >= len(past_target):
         # in this case, we simply consider the mean value of the entire sequence
         # TODO consider if there is a better way of handling this
@@ -79,7 +79,7 @@ def compute_mase_coefficient(past_target: Union[List, np.ndarray], sp: int) -> n
                                                                        np.zeros_like(past_target),
                                                                        multioutput="raw_values")
         except ValueError:
-            return np.asarray(1.)
+            return np.asarray([1.])
 
     else:
         mase_denominator = forecasting_metrics.mean_absolute_error(past_target[sp:],
