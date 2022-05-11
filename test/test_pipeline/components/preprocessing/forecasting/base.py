@@ -1,8 +1,9 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
+from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.TimeSeriesTransformer import (
-    TimeSeriesTransformer, TimeSeriesTargetTransformer
+    TimeSeriesFeatureTransformer, TimeSeriesTargetTransformer
 )
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.encoding import (
     TimeSeriesEncoderChoice
@@ -26,17 +27,23 @@ class ForecastingPipeline(TimeSeriesForecastingPipeline):
             List[Tuple[str, autoPyTorchChoice]]: list of steps sequentially exercised
                 by the pipeline.
         """
-        steps: List[Tuple[str, autoPyTorchChoice]] = []
+        steps: List[Tuple[str, Union[autoPyTorchChoice, autoPyTorchComponent]]] = []
 
         default_dataset_properties = {'target_type': 'time_series_forecasting'}
         if dataset_properties is not None:
             default_dataset_properties.update(dataset_properties)
+        if not default_dataset_properties['uni_variant']:
 
-        steps.extend([("imputer", TimeSeriesFeatureImputer(random_state=self.random_state)),
-                      ("scaler", BaseScaler(random_state=self.random_state)),
-                      ('encoding', TimeSeriesEncoderChoice(default_dataset_properties,
-                                                           random_state=self.random_state)),
-                      ("time_series_transformer", TimeSeriesTransformer(random_state=self.random_state)),
-                      ("target_imputer", TimeSeriesTargetImputer(random_state=self.random_state)),
+            steps.extend([("imputer", TimeSeriesFeatureImputer(random_state=self.random_state)),
+                          ("scaler", BaseScaler(random_state=self.random_state)),
+                          ('encoding', TimeSeriesEncoderChoice(default_dataset_properties,
+                                                               random_state=self.random_state)),
+                          ("time_series_transformer", TimeSeriesFeatureTransformer(random_state=self.random_state)),
+                          ])
+
+        steps.extend([("target_imputer", TimeSeriesTargetImputer(random_state=self.random_state)),
+                      ("time_series_target_transformer", TimeSeriesTargetTransformer(random_state=self.random_state)),
                       ])
+
         return steps
+

@@ -645,8 +645,7 @@ def get_forecasting_data(request):
         with_missing_values = False
     elif request == 'multi_variant_w_missing':
         with_missing_values = True
-    else:
-        raise NotImplementedError
+
     generator = check_random_state(0)
     n_seq = 10
     base_length = 50
@@ -658,9 +657,19 @@ def get_forecasting_data(request):
     # for categorical features, the following character indicate how the feature is stored:
     # s: stored as string; n: stored as
     if type_X == 'pd':
-        feature_columns = ['n1', 'cs2_10', 'n3', 'cn4_5', 'n5']
+        if 'only_cat' in request:
+            feature_columns = ['cs2_10', 'cn4_5']
+        elif 'only_num' in request:
+            feature_columns = ['n1', 'n3', 'n5']
+        else:
+            feature_columns = ['n1', 'cs2_10', 'n3', 'cn4_5', 'n5']
     else:
-        feature_columns = ['n1', 'cn2_5', 'n3', 'cn4_5', 'n5']
+        if 'only_cat' in request:
+            feature_columns = ['cn2_5', 'cn4_5']
+        elif 'only_num' in request:
+            feature_columns = ['n1', 'n3', 'n5']
+        else:
+            feature_columns = ['n1', 'cn2_5', 'n3', 'cn4_5', 'n5']
 
     def generate_forecasting_features(feature_type, length):
         feature_type_content = list(feature_type)

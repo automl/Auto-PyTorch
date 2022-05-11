@@ -19,7 +19,7 @@ from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.TimeSeriesTransformer import (
-    TimeSeriesTransformer
+    TimeSeriesFeatureTransformer
 )
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.encoding import (
     TimeSeriesEncoderChoice
@@ -41,12 +41,17 @@ from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head
 from autoPyTorch.pipeline.components.setup.network_initializer import (
     NetworkInitializerChoice
 )
-from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import \
+from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import (
     TargetScalerChoice
+)
+from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.TargetNoScaler import (
+    TargetNoScaler
+)
 from autoPyTorch.pipeline.components.setup.optimizer import OptimizerChoice
 from autoPyTorch.pipeline.components.setup.forecasting_training_loss import ForecastingLossChoices
-from autoPyTorch.pipeline.components.training.data_loader.time_series_forecasting_data_loader import \
+from autoPyTorch.pipeline.components.training.data_loader.time_series_forecasting_data_loader import (
     TimeSeriesForecastingDataLoader
+)
 from autoPyTorch.pipeline.components.training.trainer.forecasting_trainer import ForecastingTrainerChoice
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
@@ -118,7 +123,8 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
     def fit(self, X: Dict[str, Any], y: Optional[np.ndarray] = None,
             **fit_params: Any) -> Pipeline:
         super().fit(X, y, **fit_params)
-        self.target_scaler = X['target_scaler']
+        self.target_scaler = X.get('target_scaler', TargetNoScaler(self.random_state).fit(X))
+        return self
 
     def _get_hyperparameter_search_space(self,
                                          dataset_properties: Dict[str, Any],
@@ -331,7 +337,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                           ("scaler", BaseScaler(random_state=self.random_state)),
                           ('encoding', TimeSeriesEncoderChoice(default_dataset_properties,
                                                                random_state=self.random_state)),
-                          ("time_series_transformer", TimeSeriesTransformer(random_state=self.random_state)),
+                          ("time_series_transformer", TimeSeriesFeatureTransformer(random_state=self.random_state)),
                           ("preprocessing", TimeSeriesEarlyPreprocessing(random_state=self.random_state)),
                           ])
 

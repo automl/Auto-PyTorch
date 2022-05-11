@@ -42,7 +42,7 @@ def get_time_series_target_preprocessers(X: Dict[str, Any]) -> Dict[str, List[Ba
     Returns:
         (Dict[str, List[BaseEstimator]]): dictionary with list of numerical and categorical preprocessors
     """
-    preprocessor = dict(numerical=list(), categorical=list())  # type: Dict[str, List[BaseEstimator]]
+    preprocessor = dict(target_numerical=list(), target_categorical=list())  # type: Dict[str, List[BaseEstimator]]
     for key, value in X.items():
         if isinstance(value, dict):
             # as each preprocessor is child of BaseEstimator

@@ -18,11 +18,11 @@ from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.uti
 from autoPyTorch.utils.common import FitRequirement
 
 
-class TimeSeriesTransformer(autoPyTorchTimeSeriesPreprocessingComponent):
+class TimeSeriesFeatureTransformer(autoPyTorchTimeSeriesPreprocessingComponent):
     def __init__(self, random_state: Optional[Union[np.random.RandomState, int]] = None):
         super().__init__()
         self.random_state = random_state
-        self.preprocessor: Optional[Pipeline] = None
+        self.preprocessor: Optional[ColumnTransformer] = None
         self.add_fit_requirements([
             FitRequirement('numerical_features', (List,), user_defined=True, dataset_property=True),
             FitRequirement('categorical_features', (List,), user_defined=True, dataset_property=True)])
@@ -78,11 +78,10 @@ class TimeSeriesTransformer(autoPyTorchTimeSeriesPreprocessingComponent):
         Returns:
             X (Dict[str, Any]): updated fit dictionary
         """
-        X.update({'time_series_transformer': self})
+        X.update({'time_series_feature_transformer': self})
         return X
 
     def __call__(self, X: pd.DataFrame) -> pd.DataFrame:
-
         if self.preprocessor is None:
             raise ValueError("cant call {} without fitting the column transformer first."
                              .format(self.__class__.__name__))
@@ -104,6 +103,11 @@ class TimeSeriesTransformer(autoPyTorchTimeSeriesPreprocessingComponent):
 
 
 class TimeSeriesTargetTransformer(autoPyTorchTimeSeriesTargetPreprocessingComponent):
+    def __init__(self, random_state: Optional[Union[np.random.RandomState, int]] = None):
+        super().__init__()
+        self.random_state = random_state
+        self.preprocessor: Optional[ColumnTransformer] = None
+
     def fit(self, X: Dict[str, Any], y: Any = None) -> "TimeSeriesTransformer":
         """
         Creates a column transformer for the chosen tabular
