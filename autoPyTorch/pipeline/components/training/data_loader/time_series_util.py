@@ -1,4 +1,4 @@
-from typing import Optional, Sequence, List, Iterator, Sized
+from typing import Optional, Sequence, List, Iterator, Sized, Union
 
 import numpy as np
 
@@ -25,7 +25,7 @@ class TestSequenceDataset(TransformSubset):
 
 
 def pad_sequence_with_minimal_length(sequences: List[torch.Tensor],
-                                     seq_minimal_length: int,
+                                     seq_minimal_length: int = 1,
                                      seq_max_length: int = np.inf,
                                      batch_first=True,
                                      padding_value=0.0) -> torch.Tensor:
@@ -127,7 +127,7 @@ class TimeSeriesSampler(SubsetRandomSampler):
     def __init__(self,
                  indices: Sequence[int],
                  seq_lengths: Sequence[int],
-                 num_instances_per_seqs: Optional[List[float]] = None,
+                 num_instances_per_seqs: Optional[Union[List[float], np.ndarray]] = None,
                  min_start: int = 0,
                  generator: Optional[torch.Generator] = None) -> None:
         """
@@ -154,7 +154,7 @@ class TimeSeriesSampler(SubsetRandomSampler):
         generator: Optional[torch.Generator]
             pytorch generator to control the randomness
         """
-        super(TimeSeriesSampler, self).__init__(indices, generator)
+        super().__init__(indices, generator)
         if num_instances_per_seqs is None:
             self.iter_all_seqs = True
         else:

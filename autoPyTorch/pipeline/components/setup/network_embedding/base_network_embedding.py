@@ -55,8 +55,8 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
             if 'tabular_transformer' in X:
                 numerical_column_transformer = X['tabular_transformer'].preprocessor. \
                     named_transformers_['numerical_pipeline']
-            elif 'time_series_transformer' in X:
-                numerical_column_transformer = X['time_series_transformer'].preprocessor. \
+            elif 'time_series_feature_transformer' in X:
+                numerical_column_transformer = X['time_series_feature_transformer'].preprocessor. \
                     named_transformers_['numerical_pipeline']
             else:
                 raise ValueError("Either a tabular or time_series transformer must be contained!")

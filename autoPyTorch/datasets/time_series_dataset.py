@@ -1,5 +1,4 @@
 import os
-import pdb
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 from numbers import Real
 import uuid
@@ -103,7 +102,7 @@ class TimeSeriesSequence(Dataset):
                  Y_test: Optional[np.ndarray] = None,
                  train_transforms: Optional[torchvision.transforms.Compose] = None,
                  val_transforms: Optional[torchvision.transforms.Compose] = None,
-                 n_prediction_steps: int = 0,
+                 n_prediction_steps: int = 1,
                  sp: int = 1,
                  known_future_features_index: Optional[List[int]] = None,
                  compute_mase_coefficient_value: bool = True,
@@ -120,6 +119,8 @@ class TimeSeriesSequence(Dataset):
         """
         self.n_prediction_steps = n_prediction_steps
 
+        if X is not None and X.ndim == 1:
+            X = X[:, np.newaxis]
         self.X = X
         self.Y = Y
 
@@ -130,6 +131,9 @@ class TimeSeriesSequence(Dataset):
 
         self.X_val = None
         self.Y_val = None
+
+        if X_test is not None and X_test.ndim == 1:
+            X_test = X_test[:, np.newaxis]
 
         self.X_test = X_test
         self.Y_tet = Y_test
@@ -1136,7 +1140,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         splits = [[() for _ in range(len(self.datasets))] for _ in range(2)]
         idx_start = 0
         for idx_seq, dataset in enumerate(self.datasets):
-
             split = self.holdout_validators[holdout_val_type.name](self.random_state,
                                                                    val_share,
                                                                    indices=np.arange(len(dataset)) + idx_start,

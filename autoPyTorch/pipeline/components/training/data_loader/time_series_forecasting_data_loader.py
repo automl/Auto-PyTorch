@@ -52,7 +52,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                  window_size: int = 1,
                  num_batches_per_epoch: Optional[int] = 50,
                  n_prediction_steps: int = 1,
-                 sample_strategy='seq_uniform',
+                 sample_strategy='SeqUniform',
                  transform_time_features=False,
                  random_state: Optional[np.random.RandomState] = None) -> None:
         """
@@ -68,11 +68,12 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         super().__init__(batch_size=batch_size, random_state=random_state)
         self.backcast = backcast
         self.backcast_period = backcast_period
-        if not backcast:
-            self.window_size: int = window_size
-        else:
-            self.window_size: int = backcast_period * n_prediction_steps
+
         self.n_prediction_steps = n_prediction_steps
+        self.window_size = window_size
+
+        self.window_size = self.adjust_window_size(1)
+
         self.sample_interval = 1
         # length of the tail, for instance if a sequence_length = 2, sample_interval =2, n_prediction = 2,
         # the time sequence should look like: [X, y, X, y, y] [test_data](values in tail is marked with X)
@@ -88,13 +89,78 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         self.freq = "1Y"
         self.time_feature_transform = []
         self.dataset_columns = []
+        self.sampler_train = None
 
         self.add_fit_requirements(
             [FitRequirement("known_future_features", (Tuple,), user_defined=True, dataset_property=True),
              FitRequirement("feature_shapes", (Dict,), user_defined=True, dataset_property=True),
-             FitRequirement("feature_names", (Tuple, ), user_defined=True, dataset_property=True),
+             FitRequirement("feature_names", (Tuple,), user_defined=True, dataset_property=True),
              FitRequirement("sequence_lengths_train", (List,), user_defined=True, dataset_property=True),
-             FitRequirement("freq", (str, ), user_defined=True, dataset_property=True)])
+             FitRequirement("freq", (str,), user_defined=True, dataset_property=True),
+             FitRequirement("n_prediction_steps", (int,), user_defined=True, dataset_property=True)])
+
+    def adjust_window_size(self, sample_interval: int = 1) -> int:
+        """
+        Adjust the sliding window size with the given sample_interval and the
+        Args:
+            sample_interval (int): resolution of the window size
+
+        Returns:
+            window_size (int): window size
+
+        """
+        window_size = self.window_size
+        if self.backcast:
+            window_size = self.backcast_period * self.n_prediction_steps
+
+        if sample_interval > 1:
+            # for lower resolution, window_size should be smaller
+            window_size = (self.window_size - 1) // sample_interval + 1
+        return window_size
+
+    def compute_expected_num_instances_per_seq(self,
+                                               num_instances_dataset: int,
+                                               seq_train_length: np.ndarray,
+                                               min_start: int = 0,
+                                               fraction_seq: float = 1.0,
+                                               fraction_samples_per_seq: float = 1.0,
+                                               ) -> np.ndarray:
+        """
+        Compute the number of expected sample instances within each sequence.
+        Args:
+            num_instances_dataset (int): number of all possible instances inside a dataset
+            seq_train_length (np.ndarray): length of each sequence
+            min_start (int): minimal number of start
+            fraction_seq (float): fraction of the sequence that will be sampled during training.
+            fraction_samples_per_seq (float): fraction of number of samples inside each series
+
+        Returns:
+            num_instances_per_seqs (np.ndarray): expected number of instances to be sampled inside each sequence
+        """
+        seq_train_length = np.asarray(seq_train_length)
+        num_instances_epoch = self.num_batches_per_epoch * self.batch_size
+        # create masks for masking
+        seq_idx_inactivate = np.random.choice(seq_train_length.size,
+                                              int(np.floor(seq_train_length.size * (1 - fraction_seq))),
+                                              replace=False)
+        if len(seq_idx_inactivate) == seq_train_length.size:
+            # we don't want to make all the sequence inactivate
+            seq_idx_inactivate = self.random_state.choice(seq_idx_inactivate, len(seq_idx_inactivate) - 1,
+                                                          replace=False)
+
+        if self.sample_strategy == 'LengthUniform':
+            available_seq_length = seq_train_length - min_start
+            available_seq_length = np.where(available_seq_length <= 0, 0, available_seq_length)
+            num_instances_per_seqs = num_instances_epoch / np.sum(available_seq_length) * available_seq_length
+        elif self.sample_strategy == 'SeqUniform':
+            num_seq_train = len(seq_train_length)
+            num_instances_per_seqs = np.repeat(num_instances_epoch / num_seq_train, num_seq_train)
+        else:
+            raise NotImplementedError(f'Unsupported sample strategy: {self.sample_strategy}')
+
+        num_instances_per_seqs[seq_idx_inactivate] = 0
+        num_instances_per_seqs *= fraction_samples_per_seq
+        return num_instances_per_seqs
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> torch.utils.data.DataLoader:
         """
@@ -111,22 +177,20 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
 
         # Incorporate the transform to the dataset
         datamanager: TimeSeriesForecastingDataset = X['backend'].load_datamanager()
-
-        self.n_prediction_steps = datamanager.n_prediction_steps
-        if self.backcast:
-            self.window_size = self.backcast_period * self.n_prediction_steps
+        dataset_properties = X['dataset_properties']
 
         # this value corresponds to budget type resolution
         sample_interval = X.get('sample_interval', 1)
         padding_value = X.get('required_padding_value', 0.0)
 
-        if sample_interval > 1:
-            # for lower resolution, window_size should be smaller
-            self.window_size = (self.window_size - 1) // sample_interval + 1
+        self.n_prediction_steps = dataset_properties['n_prediction_steps']
+
+        self.window_size = self.adjust_window_size(sample_interval)
 
         max_lagged_value = max(X['dataset_properties'].get('lagged_value', [np.inf]))
         max_lagged_value += self.window_size + self.n_prediction_steps
 
+        # we want the feature names from the raw dataset
         self.dataset_columns = datamanager.feature_names
 
         known_future_features_index = extract_feature_index(
@@ -158,7 +222,6 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             train=False,
         )
 
-        datamanager.transform_time_features = self.transform_time_features
         if X['dataset_properties']["is_small_preprocess"]:
             # This parameter indicates that the data has been pre-processed for speed
             # Overwrite the datamanager with the pre-processes data
@@ -168,6 +231,8 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             self.dataset_small_preprocess = True
         else:
             self.dataset_small_preprocess = False
+
+        datamanager.transform_time_features = self.transform_time_features
 
         self._is_uni_variant = X['dataset_properties']['uni_variant']
 
@@ -180,11 +245,10 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         train_split, test_split = datamanager.splits[X['split_id']]
 
         num_instances_dataset = np.size(train_split)
-        num_instances_train = self.num_batches_per_epoch * self.batch_size
 
         # get the length of each sequence of training data (after split), as we know that validation sets are always
         # place on the tail of the series, the discontinuity only happens if a new series is concated.
-        # for instance, if we have a train indices is experssed as [0, 1, 2 ,3, 7 ,8 ].
+        # for instance, if we have a train indices is expressed as [0, 1, 2 ,3, 7 ,8 ].
         #  A new sequence must start from the index 7. We could then split each unique values to represent the length
         # of each split
 
@@ -193,38 +257,17 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
 
         dataset_seq_length_train_all = X['dataset_properties']['sequence_lengths_train']
         if np.sum(dataset_seq_length_train_all) == len(train_split):
-            # this works if we want to fit the entire datasets
+            # this applies if we want to fit the entire datasets
             seq_train_length = np.array(dataset_seq_length_train_all)
         else:
             _, seq_train_length = np.unique(train_split - np.arange(len(train_split)), return_counts=True)
-        # create masks for masking
-        seq_idx_inactivate = np.where(self.random_state.rand(seq_train_length.size) > fraction_seq)[0]
-        if len(seq_idx_inactivate) == seq_train_length.size:
-            seq_idx_inactivate = self.random_state.choice(seq_idx_inactivate, len(seq_idx_inactivate) - 1,
-                                                          replace=False)
-        # this budget will reduce the number of samples inside each sequence, e.g., the samples becomes more sparse
 
-        """
-        num_instances_per_seqs = np.ceil(
-            np.ceil(num_instances_train / (num_instances_dataset - min_start) * seq_train_length) *
-            fraction_samples_per_seq
-        )
-        """
-        if self.sample_strategy == 'LengthUniform':
-            available_seq_length = seq_train_length - min_start
-            available_seq_length = np.where(available_seq_length <= 1, 1, available_seq_length)
-            num_instances_per_seqs = num_instances_train / num_instances_dataset * available_seq_length
-        elif self.sample_strategy == 'SeqUniform':
-            num_seq_train = len(seq_train_length)
-            num_instances_per_seqs = np.repeat(num_instances_train / num_seq_train, num_seq_train)
-        else:
-            raise NotImplementedError(f'Unsupported sample strategy: {self.sample_strategy}')
-
-        num_instances_per_seqs[seq_idx_inactivate] = 0
-        num_instances_per_seqs *= fraction_samples_per_seq
-
-        # num_instances_per_seqs = num_instances_per_seqs.astype(seq_train_length.dtype)
-        # at least one element of each sequence should be selected
+        num_instances_per_seqs = self.compute_expected_num_instances_per_seq(num_instances_dataset,
+                                                                             seq_train_length,
+                                                                             min_start,
+                                                                             fraction_seq,
+                                                                             fraction_samples_per_seq,
+                                                                             )
 
         # TODO consider the case where num_instances_train is greater than num_instances_dataset,
         # In which case we simply iterate through all the datasets
@@ -314,6 +357,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                 sequence_lengths = [0] * num_sequences
                 for seq_idx, x_seq in enumerate(X):
                     sequence_lengths[seq_idx] = len(x_seq.X)
+
                 x_all = pd.DataFrame(np.concatenate([x_seq.X for x_seq in X]), columns=self.dataset_columns)
                 series_number = np.arange(len(sequence_lengths)).repeat(sequence_lengths)
                 x_all.index = series_number
@@ -344,6 +388,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                     x_seq.cache_time_features()
 
                 x_seq.freq = self.freq
+                x_seq.is_test_set = True
                 if not self.dataset_small_preprocess:
                     x_seq.update_transform(self.test_transform, train=False)
         else:
