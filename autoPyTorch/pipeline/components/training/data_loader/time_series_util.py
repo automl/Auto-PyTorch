@@ -49,6 +49,7 @@ def pad_sequence_with_minimal_length(sequences: List[torch.Tensor],
         out_tensor = sequences[0].new_full(out_dims, False)
     else:
         out_tensor = sequences[0].new_full(out_dims, padding_value)
+
     for i, tensor in enumerate(sequences):
         length = min(tensor.size(0), seq_max_length)
         # use index notation to prevent duplicate references to the tensor
@@ -110,12 +111,13 @@ class PadSequenceCollector:
             return batch
         elif isinstance(elem, collections.abc.Mapping):
             # only past targets and features needs to be transformed
-
             return {
-                key: self([d[key] for d in batch]) if "past" not in key else self([d[key] for d in batch],
-                                                                                  self.sample_interval,
-                                                                                  self.window_size,
-                                                                                  self.target_padding_value) for key
+                key: self([d[key] for d in batch]) if "past" not in key else self(
+                    [d[key] for d in batch],
+                    self.sample_interval,
+                    self.window_size,
+                    self.target_padding_value if "targets" in key else 0.0
+                ) for key
                 in elem}
 
         elif elem is None:
@@ -174,7 +176,7 @@ class TimeSeriesSampler(SubsetRandomSampler):
                     idx_start = idx_tracker
 
                 num_interval = int(np.ceil(num_instances))
-                if num_interval > idx_end - idx_start or num_interval == 0:
+                if num_interval > idx_end - idx_start:
                     interval = np.linspace(idx_start, idx_end, 2, endpoint=True, dtype=np.int)
                     # we consider
                     num_expected_ins_decimal.append(num_instances)
@@ -190,7 +192,7 @@ class TimeSeriesSampler(SubsetRandomSampler):
                 idx_tracker += seq_length
 
             num_expected_ins_decimal = np.stack(num_expected_ins_decimal)
-            # seq_intervals_decimal_length = np.stack(seq_intervals_decimal_length)
+
             self.seq_lengths = seq_lengths
             self.seq_lengths_sum = np.sum(seq_lengths)
             self.num_instances = int(np.round(np.sum(num_instances_per_seqs)))
@@ -255,7 +257,7 @@ class SequentialSubSetSampler(SequentialSampler):
 
     def __iter__(self) -> Iterator[int]:
         if self.eval_all_sequences:
-            return super(SequentialSubSetSampler, self).__iter__()
+            yield from super(SequentialSubSetSampler, self).__iter__()
         else:
             yield from torch.randperm(len(self.data_source), generator=self.generator)[:self.num_samples]
 

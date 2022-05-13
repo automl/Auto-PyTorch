@@ -289,6 +289,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             sampler=self.sampler_train,
         )
 
+        # validation set is not so important here, we make  the size of validation set to be 20% of training instances
         num_samples_val = int(np.sum(num_instances_per_seqs)) // 5
         if num_samples_val > len(val_dataset):
             sampler_val = None

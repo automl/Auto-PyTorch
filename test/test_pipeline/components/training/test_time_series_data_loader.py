@@ -1,4 +1,4 @@
-from  typing import List
+from typing import List
 import copy
 import unittest
 from unittest import mock
@@ -15,7 +15,8 @@ from autoPyTorch.pipeline.components.training.data_loader.time_series_util impor
     TestSequenceDataset,
     pad_sequence_with_minimal_length,
     PadSequenceCollector,
-    TimeSeriesSampler
+    TimeSeriesSampler,
+    SequentialSubSetSampler
 )
 
 from autoPyTorch.utils.common import HyperparameterSearchSpace
@@ -27,7 +28,6 @@ from autoPyTorch.pipeline.components.training.data_loader.time_series_forecastin
 
 class TestTimeSeriesForecastingDataSets(unittest.TestCase):
     def setUp(self) -> None:
-        rng = np.random.RandomState(0)
         feature_names = ['f1']
         feature_shapes = {'f1': 1}
         known_future_features = ('f1',)
@@ -57,23 +57,7 @@ class TestTimeSeriesForecastingDataSets(unittest.TestCase):
                                                                       HoldoutValTypes.time_series_hold_out_validation,
                                                                       0.1,
                                                                       n_repeats=n_repeats)
-        X = []
-        y = []
-        X_test = []
-        """
-        for i, seq_len in enumerate(sequence_lengths_train):
-            X.append(
-                pd.DataFrame(rng.random([seq_len, len(feature_names)]), columns=feature_names, index=[i] * seq_len))
-            y.append(pd.DataFrame(rng.random([seq_len, 1]), columns=feature_names, index=[i] * seq_len))
-            X_test.append(pd.DataFrame(rng.random([n_prediction_steps, 1]),
-                                       columns=feature_names, index=[i] * n_prediction_steps)
-                          )
 
-        self.datamanager = TimeSeriesForecastingDataset(X, y, X_test=X_test,
-                                                        n_prediction_steps=n_prediction_steps,
-                                                        known_future_features=known_future_features,
-                                                        freq="1Q")
-        """
         with mock.patch('autoPyTorch.datasets.time_series_dataset.TimeSeriesForecastingDataset') as MockDataSet:
             dataset = MockDataSet.return_value
 
@@ -380,26 +364,26 @@ class TestTimeSeriesUtil(unittest.TestCase):
                      torch.ones([17, 1])]
         pad_seq_1 = pad_sequence_with_minimal_length(sequences, 5)
         self.assertEqual(list(pad_seq_1.shape), [3, 17, 1])
-        self.assertTrue(torch.all(pad_seq_1[0] == torch.tensor([0.]*7 + [1.] * 10).unsqueeze(-1)))
+        self.assertTrue(torch.all(pad_seq_1[0] == torch.tensor([0.] * 7 + [1.] * 10).unsqueeze(-1)))
 
         pad_seq_2 = pad_sequence_with_minimal_length(sequences, 5, batch_first=False)
         self.assertEqual(list(pad_seq_2.shape), [17, 3, 1])
-        self.assertTrue(torch.all(pad_seq_2[:, 0] == torch.tensor([0.]*7 + [1.] * 10).unsqueeze(-1)))
+        self.assertTrue(torch.all(pad_seq_2[:, 0] == torch.tensor([0.] * 7 + [1.] * 10).unsqueeze(-1)))
 
         pad_seq_3 = pad_sequence_with_minimal_length(sequences, 5, padding_value=0.5)
-        self.assertTrue(torch.all(pad_seq_3[0] == torch.tensor([0.5]*7 + [1.] * 10).unsqueeze(-1)))
+        self.assertTrue(torch.all(pad_seq_3[0] == torch.tensor([0.5] * 7 + [1.] * 10).unsqueeze(-1)))
 
         pad_seq_4 = pad_sequence_with_minimal_length(sequences, 5, 10)
         self.assertEqual(list(pad_seq_4.shape), [3, 10, 1])
         self.assertTrue(torch.all(pad_seq_4[0] == torch.ones(10).unsqueeze(-1)))
-        self.assertTrue(torch.all(pad_seq_4[1] == torch.tensor([0]*7 + [1.] * 3).unsqueeze(-1)))
+        self.assertTrue(torch.all(pad_seq_4[1] == torch.tensor([0] * 7 + [1.] * 3).unsqueeze(-1)))
         self.assertTrue(torch.all(pad_seq_4[2] == torch.ones(10).unsqueeze(-1)))
 
         pad_seq_5 = pad_sequence_with_minimal_length(sequences, 20)
         self.assertEqual(list(pad_seq_5.shape), [3, 20, 1])
-        self.assertTrue(torch.all(pad_seq_5[0] == torch.tensor([0]*10 + [1.] * 10).unsqueeze(-1)))
-        self.assertTrue(torch.all(pad_seq_5[1] == torch.tensor([0]*17 + [1.] * 3).unsqueeze(-1)))
-        self.assertTrue(torch.all(pad_seq_5[2] == torch.tensor([0]*3 + [1.] * 17).unsqueeze(-1)))
+        self.assertTrue(torch.all(pad_seq_5[0] == torch.tensor([0] * 10 + [1.] * 10).unsqueeze(-1)))
+        self.assertTrue(torch.all(pad_seq_5[1] == torch.tensor([0] * 17 + [1.] * 3).unsqueeze(-1)))
+        self.assertTrue(torch.all(pad_seq_5[2] == torch.tensor([0] * 3 + [1.] * 17).unsqueeze(-1)))
 
         sequences = [torch.ones(3, dtype=torch.bool),
                      torch.ones(15, dtype=torch.bool)]
@@ -407,5 +391,82 @@ class TestTimeSeriesUtil(unittest.TestCase):
         self.assertTrue(pad_seq_6.dtype == torch.bool)
         self.assertTrue(torch.all(pad_seq_6[0] == torch.tensor([False] * 12 + [True] * 3, dtype=torch.bool)))
 
+    def test_pad_sequence_controller(self):
+        window_size = 3
+        seq_max_length = 5
+        target_padding_value = 0.5
+        pad_seq_controller = PadSequenceCollector(window_size=window_size,
+                                                  sample_interval=1,
+                                                  target_padding_value=target_padding_value,
+                                                  seq_max_length=seq_max_length)
+        n_prediction_steps = 2
+        seq = TimeSeriesSequence(np.arange(10).astype(np.float), np.arange(10).astype(np.float),
+                                 n_prediction_steps=n_prediction_steps)
+        features_padded = pad_seq_controller([seq[0][0], seq[-1][0]])
+        past_targets = features_padded['past_targets']
+        past_features = features_padded['past_features']
+        self.assertEqual(list(past_targets.shape), [2, seq_max_length])
+        self.assertEqual(list(past_features.shape), [2, seq_max_length, 1])
+        self.assertTrue(features_padded['past_observed_targets'].dtype == torch.bool)
+        self.assertTrue(features_padded['decoder_lengths'].dtype == torch.int64)
 
+        self.assertTrue(torch.all(torch.ones(seq_max_length - 1) * target_padding_value == past_targets[0, :-1]))
+        self.assertTrue(torch.all(torch.zeros(seq_max_length - 1) == past_features[0, :-1]))
 
+        targets_padded = pad_seq_controller([seq[0][1], seq[-1][1]])
+        self.assertTrue(list(targets_padded['future_targets']), [2, n_prediction_steps])
+
+        features_padded = pad_seq_controller([seq[0][0], seq[0][0]])
+        self.assertEqual(list(features_padded['past_targets'].shape), [2, window_size])
+
+        pad_seq_controller.sample_interval = 2
+        features_padded = pad_seq_controller([seq[0][0], seq[-1][0]])
+        self.assertEqual(list(features_padded['past_targets'].shape), [2, 3])
+
+        self.assertTrue(torch.all(
+            pad_seq_controller([{'x': 0}, {'x': 1}])['x'] == torch.Tensor([0, 1]))
+        )
+        self.assertTrue(torch.all(
+            pad_seq_controller([{'x': np.array(0)}, {'x': np.array(1)}])['x'] == torch.Tensor([0, 1]))
+        )
+
+    def test_time_series_sampler(self):
+        indices = np.arange(100)
+        seq_lengths = [5, 10, 15, 20, 50]
+        num_instances_per_seqs = [3.3, 1.3, 7.5, 10, 20.1]
+
+        sampler = TimeSeriesSampler(indices, seq_lengths, num_instances_per_seqs, min_start=2)
+        self.assertEqual(sampler.num_instances, int(np.round(np.sum(num_instances_per_seqs))))
+        # The first sequence does not contain enough data to allow 3.3 sequences, so it only has 1 interval
+        # For the others, Interval should be np.floor(n_inst) + 1 (resulting in  np.floor(n_inst) intervals)
+        self.assertEqual(list(map(len, sampler.seq_intervals_int)), [1, 2, 8, 10, 21])
+        self.assertTrue(torch.equal(sampler.seq_intervals_decimal, torch.tensor([[2, 5],
+                                                                                 [7, 11],
+                                                                                 [17, 18],
+                                                                                 [32, 33],
+                                                                                 [52, 54]])))
+        self.assertTrue(
+            torch.allclose(sampler.num_expected_ins_decimal,
+                           torch.Tensor(
+                               [3.3000e+00, 3.0000e-01, 5.0000e-01, 1.0000e-08, 1.0000e-01]).type(torch.float64))
+        )
+
+        for i in range(5):
+            samples = torch.stack(list(sampler)).sort()[0].numpy()
+            for seq_intervals_int in sampler.seq_intervals_int:
+                if len(seq_intervals_int) > 1:
+                    for i in range(len(seq_intervals_int) - 1):
+                        self.assertTrue(
+                            len(np.where((seq_intervals_int[i] < samples) & (samples < seq_intervals_int[i + 1]))) == 1
+                        )
+
+    def test_sequential_sub_set_sampler(self):
+        n_samples = 5
+        n_indices = np.arange(100)
+        sampler = SequentialSubSetSampler(n_indices, n_samples)
+        self.assertEqual(len(sampler), n_samples)
+        self.assertEqual(len(list(sampler)), n_samples)
+
+        sampler = SequentialSubSetSampler(n_indices, 150)
+        self.assertEqual(len(sampler), len(n_indices))
+        self.assertEqual(len(list(sampler)), len(n_indices))
