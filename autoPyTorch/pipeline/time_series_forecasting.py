@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 
 from sklearn.base import RegressorMixin
-from sklearn.pipeline import Pipeline
 
 import torch
 
@@ -43,9 +42,6 @@ from autoPyTorch.pipeline.components.setup.network_initializer import (
 )
 from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import (
     TargetScalerChoice
-)
-from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.TargetNoScaler import (
-    TargetNoScaler
 )
 from autoPyTorch.pipeline.components.setup.optimizer import OptimizerChoice
 from autoPyTorch.pipeline.components.setup.forecasting_training_loss import ForecastingLossChoices
@@ -94,8 +90,6 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                               config, steps, dataset_properties, include, exclude,
                               random_state, init_params, search_space_updates)
 
-        self.target_scaler = None
-
         # Because a pipeline is passed to a worker, we need to honor the random seed
         # in this context. A tabular regression pipeline will implement a torch
         # model, so we comply with https://pytorch.org/docs/stable/notes/randomness.html
@@ -112,19 +106,12 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         Returns:
             np.ndarray: coefficient of determination R^2 of the prediction
         """
-        # TODO adjust to sktime's losses
         from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics, calculate_score
         metrics = get_metrics(self.dataset_properties, ['r2'])
         y_pred = self.predict(X, batch_size=batch_size)
         r2 = calculate_score(y, y_pred, task_type=STRING_TO_TASK_TYPES[self.dataset_properties['task_type']],
                              metrics=metrics)['r2']
         return r2
-
-    def fit(self, X: Dict[str, Any], y: Optional[np.ndarray] = None,
-            **fit_params: Any) -> Pipeline:
-        super().fit(X, y, **fit_params)
-        self.target_scaler = X.get('target_scaler', TargetNoScaler(self.random_state).fit(X))
-        return self
 
     def _get_hyperparameter_search_space(self,
                                          dataset_properties: Dict[str, Any],
@@ -431,7 +418,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
 
         loader = self.named_steps['data_loader'].get_loader(X=X, batch_size=batch_size)
         try:
-            return self.named_steps['network'].predict(loader, self.target_scaler).flatten()
+            return self.named_steps['network'].predict(loader).flatten()
         except Exception as e:
             # https://github.com/pytorch/fairseq/blob/50a671f78d0c8de0392f924180db72ac9b41b801/fairseq/trainer.py#L283
             if 'out of memory' in str(e):

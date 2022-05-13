@@ -129,8 +129,7 @@ class ForecastingNetworkComponent(NetworkComponent):
 
         return self
 
-    def predict(self, loader: torch.utils.data.DataLoader,
-                target_scaler: Optional[BaseTargetScaler] = None) -> torch.Tensor:
+    def predict(self, loader: torch.utils.data.DataLoader) -> torch.Tensor:
         """
         Performs batched prediction given a loader object
         """
