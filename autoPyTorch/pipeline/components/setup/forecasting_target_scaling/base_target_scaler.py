@@ -52,7 +52,7 @@ class BaseTargetScaler(autoPyTorchComponent):
     def __call__(self,
                  past_target: Union[np.ndarray, torch.tensor],
                  past_observed_values: Optional[torch.BoolTensor] = None,
-                 future_targets: Optional[Union[np.ndarray, torch.Tensor]]=None,
+                 future_targets: Optional[Union[np.ndarray, torch.Tensor]] = None,
                  ) -> Union[np.ndarray, torch.tensor]:
 
         if self.scaler is None:
@@ -69,7 +69,7 @@ class BaseTargetScaler(autoPyTorchComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         return cs
