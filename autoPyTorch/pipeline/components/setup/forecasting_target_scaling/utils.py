@@ -40,7 +40,7 @@ class TargetScaler(BaseEstimator):
                 max_ = torch.max(past_targets, dim=1, keepdim=True)[0]
 
                 diff_ = max_ - min_
-                loc = min_ - 1e-10
+                loc = min_
                 scale = torch.where(diff_ == 0, past_targets[:, [-1]], diff_)
                 scale[scale == 0.0] = 1.0
                 if future_targets is not None:
@@ -98,13 +98,15 @@ class TargetScaler(BaseEstimator):
                 max_ = torch.max(max_masked_past_targets, dim=1, keepdim=True)[0]
 
                 diff_ = max_ - min_
-                loc = min_ - 1e-10
+                loc = min_
                 scale = torch.where(diff_ == 0, past_targets[:, [-1]], diff_)
                 scale[scale == 0.0] = 1.0
 
                 if future_targets is not None:
                     future_targets = (future_targets - loc) / scale
-                return (past_targets - loc) / scale, future_targets, loc, scale
+                scaled_past_targets = torch.where(past_observed_values, (past_targets - loc) / scale, past_targets)
+
+                return scaled_past_targets, future_targets, loc, scale
 
             elif self.mode == "max_abs":
                 max_abs_ = torch.max(torch.abs(valid_past_targets), dim=1, keepdim=True)[0]
@@ -112,7 +114,10 @@ class TargetScaler(BaseEstimator):
                 scale = max_abs_
                 if future_targets is not None:
                     future_targets = future_targets / scale
-                return past_targets / scale, future_targets, None, scale
+
+                scaled_past_targets = torch.where(past_observed_values, past_targets / scale, past_targets)
+
+                return scaled_past_targets, future_targets, None, scale
 
             elif self.mode == 'mean_abs':
                 mean_abs = torch.sum(torch.abs(valid_past_targets), dim=1, keepdim=True) / valid_past_obs
@@ -121,7 +126,9 @@ class TargetScaler(BaseEstimator):
                 scale[scale == 0.0] = 1.0
                 if future_targets is not None:
                     future_targets = future_targets / scale
-                return past_targets / scale, future_targets, None, scale
+
+                scaled_past_targets = torch.where(past_observed_values, past_targets / scale, past_targets)
+                return scaled_past_targets, future_targets, None, scale
 
             elif self.mode == "none":
                 return past_targets, future_targets, None, None
