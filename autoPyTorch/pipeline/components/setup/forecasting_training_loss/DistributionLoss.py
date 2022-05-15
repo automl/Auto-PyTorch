@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Union, Any, NamedTuple
+from typing import Optional, Dict, Union, Any
 import numpy as np
 
 from ConfigSpace import ConfigurationSpace
@@ -10,10 +10,11 @@ from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head
     DisForecastingStrategy
 )
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-from autoPyTorch.pipeline.components.setup.forecasting_training_loss.base_forecasting_loss import \
-    ForecastingLossComponents
+from autoPyTorch.pipeline.components.setup.forecasting_training_loss.base_forecasting_loss import (
+    ForecastingLossComponents,
+)
 from autoPyTorch.pipeline.components.training.losses import LogProbLoss
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter, FitRequirement
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
 
 class DistributionLoss(ForecastingLossComponents):

@@ -196,4 +196,3 @@ class ForecastingLossChoices(autoPyTorchChoice):
     def transform(self, X: np.ndarray) -> np.ndarray:
         assert self.choice is not None, "Cannot call transform before the object is initialized"
         return self.choice.transform(X)
-

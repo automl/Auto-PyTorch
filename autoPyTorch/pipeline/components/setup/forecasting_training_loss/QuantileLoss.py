@@ -24,6 +24,8 @@ class NetworkQuantileLoss(ForecastingLossComponents):
         super().__init__()
         self.random_state = random_state
         self.quantiles = [0.5, lower_quantile, upper_quantile]
+        # To make it compatible with
+        # autoPyTorch.pipeline.components.training.trainer.forecasting_trainer.forecasting_base_trainer
         self.loss = partial(QuantileLoss, quantiles=self.quantiles)
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
