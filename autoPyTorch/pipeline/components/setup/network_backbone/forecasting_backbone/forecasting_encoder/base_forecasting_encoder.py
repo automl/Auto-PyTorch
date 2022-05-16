@@ -42,27 +42,28 @@ class BaseForecastingEncoder(autoPyTorchComponent):
     def _required_fit_arguments(self) -> List[FitRequirement]:
         return [
             FitRequirement('is_small_preprocess', (bool,), user_defined=True, dataset_property=True),
-            FitRequirement('y_train', (np.ndarray, pd.DataFrame, csr_matrix), user_defined=True,
-                           dataset_property=False),
             FitRequirement('uni_variant', (bool,), user_defined=False, dataset_property=True),
             FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
             FitRequirement('output_shape', (Iterable,), user_defined=True, dataset_property=True),
             FitRequirement('network_structure', (NetworkStructure,),  user_defined=False, dataset_property=False),
             FitRequirement('transform_time_features', (bool,), user_defined=False, dataset_property=False),
             FitRequirement('time_feature_transform', (Iterable,), user_defined=False, dataset_property=True),
-            FitRequirement('network_embedding', (nn.Module, ), user_defined=False, dataset_property=False)
+            FitRequirement('network_embedding', (nn.Module, ), user_defined=False, dataset_property=False),
+            FitRequirement('window_size', (int,), user_defined=False, dataset_property=False)
         ]
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         self.check_requirements(X, y)
 
-        X_train = X.get('X_train', None)
-
-        input_shape = X["dataset_properties"]['input_shape']
+        input_shape = (*X["dataset_properties"]['input_shape'][:-1], 0)
         output_shape = X["dataset_properties"]['output_shape']
 
         if self.block_number == 1:
             if not X["dataset_properties"]["uni_variant"]:
+                X_train = X.get('X_train', None)
+                if X_train is None:
+                    raise ValueError('Non uni_variant dataset must contain X_train!')
+
                 if X["dataset_properties"]["is_small_preprocess"]:
                     input_shape = X_train.shape[1:]
                 else:
@@ -72,10 +73,12 @@ class BaseForecastingEncoder(autoPyTorchComponent):
                     X_train = transforms(X_train)
                     input_shape = np.concatenate(X_train).shape[1:]
 
+
             if X['transform_time_features']:
                 n_time_feature_transform = len(X['dataset_properties']['time_feature_transform'])
             else:
                 n_time_feature_transform = 0
+
             input_shape = (*input_shape[:-1], input_shape[-1] + n_time_feature_transform)
 
             if 'network_embedding' in X.keys():
@@ -92,7 +95,10 @@ class BaseForecastingEncoder(autoPyTorchComponent):
 
             input_shape = (X['window_size'], in_features)
         else:
-            input_shape = X['encoder_output_shape']
+            if 'network_encoder' not in X or f'block_{self.block_number -1}' not in X['network_encoder']:
+                raise ValueError('Lower block layers must be fitted and transformed first!')
+            network_block_info = X['network_encoder'][f'block_{self.block_number -1}']
+            input_shape = network_block_info.encoder_output_shape
 
         self.encoder = self.build_encoder(
             input_shape=input_shape,
@@ -100,8 +106,11 @@ class BaseForecastingEncoder(autoPyTorchComponent):
 
         self.input_shape = input_shape
 
+
         has_hidden_states = self.encoder_properties().has_hidden_states
         self.encoder_output_shape = get_output_shape(self.encoder, input_shape, has_hidden_states)
+        if self.n_encoder_output_feature() != self.encoder_output_shape[-1]:
+            raise ValueError('n_encoder_output_feature must equal to the output dimension')
         return self
 
     @staticmethod
@@ -110,6 +119,7 @@ class BaseForecastingEncoder(autoPyTorchComponent):
 
     @abstractmethod
     def n_encoder_output_feature(self) -> int:
+        # We need this to compute the output of the variable selection network
         raise NotImplementedError
 
     def n_hidden_states(self) -> int:
@@ -141,7 +151,7 @@ class BaseForecastingEncoder(autoPyTorchComponent):
         Returns:
             nn.Module: backbone module
         """
-        raise NotImplementedError()
+        pass
 
     @staticmethod
     def encoder_properties() -> EncoderProperties:

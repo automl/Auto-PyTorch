@@ -59,6 +59,7 @@ class ForecastingHead(NetworkHeadComponent):
             FitRequirement('network_decoder', (Dict,), user_defined=False, dataset_property=False),
             FitRequirement('n_prediction_heads', (int,), user_defined=False, dataset_property=False),
             FitRequirement('output_shape', (Iterable,), user_defined=True, dataset_property=True),
+            FitRequirement('net_output_type', (str, ), user_defined=False, dataset_property=False)
         ]
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:

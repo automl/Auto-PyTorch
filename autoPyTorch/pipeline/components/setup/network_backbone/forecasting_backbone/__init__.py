@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import numpy as np
 from typing import Dict, Optional, List, Any, Union
 
 import ConfigSpace.hyperparameters as CSH
@@ -26,14 +27,15 @@ from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterS
 class ForecastingNetworkChoice(autoPyTorchChoice):
     """
     A network is composed of an encoder and decoder. In most of the case, the choice of decoder is heavily dependent on
-    the choice of encoder. Thus here "choice" indicates the choice of encoder, then decoder will be determined by
+    the choice of encoder. Therefore, here "choice" indicates the choice of encoder, then decoder will be determined by
     the encoder.
     """
 
     def __init__(self,
-                 **kwargs,
+                 dataset_properties: Dict[str, BaseDatasetPropertiesType],
+                 random_state: Optional[np.random.RandomState] = None
                  ):
-        super().__init__(**kwargs)
+        super().__init__(dataset_properties, random_state)
         self.include_components = None
         self.exclude_components = None
 
