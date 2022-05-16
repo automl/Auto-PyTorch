@@ -1,6 +1,6 @@
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder import \
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder import (
     AbstractForecastingEncoderChoice
-
+)
 
 import os
 from collections import OrderedDict
@@ -45,6 +45,8 @@ class FlatForecastingEncoderChoice(AbstractForecastingEncoderChoice):
              to remove from the configuration space
          dataset_properties (Optional[Dict[str, Union[str, int]]]): Caracteristics
              of the dataset to guide the pipeline choices of components
+         components(Optional[Dict[str, autoPyTorchComponent])
+            components
 
         Returns:
             Dict[str, autoPyTorchComponent]: A filtered dict of learning
@@ -94,13 +96,11 @@ class FlatForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             # target_type = dataset_properties['target_type']
             # Apply some automatic filtering here for
             # backbones based on the dataset!
-            # TODO: Think if there is any case where a backbone
-            # is not recommended for a certain dataset
+            # TODO: Think if there is any case where a backbone is not recommended for a certain dataset
 
             components_dict[name] = entry
 
         return components_dict
-
 
     def get_components(self) -> Dict[str, autoPyTorchComponent]:
         """Returns the available backbone components
@@ -121,10 +121,9 @@ class FlatForecastingEncoderChoice(AbstractForecastingEncoderChoice):
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
                        ) -> Dict[str, Union[str, bool]]:
         return {
-            'shortname': 'SeqEncoder',
-            'name': 'SeqEncoder',
+            'shortname': 'FlatEncoder',
+            'name': 'FlatEncoder',
             'handles_tabular': False,
             'handles_image': False,
             'handles_time_series': True,
         }
-

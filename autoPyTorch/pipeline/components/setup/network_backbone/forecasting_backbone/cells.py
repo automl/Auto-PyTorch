@@ -637,7 +637,6 @@ class StackedDecoder(nn.Module):
                 if incremental_update:
                     # in this case, we only have Transformer, thus x_all needs to be None value!
                     # TODO make this argument clearer!
-                    #x_all = torch.cat([self.cached_intermediate_state[i], x], dim=1)
                     fx = decoder_i(x, encoder_output=encoder_output[i], pos_idx=pos_idx)
                 else:
                     fx = decoder_i(x, encoder_output=encoder_output[i], pos_idx=pos_idx)
@@ -648,10 +647,5 @@ class StackedDecoder(nn.Module):
                 if self.decoder_has_hidden_states[i]:
                     self.cached_intermediate_state[i] = hx
                     #TODO consider if there are other case that could make use of cached intermediate states
-                # else:
-                #    if incremental_update:
-                #        self.cached_intermediate_state[i] = x_all
-                #    else:
-                #        self.cached_intermediate_state[i] = x
             x = fx
         return x

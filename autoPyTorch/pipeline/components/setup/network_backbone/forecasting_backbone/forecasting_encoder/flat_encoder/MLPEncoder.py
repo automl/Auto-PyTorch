@@ -8,7 +8,10 @@ from ConfigSpace.hyperparameters import CategoricalHyperparameter
 
 from autoPyTorch.pipeline.components.setup.network_backbone.MLPBackbone import MLPBackbone
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.base_forecasting_encoder import (
-    BaseForecastingEncoder, EncoderNetwork, EncoderProperties
+    BaseForecastingEncoder, EncoderProperties
+)
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import (
+    EncoderNetwork
 )
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType

@@ -1,19 +1,17 @@
 import os
 from collections import OrderedDict
 from typing import Dict, Optional, List, Any, Union
-import numpy as np
 from sklearn.pipeline import Pipeline
 
 from ConfigSpace.hyperparameters import (
     Constant,
     CategoricalHyperparameter,
-    UniformIntegerHyperparameter,
     UniformFloatHyperparameter,
     OrdinalHyperparameter,
 )
 from ConfigSpace.configuration_space import ConfigurationSpace, Configuration
 from ConfigSpace.conditions import (
-    EqualsCondition, OrConjunction, GreaterThanCondition, NotEqualsCondition, AndConjunction
+    EqualsCondition, OrConjunction, GreaterThanCondition
 )
 from ConfigSpace.forbidden import ForbiddenInClause, ForbiddenEqualsClause, ForbiddenAndConjunction
 
@@ -25,7 +23,7 @@ from autoPyTorch.pipeline.components.base_component import (
     find_components,
 )
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
+from autoPyTorch.utils.common import HyperparameterSearchSpace, get_hyperparameter
 
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder import \
     AbstractForecastingEncoderChoice

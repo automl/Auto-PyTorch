@@ -4,20 +4,17 @@ from collections import OrderedDict
 import pandas as pd
 from scipy.sparse import csr_matrix
 
-import torch
 import torchvision
-from ConfigSpace import ConfigurationSpace
 from autoPyTorch.utils.common import FitRequirement
 from torch import nn
 from abc import abstractmethod
-from typing import Any, Dict, Iterable, Optional, Tuple, List, Union, NamedTuple
+from typing import Any, Dict, Iterable, Optional, Tuple, List
 
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
-from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_backbone.utils import get_output_shape
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import (
-    EncoderProperties, EncoderBlockInfo, EncoderNetwork
+    EncoderProperties, EncoderBlockInfo
 )
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import NetworkStructure
 
@@ -52,14 +49,14 @@ class BaseForecastingEncoder(autoPyTorchComponent):
             FitRequirement('output_shape', (Iterable,), user_defined=True, dataset_property=True),
             FitRequirement('network_structure', (NetworkStructure,),  user_defined=False, dataset_property=False),
             FitRequirement('transform_time_features', (bool,), user_defined=False, dataset_property=False),
-            FitRequirement('time_feature_transform', (Iterable,), user_defined=False, dataset_property=True)
+            FitRequirement('time_feature_transform', (Iterable,), user_defined=False, dataset_property=True),
+            FitRequirement('network_embedding', (nn.Module, ), user_defined=False, dataset_property=False)
         ]
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         self.check_requirements(X, y)
 
         X_train = X.get('X_train', None)
-        y_train = X['y_train']
 
         input_shape = X["dataset_properties"]['input_shape']
         output_shape = X["dataset_properties"]['output_shape']
@@ -71,7 +68,7 @@ class BaseForecastingEncoder(autoPyTorchComponent):
                 else:
                     # get input shape by transforming first two elements of the training set
                     transforms = torchvision.transforms.Compose(X['preprocess_transforms'])
-                    X_train = X_train[:1, np.newaxis, ...]
+                    X_train = X_train.values[:1, np.newaxis, ...]
                     X_train = transforms(X_train)
                     input_shape = np.concatenate(X_train).shape[1:]
 
@@ -96,7 +93,6 @@ class BaseForecastingEncoder(autoPyTorchComponent):
             input_shape = (X['window_size'], in_features)
         else:
             input_shape = X['encoder_output_shape']
-
 
         self.encoder = self.build_encoder(
             input_shape=input_shape,

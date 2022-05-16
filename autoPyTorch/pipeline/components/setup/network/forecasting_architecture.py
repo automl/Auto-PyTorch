@@ -152,7 +152,7 @@ class AbstractForecastingNet(nn.Module):
 
     def __init__(self,
                  network_structure: NetworkStructure,
-                 network_embedding: nn.Module,  # TODO consider  embedding for past, future and static features
+                 network_embedding: nn.Module,
                  network_encoder: Dict[str, EncoderBlockInfo],
                  network_decoder: Dict[str, DecoderBlockInfo],
                  temporal_fusion: Optional[TemporalFusionLayer],
@@ -197,9 +197,9 @@ class AbstractForecastingNet(nn.Module):
         self.embedding = network_embedding
         if len(known_future_features) > 0:
             known_future_features_idx = [feature_names.index(kff) for kff in known_future_features]
-            self.embedding_future = self.embedding.get_partial_models(known_future_features_idx)
+            self.decoder_embedding = self.embedding.get_partial_models(known_future_features_idx)
         else:
-            self.embedding_future = _NoEmbedding()
+            self.decoder_embedding = _NoEmbedding()
         # modules that generate tensors while doing forward pass
         self.lazy_modules = []
         if network_structure.variable_selection:
@@ -406,7 +406,7 @@ class ForecastingNet(AbstractForecastingNet):
                 x_past = None
             if length_future > 0:
                 if future_features is not None:
-                    future_features = self.embedding_future(future_features.to(self.device))
+                    future_features = self.decoder_embedding(future_features.to(self.device))
                 x_future = {}
                 if hasattr(self.variable_selector, 'placeholder_features'):
                     for placehold in self.variable_selector.placeholder_features:
@@ -447,7 +447,7 @@ class ForecastingNet(AbstractForecastingNet):
 
             x_past = self.embedding(x_past.to(device=self.device))
             if future_features is not None:
-                future_features = self.embedding_future(future_features.to(self.device))
+                future_features = self.decoder_embedding(future_features.to(self.device))
             return x_past, future_features, None, loc, scale, None, past_targets
 
     def forward(self,
@@ -547,7 +547,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
         length_future = future_targets.shape[1]
         future_targets = future_targets.to(self.device)
         if future_features is not None:
-            future_features = self.embedding_future(future_features.to(self.device))
+            future_features = self.decoder_embedding(future_features.to(self.device))
         x_future = {}
         if hasattr(self.variable_selector, 'placeholder_features'):
             for placeholder in self.variable_selector.placeholder_features:
@@ -605,7 +605,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
             else:
                 x_future = future_targets if future_features is None else torch.cat([future_features, future_targets],
                                                                                     dim=-1)
-                x_future = self.embedding_future(x_future.to(self.device))
+                x_future = self.decoder_embedding(x_future.to(self.device))
 
             encoder2decoder, encoder_output = self.encoder(encoder_input=x_past,
                                                            additional_input=encoder_additional)
@@ -656,7 +656,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                                                                                       dim=-1)
                         x_future = x_future.to(self.device)
 
-                    x_future = self.embedding_future(x_future)
+                    x_future = self.decoder_embedding(x_future)
 
                     decoder_output = self.decoder(x_future,
                                                   encoder_output=encoder2decoder,
@@ -744,7 +744,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
 
                         x_future = x_future.to(self.device)
 
-                    x_future = self.embedding_future(x_future)
+                    x_future = self.decoder_embedding(x_future)
 
                     decoder_output = self.decoder(x_future,
                                                   encoder_output=encoder2decoder,

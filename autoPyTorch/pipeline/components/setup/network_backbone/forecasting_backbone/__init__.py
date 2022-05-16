@@ -1,32 +1,25 @@
-import os
 from collections import OrderedDict
-from typing import Dict, Optional, List, Any, Union, Tuple
-from sklearn.pipeline import Pipeline
+from typing import Dict, Optional, List, Any, Union
 
 import ConfigSpace.hyperparameters as CSH
 from ConfigSpace.configuration_space import ConfigurationSpace, Configuration
-from ConfigSpace.conditions import EqualsCondition, OrConjunction
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 
 from autoPyTorch.pipeline.components.base_component import (
-    ThirdPartyComponents,
     autoPyTorchComponent,
-    find_components,
 )
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
-from autoPyTorch.pipeline.components.setup.network_backbone import NetworkBackboneChoice
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder import (
     BaseForecastingEncoder,
 )
-from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.flat_encoder \
     import FlatForecastingEncoderChoice
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.seq_encoder import \
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.seq_encoder import\
     SeqForecastingEncoderChoice
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder import \
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder import (
     decoders, decoder_addons, add_decoder
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
+)
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdate
 
 
@@ -152,8 +145,7 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
             # target_type = dataset_properties['target_type']
             # Apply some automatic filtering here for
             # backbones based on the dataset!
-            # TODO: Think if there is any case where a backbone
-            # is not recommended for a certain dataset
+            # TODO: Think if there is any case where a backbone is not recommended for a certain dataset
 
             components_dict[name] = entry
 

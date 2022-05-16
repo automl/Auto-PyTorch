@@ -133,7 +133,6 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             torch.Tensor: The predictions of the network
             float: the loss incurred in the prediction
         """
-        past_target = data['past_targets'].float()
         past_observed_targets = data['past_observed_targets']
 
         past_features = data["past_features"]
@@ -146,6 +145,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         future_observed_targets = future_targets["future_observed_targets"]
         future_targets_values = future_targets["future_targets"]
 
+        past_target = self.cast_targets(data['past_targets'])
         future_targets_values = self.cast_targets(future_targets_values)
 
         if isinstance(self.criterion, MASELoss):
@@ -166,8 +166,8 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             loss_func_backcast = self.criterion_preparation(**criterion_kwargs_past)
             loss_func_forecast = self.criterion_preparation(**criterion_kwargs_future)
 
-            loss_backcast = loss_func_backcast(self.criterion, backcast) * past_observed_targets
-            loss_forecast = loss_func_forecast(self.criterion, forecast) * future_observed_targets
+            loss_backcast = loss_func_backcast(self.criterion, backcast) * past_observed_targets.to(self.device)
+            loss_forecast = loss_func_forecast(self.criterion, forecast) * future_observed_targets.to(self.device)
 
             loss = loss_forecast.mean() + loss_backcast.mean() * self.backcast_loss_ratio
 
@@ -197,7 +197,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
 
             loss_func = self.criterion_preparation(**criterion_kwargs)
 
-            loss = torch.mean(loss_func(self.criterion, outputs) * future_observed_targets)
+            loss = torch.mean(loss_func(self.criterion, outputs) * future_observed_targets.to(self.device))
 
         loss.backward()
         self.optimizer.step()
@@ -250,7 +250,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
 
                 batch_size = past_target.shape[0]
 
-                future_observed_targets = future_targets["future_observed_targets"]
+                future_observed_targets = future_targets["future_observed_targets"].to(self.device)
                 future_targets_values = future_targets["future_targets"]
 
                 future_targets_values = self.cast_targets(future_targets_values)
@@ -310,3 +310,18 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         targets_data = torch.cat(targets_data, dim=0).numpy()
 
         return calculate_score(targets_data, outputs_data, self.task_type, self.metrics, **self.metrics_kwargs)
+
+    def cast_targets(self, targets: torch.Tensor) -> torch.Tensor:
+        """
+        This function is quite similar to the base class implementation, except that we do not move targets to
+        sef.device
+
+        """
+        if self.task_type in (REGRESSION_TASKS + FORECASTING_TASKS):
+            targets = targets.float()
+            # make sure that targets will have same shape as outputs (really important for mse loss for example)
+            if targets.ndim == 1:
+                targets = targets.unsqueeze(1)
+        else:
+            targets = targets.long()
+        return targets

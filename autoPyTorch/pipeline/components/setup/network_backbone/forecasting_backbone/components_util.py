@@ -1,9 +1,11 @@
 import math
+
 from sklearn.base import BaseEstimator
 
 from typing import Any, Dict, NamedTuple, Optional, Tuple
 
 import torch
+
 from torch import nn
 
 

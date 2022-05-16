@@ -56,7 +56,6 @@ class ForecastingHead(NetworkHeadComponent):
             FitRequirement('task_type', (str,), user_defined=True, dataset_property=True),
             FitRequirement('auto_regressive', (bool,), user_defined=False, dataset_property=False),
             FitRequirement('n_decoder_output_features', (int,), user_defined=False, dataset_property=False),
-            FitRequirement('network_encoder', (Dict,), user_defined=False, dataset_property=False),
             FitRequirement('network_decoder', (Dict,), user_defined=False, dataset_property=False),
             FitRequirement('n_prediction_heads', (int,), user_defined=False, dataset_property=False),
             FitRequirement('output_shape', (Iterable,), user_defined=True, dataset_property=True),
