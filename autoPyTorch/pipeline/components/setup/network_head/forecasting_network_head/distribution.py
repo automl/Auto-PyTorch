@@ -209,7 +209,6 @@ class DisForecastingStrategy(NamedTuple):
     aggregation: str = "mean"
 
 
-# TODO find components that are compatible with beta, gamma and poisson distrubtion!
+# TODO find components that are compatible with beta, gamma and poisson distribution!
 
 # TODO consider how to implement NegativeBinomialOutput without scale information
-# class NegativeBinomialOutput(ProjectionLayer):

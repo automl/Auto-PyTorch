@@ -1,4 +1,5 @@
 import os
+import warnings
 from collections import OrderedDict
 from typing import Dict, Optional, List, Any, Type
 from abc import abstractmethod
@@ -109,8 +110,7 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
         if include is not None:
             for incl in include:
                 if incl not in available_comp:
-                    raise ValueError("Trying to include unknown component: "
-                                     "%s" % incl)
+                    warnings.warn("Trying to include unknown component: ""%s" % incl)
 
         components_dict = OrderedDict()
         for name in available_comp:

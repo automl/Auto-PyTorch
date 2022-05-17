@@ -6,21 +6,11 @@ from test.test_pipeline.components.setup.forecasting.forecasting_networks.test_b
 from ConfigSpace import Configuration
 import torch
 
-from autoPyTorch.constants import (
-    TASK_TYPES_TO_STRING,
-    TIMESERIES_FORECASTING,
-)
 from sklearn.pipeline import Pipeline
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.flat_encoder \
     import FlatForecastingEncoderChoice
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import NetworkStructure
 from autoPyTorch.pipeline.components.setup.network_embedding.NoEmbedding import _NoEmbedding
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import (
-    DecoderBlockInfo
-)
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import (
-    EncoderBlockInfo, EncoderNetwork
-)
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.flat_encoder. \
     MLPEncoder import MLPEncoder
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.flat_encoder. \
@@ -30,7 +20,11 @@ from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone
 )
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.NBEATSDecoder \
     import NBEATSDecoder
-from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head import ForecastingHead
+from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.forecasting_head import ForecastingHead
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.cells import (
+    StackedEncoder,
+    StackedDecoder
+)
 
 
 class TestFlatEncoder(unittest.TestCase):
@@ -59,7 +53,7 @@ class TestFlatEncoder(unittest.TestCase):
         self.assertTrue('network_structure' in fit_dict)
         network_structure = fit_dict['network_structure']
         self.assertIsInstance(network_structure, NetworkStructure)
-        self.assertTrue(NetworkStructure.num_blocks, 1)
+        self.assertTrue(network_structure.num_blocks, 1)
 
         self.assertTrue('network_encoder' in fit_dict)
         self.assertEqual(len(fit_dict['network_encoder']), 1)
@@ -97,8 +91,6 @@ class TestFlatEncoder(unittest.TestCase):
         encoder = encoder.fit(fit_dict)
         fit_dict = encoder.transform(fit_dict)
 
-        network_embedding = self.fit_dictionary['network_embedding']
-
         for name, decoder in decoders.items():
             fit_dict_ = copy.copy(fit_dict)
 
@@ -112,64 +104,15 @@ class TestFlatEncoder(unittest.TestCase):
             head = head.fit(fit_dict_)
             fit_dict_ = head.transform(fit_dict_)
 
-            encoder = fit_dict_['network_encoder']['block_1'].encoder
-            decoder = fit_dict_['network_decoder']['block_1'].decoder
+            net_encoder = StackedEncoder(network_structure, False,
+                                         fit_dict_['network_encoder'], fit_dict_['network_decoder'])
+            net_decoder = StackedDecoder(network_structure, net_encoder.encoder, fit_dict_['network_encoder'],
+                                         fit_dict_['network_decoder'])
 
             head = fit_dict_['network_head']
-            output = head(decoder(input_tensor_future, encoder(input_tensor, output_seq=False)))
 
-            self.assertListEqual(list(output.shape), [10, n_prediction_steps, 1])
-
-    def test_mlp_network(self):
-        n_prediction_steps = self.dataset_properties['n_prediction_steps']
-        network_structure = NetworkStructure()
-
-        encoder_cfg = MLPEncoder().get_hyperparameter_search_space().get_default_configuration()
-        encoder = MLPEncoder(**encoder_cfg)
-
-        mlp_cs = ForecastingMLPDecoder.get_hyperparameter_search_space(self.dataset_properties,
-                                                                       can_be_auto_regressive=False)
-        mlp_cfg_non_ar_w_local = mlp_cs.get_default_configuration()
-        mlp_cfg_non_ar_wo_local = copy.copy(mlp_cfg_non_ar_w_local.get_dictionary())
-
-        mlp_cfg_non_ar_wo_local['has_local_layer'] = False
-        mlp_cfg_non_ar_wo_local.pop('units_local_layer')
-
-        mlp_cfg_non_ar_wo_local = Configuration(mlp_cs, values=mlp_cfg_non_ar_wo_local)
-
-        decoder_w_local = ForecastingMLPDecoder(**mlp_cfg_non_ar_w_local)
-        decoder_wo_local = ForecastingMLPDecoder(**mlp_cfg_non_ar_wo_local)
-
-        decoders = {"non_ar_w_local": decoder_w_local,
-                    "non_ar_wo_local": decoder_wo_local}
-
-        fit_dict = copy.copy(self.fit_dictionary)
-        fit_dict['dataset_properties'] = self.dataset_properties
-        fit_dict['network_structure'] = network_structure
-
-        encoder = encoder.fit(fit_dict)
-        fit_dict = encoder.transform(fit_dict)
-
-        network_embedding = self.fit_dictionary['network_embedding']
-
-        for name, decoder in decoders.items():
-            fit_dict_ = copy.copy(fit_dict)
-
-            decoder = decoder.fit(fit_dict_)
-            fit_dict_ = decoder.transform(fit_dict_)
-
-            input_tensor = torch.randn([10, 20, 3 + fit_dict_['X_train'].shape[-1]])
-            input_tensor_future = torch.randn([10, n_prediction_steps, 2 + fit_dict_['X_train'].shape[-1]])
-
-            head = ForecastingHead()
-            head = head.fit(fit_dict_)
-            fit_dict_ = head.transform(fit_dict_)
-
-            encoder = fit_dict_['network_encoder']['block_1'].encoder
-            decoder = fit_dict_['network_decoder']['block_1'].decoder
-
-            head = fit_dict_['network_head']
-            output = head(decoder(input_tensor_future, encoder(network_embedding(input_tensor), output_seq=False)))
+            encoder2decoder, _ = net_encoder(input_tensor, [None])
+            output = head(net_decoder(input_tensor_future, encoder2decoder))
 
             self.assertListEqual(list(output.shape), [10, n_prediction_steps, 1])
 
@@ -275,3 +218,4 @@ class TestFlatEncoder(unittest.TestCase):
                 backcast_block, forecast_block = block([None], input_tensor)
                 self.assertListEqual(list(backcast_block.shape), [10, window_size * 1])
                 self.assertListEqual(list(forecast_block.shape), [10, n_prediction_steps * 1])
+

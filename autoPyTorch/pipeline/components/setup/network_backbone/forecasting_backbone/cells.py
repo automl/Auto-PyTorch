@@ -648,6 +648,6 @@ class StackedDecoder(nn.Module):
             if cache_intermediate_state:
                 if self.decoder_has_hidden_states[i]:
                     self.cached_intermediate_state[i] = hx
-                    #TODO consider if there are other case that could make use of cached intermediate states
+                    # TODO consider if there are other case that could make use of cached intermediate states
             x = fx
         return x

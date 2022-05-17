@@ -183,7 +183,6 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                                  skip_connection]
         cond_skip_connections = []
 
-
         if True in skip_connection.choices:
             skip_connection_type = get_hyperparameter(skip_connection_type, CategoricalHyperparameter)
             hp_network_structures.append(skip_connection_type)
@@ -196,7 +195,8 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                         EqualsCondition(grn_use_dropout, skip_connection_type, "gate_add_norm")
                     )
                 else:
-                    cond_skip_connections.append(EqualsCondition(grn_use_dropout, skip_connection_type, "gate_add_norm"))
+                    cond_skip_connections.append(
+                        EqualsCondition(grn_use_dropout, skip_connection_type, "gate_add_norm"))
                 if True in grn_use_dropout.choices:
                     grn_dropout_rate = get_hyperparameter(grn_dropout_rate, UniformFloatHyperparameter)
                     hp_network_structures.append(grn_dropout_rate)
@@ -215,8 +215,6 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             cond_vs_dropout = EqualsCondition(variable_selection_use_dropout, variable_selection, True)
             cond_vs_dropoutrate = EqualsCondition(variable_selection_dropout_rate, variable_selection_use_dropout, True)
             cs.add_conditions([cond_vs_dropout, cond_vs_dropoutrate])
-
-
 
         if static_features_shape + future_feature_shapes[-1] == 0:
             if False in variable_selection.choices and False in decoder_auto_regressive.choices:
@@ -238,7 +236,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
 
         available_decoders = self.get_available_components(
             dataset_properties=dataset_properties,
-            include=None, exclude=None,
+            include=None, exclude=exclude,
             components=self.get_decoder_components())
 
         if len(available_encoders) == 0:
@@ -291,15 +289,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             for encoder_name in hp_encoder.choices:
                 updates = self._get_search_space_updates(prefix=block_prefix + encoder_name)
                 config_space = available_encoders[encoder_name].get_hyperparameter_search_space(dataset_properties,
-                                                                                                # type: ignore
                                                                                                 **updates)
-                parent_hyperparameter = {'parent': hp_encoder, 'value': encoder_name}
-                cs.add_configuration_space(
-                    block_prefix + encoder_name,
-                    config_space,
-                    parent_hyperparameter=parent_hyperparameter
-                )
-
                 allowed_decoders = available_encoders[encoder_name].allowed_decoders()
                 if len(allowed_decoders) > 1:
                     if 'decoder_type' not in config_space:
@@ -311,9 +301,27 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                         raise ValueError(
                             'The encoder hyperparameter decoder_type must be a subset of the allowed_decoders')
                     allowed_decoders = hp_decoder_choice
+                valid_decoders = []
                 for decoder_name in allowed_decoders:
-                    decoder2encoder[decoder_name].append(encoder_name)
+                    if decoder_name in decoder2encoder:
+                        valid_decoders.append(decoder_name)
+                        decoder2encoder[decoder_name].append(encoder_name)
                 encoder2decoder[encoder_name] = allowed_decoders
+                if len(allowed_decoders) > 1:
+
+                    if len(valid_decoders) < len(config_space.get_hyperparameter('decoder_type').choices):
+                        updates['decoder_type'] = HyperparameterSearchSpace(hyperparameter='decoder_type',
+                                                                            value_range=tuple(valid_decoders),
+                                                                            default_value=valid_decoders[0])
+                        config_space = available_encoders[encoder_name].get_hyperparameter_search_space(
+                            dataset_properties,
+                            **updates)
+                parent_hyperparameter = {'parent': hp_encoder, 'value': encoder_name}
+                cs.add_configuration_space(
+                    block_prefix + encoder_name,
+                    config_space,
+                    parent_hyperparameter=parent_hyperparameter
+                )
 
             for decoder_name in available_decoders.keys():
                 if not decoder2encoder[decoder_name]:
@@ -322,10 +330,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                 if i == 1 and decoder_name == self.deepAR_decoder_name:
                     # TODO this is only a temporary solution, a fix on ConfigSpace needs to be implemented
                     updates['can_be_auto_regressive'] = True
-                if decoder_name == "MLPDecoder" and i < int(max_num_blocks):
-                    updates['has_local_layer'] = HyperparameterSearchSpace('has_local_layer',
-                                                                           value_range=(True,),
-                                                                           default_value=True)
+
                 config_space = available_decoders[decoder_name].get_hyperparameter_search_space(dataset_properties,
                                                                                                 # type: ignore
                                                                                                 **updates)
@@ -412,14 +417,13 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                     forbidden_deep_ar = ForbiddenEqualsClause(deep_ar_hp, True)
                     if min_num_blocks == 1:
                         if max_num_blocks > 1:
-                            if max_num_blocks - min_num_blocks > 1:
-                                forbidden = ForbiddenAndConjunction(
-                                    ForbiddenInClause(num_blocks, list(range(1, max_num_blocks))),
-                                    forbidden_deep_ar
-                                )
-                            else:
-                                forbidden = ForbiddenAndConjunction(ForbiddenEqualsClause(num_blocks, 2), forbidden_deep_ar)
+                            forbidden = ForbiddenAndConjunction(
+                                ForbiddenInClause(num_blocks, list(range(2, max_num_blocks + 1))),
+                                forbidden_deep_ar
+                            )
                             cs.add_forbidden_clause(forbidden)
+                    else:
+                        cs.add_forbidden_clause(forbidden_deep_ar)
 
                     forbidden_deep_ars = []
 
@@ -430,26 +434,25 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                                 ForbiddenEqualsClause(hp_forbidden_deep_ar, True),
                                 forbidden_deep_ar
                             ))
+                    if True in skip_connection.choices:
+                        forbidden_deep_ars.append(ForbiddenAndConjunction(
+                            ForbiddenEqualsClause(skip_connection, True),
+                            forbidden_deep_ar
+                        ))
                     if forbidden_deep_ars:
                         cs.add_forbidden_clauses(forbidden_deep_ars)
 
-        if True in skip_connection.choices:
-            forbidden_mlp_skip = []
-            forbidden_skip = ForbiddenEqualsClause(skip_connection, True)
-            forbidden_temporal_fusion = ForbiddenEqualsClause(use_temporal_fusion, True)
-            for i in range(1, max_num_blocks + 1):
-                hp_mlp_has_local_layer = f"block_{i}:MLPDecoder:has_local_layer"
-                if hp_mlp_has_local_layer in cs:
-                    hp_mlp_has_local_layer = cs.get_hyperparameter(hp_mlp_has_local_layer)
-                    forbidden_mlp_skip.append(ForbiddenAndConjunction(
+        forbidden_mlp_local_layer = []
+        for i in range(1, max_num_blocks + 1):
+            hp_mlp_has_local_layer = f"block_{i}:MLPDecoder:has_local_layer"
+            if hp_mlp_has_local_layer in cs:
+                hp_mlp_has_local_layer = cs.get_hyperparameter(hp_mlp_has_local_layer)
+                if i < max_num_blocks:
+                    forbidden_mlp_local_layer.append(ForbiddenAndConjunction(
                         ForbiddenEqualsClause(hp_mlp_has_local_layer, False),
-                        forbidden_skip
+                        ForbiddenInClause(num_blocks, list(range(i + 1, max_num_blocks + 1))),
                     ))
-                    forbidden_mlp_skip.append(ForbiddenAndConjunction(
-                        ForbiddenEqualsClause(hp_mlp_has_local_layer, False),
-                        forbidden_temporal_fusion
-                    ))
-            cs.add_forbidden_clauses(forbidden_mlp_skip)
+        cs.add_forbidden_clauses(forbidden_mlp_local_layer)
 
         return cs
 

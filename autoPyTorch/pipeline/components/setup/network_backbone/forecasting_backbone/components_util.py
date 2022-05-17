@@ -30,15 +30,23 @@ class ForecastingNetworkStructure(BaseEstimator):
                  grn_dropout_rate: float = 0.0,
                  ) -> None:
         super().__init__()
-        self.network_structure = NetworkStructure(num_blocks=num_blocks,
-                                                  variable_selection=variable_selection,
-                                                  share_single_variable_networks=share_single_variable_networks,
-                                                  use_temporal_fusion=use_temporal_fusion,
-                                                  skip_connection=skip_connection,
-                                                  skip_connection_type=skip_connection_type,
-                                                  grn_dropout_rate=grn_dropout_rate)
+        self.num_blocks = num_blocks
+        self.variable_selection = variable_selection
+        self.share_single_variable_networks = share_single_variable_networks
+        self.use_temporal_fusion = use_temporal_fusion
+        self.skip_connection = skip_connection
+        self.skip_connection_type = skip_connection_type
+        self.grn_dropout_rate = grn_dropout_rate
+        self.network_structure = None
 
-    def fit(self, X: Dict[str, Any], y: Any = None) -> "ForecastingNetworkStructure":
+    def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
+        self.network_structure = NetworkStructure(num_blocks=self.num_blocks,
+                                                  variable_selection=self.variable_selection,
+                                                  share_single_variable_networks=self.share_single_variable_networks,
+                                                  use_temporal_fusion=self.use_temporal_fusion,
+                                                  skip_connection=self.skip_connection,
+                                                  skip_connection_type=self.skip_connection_type,
+                                                  grn_dropout_rate=self.grn_dropout_rate)
         return self
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:

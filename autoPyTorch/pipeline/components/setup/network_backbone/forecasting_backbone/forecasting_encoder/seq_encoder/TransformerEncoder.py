@@ -187,7 +187,7 @@ class TransformerEncoder(BaseForecastingEncoder):
             decoder_type: HyperparameterSearchSpace =
             HyperparameterSearchSpace(hyperparameter='decoder_type',
                                       value_range=('MLPDecoder', 'TransformerDecoder'),
-                                      default_value='TransformerDecoder')
+                                      default_value='MLPDecoder')
     ) -> ConfigurationSpace:
         """
         get hyperparameter search space for Transformer, Given that d_model must be a multiple of n_head_log, we
@@ -199,8 +199,6 @@ class TransformerEncoder(BaseForecastingEncoder):
         add_hyperparameter(cs, activation, CategoricalHyperparameter)
         add_hyperparameter(cs, d_model_log, UniformIntegerHyperparameter)
         add_hyperparameter(cs, norm_first, CategoricalHyperparameter)
-
-        min_transformer_layers, max_transformer_layers = num_layers.value_range
 
         num_layers = get_hyperparameter(num_layers, UniformIntegerHyperparameter)
         use_dropout = get_hyperparameter(use_dropout, CategoricalHyperparameter)

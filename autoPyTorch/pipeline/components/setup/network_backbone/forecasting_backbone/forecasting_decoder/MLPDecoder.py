@@ -30,7 +30,8 @@ class MLPDecoderModule(DecoderNetwork):
         self.local_layers = local_layers
         self.auto_regressive = auto_regressive
 
-    def forward(self, x_future: Optional[torch.Tensor], encoder_output: torch.Tensor, pos_idx: Optional[Tuple[int]] = None):
+    def forward(self, x_future: Optional[torch.Tensor], encoder_output: torch.Tensor,
+                pos_idx: Optional[Tuple[int]] = None):
         if x_future is None or self.auto_regressive:
             # for auto-regressive model, x_future is fed to the encoders
             x = self.global_layers(encoder_output)
@@ -39,6 +40,7 @@ class MLPDecoderModule(DecoderNetwork):
             else:
                 # auto regressive model does not have local layers
                 return self.local_layers(x)
+
         if len(encoder_output.shape) == 3:
             encoder_output = encoder_output.squeeze(1)
 
@@ -147,13 +149,15 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
 
         Args:
             dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]): Dataset Properties
-            can_be_auto_regressive: bool: if this decoder is allowed to be auto-regressive
+            can_be_auto_regressive (bool): if this decoder is allowed to be auto-regressive
+            is_top_layer (bool) if this mlp decoder is at the top layer as seq decoders. Only top layer MLP allows
+                deactivating local layers. (Otherwise the decoder cannot output a sequence)
             num_layers (HyperparameterSearchSpace): number of decoder layers (the last layer is not included, thus it
-            could start from 0)
+                could start from 0)
             units_layer (HyperparameterSearchSpace): number of units of each layer (except for the last layer)
             activation (HyperparameterSearchSpace): activation function
             auto_regressive (bool): if the model acts as a DeepAR model, the corresponding hyperparaemter is
-            controlled by seq_encoder
+                controlled by seq_encoder
             has_local_layer (HyperparameterSearchSpace): if local MLP layer is applied, if not, the output of the
                 network will be directly attached with different heads
             units_local_layer (HyperparameterSearchSpace): number of units of local layer. The size of this layer is
@@ -167,8 +171,7 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
                 # deepAR model cannot be applied
                 auto_regressive = HyperparameterSearchSpace(hyperparameter=auto_regressive.hyperparameter,
                                                             value_range=[False],
-                                                            default_value=False,)
-
+                                                            default_value=False, )
         cs = ConfigurationSpace()
 
         min_num_layers: int = num_layers.value_range[0]  # type: ignore
@@ -210,14 +213,20 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
 
         cond_units_local_layer = EqualsCondition(units_local_layer, has_local_layer, True)
 
-        cs.add_hyperparameters([has_local_layer, units_local_layer])
-        cs.add_conditions([cond_units_local_layer])
-
         if can_be_auto_regressive:
             auto_regressive = get_hyperparameter(auto_regressive, CategoricalHyperparameter)
-
-            cond_use_local_layer = EqualsCondition(has_local_layer, auto_regressive, False)
             cs.add_hyperparameters([auto_regressive])
-            cs.add_conditions([cond_use_local_layer])
 
+            if False in auto_regressive.choices:
+                cs.add_hyperparameters([has_local_layer, units_local_layer])
+                cs.add_conditions([cond_units_local_layer])
+
+                cond_use_local_layer = EqualsCondition(has_local_layer, auto_regressive, False)
+                cs.add_conditions([cond_use_local_layer])
+                return cs
+            else:
+                return cs
+
+        cs.add_hyperparameters([has_local_layer, units_local_layer])
+        cs.add_conditions([cond_units_local_layer])
         return cs
