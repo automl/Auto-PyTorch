@@ -512,9 +512,11 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         # process known future features
         if known_future_features is None:
-            self.future_feature_shapes: Tuple[int, int] = (self.seq_length_min, 0)
+            future_feature_shapes: Tuple[int, int] = (self.seq_length_min, 0)
         else:
-            self.future_feature_shapes: Tuple[int, int] = (self.seq_length_min, len(known_future_features))
+            future_feature_shapes: Tuple[int, int] = (self.seq_length_min, len(known_future_features))
+        self.encoder_can_be_auto_regressive = (self.input_shape[-1] == future_feature_shapes[-1])
+
 
         if len(self.train_tensors) == 2 and self.train_tensors[1] is not None:
             self.output_type: str = type_of_target(self.train_tensors[1][0].fillna(method="pad"))
@@ -947,6 +949,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                                    'time_feature_transform': self.time_feature_transform,
                                    'uni_variant': self.is_uni_variant,
                                    'targets_have_missing_values': self.train_tensors[1].isnull().values.any(),
+                                   'encoder_can_be_auto_regressive': self.encoder_can_be_auto_regressive,
                                    'features_have_missing_values': False if self.train_tensors[0] is None
                                    else self.train_tensors[0].isnull().values.any()})
         return dataset_properties

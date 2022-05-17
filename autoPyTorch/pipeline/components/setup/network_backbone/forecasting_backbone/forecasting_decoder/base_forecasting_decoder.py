@@ -41,6 +41,7 @@ class BaseForecastingDecoder(autoPyTorchComponent):
             FitRequirement('known_future_features', (Tuple,), user_defined=False, dataset_property=True),
             FitRequirement('feature_shapes', (Dict,), user_defined=False, dataset_property=True),
             FitRequirement('network_encoder', (OrderedDict,), user_defined=False, dataset_property=False),
+            FitRequirement('n_prediction_steps', (int,), user_defined=False, dataset_property=True),
             FitRequirement('network_structure', (NetworkStructure,), user_defined=False, dataset_property=False),
             FitRequirement('transform_time_features', (bool,), user_defined=False, dataset_property=False),
             FitRequirement('time_feature_transform', (Iterable,), user_defined=False, dataset_property=True)
@@ -74,7 +75,7 @@ class BaseForecastingDecoder(autoPyTorchComponent):
         if auto_regressive:
             self.n_prediction_heads = 1
         else:
-            self.n_prediction_heads = output_shape[0]
+            self.n_prediction_heads = X['dataset_properties']['n_prediction_steps']
 
         network_structure = X['network_structure']
         variable_selection = network_structure.variable_selection
@@ -90,9 +91,6 @@ class BaseForecastingDecoder(autoPyTorchComponent):
             else:
                 n_time_feature_transform = 0
 
-            if self.block_number == network_structure.num_blocks:
-                self.is_last_decoder = True
-
             if variable_selection:
                 future_in_features = X['network_encoder']['block_1'].encoder_output_shape[-1]
             else:
@@ -105,6 +103,9 @@ class BaseForecastingDecoder(autoPyTorchComponent):
             future_variable_input = (self.n_prediction_heads, future_in_features)
         else:
             future_variable_input = (self.n_prediction_heads, X['n_decoder_output_features'])
+
+        if self.block_number == network_structure.num_blocks:
+            self.is_last_decoder = True
 
         # TODO consider decoder auto regressive and fill in decoder part
 
@@ -168,7 +169,7 @@ class BaseForecastingDecoder(autoPyTorchComponent):
         """
         decoder, n_decoder_features = self._build_decoder(encoder_output_shape, future_variable_input,
                                                           n_prediction_heads, dataset_properties)
-        return decoder, n_decoder_features
+        return decoder, int(n_decoder_features)
 
     @abstractmethod
     def _build_decoder(self,

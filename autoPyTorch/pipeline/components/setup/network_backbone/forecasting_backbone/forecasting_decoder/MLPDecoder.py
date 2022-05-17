@@ -39,11 +39,16 @@ class MLPDecoderModule(DecoderNetwork):
             else:
                 # auto regressive model does not have local layers
                 return self.local_layers(x)
+        if len(encoder_output.shape) == 3:
+            encoder_output = encoder_output.squeeze(1)
+
         if self.local_layers is None:
             x = torch.concat([encoder_output, x_future.flatten(-2)], dim=-1)
             return self.global_layers(x)
+
         x = self.global_layers(encoder_output)
         x = self.local_layers(x)
+
         return torch.concat([x, x_future], dim=-1)
 
 
@@ -55,7 +60,6 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
                        dataset_properties: Dict) -> Tuple[nn.Module, int]:
         global_layers = []
         in_features = encoder_output_shape[-1]
-        num_decoder_output_features = in_features
         has_local_layer = 'units_local_layer' in self.config
         if not has_local_layer and not self.auto_regressive:
             in_features += int(np.prod(future_variable_input))
@@ -110,7 +114,7 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
                                                                               default_value=1),
             units_layer: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="units_layer",
                                                                                value_range=(16, 512),
-                                                                               default_value=64,
+                                                                               default_value=32,
                                                                                log=True),
             activation: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="activation",
                                                                               value_range=tuple(_activations.keys()),
@@ -124,8 +128,8 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
                                                                                    value_range=(True, False),
                                                                                    default_value=True),
             units_local_layer: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="units_local_layer",
-                                                                                     value_range=(16, 128),
-                                                                                     default_value=32,
+                                                                                     value_range=(8, 128),
+                                                                                     default_value=16,
                                                                                      log=True),
     ) -> ConfigurationSpace:
         """
@@ -159,9 +163,8 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
             cs (ConfigurationSpace): ConfigurationSpace
         """
         if dataset_properties is not None:
-            num_in_features = dataset_properties.get('input_shape', (0,))
-            future_feature_shapes = dataset_properties.get('future_feature_shapes', (0,))
-            if num_in_features[-1] != future_feature_shapes[-1]:
+            encoder_can_be_auto_regressive = dataset_properties.get('encoder_can_be_auto_regressive', False)
+            if not encoder_can_be_auto_regressive:
                 # deepAR model cannot be applied
                 auto_regressive = HyperparameterSearchSpace(hyperparameter=auto_regressive.hyperparameter,
                                                             value_range=[False],

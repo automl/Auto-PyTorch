@@ -53,7 +53,6 @@ class ForecastingHead(NetworkHeadComponent):
     def _required_fit_requirements(self) -> List[FitRequirement]:
         return [
             FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
-            FitRequirement('task_type', (str,), user_defined=True, dataset_property=True),
             FitRequirement('auto_regressive', (bool,), user_defined=False, dataset_property=False),
             FitRequirement('n_decoder_output_features', (int,), user_defined=False, dataset_property=False),
             FitRequirement('network_decoder', (Dict,), user_defined=False, dataset_property=False),

@@ -482,7 +482,7 @@ class StackedEncoder(nn.Module):
                         # Transformer -> Transformer
                         self.encoder_output_type[i] = EncoderOutputForm.Sequence
                 else:
-                    # Deep AR
+                    # Deep AR, MLP as decoder
                     self.encoder_output_type[i] = EncoderOutputForm.SequenceLast
             if encoder_info[block_id].encoder_properties.has_hidden_states:
                 self.encoder_has_hidden_states[i] = True
@@ -552,6 +552,8 @@ class StackedEncoder(nn.Module):
                     encoder2decoder.append(encoder_i.get_last_seq_value(fx).squeeze(1))
                 else:
                     encoder2decoder.append(fx.squeeze(1))
+            else:
+                raise NotImplementedError
 
             if cache_intermediate_state:
                 if self.encoder_has_hidden_states[i]:

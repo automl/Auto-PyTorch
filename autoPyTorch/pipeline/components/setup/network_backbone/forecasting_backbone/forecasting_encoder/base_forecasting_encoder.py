@@ -106,7 +106,6 @@ class BaseForecastingEncoder(autoPyTorchComponent):
 
         self.input_shape = input_shape
 
-
         has_hidden_states = self.encoder_properties().has_hidden_states
         self.encoder_output_shape = get_output_shape(self.encoder, input_shape, has_hidden_states)
         if self.n_encoder_output_feature() != self.encoder_output_shape[-1]:

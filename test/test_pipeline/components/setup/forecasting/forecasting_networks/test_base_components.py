@@ -1,7 +1,7 @@
 import copy
 import unittest
-from unittest import mock
 
+from ConfigSpace import Configuration
 import pandas as pd
 import numpy as np
 import torch
@@ -14,17 +14,18 @@ from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder. \
     base_forecasting_encoder import BaseForecastingEncoder
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder. \
-    base_forecasting_decoder import BaseForecastingDecoder
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder. \
     MLPDecoder import ForecastingMLPDecoder
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import (
-    DecoderBlockInfo, DecoderProperties
+    DecoderBlockInfo
 )
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import (
-    EncoderProperties, EncoderBlockInfo, EncoderNetwork
+    EncoderBlockInfo, EncoderNetwork
 )
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import NetworkStructure
 from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.forecasting_head import ForecastingHead
+from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import (
+    ALL_DISTRIBUTIONS, DisForecastingStrategy
+)
 
 
 class DummyEmbedding(torch.nn.Module):
@@ -33,11 +34,12 @@ class DummyEmbedding(torch.nn.Module):
             return x[..., :-10]
         return x
 
+
 class DummyEncoderNetwork(EncoderNetwork):
     def forward(self, x, output_seq=False):
         if output_seq:
-            return torch.ones(x.shape[:-1])
-        return torch.ones((*x.shape[:-1], 10))
+            return torch.ones((*x.shape[:-1], 10))
+        return torch.ones((*x.shape[:-2], 1, 10))
 
 
 class DummyForecastingEncoder(BaseForecastingEncoder):
@@ -64,15 +66,9 @@ class TestForecastingNetworkBases(unittest.TestCase):
         time_feature_transform = [1, 2]
 
         feature_shapes = {'f1': 10, 'f2': 10, 'f3': 10, 'f4': 10, 'f5': 10}
-        known_future_features = ('f1', 'f2', 'f5')
+        known_future_features = ('f1', 'f2', 'f3', 'f4', 'f5')
 
         self.encoder = DummyForecastingEncoder()
-
-        with mock.patch('autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.'
-                        'forecasting_decoder.base_forecasting_decoder.BaseForecastingDecoder') as MockDecoder:
-            mockdecoder = MockDecoder.return_value
-            mockdecoder._build_decoder.return_values = (None, 10)
-        self.decoder = mockdecoder
 
         self.dataset_properties = dict(input_shape=input_shape,
                                        output_shape=output_shape,
@@ -80,14 +76,39 @@ class TestForecastingNetworkBases(unittest.TestCase):
                                        time_feature_transform=time_feature_transform,
                                        feature_shapes=feature_shapes,
                                        known_future_features=known_future_features,
+                                       n_prediction_steps=3,
+                                       encoder_can_be_auto_regressive=True
                                        )
+
+        mlp_cs = ForecastingMLPDecoder.get_hyperparameter_search_space(self.dataset_properties,
+                                                                       can_be_auto_regressive=True)
+        mlp_cfg_non_ar_w_local = mlp_cs.get_default_configuration()
+        mlp_cfg_non_ar_wo_local = copy.copy(mlp_cfg_non_ar_w_local.get_dictionary())
+
+        mlp_cfg_non_ar_wo_local['has_local_layer'] = False
+        mlp_cfg_non_ar_wo_local.pop('units_local_layer')
+
+        mlp_cfg_ar = copy.copy(mlp_cfg_non_ar_wo_local)
+        mlp_cfg_ar.pop('has_local_layer')
+        mlp_cfg_ar['auto_regressive'] = True
+
+        mlp_cfg_non_ar_wo_local = Configuration(mlp_cs, values=mlp_cfg_non_ar_wo_local)
+        mlp_cfg_ar = Configuration(mlp_cs, values=mlp_cfg_ar)
+
+        self.decoder_ar = ForecastingMLPDecoder(**mlp_cfg_ar)
+        self.decoder_w_local = ForecastingMLPDecoder(**mlp_cfg_non_ar_w_local)
+        self.decoder_wo_local = ForecastingMLPDecoder(**mlp_cfg_non_ar_wo_local)
 
         self.fit_dictionary = dict(X_train=pd.DataFrame(np.random.randn(*input_shape)),
                                    y_train=pd.DataFrame(np.random.randn(*output_shape)),
                                    network_embedding=embedding,
                                    preprocess_transforms=transformation,
-                                   window_size=3
+                                   window_size=5
                                    )
+
+        self.decoders = {"non_ar_w_local": self.decoder_w_local,
+                         "non_ar_wo_local": self.decoder_wo_local,
+                         "ar": self.decoder_ar}
 
     def test_encoder_choices(self):
         dataset_properties = {'task_type': TASK_TYPES_TO_STRING[TIMESERIES_FORECASTING]}
@@ -107,7 +128,8 @@ class TestForecastingNetworkBases(unittest.TestCase):
                                                                       include=['seq_encoder:RNNEncoder'])
 
         self.assertListEqual(list(cs_only_rnn.get_hyperparameter('__choice__').choices), ['seq_encoder'])
-        self.assertListEqual(list(cs_only_rnn.get_hyperparameter('seq_encoder:block_1:__choice__').choices), ['RNNEncoder'])
+        self.assertListEqual(list(cs_only_rnn.get_hyperparameter('seq_encoder:block_1:__choice__').choices),
+                             ['RNNEncoder'])
 
         cs_no_rnn = encoder_choices.get_hyperparameter_search_space(dataset_properties,
                                                                     exclude=['seq_encoder:RNNEncoder'])
@@ -142,7 +164,7 @@ class TestForecastingNetworkBases(unittest.TestCase):
                         fit_dictionary = encoder_block_1.transform(fit_dictionary)
                         network_encoder = fit_dictionary['network_encoder']
                         self.assertIsInstance(network_encoder['block_1'], EncoderBlockInfo)
-                        self.assertEqual(network_encoder['block_1'].encoder_output_shape, (window_size, 10))
+                        self.assertEqual(network_encoder['block_1'].encoder_output_shape, (1, 10))
 
                         if variable_selection:
                             self.assertEqual(network_encoder['block_1'].encoder_input_shape, (window_size, 10))
@@ -167,8 +189,155 @@ class TestForecastingNetworkBases(unittest.TestCase):
 
                         network_encoder = fit_dictionary['network_encoder']
                         self.assertIsInstance(network_encoder['block_2'], EncoderBlockInfo)
-                        self.assertEqual(network_encoder['block_2'].encoder_output_shape, (window_size, 10))
-                        self.assertEqual(network_encoder['block_2'].encoder_input_shape, (window_size,
-                                                                                          10))
+                        self.assertEqual(network_encoder['block_2'].encoder_output_shape, (1, 10))
+                        self.assertEqual(network_encoder['block_2'].encoder_input_shape, (1, 10))
+
+    def test_base_decoder(self):
+        n_prediction_steps = self.dataset_properties['n_prediction_steps']
+        for variable_selection in (True, False):
+            network_structure = NetworkStructure(variable_selection=variable_selection, num_blocks=2)
+            dataset_properties = copy.copy(self.dataset_properties)
+            fit_dictionary = copy.copy(self.fit_dictionary)
+
+            dataset_properties['is_small_preprocess'] = False
+            dataset_properties['uni_variant'] = False
+
+            fit_dictionary['dataset_properties'] = self.dataset_properties
+            fit_dictionary['network_structure'] = network_structure
+            fit_dictionary['transform_time_features'] = True
+            fit_dictionary['dataset_properties'] = dataset_properties
+            encoder_block_1 = copy.deepcopy(self.encoder)
+            encoder_block_2 = copy.deepcopy(self.encoder)
+            encoder_block_2.block_number = 2
+
+            encoder_block_1 = encoder_block_1.fit(fit_dictionary)
+            fit_dictionary = encoder_block_1.transform(fit_dictionary)
+            encoder_block_2 = encoder_block_2.fit(fit_dictionary)
+            fit_dictionary = encoder_block_2.transform(fit_dictionary)
+
+            decoder1 = copy.deepcopy(self.decoder_w_local)
+            decoder1 = decoder1.fit(fit_dictionary)
+            self.assertEqual(decoder1.n_prediction_heads, n_prediction_steps)
+            fit_dictionary = decoder1.transform(fit_dictionary)
+
+            network_decoder = fit_dictionary['network_decoder']
+            self.assertIsInstance(network_decoder['block_1'], DecoderBlockInfo)
+            if variable_selection:
+                self.assertEqual(network_decoder['block_1'].decoder_input_shape,
+                                 (n_prediction_steps, 10))  # Pure variable selection
+                self.assertEqual(network_decoder['block_1'].decoder_output_shape,
+                                 (n_prediction_steps, 26))  # 10 (input features) + 16 (n_output_dims)
+            else:
+                self.assertEqual(network_decoder['block_1'].decoder_input_shape,
+                                 (n_prediction_steps, 52))  # 50 (input features) + 2 (time_transforms)
+                self.assertEqual(network_decoder['block_1'].decoder_output_shape,
+                                 (n_prediction_steps, 68))  # 52 (input features) + 16 (n_out_dims)
+
+            for name, decoder in self.decoders.items():
+                fit_dictionary_ = copy.deepcopy(fit_dictionary)
+                decoder2 = copy.deepcopy(decoder)
+                decoder2.block_number = 2
+                decoder2 = decoder2.fit(fit_dictionary_)
+                fit_dictionary_ = decoder2.transform(fit_dictionary_)
+                self.assertTrue(decoder2.is_last_decoder)
+                if name == 'ar':
+                    self.assertEqual(fit_dictionary_['n_prediction_heads'], 1)
+                else:
+                    self.assertEqual(fit_dictionary_['n_prediction_heads'], n_prediction_steps)
+                n_prediction_heads = fit_dictionary_['n_prediction_heads']
+
+                network_decoder = fit_dictionary_['network_decoder']['block_2']
+                self.assertIsInstance(network_decoder, DecoderBlockInfo)
+                if variable_selection:
+                    self.assertEqual(network_decoder.decoder_input_shape, (n_prediction_heads, 26))
+
+                    if name == 'non_ar_w_local':
+                        self.assertEqual(network_decoder.decoder_output_shape, (n_prediction_heads, 42))  # 26+16
+                    elif name == 'non_ar_wo_local':
+                        self.assertEqual(network_decoder.decoder_output_shape, (n_prediction_heads, 32))  # num_global
+                    elif name == 'ar':
+                        self.assertEqual(network_decoder.decoder_output_shape, (n_prediction_heads, 32))  # 32
+                else:
+                    self.assertEqual(network_decoder.decoder_input_shape, (n_prediction_heads, 68))
+
+                    if name == 'non_ar_w_local':
+                        self.assertEqual(network_decoder.decoder_output_shape, (n_prediction_heads, 84))  # 26+16
+                    elif name == 'non_ar_wo_local':
+                        self.assertEqual(network_decoder.decoder_output_shape, (n_prediction_heads, 32))  # num_global
+                    elif name == 'ar':
+                        self.assertEqual(network_decoder.decoder_output_shape, (n_prediction_heads, 32))  # 32
+
+    def test_forecasting_heads(self):
+        variable_selection = False
+        n_prediction_steps = self.dataset_properties["n_prediction_steps"]
+
+        network_structure = NetworkStructure(variable_selection=variable_selection, num_blocks=1)
+
+        dataset_properties = copy.copy(self.dataset_properties)
+        fit_dictionary = copy.copy(self.fit_dictionary)
+
+        dataset_properties['is_small_preprocess'] = False
+        dataset_properties['uni_variant'] = False
+        input_tensor = torch.randn([10, fit_dictionary['window_size'], 3 + fit_dictionary['X_train'].shape[-1]])
+        input_tensor_future = torch.randn([10, n_prediction_steps, 2 + fit_dictionary['X_train'].shape[-1]])
+
+        fit_dictionary['dataset_properties'] = self.dataset_properties
+        fit_dictionary['network_structure'] = network_structure
+        fit_dictionary['transform_time_features'] = True
+        fit_dictionary['dataset_properties'] = dataset_properties
+        encoder = copy.deepcopy(self.encoder)
+        encoder = encoder.fit(fit_dictionary)
+        fit_dictionary = encoder.transform(fit_dictionary)
+
+        quantiles = [0.5, 0.1, 0.9]
+        for name, decoder in self.decoders.items():
+            fit_dictionary_ = copy.deepcopy(fit_dictionary)
+            decoder = decoder.fit(fit_dictionary_)
+            fit_dictionary_ = decoder.transform(fit_dictionary_)
+            for net_output_type in ['regression', 'distribution', 'quantile']:
+
+                def eval_heads_output(fit_dict):
+                    head = ForecastingHead()
+                    head = head.fit(fit_dict)
+                    fit_dictionary_copy = head.transform(fit_dict)
+
+                    encoder = fit_dictionary_copy['network_encoder']['block_1'].encoder
+                    decoder = fit_dictionary_copy['network_decoder']['block_1'].decoder
+
+                    head = fit_dictionary_copy['network_head']
+                    output = head(decoder(input_tensor_future, encoder(input_tensor, output_seq=False)))
+                    if name != "ar":
+                        if net_output_type == 'regression':
+                            self.assertListEqual(list(output.shape), [10, n_prediction_steps, 1])
+                        elif net_output_type == 'distribution':
+                            self.assertListEqual(list(output.sample().shape), [10, n_prediction_steps, 1])
+                        elif net_output_type == 'quantile':
+                            self.assertEqual(len(output), len(quantiles))
+                            for output_quantile in output:
+                                self.assertListEqual(list(output_quantile.shape), [10, n_prediction_steps, 1])
+                    else:
+                        if net_output_type == 'regression':
+                            self.assertListEqual(list(output.shape), [10, 1, 1])
+                        elif net_output_type == 'distribution':
+                            self.assertListEqual(list(output.sample().shape), [10, 1, 1])
+                        elif net_output_type == 'quantile':
+                            self.assertEqual(len(output), len(quantiles))
+                            for output_quantile in output:
+                                self.assertListEqual(list(output_quantile.shape), [10, 1, 1])
+
+                fit_dictionary_copy = copy.deepcopy(fit_dictionary_)
+                fit_dictionary_copy['net_output_type'] = net_output_type
+
+                if net_output_type == 'distribution':
+                    for dist in ALL_DISTRIBUTIONS.keys():
+                        fit_dictionary_copy['dist_forecasting_strategy'] = DisForecastingStrategy(dist_cls=dist)
+                        eval_heads_output(fit_dictionary_copy)
+                elif net_output_type == 'quantile':
+                    fit_dictionary_copy['quantile_values'] = quantiles
+                    eval_heads_output(fit_dictionary_copy)
+                else:
+                    eval_heads_output(fit_dictionary_copy)
+
+
 
 
