@@ -58,7 +58,9 @@ class ForecastingHead(NetworkHeadComponent):
             FitRequirement('network_decoder', (Dict,), user_defined=False, dataset_property=False),
             FitRequirement('n_prediction_heads', (int,), user_defined=False, dataset_property=False),
             FitRequirement('output_shape', (Iterable,), user_defined=True, dataset_property=True),
-            FitRequirement('net_output_type', (str, ), user_defined=False, dataset_property=False)
+            FitRequirement('net_output_type', (str, ), user_defined=False, dataset_property=False),
+            FitRequirement('n_prediction_steps', (int,), user_defined=False, dataset_property=True)
+
         ]
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
@@ -81,7 +83,7 @@ class ForecastingHead(NetworkHeadComponent):
             # if the decoder is a stacked block, we directly build head inside the decoder
             if net_output_type != 'regression':
                 raise ValueError("decoder with multi block structure only allow regression loss!")
-            self.output_shape = output_shape
+            self.output_shape = (X['dataset_properties']['n_prediction_steps'], output_shape[-1])
             return self
 
         num_quantiles = 0

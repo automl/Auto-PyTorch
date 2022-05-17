@@ -55,30 +55,47 @@ class DummyTranformers():
         return x[..., :(x.shape[-1] // 2)]
 
 
+def generate_fit_dict_and_dataset_property():
+    embedding = DummyEmbedding()
+
+    transformation = [DummyTranformers()]
+    n_prediction_steps = 3
+    input_shape = (100, 50)
+    output_shape = (n_prediction_steps, 1)
+    time_feature_transform = [1, 2]
+
+    feature_shapes = {'f1': 10, 'f2': 10, 'f3': 10, 'f4': 10, 'f5': 10}
+    known_future_features = ('f1', 'f2', 'f3', 'f4', 'f5')
+
+    dataset_properties = dict(input_shape=input_shape,
+                              output_shape=output_shape,
+                              transform_time_features=True,
+                              time_feature_transform=time_feature_transform,
+                              feature_shapes=feature_shapes,
+                              known_future_features=known_future_features,
+                              n_prediction_steps=n_prediction_steps,
+                              encoder_can_be_auto_regressive=True,
+                              is_small_preprocess=True,
+                              task_type=TASK_TYPES_TO_STRING[TIMESERIES_FORECASTING],
+                              uni_variant=False,
+                              )
+
+    fit_dictionary = dict(X_train=pd.DataFrame(np.random.randn(*input_shape)),
+                          y_train=pd.DataFrame(np.random.randn(*output_shape)),
+                          network_embedding=embedding,
+                          preprocess_transforms=transformation,
+                          transform_time_features=True,
+                          window_size=5
+                          )
+
+    return dataset_properties, fit_dictionary
+
+
 class TestForecastingNetworkBases(unittest.TestCase):
     def setUp(self) -> None:
-        embedding = DummyEmbedding()
-
-        transformation = [DummyTranformers()]
-
-        input_shape = (100, 50)
-        output_shape = (100, 1)
-        time_feature_transform = [1, 2]
-
-        feature_shapes = {'f1': 10, 'f2': 10, 'f3': 10, 'f4': 10, 'f5': 10}
-        known_future_features = ('f1', 'f2', 'f3', 'f4', 'f5')
+        self.dataset_properties, self.fit_dictionary = generate_fit_dict_and_dataset_property()
 
         self.encoder = DummyForecastingEncoder()
-
-        self.dataset_properties = dict(input_shape=input_shape,
-                                       output_shape=output_shape,
-                                       transform_time_features=True,
-                                       time_feature_transform=time_feature_transform,
-                                       feature_shapes=feature_shapes,
-                                       known_future_features=known_future_features,
-                                       n_prediction_steps=3,
-                                       encoder_can_be_auto_regressive=True
-                                       )
 
         mlp_cs = ForecastingMLPDecoder.get_hyperparameter_search_space(self.dataset_properties,
                                                                        can_be_auto_regressive=True)
@@ -98,13 +115,6 @@ class TestForecastingNetworkBases(unittest.TestCase):
         self.decoder_ar = ForecastingMLPDecoder(**mlp_cfg_ar)
         self.decoder_w_local = ForecastingMLPDecoder(**mlp_cfg_non_ar_w_local)
         self.decoder_wo_local = ForecastingMLPDecoder(**mlp_cfg_non_ar_wo_local)
-
-        self.fit_dictionary = dict(X_train=pd.DataFrame(np.random.randn(*input_shape)),
-                                   y_train=pd.DataFrame(np.random.randn(*output_shape)),
-                                   network_embedding=embedding,
-                                   preprocess_transforms=transformation,
-                                   window_size=5
-                                   )
 
         self.decoders = {"non_ar_w_local": self.decoder_w_local,
                          "non_ar_wo_local": self.decoder_wo_local,
@@ -135,6 +145,11 @@ class TestForecastingNetworkBases(unittest.TestCase):
                                                                     exclude=['seq_encoder:RNNEncoder'])
         for hp_name in cs_no_rnn.get_hyperparameter_names():
             self.assertFalse('RNNEncoder' in hp_name)
+
+        sample = cs.sample_configuration()
+
+        encoder_choices = encoder_choices.set_hyperparameters(sample)
+        self.assertIsInstance(encoder_choices.choice.choice, BaseForecastingEncoder)
 
     def test_base_encoder(self):
         window_size = self.fit_dictionary['window_size']
@@ -199,13 +214,9 @@ class TestForecastingNetworkBases(unittest.TestCase):
             dataset_properties = copy.copy(self.dataset_properties)
             fit_dictionary = copy.copy(self.fit_dictionary)
 
-            dataset_properties['is_small_preprocess'] = False
-            dataset_properties['uni_variant'] = False
-
-            fit_dictionary['dataset_properties'] = self.dataset_properties
             fit_dictionary['network_structure'] = network_structure
-            fit_dictionary['transform_time_features'] = True
             fit_dictionary['dataset_properties'] = dataset_properties
+
             encoder_block_1 = copy.deepcopy(self.encoder)
             encoder_block_2 = copy.deepcopy(self.encoder)
             encoder_block_2.block_number = 2
@@ -276,10 +287,11 @@ class TestForecastingNetworkBases(unittest.TestCase):
         dataset_properties = copy.copy(self.dataset_properties)
         fit_dictionary = copy.copy(self.fit_dictionary)
 
-        dataset_properties['is_small_preprocess'] = False
-        dataset_properties['uni_variant'] = False
-        input_tensor = torch.randn([10, fit_dictionary['window_size'], 3 + fit_dictionary['X_train'].shape[-1]])
+        input_tensor = torch.randn([10, 20, 3 + fit_dictionary['X_train'].shape[-1]])
         input_tensor_future = torch.randn([10, n_prediction_steps, 2 + fit_dictionary['X_train'].shape[-1]])
+
+        network_embedding = self.fit_dictionary['network_embedding']
+        input_tensor = network_embedding(input_tensor)
 
         fit_dictionary['dataset_properties'] = self.dataset_properties
         fit_dictionary['network_structure'] = network_structure
@@ -294,6 +306,7 @@ class TestForecastingNetworkBases(unittest.TestCase):
             fit_dictionary_ = copy.deepcopy(fit_dictionary)
             decoder = decoder.fit(fit_dictionary_)
             fit_dictionary_ = decoder.transform(fit_dictionary_)
+
             for net_output_type in ['regression', 'distribution', 'quantile']:
 
                 def eval_heads_output(fit_dict):
@@ -337,7 +350,3 @@ class TestForecastingNetworkBases(unittest.TestCase):
                     eval_heads_output(fit_dictionary_copy)
                 else:
                     eval_heads_output(fit_dictionary_copy)
-
-
-
-

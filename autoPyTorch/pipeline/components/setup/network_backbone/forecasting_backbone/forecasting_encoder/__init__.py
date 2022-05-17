@@ -17,7 +17,7 @@ from autoPyTorch.pipeline.components.base_component import (
 )
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.setup.network_backbone import NetworkBackboneChoice
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.\
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone. \
     forecasting_encoder.base_forecasting_encoder import BaseForecastingEncoder
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import (
     ForecastingNetworkStructure
@@ -38,6 +38,7 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
     the choice of encoder. Thus here "choice" indicates the choice of encoder, then decoder will be determined by
     the encoder.
     """
+
     def __init__(self,
 
                  **kwargs,
@@ -71,11 +72,11 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
         return [self.get_decoder_components]
 
     def get_available_components(
-        self,
-        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
-        include: List[str] = None,
-        exclude: List[str] = None,
-        components: Optional[Dict[str, autoPyTorchComponent]] = None
+            self,
+            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+            include: List[str] = None,
+            exclude: List[str] = None,
+            components: Optional[Dict[str, autoPyTorchComponent]] = None
     ) -> Dict[str, Type[autoPyTorchComponent]]:
         """Filters out components based on user provided
         include/exclude directives, as well as the dataset properties
@@ -144,11 +145,11 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
         return components_dict
 
     def get_hyperparameter_search_space(
-        self,
-        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
-        default: Optional[str] = None,
-        include: Optional[List[str]] = None,
-        exclude: Optional[List[str]] = None,
+            self,
+            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+            default: Optional[str] = None,
+            include: Optional[List[str]] = None,
+            exclude: Optional[List[str]] = None,
     ) -> ConfigurationSpace:
         """Returns the configuration space of the current chosen components
 
@@ -198,8 +199,8 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
                                                                available_encoders,
                                                                choice_hyperparameter.value_range))
             hp_encoder = CSH.CategoricalHyperparameter('__choice__',
-                                                     choice_hyperparameter.value_range,
-                                                     default_value=choice_hyperparameter.default_value)
+                                                       choice_hyperparameter.value_range,
+                                                       default_value=choice_hyperparameter.default_value)
         else:
             hp_encoder = CSH.CategoricalHyperparameter(
                 '__choice__',
@@ -212,8 +213,9 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
         encoder2decoder = {}
         for encoder_name in hp_encoder.choices:
             updates = self._get_search_space_updates(prefix=encoder_name)
-            config_space = available_encoders[encoder_name].get_hyperparameter_search_space(dataset_properties,  # type: ignore
-                                                                                     **updates)
+            config_space = available_encoders[encoder_name].get_hyperparameter_search_space(dataset_properties,
+                                                                                            # type: ignore
+                                                                                            **updates)
             parent_hyperparameter = {'parent': hp_encoder, 'value': encoder_name}
             cs.add_configuration_space(
                 encoder_name,
@@ -239,7 +241,8 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
             if not decoder2encoder[decoder_name]:
                 continue
             updates = self._get_search_space_updates(prefix=decoder_name)
-            config_space = available_decoders[decoder_name].get_hyperparameter_search_space(dataset_properties,  # type: ignore
+            config_space = available_decoders[decoder_name].get_hyperparameter_search_space(dataset_properties,
+                                                                                            # type: ignore
                                                                                             **updates)
             compatible_encoders = decoder2encoder[decoder_name]
             encoders_with_multi_decoder = []
@@ -254,9 +257,9 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
             cs.add_configuration_space(
                 decoder_name,
                 config_space,
-                #parent_hyperparameter=parent_hyperparameter
+                # parent_hyperparameter=parent_hyperparameter
             )
-            hps = cs.get_hyperparameters() # type: List[CSH.Hyperparameter]
+            hps = cs.get_hyperparameters()  # type: List[CSH.Hyperparameter]
             conditions_to_add = []
             for hp in hps:
                 # TODO consider if this will raise any unexpected behavior
@@ -360,7 +363,7 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
     def _defaults_network(self):
         return ['MLPEncoder']
 
-    def fit(self, X: Dict[str, Any], y: Any) -> autoPyTorchComponent:
+    def fit(self, X: Dict[str, Any], y: Any = None) -> autoPyTorchComponent:
         """Handy method to check if a component is fitted
 
         Args:
@@ -381,5 +384,3 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
     @property
     def _defaults_network(self):
         return ['MLPEncoder']
-
-

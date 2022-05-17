@@ -84,7 +84,6 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
                                 local_layers=nn.Sequential(*local_layers) if local_layers is not None else None,
                                 auto_regressive=self.auto_regressive), num_decoder_output_features
 
-
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
                        ) -> Dict[str, Union[str, bool]]:

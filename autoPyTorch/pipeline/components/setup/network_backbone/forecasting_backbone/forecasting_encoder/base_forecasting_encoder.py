@@ -73,7 +73,6 @@ class BaseForecastingEncoder(autoPyTorchComponent):
                     X_train = transforms(X_train)
                     input_shape = np.concatenate(X_train).shape[1:]
 
-
             if X['transform_time_features']:
                 n_time_feature_transform = len(X['dataset_properties']['time_feature_transform'])
             else:
