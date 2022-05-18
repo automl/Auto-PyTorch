@@ -108,7 +108,8 @@ class BaseForecastingEncoder(autoPyTorchComponent):
         has_hidden_states = self.encoder_properties().has_hidden_states
         self.encoder_output_shape = get_output_shape(self.encoder, input_shape, has_hidden_states)
         if self.n_encoder_output_feature() != self.encoder_output_shape[-1]:
-            raise ValueError('n_encoder_output_feature must equal to the output dimension')
+            raise ValueError(f'n_encoder_output_feature ({ self.n_encoder_output_feature()}) '
+                             f'must equal to the output dimension f({self.encoder_output_shape})')
         return self
 
     @staticmethod

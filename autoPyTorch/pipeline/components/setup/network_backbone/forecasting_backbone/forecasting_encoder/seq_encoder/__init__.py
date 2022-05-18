@@ -101,7 +101,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             decoder_auto_regressive: HyperparameterSearchSpace = HyperparameterSearchSpace(
                 hyperparameter="decoder_auto_regressive",
                 value_range=(True, False),
-                default_value=True,
+                default_value=False,
             ),
             skip_connection: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="skip_connection",
                                                                                    value_range=(True, False),
@@ -215,16 +215,11 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             cond_vs_dropout = EqualsCondition(variable_selection_use_dropout, variable_selection, True)
             cond_vs_dropoutrate = EqualsCondition(variable_selection_dropout_rate, variable_selection_use_dropout, True)
             cs.add_conditions([cond_vs_dropout, cond_vs_dropoutrate])
-
+        
+        add_forbidden_for_non_ar_recurrent_decoder = False
         if static_features_shape + future_feature_shapes[-1] == 0:
-            if False in variable_selection.choices and False in decoder_auto_regressive.choices:
-                if variable_selection.num_choices == 1 and decoder_auto_regressive.num_choices == 1:
-                    raise ValueError("When no future information is available, it is not possible to disable variable"
-                                     "selection and enable auto-regressive decoder model")
-                cs.add_forbidden_clause(ForbiddenAndConjunction(
-                    ForbiddenEqualsClause(variable_selection, False),
-                    ForbiddenEqualsClause(decoder_auto_regressive, False)
-                ))
+            add_forbidden_for_non_ar_recurrent_decoder = True
+
         if True in variable_selection.choices:
             cs.add_hyperparameter(share_single_variable_networks)
             cs.add_condition(EqualsCondition(share_single_variable_networks, variable_selection, True))
@@ -250,15 +245,16 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                 if default_ in available_encoders:
                     default = default_
                     break
+
         updates_choice = self._get_search_space_updates()
 
         forbiddens_decoder_auto_regressive = []
 
-        if False in decoder_auto_regressive.choices:
+        if True in decoder_auto_regressive.choices:
             forbidden_decoder_ar = ForbiddenEqualsClause(decoder_auto_regressive, True)
         else:
             forbidden_decoder_ar = None
-
+            
         for i in range(1, int(max_num_blocks) + 1):
             block_prefix = f'block_{i}:'
 
@@ -342,6 +338,8 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                         encoders_with_multi_decoder.append(encoder)
                     else:
                         encoder_with_single_decoder.append(encoder)
+                encoders_with_multi_decoder = set(encoders_with_multi_decoder)
+                encoder_with_single_decoder = set(encoder_with_single_decoder)
 
                 cs.add_configuration_space(
                     block_prefix + decoder_name,
@@ -376,6 +374,50 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                             conditions_to_add.append(or_cond[0])
 
                 cs.add_conditions(conditions_to_add)
+
+                if forbidden_decoder_ar is not None:
+                    forbiddens_ar_non_recurrent = []
+                    for encoder in hp_encoder.choices:
+                        if encoder in encoder_with_single_decoder:
+                            if not available_decoders[encoder2decoder[encoder][0]].decoder_properties().recurrent:
+                                forbiddens_ar_non_recurrent.append(ForbiddenAndConjunction(
+                                    forbidden_decoder_ar,
+                                    ForbiddenEqualsClause(hp_encoder, encoder)
+                                ))
+                            else:
+                                if add_forbidden_for_non_ar_recurrent_decoder:
+                                    forbiddens_decoder_auto_regressive.append(
+                                        ForbiddenAndConjunction(
+                                            ForbiddenAndConjunction(
+                                                ForbiddenEqualsClause(variable_selection, False),
+                                                ForbiddenEqualsClause(decoder_auto_regressive, False)
+                                            ),
+                                            ForbiddenEqualsClause(hp_encoder, encoder)
+                                        )
+                                    )
+                                
+                        elif encoder in encoders_with_multi_decoder:
+                            hp_decoder_type = cs.get_hyperparameter(f'{block_prefix + encoder}:decoder_type')
+                            for decoder in hp_decoder_type.choices:
+                                if not available_decoders[decoder].decoder_properties().recurrent:
+                                    forbiddens_ar_non_recurrent.append(ForbiddenAndConjunction(
+                                        forbidden_decoder_ar,
+                                        ForbiddenEqualsClause(hp_decoder_type, decoder)
+                                    ))
+                                else:
+                                    if add_forbidden_for_non_ar_recurrent_decoder:
+                                        forbiddens_decoder_auto_regressive.append(
+                                            ForbiddenAndConjunction(
+                                                ForbiddenAndConjunction(
+                                                    ForbiddenEqualsClause(variable_selection, False),
+                                                    ForbiddenEqualsClause(decoder_auto_regressive, False)
+                                                ),
+                                                ForbiddenEqualsClause(hp_decoder_type, decoder)
+                                            )
+                                        )
+                    if forbiddens_ar_non_recurrent:
+                        cs.add_forbidden_clauses(forbiddens_ar_non_recurrent)
+
 
         use_temporal_fusion = get_hyperparameter(use_temporal_fusion, CategoricalHyperparameter)
         cs.add_hyperparameter(use_temporal_fusion)
@@ -452,9 +494,29 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                         ForbiddenEqualsClause(hp_mlp_has_local_layer, False),
                         ForbiddenInClause(num_blocks, list(range(i + 1, max_num_blocks + 1))),
                     ))
-        cs.add_forbidden_clauses(forbidden_mlp_local_layer)
+                c1 = isinstance(skip_connection, CategoricalHyperparameter) and True in skip_connection.choices
+                c2 = isinstance(skip_connection, Constant) and skip_connection.value
+                if c1 or c2:
+                    if True in skip_connection.choices:
+                        forbidden_mlp_local_layer.append(ForbiddenAndConjunction(
+                            ForbiddenEqualsClause(hp_mlp_has_local_layer, False),
+                            ForbiddenEqualsClause(skip_connection, True),
+                        ))
+                c1 = isinstance(use_temporal_fusion, CategoricalHyperparameter) and True in use_temporal_fusion.choices
+                c2 = isinstance(use_temporal_fusion, Constant) and skip_connection.value
+                if c1 or c2:
+                    if True in use_temporal_fusion.choices:
+                        forbidden_mlp_local_layer.append(ForbiddenAndConjunction(
+                            ForbiddenEqualsClause(hp_mlp_has_local_layer, False),
+                            ForbiddenEqualsClause(use_temporal_fusion, True),
+                        ))
 
+        cs.add_forbidden_clauses(forbidden_mlp_local_layer)
         return cs
+
+    @property
+    def _defaults_network(self):
+        return ['RNNEncoder', 'NBEATSEncoder']
 
     def set_hyperparameters(self,
                             configuration: Configuration,

@@ -452,11 +452,11 @@ class TimeSeriesForecastingTask(BaseTask):
 
     def predict(
             self,
-            X_test: Optional[List[Union[np.ndarray, pd.DataFrame, TimeSeriesSequence]], pd.DataFrame] = None,
+            X_test: Optional[List[Union[np.ndarray, pd.DataFrame, TimeSeriesSequence]]] = None,
             batch_size: Optional[int] = None,
             n_jobs: int = 1,
             past_targets: Optional[List[np.ndarray]] = None,
-            future_targets: Optional[List[Union[np.ndarray, pd.DataFrame, TimeSeriesSequence]], pd.DataFrame] = None,
+            future_targets: Optional[List[Union[np.ndarray, pd.DataFrame, TimeSeriesSequence]]] = None,
             start_times: List[pd.DatetimeIndex] = []
     ) -> np.ndarray:
         """
@@ -466,11 +466,11 @@ class TimeSeriesForecastingTask(BaseTask):
         if not isinstance(X_test[0], TimeSeriesSequence):
             # Validate and construct TimeSeriesSequence
             X_test, _, _ = self.dataset.transform_data_into_time_series_sequence(X=X_test,
-                                                                              Y=past_targets,
-                                                                              X_test=future_targets,
-                                                                              start_times=start_times,
-                                                                              is_test_set=True
-                                                                              )
+                                                                                 Y=past_targets,
+                                                                                 X_test=future_targets,
+                                                                                 start_times=start_times,
+                                                                                 is_test_set=True
+                                                                                 )
         flattened_res = super(TimeSeriesForecastingTask, self).predict(X_test, batch_size, n_jobs)
         if self.dataset.num_target == 1:
             forecasting = flattened_res.reshape([-1, self.dataset.n_prediction_steps])

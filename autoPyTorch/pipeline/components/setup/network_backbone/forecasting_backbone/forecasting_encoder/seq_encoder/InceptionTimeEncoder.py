@@ -131,7 +131,7 @@ class _InceptionTime(nn.Module):
             return self.get_last_seq_value(x)
 
     def get_last_seq_value(self, x: torch.Tensor) -> torch.Tensor:
-        return x[:, -1, :]
+        return x[:, -1:, :]
 
 
 class InceptionTimeEncoder(BaseForecastingEncoder):
@@ -148,7 +148,8 @@ class InceptionTimeEncoder(BaseForecastingEncoder):
         return encoder
 
     def n_encoder_output_feature(self) -> int:
-        return self.config['num_filters']
+        # see _InceptionBlock.forward()
+        return self.config['num_filters'] * 4
 
     @staticmethod
     def allowed_decoders():
@@ -164,8 +165,7 @@ class InceptionTimeEncoder(BaseForecastingEncoder):
             'name': 'InceptionTimeEncoder',
             'handles_tabular': False,
             'handles_image': False,
-            # TODO consider InceptionTime for forecasting
-            'handles_time_series': False,
+            'handles_time_series': True,
         }
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:

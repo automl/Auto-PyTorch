@@ -69,8 +69,7 @@ class _TransformerDecoder(DecoderNetwork):
         if self.use_positional_decoder:
             output = self.pos_encoding(output, pos_idx)
         if self.training:
-            output = self.transformer_decoder_layers(output, encoder_output,
-                                                     tgt_mask=self.tgt_mask.to(encoder_output.device))
+            output = self.transformer_decoder_layers(output, encoder_output, tgt_mask=self.tgt_mask.to(encoder_output.device))
         else:
             output = self.transformer_decoder_layers(output, encoder_output)
         return output
@@ -81,7 +80,7 @@ class ForecastingTransformerDecoder(BaseForecastingDecoder):
         super().__init__(**kwargs)
         # RNN is naturally auto-regressive. However, we will not consider it as a decoder for deep AR model
         self.transformer_encoder_kwargs = None
-        self.lagged_value = [0, 1, 2, 3, 4, 5, 6, 7]
+        self.lagged_value = [1, 2, 3, 4, 5, 6, 7]
 
     def _build_decoder(self,
                        encoder_output_shape: Tuple[int, ...],

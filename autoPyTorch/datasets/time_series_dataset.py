@@ -1193,8 +1193,9 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         test_sets = copy.deepcopy(self.datasets)
         for test_seq in test_sets:
             test_seq.is_test_set = True
-            if len(self.known_future_features) > 0 and test_seq.X_test is None:
-                raise ValueError("If future features are required, X_test must be given!")
-            test_seq.X = np.concatenate([test_seq.X, test_seq.X_test])
+            if len(self.known_future_features) > 0:
+                if test_seq.X_test is None:
+                    raise ValueError("If future features are required, X_test must be given!")
+                test_seq.X = np.concatenate([test_seq.X, test_seq.X_test])
         return test_sets
 

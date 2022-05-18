@@ -29,7 +29,7 @@ class TemporalFusion(autoPyTorchComponent):
                  attention_n_head_log: int = 2,
                  attention_d_model_log: int = 4,
                  use_dropout: bool = False,
-                 dropout_rate: Optional[float] = None,):
+                 dropout_rate: Optional[float] = None, ):
         autoPyTorchComponent.__init__(self)
         self.add_fit_requirements(
             self._required_fit_requirements
@@ -55,13 +55,13 @@ class TemporalFusion(autoPyTorchComponent):
         network_structure = X['network_structure']  # type: NetworkStructure
 
         self.temporal_fusion = TemporalFusionLayer(window_size=X['window_size'],
-                                              network_structure=network_structure,
-                                              network_encoder=X['network_encoder'],
-                                              n_decoder_output_features=X['n_decoder_output_features'],
-                                              d_model=2 ** self.attention_d_model_log,
-                                              n_head=2 ** self.attention_n_head_log,
-                                              dropout=self.dropout_rate
-                                              )
+                                                   network_structure=network_structure,
+                                                   network_encoder=X['network_encoder'],
+                                                   n_decoder_output_features=X['n_decoder_output_features'],
+                                                   d_model=2 ** self.attention_d_model_log,
+                                                   n_head=2 ** self.attention_n_head_log,
+                                                   dropout=self.dropout_rate
+                                                   )
         self.n_decoder_output_features = 2 ** self.attention_d_model_log
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
@@ -108,10 +108,6 @@ class TemporalFusion(autoPyTorchComponent):
         Args:
             dataset_properties (Optional[Dict[str, Union[str, int]]):
                 Describes the dataset to work on
-            use_temporal_fusion (HyperparameterSearchSpace):
-                if attention fusion layer is applied (Lim et al.
-                Temporal Fusion Transformers for Interpretable Multi-horizon Time Series Forecasting,
-                https://arxiv.org/abs/1912.09363)
             attention_n_head_log (HyperparameterSearchSpace):
                 log value of number of heads for interpretable
             attention_d_model_log (HyperparameterSearchSpace):

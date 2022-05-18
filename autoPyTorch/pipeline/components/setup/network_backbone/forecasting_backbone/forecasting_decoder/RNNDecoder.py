@@ -65,7 +65,7 @@ class ForecastingRNNDecoder(BaseForecastingDecoder):
         super().__init__(**kwargs)
         # RNN is naturally auto-regressive. However, we will not consider it as a decoder for deep AR model
         self.rnn_kwargs = None
-        self.lagged_value = [0, 1, 2, 3, 4, 5, 6, 7]
+        self.lagged_value = [1, 2, 3, 4, 5, 6, 7]
 
     @property
     def _required_fit_requirements(self) -> List[FitRequirement]:

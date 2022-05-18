@@ -88,6 +88,7 @@ class TemporalFusionLayer(nn.Module):
             elif network_structure.skip_connection_type == 'gate_add_norm':
                 self.residual_connection = GateAddNorm(d_model, skip_size=n_encoder_output,
                                                        dropout=None, trainable_add=False)
+        self._device = 'cpu'
 
     def forward(self,
                 encoder_output: torch.Tensor,
@@ -103,12 +104,13 @@ class TemporalFusionLayer(nn.Module):
             decoder_length: length of decoder network
             static_embedding: output of static variable selection network (if applible)
         """
+
         if self.decoder_proj_layer is not None:
             decoder_output = self.decoder_proj_layer(decoder_output)
 
         network_output = torch.cat([encoder_output, decoder_output], dim=1)
 
-        if self.enrich_with_static:
+        if self.enrich_with_static and static_embedding is not None:
             static_context_enrichment = self.static_context_enrichment(static_embedding)
             attn_input = self.enrichment(
                 network_output, static_context_enrichment[:, None].expand(-1, network_output.shape[1], -1)
@@ -546,12 +548,10 @@ class StackedEncoder(nn.Module):
             elif self.encoder_output_type[i] == EncoderOutputForm.Sequence:
                 encoder2decoder.append(fx)
             elif self.encoder_output_type[i] == EncoderOutputForm.SequenceLast:
-                if output_seq or incremental_update:
-                    encoder2decoder.append(fx)
-                elif output_seq_i:
+                if output_seq_i:
                     encoder2decoder.append(encoder_i.get_last_seq_value(fx).squeeze(1))
                 else:
-                    encoder2decoder.append(fx.squeeze(1))
+                    encoder2decoder.append(fx)
             else:
                 raise NotImplementedError
 

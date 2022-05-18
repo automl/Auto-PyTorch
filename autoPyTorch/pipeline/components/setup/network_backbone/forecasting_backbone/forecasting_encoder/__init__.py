@@ -361,7 +361,7 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
 
     @property
     def _defaults_network(self):
-        return ['MLPEncoder']
+        return ['MLPEncoder', 'RNNEncoder', 'NBEATSEncoder']
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> autoPyTorchComponent:
         """Handy method to check if a component is fitted

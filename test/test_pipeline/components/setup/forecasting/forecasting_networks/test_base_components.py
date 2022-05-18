@@ -78,6 +78,7 @@ def generate_fit_dict_and_dataset_property():
                               is_small_preprocess=True,
                               task_type=TASK_TYPES_TO_STRING[TIMESERIES_FORECASTING],
                               uni_variant=False,
+                              future_feature_shapes=(n_prediction_steps, 50),
                               )
 
     fit_dictionary = dict(X_train=pd.DataFrame(np.random.randn(*input_shape)),
