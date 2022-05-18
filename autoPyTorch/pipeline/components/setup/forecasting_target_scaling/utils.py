@@ -1,7 +1,6 @@
-from typing import Any, Dict, Callable, Optional, Union, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import torch
-import sklearn
 from sklearn.base import BaseEstimator
 
 

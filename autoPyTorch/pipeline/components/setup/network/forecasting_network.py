@@ -10,12 +10,7 @@ from torch import nn
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import BaseTargetScaler
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import (
-    EncoderBlockInfo,
-)
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import (
-    DecoderBlockInfo,
-)
+
 
 from autoPyTorch.utils.common import FitRequirement, get_device_from_fit_dictionary
 from autoPyTorch.pipeline.components.setup.network.base_network import NetworkComponent
@@ -25,6 +20,9 @@ from autoPyTorch.pipeline.components.setup.network.forecasting_architecture impo
     ForecastingSeq2SeqNet,
     ForecastingDeepARNet,
     NBEATSNet,
+)
+from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import (
+    DisForecastingStrategy
 )
 
 
@@ -43,9 +41,9 @@ class ForecastingNetworkComponent(NetworkComponent):
             FitRequirement('window_size', (int,), user_defined=False, dataset_property=False),
             FitRequirement('network_structure', (Dict,), user_defined=False, dataset_property=False),
             FitRequirement("network_embedding", (torch.nn.Module,), user_defined=False, dataset_property=False),
-            FitRequirement("network_encoder", (Dict[str, EncoderBlockInfo]), user_defined=False,
+            FitRequirement("network_encoder", (Dict,), user_defined=False,
                            dataset_property=False),
-            FitRequirement("network_decoder", (Dict[str, DecoderBlockInfo]), user_defined=False,
+            FitRequirement("network_decoder", (Dict,), user_defined=False,
                            dataset_property=False),
             FitRequirement("network_head", (Optional[torch.nn.Module],), user_defined=False, dataset_property=False),
             FitRequirement("auto_regressive", (bool,), user_defined=False, dataset_property=False),

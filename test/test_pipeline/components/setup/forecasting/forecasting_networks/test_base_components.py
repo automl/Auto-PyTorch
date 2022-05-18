@@ -26,6 +26,7 @@ from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head
 from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import (
     ALL_DISTRIBUTIONS, DisForecastingStrategy
 )
+from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdate
 
 
 class DummyEmbedding(torch.nn.Module):
@@ -151,6 +152,27 @@ class TestForecastingNetworkBases(unittest.TestCase):
 
         encoder_choices = encoder_choices.set_hyperparameters(sample)
         self.assertIsInstance(encoder_choices.choice.choice, BaseForecastingEncoder)
+
+        encoder_choices = ForecastingNetworkChoice(dataset_properties)
+
+        update_seq = HyperparameterSearchSpaceUpdate(node_name="network_backbone",
+                                                     hyperparameter='__choice__',
+                                                     value_range=('seq_encoder',),
+                                                     default_value='seq_encoder', )
+        encoder_choices._apply_search_space_update(update_seq)
+        cs_seq = encoder_choices.get_hyperparameter_search_space(dataset_properties)
+        self.assertListEqual(list(cs_seq.get_hyperparameter('__choice__').choices), ['seq_encoder'])
+
+        encoder_choices = ForecastingNetworkChoice(dataset_properties)
+        update_rnn_decoder_type = HyperparameterSearchSpaceUpdate(
+            node_name="network_backbone",
+            hyperparameter='seq_encoder:block_1:RNNEncoder:decoder_type',
+            value_range=('MLPDecoder',),
+            default_value='MLPDecoder', )
+        encoder_choices._apply_search_space_update(update_rnn_decoder_type)
+        cs_seq = encoder_choices.get_hyperparameter_search_space(dataset_properties)
+        hp_rnn_decoder_type = cs_seq.get_hyperparameter(update_rnn_decoder_type.hyperparameter)
+        self.assertListEqual(list(hp_rnn_decoder_type.choices), ['MLPDecoder'])
 
     def test_base_encoder(self):
         window_size = self.fit_dictionary['window_size']

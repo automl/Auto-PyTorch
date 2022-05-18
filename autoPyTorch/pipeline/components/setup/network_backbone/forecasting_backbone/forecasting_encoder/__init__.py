@@ -24,7 +24,7 @@ from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone
     ForecastingNetworkStructure
 )
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder import \
-    decoders, decoder_addons, add_decoder
+    decoders, decoder_addons
 
 directory = os.path.split(__file__)[0]
 _encoders = find_components(__package__,

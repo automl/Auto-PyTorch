@@ -2,6 +2,7 @@ from typing import Any, Dict, Optional, Union
 
 import numpy as np
 
+from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline
 
 import torch
@@ -19,7 +20,7 @@ class BaseTargetScaler(autoPyTorchComponent):
         self.random_state = random_state
         self.preprocessor: Optional[Pipeline] = None
 
-    def fit(self, X: Dict[str, Any], y: Any = None) -> "BaseBatchScaler":
+    def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         """
         Creates a column transformer for the chosen tabular
         preprocessors

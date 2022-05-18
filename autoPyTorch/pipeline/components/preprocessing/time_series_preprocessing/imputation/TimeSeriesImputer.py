@@ -8,7 +8,6 @@ from ConfigSpace import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter
 from autoPyTorch.utils.common import FitRequirement
 
-
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.base_time_series_preprocessing import (
     autoPyTorchTimeSeriesPreprocessingComponent,
     autoPyTorchTimeSeriesTargetPreprocessingComponent
@@ -95,9 +94,10 @@ class TimeSeriesFeatureImputer(autoPyTorchTimeSeriesPreprocessingComponent):
                              " a search space.")
 
         cs = ConfigurationSpace()
-        if (dataset_properties.get('features_have_missing_values', True)
-            and isinstance(dataset_properties['numerical_columns'], List)
-            and len(dataset_properties['numerical_columns']) != 0
+        if (
+                dataset_properties.get('features_have_missing_values', True)
+                and isinstance(dataset_properties['numerical_columns'], List)
+                and len(dataset_properties['numerical_columns']) != 0
         ):
             add_hyperparameter(cs, imputation_strategy, CategoricalHyperparameter)
         return cs

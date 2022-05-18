@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, List, Tuple, Set, Union
+from typing import Any, Dict, Optional, List, Tuple, Union
 
 import torch
 from torch import nn
@@ -256,7 +256,6 @@ class VariableSelector(nn.Module):
             future_feature_name2tensor_idx[future_name] = [idx_tracker_future, idx_tracker_future + feature_shape]
             idx_tracker_future += feature_shape
 
-
         if time_feature_names:
             for name in time_feature_names:
                 feature_names2tensor_idx[name] = [idx_tracker, idx_tracker+1]
@@ -413,7 +412,6 @@ class VariableSelector(nn.Module):
                 static_embedding = torch.zeros(
                     (batch_size, self.hidden_size), dtype=model_dtype, device=self.device
                 )
-                static_variable_selection = torch.zeros((batch_size, 0), dtype=model_dtype, device=self.device)
 
             static_context_variable_selection = self.static_context_variable_selection(static_embedding)[:, None]
             static_context_initial_hidden = tuple(init_hidden(static_embedding) for init_hidden in
@@ -506,15 +504,15 @@ class StackedEncoder(nn.Module):
              additional_input (List[Optional[torch.Tensor]]) additional input to the encoder, e.g., inital hidden states
              output_seq (bool) if a sequence output is generated
              cache_intermediate_state (bool): if store the intermediate values
-             incremental_update (bool): if an incremental update is applied, this is normally applied for auto-regressive
-                model, however, ony deepAR requires encoder to do incremental update, thus the decoder only need to
-                receive the last output of the encoder
+             incremental_update (bool): if an incremental update is applied, this is normally applied for
+                auto-regressive model, however, ony deepAR requires encoder to do incremental update,
+                whose decoder only need to receive the last output of the encoder
         """
         encoder2decoder = []
         x = encoder_input
         for i, block_id in enumerate(range(1, self.num_blocks + 1)):
             output_seq_i = (output_seq or self.has_temporal_fusion or block_id < self.num_blocks)
-            encoder_i = self.encoder[f'block_{block_id}']  # type: EncoderNetwork
+            encoder_i = self.encoder[f'block_{block_id}']
             if self.encoder_has_hidden_states[i]:
                 if incremental_update:
                     hx = self.cached_intermediate_state[i]
@@ -615,7 +613,8 @@ class StackedDecoder(nn.Module):
                                 decoder[f'skip_connection_{i}'] = GateAddNorm(input_size_decoder,
                                                                               hidden_size=input_size_decoder,
                                                                               skip_size=skip_size_decoder,
-                                                                              dropout=network_structure.grn_dropout_rate)
+                                                                              dropout=network_structure.grn_dropout_rate
+                                                                              )
         self.cached_intermediate_state = [torch.empty(0) for _ in range(self.num_blocks + 1 - self.first_block)]
         self.decoder = decoder
 
@@ -628,7 +627,7 @@ class StackedDecoder(nn.Module):
                 ) -> torch.Tensor:
         x = x_future
         for i, block_id in enumerate(range(self.first_block, self.num_blocks + 1)):
-            decoder_i = self.decoder[f'block_{block_id}']  # type: DecoderNetwork
+            decoder_i = self.decoder[f'block_{block_id}']
             if self.decoder_has_hidden_states[i]:
                 if incremental_update:
                     hx = self.cached_intermediate_state[i]

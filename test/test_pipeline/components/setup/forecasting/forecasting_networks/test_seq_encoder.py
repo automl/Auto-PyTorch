@@ -10,26 +10,11 @@ from test.test_pipeline.components.setup.forecasting.forecasting_networks.test_b
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.seq_encoder \
     import SeqForecastingEncoderChoice
 from autoPyTorch.pipeline.components.setup.network_embedding.NoEmbedding import _NoEmbedding
-from autoPyTorch.utils.common import HyperparameterSearchSpace, get_hyperparameter
+from autoPyTorch.utils.common import HyperparameterSearchSpace
 from sklearn.pipeline import Pipeline
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import NetworkStructure
 from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.forecasting_head import ForecastingHead
 
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.seq_encoder. \
-    RNNEncoder import RNNEncoder
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.seq_encoder. \
-    TCNEncoder import TCNEncoder
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.seq_encoder. \
-    TransformerEncoder import TransformerEncoder
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.seq_encoder. \
-    RNNEncoder import RNNEncoder
-
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder. \
-    RNNDecoder import ForecastingRNNDecoder
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder. \
-    MLPDecoder import ForecastingMLPDecoder
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder. \
-    TransformerDecoder import ForecastingTransformerDecoder
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdate
 
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.cells import (

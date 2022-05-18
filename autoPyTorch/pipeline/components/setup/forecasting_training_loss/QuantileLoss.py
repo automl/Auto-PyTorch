@@ -9,7 +9,7 @@ from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.forecasting_training_loss.base_forecasting_loss import \
     ForecastingLossComponents
 from autoPyTorch.pipeline.components.training.losses import QuantileLoss
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter, FitRequirement
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 class NetworkQuantileLoss(ForecastingLossComponents):

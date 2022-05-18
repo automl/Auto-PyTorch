@@ -13,7 +13,7 @@ class NetworkStructure(NamedTuple):
     num_blocks: int = 1
     variable_selection: bool = False
     share_single_variable_networks: bool = False
-    use_temporal_fusion: bool = False,
+    use_temporal_fusion: bool = False
     skip_connection: bool = False
     skip_connection_type: str = "add"  # could be 'add' or 'gate_add_norm'
     grn_dropout_rate: float = 0.0
@@ -126,10 +126,11 @@ class PositionalEncoding(nn.Module):
         pe = pe.unsqueeze(0)
         self.register_buffer('pe', pe)
 
-    def forward(self, x, pos_idx:Optional[Tuple[int]] = None):
+    def forward(self, x, pos_idx: Optional[Tuple[int]] = None):
         r"""Inputs of forward function
         Args:
             x: the sequence fed to the positional encoder model (required).
+            pos_idx (Tuple[int]), position idx indicating the start (first) and end (last) time index of x in a sequence
         Shape:
             x: [batch size, sequence length embed dim]
             pos_idx: positional index, indicating the index of the current

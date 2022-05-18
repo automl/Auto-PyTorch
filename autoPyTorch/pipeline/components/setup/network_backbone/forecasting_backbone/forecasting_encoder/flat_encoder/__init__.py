@@ -4,14 +4,13 @@ from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone
 
 import os
 from collections import OrderedDict
-from typing import Dict, Union, Optional, List, Type
+from typing import Dict, Union, Optional
 
 from autoPyTorch.pipeline.components.base_component import (
     ThirdPartyComponents,
     autoPyTorchComponent,
     find_components,
 )
-from autoPyTorch.pipeline.components.setup.network_backbone import NetworkBackboneChoice
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.\
     base_forecasting_encoder import BaseForecastingEncoder

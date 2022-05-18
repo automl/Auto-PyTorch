@@ -1,6 +1,6 @@
 from collections import OrderedDict
 import numpy as np
-from typing import Dict, Optional, List, Any, Union
+from typing import Dict, Optional, List, Any
 
 import ConfigSpace.hyperparameters as CSH
 from ConfigSpace.configuration_space import ConfigurationSpace, Configuration
@@ -11,16 +11,10 @@ from autoPyTorch.pipeline.components.base_component import (
     autoPyTorchComponent,
 )
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder import (
-    BaseForecastingEncoder,
-)
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.flat_encoder \
     import FlatForecastingEncoderChoice
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.seq_encoder import\
     SeqForecastingEncoderChoice
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder import (
-    decoders, decoder_addons, add_decoder
-)
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdate
 
 
@@ -72,7 +66,7 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
             to honor when creating the configuration space
          exclude (Optional[Dict[str, Any]]): what hyper-parameter configurations
              to remove from the configuration space
-         dataset_properties (Optional[Dict[str, Union[str, int]]]): Caracteristics
+         dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]): Caracteristics
              of the dataset to guide the pipeline choices of components
 
         Returns:
@@ -264,7 +258,7 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
         choice_component = self.get_components()[choice]
 
         self.new_params = new_params
-        sub_configuration_space = choice_component.get_hyperparameter_search_space(  # type: ignore[call-arg]
+        sub_configuration_space = choice_component.get_hyperparameter_search_space(
             self.dataset_properties,
         )
 

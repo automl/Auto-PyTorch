@@ -58,10 +58,10 @@ class DistributionLoss(ForecastingLossComponents):
     @staticmethod
     def get_hyperparameter_search_space(
             dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
-            dist_cls: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="dist_cls",
-                                                                            value_range=tuple(ALL_DISTRIBUTIONS.keys()),
-                                                                            default_value=
-                                                                            list(ALL_DISTRIBUTIONS.keys())[0]),
+            dist_cls: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                hyperparameter="dist_cls",
+                value_range=tuple(ALL_DISTRIBUTIONS.keys()),
+                default_value=list(ALL_DISTRIBUTIONS.keys())[0]),
             forecast_strategy: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter='forecast_strategy',
                                                                                      value_range=('sample', 'mean'),
                                                                                      default_value='sample'),

@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from sklearn.base import BaseEstimator
-from sklearn.pipeline import Pipeline, make_pipeline
+from sklearn.pipeline import make_pipeline
 from sklearn.compose import ColumnTransformer
 
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.base_time_series_preprocessing import (
@@ -27,7 +27,7 @@ class TimeSeriesFeatureTransformer(autoPyTorchTimeSeriesPreprocessingComponent):
             FitRequirement('numerical_features', (List,), user_defined=True, dataset_property=True),
             FitRequirement('categorical_features', (List,), user_defined=True, dataset_property=True)])
 
-    def fit(self, X: Dict[str, Any], y: Any = None) -> "TimeSeriesTransformer":
+    def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         """
         Creates a column transformer for the chosen tabular
         preprocessors
@@ -108,7 +108,7 @@ class TimeSeriesTargetTransformer(autoPyTorchTimeSeriesTargetPreprocessingCompon
         self.random_state = random_state
         self.preprocessor: Optional[ColumnTransformer] = None
 
-    def fit(self, X: Dict[str, Any], y: Any = None) -> "TimeSeriesTransformer":
+    def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         """
         Creates a column transformer for the chosen tabular
         preprocessors

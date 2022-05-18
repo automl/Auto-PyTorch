@@ -15,7 +15,6 @@ from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import Bas
 from autoPyTorch.pipeline.components.setup.network_embedding.NoEmbedding import _NoEmbedding
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import NetworkStructure
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import (
-    EncoderNetwork,
     EncoderBlockInfo,
 )
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.cells import (
@@ -178,9 +177,11 @@ class AbstractForecastingNet(nn.Module):
         This structure is active when the decoder is a MLP with auto_regressive set as false
 
         Args:
+            network_structure (NetworkStructure): network structure information
             network_embedding (nn.Module): network embedding
-            network_encoder (EncoderNetwork): Encoder network, could be selected to return a sequence or a
-            network_decoder (nn.Module): network decoder
+            network_encoder (Dict[str, EncoderBlockInfo]): Encoder network, could be selected to return a sequence or a
+            network_decoder (Dict[str, DecoderBlockInfo]): network decoder
+            temporal_fusion Optional[TemporalFusionLayer]: Temporal Fusion Layer
             network_head (nn.Module): network head, maps the output of decoder to the final output
             dataset_properties (Dict): dataset properties
             auto_regressive (bool): if the overall model is auto-regressive model
@@ -528,18 +529,18 @@ class ForecastingNet(AbstractForecastingNet):
 
 class ForecastingSeq2SeqNet(ForecastingNet):
     future_target_required = True
-    """
-    Forecasting network with Seq2Seq structure, Encoder/ Decoder need to be the same recurrent models while 
-
-    This structure is activate when the decoder is recurrent (RNN or transformer). 
-    We train the network with teacher forcing, thus
-    future_targets is required for the network. To train the network, past targets and past features are fed to the
-    encoder to obtain the hidden states whereas future targets and future features.
-    When the output type is distribution and forecast_strategy is sampling, this model is equivalent to a deepAR model 
-    during inference.
-    """
 
     def __init__(self, **kwargs):
+        """
+        Forecasting network with Seq2Seq structure, Encoder/ Decoder need to be the same recurrent models while
+
+        This structure is activate when the decoder is recurrent (RNN or transformer).
+        We train the network with teacher forcing, thus
+        future_targets is required for the network. To train the network, past targets and past features are fed to the
+        encoder to obtain the hidden states whereas future targets and future features.
+        When the output type is distribution and forecast_strategy is sampling,
+        this model is equivalent to a deepAR model during inference.
+        """
         super(ForecastingSeq2SeqNet, self).__init__(**kwargs)
 
     def decoder_select_variable(self, future_targets: torch.tensor, future_features: Optional[torch.Tensor]):
