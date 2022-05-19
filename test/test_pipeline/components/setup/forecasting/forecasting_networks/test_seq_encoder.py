@@ -341,7 +341,7 @@ class TestSeqEncoder(unittest.TestCase):
                         temporal_fusion.eval()
                         decoder_output = temporal_fusion(encoder_output=encoder_output,
                                                          decoder_output=decoder_output,
-                                                         past_observed_values=past_observed_values,
+                                                         past_observed_targets=past_observed_values,
                                                          decoder_length=1,
                                                          )
                         output = head(decoder_output)
@@ -356,7 +356,7 @@ class TestSeqEncoder(unittest.TestCase):
                     if hp_use_temporal_fusion:
                         decoder_output = temporal_fusion(encoder_output=encoder_output,
                                                          decoder_output=decoder_output,
-                                                         past_observed_values=past_observed_values,
+                                                         past_observed_targets=past_observed_values,
                                                          decoder_length=1,
                                                          )
                         output = head(decoder_output)
