@@ -93,14 +93,14 @@ class TemporalFusionLayer(nn.Module):
     def forward(self,
                 encoder_output: torch.Tensor,
                 decoder_output: torch.Tensor,
-                past_observed_values: torch.BoolTensor,
+                past_observed_targets: torch.BoolTensor,
                 decoder_length: int,
                 static_embedding: Optional[torch.Tensor] = None):
         """
         Args:
             encoder_output: the output of the last layer of encoder network
             decoder_output: the output of the last layer of decoder network
-            past_observed_values: observed values in the past
+            past_observed_targets: observed values in the past
             decoder_length: length of decoder network
             static_embedding: output of static variable selection network (if applible)
         """
@@ -120,10 +120,10 @@ class TemporalFusionLayer(nn.Module):
 
         # Attention
         encoder_out_length = encoder_output.shape[1]
-        past_observed_values = past_observed_values[:, -encoder_out_length:]
-        past_observed_values = past_observed_values.to(self.device)
+        past_observed_targets = past_observed_targets[:, -encoder_out_length:]
+        past_observed_targets = past_observed_targets.to(self.device)
 
-        mask = self.get_attention_mask(past_observed_values=past_observed_values, decoder_length=decoder_length)
+        mask = self.get_attention_mask(past_observed_targets=past_observed_targets, decoder_length=decoder_length)
         if mask.shape[-1] < attn_input.shape[1]:
             # in case that none of the samples has length greater than window_size
             mask = torch.cat([
@@ -155,7 +155,7 @@ class TemporalFusionLayer(nn.Module):
         self.to(device)
         self._device = device
 
-    def get_attention_mask(self, past_observed_values: torch.BoolTensor, decoder_length: int):
+    def get_attention_mask(self, past_observed_targets: torch.BoolTensor, decoder_length: int):
         """
         https://github.com/jdb78/pytorch-forecasting/blob/master/pytorch_forecasting/models/
         temporal_fusion_transformer/__init__.py
@@ -174,7 +174,7 @@ class TemporalFusionLayer(nn.Module):
         decoder_mask = attend_step >= predict_step
         # do not attend to steps where data is padded
         # this is the result of our padding strategy: we pad values at the start of the tensors
-        encoder_mask = ~past_observed_values.squeeze(-1)
+        encoder_mask = ~past_observed_targets.squeeze(-1)
 
         # combine masks along attended time - first encoder and then decoder
         mask = torch.cat(
@@ -237,6 +237,8 @@ class VariableSelector(nn.Module):
 
         # static_features should always be known beforehand
         known_future_features = tuple(known_future_features)
+        feature_names = tuple(feature_names)
+        time_feature_names = tuple(time_feature_names)
 
         if feature_names:
             for name in feature_names:
@@ -367,6 +369,7 @@ class VariableSelector(nn.Module):
         n_hidden_states = 0
         if network_encoder['block_1'].encoder_properties.has_hidden_states:
             n_hidden_states = network_encoder['block_1'].n_hidden_states
+
 
         static_context_initial_hidden = [GatedResidualNetwork(input_size=self.hidden_size,
                                                               hidden_size=self.hidden_size,
@@ -546,7 +549,7 @@ class StackedEncoder(nn.Module):
             elif self.encoder_output_type[i] == EncoderOutputForm.Sequence:
                 encoder2decoder.append(fx)
             elif self.encoder_output_type[i] == EncoderOutputForm.SequenceLast:
-                if output_seq_i:
+                if output_seq_i and not output_seq:
                     encoder2decoder.append(encoder_i.get_last_seq_value(fx).squeeze(1))
                 else:
                     encoder2decoder.append(fx)

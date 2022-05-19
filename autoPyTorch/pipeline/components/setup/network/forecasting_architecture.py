@@ -333,6 +333,7 @@ class AbstractForecastingNet(nn.Module):
                 past_targets: torch.Tensor,
                 past_features: Optional[torch.Tensor] = None,
                 future_features: Optional[torch.Tensor] = None,
+                past_observed_targets: Optional[torch.Tensor] = None,
                 ):
         raise NotImplementedError
 
@@ -350,6 +351,12 @@ class AbstractForecastingNet(nn.Module):
                 intermediate_values[i] = repeated_value
         return intermediate_values
 
+    def pad_tensor(self, tensor_to_be_padded: torch.Tensor, target_length) -> torch.Tensor:
+        tensor_shape = tensor_to_be_padded.shape
+        padding_size = [tensor_shape[0], target_length - tensor_shape[1], tensor_shape[-1]]
+        tensor_to_be_padded = torch.cat([tensor_to_be_padded.new_zeros(padding_size), tensor_to_be_padded], dim=1)
+        return tensor_to_be_padded
+
 
 class ForecastingNet(AbstractForecastingNet):
     def pre_processing(self,
@@ -362,78 +369,91 @@ class ForecastingNet(AbstractForecastingNet):
                        variable_selector_kwargs: Dict = {},
                        ):
         if self.encoder_lagged_input:
-            past_targets[:, -self.window_size:], _, loc, scale = self.target_scaler(
-                past_targets[:, -self.window_size:],
-                past_observed_targets[:, -self.window_size:]
-            )
-            past_targets[:, :-self.window_size] = torch.where(
-                past_observed_targets[:, :-self.window_size],
-                self.scale_value(past_targets[:, :-self.window_size], loc, scale),
-                past_targets[:, :-self.window_size])
-            x_past, self.cached_lag_mask_encoder = get_lagged_subsequences(past_targets,
-                                                                           self.window_size,
-                                                                           self.encoder_lagged_value,
-                                                                           self.cached_lag_mask_encoder)
+            if self.window_size < past_targets.shape[1]:
+                past_targets[:, -self.window_size:], _, loc, scale = self.target_scaler(
+                    past_targets[:, -self.window_size:],
+                    past_observed_targets[:, -self.window_size:]
+                )
+                past_targets[:, :-self.window_size] = torch.where(
+                    past_observed_targets[:, :-self.window_size],
+                    self.scale_value(past_targets[:, :-self.window_size], loc, scale),
+                    past_targets[:, :-self.window_size])
+            else:
+                past_targets, _, loc, scale = self.target_scaler(
+                    past_targets,
+                    past_observed_targets
+                )
+            truncated_past_targets, self.cached_lag_mask_encoder = get_lagged_subsequences(past_targets,
+                                                                                           self.window_size,
+                                                                                           self.encoder_lagged_value,
+                                                                                           self.cached_lag_mask_encoder)
         else:
             if self.window_size < past_targets.shape[1]:
                 past_targets = past_targets[:, -self.window_size:]
                 past_observed_targets = past_observed_targets[:, -self.window_size:]
             past_targets, _, loc, scale = self.target_scaler(past_targets, past_observed_targets)
-            x_past = past_targets
+            truncated_past_targets = past_targets
+
+        if past_features is not None:
+            if self.window_size <= past_features.shape[1]:
+                past_features = past_features[:, -self.window_size:]
+            elif self.encoder_lagged_input:
+                past_features = self.pad_tensor(past_features, self.window_size)
 
         if self.network_structure.variable_selection:
-            batch_size = x_past.shape[0]
-            x_static = {}
+            batch_size = truncated_past_targets.shape[0]
+            feat_dict_static = {}
             if length_past > 0:
                 if past_features is not None:
-                    past_features = self.embedding(past_features[:, -self.window_size:].to(self.device))
-                x_past = {'past_targets': x_past.to(device=self.device)}
+                    past_features = self.embedding(past_features.to(self.device))
+                feat_dict_past = {'past_targets': truncated_past_targets.to(device=self.device)}
 
                 if past_features is not None:
                     for feature_name in self.variable_selector.feature_names:
                         tensor_idx = self.variable_selector.feature_names2tensor_idx[feature_name]
                         if feature_name not in self.variable_selector.static_features:
-                            x_past[feature_name] = past_features[:, :, tensor_idx[0]: tensor_idx[1]]
+                            feat_dict_past[feature_name] = past_features[:, :, tensor_idx[0]: tensor_idx[1]]
                         else:
                             static_feature = past_features[:, 0, tensor_idx[0]: tensor_idx[1]]
-                            x_static[feature_name] = static_feature
+                            feat_dict_static[feature_name] = static_feature
 
                 if hasattr(self.variable_selector, 'placeholder_features'):
                     for placehold in self.variable_selector.placeholder_features:
-                        x_past[placehold] = torch.zeros((batch_size, length_past, 1),
-                                                        dtype=past_targets.dtype,
-                                                        device=self.device)
+                        feat_dict_past[placehold] = torch.zeros((batch_size, length_past, 1),
+                                                                dtype=past_targets.dtype,
+                                                                device=self.device)
             else:
-                x_past = None
+                feat_dict_past = None
             if length_future > 0:
                 if future_features is not None:
                     future_features = self.decoder_embedding(future_features.to(self.device))
-                x_future = {}
+                feat_dict_future = {}
                 if hasattr(self.variable_selector, 'placeholder_features'):
                     for placehold in self.variable_selector.placeholder_features:
-                        x_future[placehold] = torch.zeros((batch_size,
-                                                           length_future, 1),
-                                                          dtype=past_targets.dtype,
-                                                          device=self.device)
+                        feat_dict_future[placehold] = torch.zeros((batch_size,
+                                                                   length_future, 1),
+                                                                  dtype=past_targets.dtype,
+                                                                  device=self.device)
                 else:
-                    x_future = {}
+                    feat_dict_future = {}
                 if future_features is not None:
                     for feature_name in self.variable_selector.known_future_features:
                         tensor_idx = self.variable_selector.future_feature_name2tensor_idx[feature_name]
                         if feature_name not in self.variable_selector.static_features:
-                            x_future[feature_name] = future_features[:, :, tensor_idx[0]: tensor_idx[1]]
+                            feat_dict_future[feature_name] = future_features[:, :, tensor_idx[0]: tensor_idx[1]]
                         else:
                             if length_past == 0:
+                                # Otherwise static_feature is acquired when processing with encoder network
                                 static_feature = future_features[:, 0, tensor_idx[0]: tensor_idx[1]]
-                                x_static[feature_name] = static_feature
+                                feat_dict_static[feature_name] = static_feature
 
             else:
-                x_future = None
+                feat_dict_future = None
 
             x_past, x_future, x_static, static_context_initial_hidden = self.variable_selector(
-                x_past=x_past,
-                x_future=x_future,
-                x_static=x_static,
+                x_past=feat_dict_past,
+                x_future=feat_dict_future,
+                x_static=feat_dict_static,
                 batch_size=batch_size,
                 length_past=length_past,
                 length_future=length_future,
@@ -443,11 +463,10 @@ class ForecastingNet(AbstractForecastingNet):
             return x_past, x_future, x_static, loc, scale, static_context_initial_hidden, past_targets
         else:
             if past_features is not None:
-                past_features = past_features[:, -self.window_size:]
-                x_past = torch.cat([x_past, past_features], dim=-1)
+                x_past = torch.cat([truncated_past_targets, past_features], dim=-1)
 
             x_past = self.embedding(x_past.to(device=self.device))
-            if future_features is not None:
+            if future_features is not None and length_future > 0:
                 future_features = self.decoder_embedding(future_features.to(self.device))
             return x_past, future_features, None, loc, scale, None, past_targets
 
@@ -470,6 +489,7 @@ class ForecastingNet(AbstractForecastingNet):
 
         encoder_additional = [static_context_initial_hidden]
         encoder_additional.extend([None] * (self.network_structure.num_blocks - 1))
+
         encoder2decoder, encoder_output = self.encoder(encoder_input=x_past, additional_input=encoder_additional)
 
         decoder_output = self.decoder(x_future=x_future, encoder_output=encoder2decoder,
@@ -478,7 +498,7 @@ class ForecastingNet(AbstractForecastingNet):
         if self.has_temporal_fusion:
             decoder_output = self.temporal_fusion(encoder_output=encoder_output,
                                                   decoder_output=decoder_output,
-                                                  past_observed_values=past_observed_targets,
+                                                  past_observed_targets=past_observed_targets,
                                                   decoder_length=self.n_prediction_steps,
                                                   static_embedding=x_static
                                                   )
@@ -549,19 +569,22 @@ class ForecastingSeq2SeqNet(ForecastingNet):
         future_targets = future_targets.to(self.device)
         if future_features is not None:
             future_features = self.decoder_embedding(future_features.to(self.device))
-        x_future = {}
+        feat_dict_future = {}
         if hasattr(self.variable_selector, 'placeholder_features'):
             for placeholder in self.variable_selector.placeholder_features:
-                x_future[placeholder] = torch.zeros((batch_size,
-                                                     length_future, 1),
-                                                    dtype=future_targets.dtype,
-                                                    device=self.device)
+                feat_dict_future[placeholder] = torch.zeros((batch_size,
+                                                             length_future, 1),
+                                                            dtype=future_targets.dtype,
+                                                            device=self.device)
+
         for feature_name in self.variable_selector.known_future_features:
             tensor_idx = self.variable_selector.future_feature_name2tensor_idx[feature_name]
-            x_future[feature_name] = future_features[:, :, tensor_idx[0]: tensor_idx[1]]
-        x_future['future_prediction'] = future_targets
+            if feature_name not in self.variable_selector.static_features:
+                feat_dict_future[feature_name] = future_features[:, :, tensor_idx[0]: tensor_idx[1]]
+
+        feat_dict_future['future_prediction'] = future_targets
         _, x_future, _, _ = self.variable_selector(x_past=None,
-                                                   x_future=x_future,
+                                                   x_future=feat_dict_future,
                                                    x_static=None,
                                                    length_past=0,
                                                    length_future=length_future,
@@ -577,7 +600,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                 future_features: Optional[torch.Tensor] = None,
                 past_observed_targets: Optional[torch.BoolTensor] = None,
                 decoder_observed_values: Optional[torch.Tensor] = None, ):
-        x_past, x_future, x_static, loc, scale, static_context_initial_hidden, past_targets = self.pre_processing(
+        x_past, _, x_static, loc, scale, static_context_initial_hidden, past_targets = self.pre_processing(
             past_targets=past_targets,
             past_observed_targets=past_observed_targets,
             past_features=past_features,
@@ -602,16 +625,17 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                 future_targets = torch.cat([past_targets[:, [-1], :], future_targets[:, :-1, :]], dim=1)
 
             if self.network_structure.variable_selection:
-                x_future = self.decoder_select_variable(future_targets, future_features)
+                decoder_input = self.decoder_select_variable(future_targets, future_features)
             else:
-                x_future = future_targets if future_features is None else torch.cat([future_features, future_targets],
-                                                                                    dim=-1)
-                x_future = self.decoder_embedding(x_future.to(self.device))
+                decoder_input = future_targets if future_features is None else torch.cat([future_features,
+                                                                                          future_targets], dim=-1)
+                decoder_input.to(self.device)
+                decoder_input = self.decoder_embedding(decoder_input)
 
             encoder2decoder, encoder_output = self.encoder(encoder_input=x_past,
                                                            additional_input=encoder_additional)
 
-            decoder_output = self.decoder(x_future=x_future, encoder_output=encoder2decoder,
+            decoder_output = self.decoder(x_future=decoder_input, encoder_output=encoder2decoder,
                                           pos_idx=(x_past.shape[1], x_past.shape[1] + self.n_prediction_steps))
 
             if self.has_temporal_fusion:
@@ -627,9 +651,6 @@ class ForecastingSeq2SeqNet(ForecastingNet):
         else:
             encoder2decoder, encoder_output = self.encoder(encoder_input=x_past, additional_input=encoder_additional)
 
-            if future_features is not None:
-                future_features = future_features
-
             if self.has_temporal_fusion:
                 decoder_output_all = None
 
@@ -640,26 +661,27 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                 for idx_pred in range(self.n_prediction_steps):
                     predicted_target = predicted_target.cpu()
                     if self.decoder_lagged_input:
-                        x_future = torch.cat([past_targets, predicted_target], dim=1)
-                        x_future = get_lagged_subsequences_inference(x_future, 1, self.decoder_lagged_value)
+                        past_targets = torch.cat([past_targets, predicted_target], dim=1)
+                        ar_future_target = get_lagged_subsequences_inference(past_targets, 1,
+                                                                             self.decoder_lagged_value)
                     else:
-                        x_future = predicted_target[:, [-1]]
+                        ar_future_target = predicted_target[:, [-1]]
 
                     if self.network_structure.variable_selection:
-                        x_future = self.decoder_select_variable(
+                        decoder_input = self.decoder_select_variable(
                             future_targets=predicted_target[:, -1:].to(self.device),
                             future_features=future_features[:, [idx_pred]] if future_features is not None else None
                         )
                     else:
-                        x_future = x_future if future_features is None else torch.cat([x_future,
-                                                                                       future_features[:, [idx_pred]],
-                                                                                       ],
-                                                                                      dim=-1)
-                        x_future = x_future.to(self.device)
+                        decoder_input = ar_future_target if future_features is None else torch.cat(
+                            [future_features[:, [idx_pred]],
+                             ar_future_target,
+                             ],
+                            dim=-1)
+                        decoder_input = decoder_input.to(self.device)
+                        decoder_input = self.decoder_embedding(decoder_input)
 
-                    x_future = self.decoder_embedding(x_future)
-
-                    decoder_output = self.decoder(x_future,
+                    decoder_output = self.decoder(decoder_input,
                                                   encoder_output=encoder2decoder,
                                                   pos_idx=(x_past.shape[1] + idx_pred, x_past.shape[1] + idx_pred + 1),
                                                   cache_intermediate_state=True,
@@ -718,7 +740,11 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                 repeated_predicted_target = repeated_past_target[:, [-1]]
                 repeated_past_target = repeated_past_target[:, :-1, ]
 
-                repeated_time_feat = future_features.repeat_interleave(
+                repeated_x_static = x_static.repeat_interleave(
+                    repeats=self.num_samples, dim=0
+                ) if x_static is not None else None
+
+                repeated_future_features = future_features.repeat_interleave(
                     repeats=self.num_samples, dim=0
                 ) if future_features is not None else None
 
@@ -730,28 +756,30 @@ class ForecastingSeq2SeqNet(ForecastingNet):
 
                 for idx_pred in range(self.n_prediction_steps):
                     if self.decoder_lagged_input:
-                        x_future = torch.cat([repeated_past_target, repeated_predicted_target.cpu()], dim=1)
-                        x_future = get_lagged_subsequences_inference(x_future, 1, self.decoder_lagged_value)
+                        ar_future_target = torch.cat([repeated_past_target, repeated_predicted_target.cpu()], dim=1)
+                        ar_future_target = get_lagged_subsequences_inference(ar_future_target, 1,
+                                                                             self.decoder_lagged_value)
                     else:
-                        x_future = repeated_predicted_target[:, [-1]]
+                        ar_future_target = repeated_predicted_target[:, [-1]]
 
                     if self.network_structure.variable_selection:
-                        x_future = self.decoder_select_variable(
-                            future_targets=x_future[:, -1:],
-                            future_features=None if repeated_time_feat is None else repeated_time_feat[:, [idx_pred]])
+                        decoder_input = self.decoder_select_variable(
+                            future_targets=ar_future_target,
+                            future_features=None if repeated_future_features is None else
+                            repeated_future_features[:, [idx_pred]])
                     else:
-                        x_future = x_future if repeated_time_feat is None else torch.cat(
-                            [repeated_time_feat[:, [idx_pred], :], x_future], dim=-1)
+                        decoder_input = repeated_future_features if repeated_future_features is None else torch.cat(
+                            [repeated_future_features[:, [idx_pred], :], ar_future_target], dim=-1)
 
-                        x_future = x_future.to(self.device)
+                        decoder_input = decoder_input.to(self.device)
+                        decoder_input = self.decoder_embedding(decoder_input)
 
-                    x_future = self.decoder_embedding(x_future)
-
-                    decoder_output = self.decoder(x_future,
+                    decoder_output = self.decoder(decoder_input,
                                                   encoder_output=encoder2decoder,
                                                   pos_idx=(x_past.shape[1] + idx_pred, x_past.shape[1] + idx_pred + 1),
                                                   cache_intermediate_state=True,
                                                   incremental_update=idx_pred > 0)
+
                     if self.has_temporal_fusion:
                         if decoder_output_all is not None:
                             decoder_output_all = torch.cat([decoder_output_all, decoder_output], dim=1)
@@ -761,8 +789,8 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                                                               decoder_output=decoder_output_all,
                                                               past_observed_targets=past_observed_targets,
                                                               decoder_length=idx_pred + 1,
-                                                              static_embedding=x_static,
-                                                              )
+                                                              static_embedding=repeated_x_static,
+                                                              )[:, -1:,]
 
                     net_output = self.head(decoder_output)
                     samples = net_output.sample().cpu()
@@ -826,24 +854,32 @@ class ForecastingDeepARNet(ForecastingSeq2SeqNet):
         past_targets = past_targets.to(self.device)
         if past_features is not None:
             past_features = past_features.to(self.device)
-        x_past = []
+            past_features = self.embedding(past_features)
+        feat_dict_past = {'past_targets': past_targets.to(device=self.device)}
+        feat_dict_static = {}
         if hasattr(self.variable_selector, 'placeholder_features'):
             for placehold in self.variable_selector.placeholder_features:
-                x_past[placehold] = torch.zeros((batch_size, length_past, 1),
-                                                dtype=past_targets.dtype,
-                                                device=self.device)
+                feat_dict_past[placehold] = torch.zeros((batch_size, length_past, 1),
+                                                        dtype=past_targets.dtype,
+                                                        device=self.device)
+
         for feature_name in self.variable_selector.feature_names:
-            tensor_idx = self.variable_selector.future_feature_name2tensor_idx[feature_name]
-            x_past[feature_name] = past_features[:, :, tensor_idx[0]: tensor_idx[1]]
-        x_past, _, _, _ = self.variable_selector(x_past=x_past,
-                                                 x_future=None,
-                                                 x_static=None,
-                                                 length_past=length_past,
-                                                 length_future=0,
-                                                 batch_size=batch_size,
-                                                 **variable_selector_kwargs,
-                                                 )
-        return x_past
+            tensor_idx = self.variable_selector.feature_names2tensor_idx[feature_name]
+            if feature_name not in self.variable_selector.static_features:
+                feat_dict_past[feature_name] = past_features[:, :, tensor_idx[0]: tensor_idx[1]]
+            else:
+                static_feature = past_features[:, 0, tensor_idx[0]: tensor_idx[1]]
+                feat_dict_static[feature_name] = static_feature
+
+        x_past, _, _, static_context_initial_hidden = self.variable_selector(x_past=feat_dict_past,
+                                                                             x_future=None,
+                                                                             x_static=feat_dict_static,
+                                                                             length_past=length_past,
+                                                                             length_future=0,
+                                                                             batch_size=batch_size,
+                                                                             **variable_selector_kwargs,
+                                                                             )
+        return x_past, static_context_initial_hidden
 
     def forward(self,
                 past_targets: torch.Tensor,
@@ -852,17 +888,25 @@ class ForecastingDeepARNet(ForecastingSeq2SeqNet):
                 future_features: Optional[torch.Tensor] = None,
                 past_observed_targets: Optional[torch.Tensor] = None,
                 decoder_observed_values: Optional[torch.Tensor] = None, ):
+        encode_length = min(self.window_size, past_targets.shape[1])
+
         if self.training:
             if self.encoder_lagged_input:
-                past_targets[:, -self.window_size:], _, loc, scale = self.target_scaler(
-                    past_targets[:, -self.window_size:],
-                    past_observed_targets[:, -self.window_size:]
-                )
+                if self.window_size < past_targets.shape[1]:
+                    past_targets[:, -self.window_size:], _, loc, scale = self.target_scaler(
+                        past_targets[:, -self.window_size:],
+                        past_observed_targets[:, -self.window_size:]
+                    )
 
-                past_targets[:, :-self.window_size] = torch.where(
-                    past_observed_targets[:, :-self.window_size],
-                    self.scale_value(past_targets[:, :-self.window_size], loc, scale),
-                    past_targets[:, :-self.window_size])
+                    past_targets[:, :-self.window_size] = torch.where(
+                        past_observed_targets[:, :-self.window_size],
+                        self.scale_value(past_targets[:, :-self.window_size], loc, scale),
+                        past_targets[:, :-self.window_size])
+                else:
+                    past_targets, _, loc, scale = self.target_scaler(
+                        past_targets,
+                        past_observed_targets
+                    )
 
                 future_targets = self.scale_value(future_targets, loc, scale)
 
@@ -872,6 +916,7 @@ class ForecastingDeepARNet(ForecastingSeq2SeqNet):
                                                                                     seq_length - 1,
                                                                                     self.encoder_lagged_value,
                                                                                     self.cached_lag_mask_encoder)
+                targets_all = targets_all[:, -(encode_length + self.n_prediction_steps - 1):]
             else:
                 if self.window_size < past_targets.shape[1]:
                     past_targets = past_targets[:, -self.window_size:]
@@ -882,28 +927,33 @@ class ForecastingDeepARNet(ForecastingSeq2SeqNet):
 
             if self.network_structure.variable_selection:
                 if past_features is not None:
-                    past_features = past_features[:-self.window_size:]
-                    features_all = torch.cat([past_features[:, 1:], future_features], dim=1)
+                    past_features = past_features[:, -self.window_size:]
+                    features_all = torch.cat([past_features, future_features[:, :-1]], dim=1)
                 else:
                     features_all = None
-                length_past = min(self.window_size, past_targets.shape[1]) + self.n_prediction_steps
-                x_input = self.encoder_select_variable(targets_all, past_features=features_all, length_past=length_past)
+                length_past = min(self.window_size, past_targets.shape[1]) + self.n_prediction_steps - 1
+                encoder_input, static_context_initial_hidden = self.encoder_select_variable(targets_all,
+                                                                                            past_features=features_all,
+                                                                                            length_past=length_past)
             else:
-                x_input = targets_all
                 if past_features is not None:
-                    past_features = past_features[:, -self.window_size:]
-                    features_all = torch.cat([past_features[:, 1:], future_features], dim=1)
-                    x_input = torch.cat([features_all, targets_all], dim=-1)
+                    if self.window_size <= past_features.shape[1]:
+                        past_features = past_features[:, -self.window_size:]
 
-                x_input = x_input.to(self.device)
+                    features_all = torch.cat([past_features, future_features[:, :-1]], dim=1)
+                    encoder_input = torch.cat([features_all, targets_all], dim=-1)
+                else:
+                    encoder_input = targets_all
 
-                x_input = self.embedding(x_input)
+                encoder_input = encoder_input.to(self.device)
+
+                encoder_input = self.embedding(encoder_input)
                 static_context_initial_hidden = None
 
             encoder_additional = [static_context_initial_hidden]
             encoder_additional.extend([None] * (self.network_structure.num_blocks - 1))
 
-            encoder2decoder, encoder_output = self.encoder(encoder_input=x_input,
+            encoder2decoder, encoder_output = self.encoder(encoder_input=encoder_input,
                                                            additional_input=encoder_additional,
                                                            output_seq=True)
 
@@ -915,67 +965,70 @@ class ForecastingDeepARNet(ForecastingSeq2SeqNet):
             return self.rescale_output(net_output, loc, scale, self.device)
         else:
             if self.encoder_lagged_input:
-                past_targets[:, -self.window_size:], _, loc, scale = self.target_scaler(
-                    past_targets[:, -self.window_size:],
-                    past_observed_targets[:, -self.window_size:],
+                if self.window_size < past_targets.shape[1]:
+                    past_targets[:, -self.window_size:], _, loc, scale = self.target_scaler(
+                        past_targets[:, -self.window_size:],
+                        past_observed_targets[:, -self.window_size:],
+                    )
+
+                    past_targets[:, :-self.window_size] = torch.where(
+                        past_observed_targets[:, :-self.window_size],
+                        self.scale_value(past_targets[:, :-self.window_size], loc, scale),
+                        past_targets[:, :-self.window_size])
+                else:
+                    past_targets, _, loc, scale = self.target_scaler(
+                        past_targets,
+                        past_observed_targets,
+                    )
+
+                truncated_past_targets, self.cached_lag_mask_encoder_test = get_lagged_subsequences(
+                    past_targets,
+                    self.window_size,
+                    self.encoder_lagged_value,
+                    self.cached_lag_mask_encoder_test
                 )
-
-                past_targets[:, :-self.window_size] = torch.where(
-                    past_observed_targets[:, :-self.window_size],
-                    self.scale_value(past_targets[:, :-self.window_size], loc, scale),
-                    past_targets[:, :-self.window_size])
-
-                x_past, self.cached_lag_mask_encoder_test = get_lagged_subsequences(past_targets,
-                                                                                    self.window_size,
-                                                                                    self.encoder_lagged_value,
-                                                                                    self.cached_lag_mask_encoder_test)
+                truncated_past_targets = truncated_past_targets[:, -encode_length:]
             else:
                 if self.window_size < past_targets.shape[1]:
                     past_targets = past_targets[:, -self.window_size:]
                     past_observed_targets = past_observed_targets[:, -self.window_size]
                 past_targets, _, loc, scale = self.target_scaler(past_targets, past_observed_targets)
-                x_past = past_targets
+                truncated_past_targets = past_targets
 
             if self.network_structure.variable_selection:
                 if past_features is not None:
-                    past_features = past_features[:-self.window_size:]
-                    features_all = torch.cat([past_features[:, 1:], future_features[:, :1]], dim=1)
+                    features_all = past_features[:, -self.window_size:]
                 else:
                     features_all = None
-                length_past = min(self.window_size, past_targets.shape[1])
                 variable_selector_kwargs = dict(cache_static_contex=True,
                                                 use_cached_static_contex=False)
-                x_past = self.encoder_select_variable(x_past,
-                                                      past_features=features_all,
-                                                      length_past=length_past,
-                                                      **variable_selector_kwargs)
+
+                encoder_input, static_context_initial_hidden = self.encoder_select_variable(truncated_past_targets,
+                                                                                            past_features=features_all,
+                                                                                            length_past=encode_length,
+                                                                                            **variable_selector_kwargs)
 
             else:
                 if past_features is not None:
-                    # features is one step ahead of target
-                    if self.window_size > 1:
-                        features_all = torch.cat([past_features[:, -self.window_size + 1:, ],
-                                                  future_features],
-                                                 dim=1)
-                    else:
-                        features_all = future_features
+                    features_all = torch.cat([past_features[:, -encode_length:], future_features[:, :-1]], dim=1)
                 else:
                     features_all = None
-                x_past = x_past if features_all is None else torch.cat([features_all[:, :self.window_size], x_past],
-                                                                       dim=-1)
 
-                x_past = x_past.to(self.device)
-                # TODO consider static features
-                x_past = self.embedding(x_past)
+                encoder_input = truncated_past_targets if features_all is None else torch.cat(
+                    [features_all[:, :encode_length], truncated_past_targets], dim=-1
+                )
+
+                encoder_input = encoder_input.to(self.device)
+                encoder_input = self.embedding(encoder_input)
                 static_context_initial_hidden = None
 
             all_samples = []
-            batch_size = past_targets.shape[0]
+            batch_size: int = past_targets.shape[0]
 
             encoder_additional = [static_context_initial_hidden]
             encoder_additional.extend([None] * (self.network_structure.num_blocks - 1))
 
-            encoder2decoder, encoder_output = self.encoder(encoder_input=x_past,
+            encoder2decoder, encoder_output = self.encoder(encoder_input=encoder_input,
                                                            additional_input=encoder_additional,
                                                            cache_intermediate_state=True,
                                                            )
@@ -984,6 +1037,7 @@ class ForecastingDeepARNet(ForecastingSeq2SeqNet):
                 self.encoder.cached_intermediate_state,
                 is_hidden_states=self.encoder.encoder_has_hidden_states,
                 repeats=self.num_samples)
+
             if self.network_structure.variable_selection:
                 self.variable_selector.cached_static_contex = self.repeat_intermediate_values(
                     [self.variable_selector.cached_static_contex],
@@ -991,9 +1045,9 @@ class ForecastingDeepARNet(ForecastingSeq2SeqNet):
                     repeats=self.num_samples)[0]
 
             if self.encoder_lagged_input:
-                max_lag_seq_length = max(max(self.encoder_lagged_value), self.window_size)
+                max_lag_seq_length = max(max(self.encoder_lagged_value), encode_length)
             else:
-                max_lag_seq_length = self.window_size
+                max_lag_seq_length = encode_length
 
             net_output = self.head(self.decoder(x_future=None, encoder_output=encoder2decoder))
 
@@ -1012,39 +1066,42 @@ class ForecastingDeepARNet(ForecastingSeq2SeqNet):
                     dim=0).squeeze(1)
 
                 if future_features is not None:
-                    time_feature = future_features[:, 1:]
+                    future_features = future_features[:, 1:]
                 else:
-                    time_feature = None
+                    future_features = None
 
-                repeated_time_feat = time_feature.repeat_interleave(
+                repeated_future_features = future_features.repeat_interleave(
                     repeats=self.num_samples, dim=0
-                ) if time_feature is not None else None
+                ) if future_features is not None else None
 
             for k in range(1, self.n_prediction_steps):
                 if self.encoder_lagged_input:
                     repeated_past_target = torch.cat([repeated_past_target, all_samples[-1]], dim=1)
-                    x_next = get_lagged_subsequences_inference(repeated_past_target, 1, self.encoder_lagged_value)
+                    ar_future_target = get_lagged_subsequences_inference(repeated_past_target, 1,
+                                                                         self.encoder_lagged_value)
                 else:
-                    x_next = next_sample
+                    ar_future_target = next_sample
 
                 if self.network_structure.variable_selection:
                     length_past = 1
                     variable_selector_kwargs = dict(use_cached_static_contex=True)
-                    if repeated_time_feat is not None:
-                        feature_next = repeated_time_feat[:, [k - 1]]
+                    if repeated_future_features is not None:
+                        feature_next = repeated_future_features[:, [k - 1]]
                     else:
                         feature_next = None
-                    x_next = self.encoder_select_variable(x_next, past_features=feature_next, length_past=1,
-                                                          **variable_selector_kwargs)
+                    encoder_input, _ = self.encoder_select_variable(ar_future_target, past_features=feature_next,
+                                                                    length_past=1,
+                                                                    **variable_selector_kwargs)
 
                 else:
-                    if repeated_time_feat is not None:
-                        x_next = torch.cat([repeated_time_feat[:, [k - 1]], x_next], dim=-1)
-                    x_next = x_next.to(self.device)
+                    if repeated_future_features is not None:
+                        encoder_input = torch.cat([repeated_future_features[:, [k - 1]], ar_future_target], dim=-1)
+                    else:
+                        encoder_input = ar_future_target
+                    encoder_input = encoder_input.to(self.device)
+                    encoder_input = self.embedding(encoder_input)
 
-                x_next = self.embedding(x_next)
-
-                encoder2decoder, _ = self.encoder(encoder_input=x_next,
+                encoder2decoder, _ = self.encoder(encoder_input=encoder_input,
                                                   additional_input=[None] * self.network_structure.num_blocks,
                                                   output_seq=False, cache_intermediate_state=True,
                                                   incremental_update=True)
@@ -1090,9 +1147,11 @@ class NBEATSNet(ForecastingNet):
                 future_features: Optional[torch.Tensor] = None,
                 past_observed_targets: Optional[torch.Tensor] = None,
                 decoder_observed_values: Optional[torch.Tensor] = None, ):
-        if self.window_size < past_targets.shape[1]:
+        if self.window_size <= past_targets.shape[1]:
             past_targets = past_targets[:, -self.window_size:]
             past_observed_targets = past_observed_targets[:, -self.window_size:]
+        else:
+            past_targets = self.pad_tensor(past_targets, self.window_size)
 
         past_targets, _, loc, scale = self.target_scaler(past_targets, past_observed_targets)
 

@@ -469,7 +469,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
 
                     forbidden_deep_ars = []
 
-                    hps_forbidden_deep_ar = [variable_selection, use_temporal_fusion]
+                    hps_forbidden_deep_ar = [use_temporal_fusion]
                     for hp_forbidden_deep_ar in hps_forbidden_deep_ar:
                         if True in hp_forbidden_deep_ar.choices:
                             forbidden_deep_ars.append(ForbiddenAndConjunction(

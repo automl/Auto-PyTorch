@@ -65,6 +65,7 @@ def generate_fit_dict_and_dataset_property():
     output_shape = (n_prediction_steps, 1)
     time_feature_transform = [1, 2]
 
+    feature_names = ('f1', 'f2', 'f3', 'f4', 'f5')
     feature_shapes = {'f1': 10, 'f2': 10, 'f3': 10, 'f4': 10, 'f5': 10}
     known_future_features = ('f1', 'f2', 'f3', 'f4', 'f5')
 
@@ -76,6 +77,7 @@ def generate_fit_dict_and_dataset_property():
                               known_future_features=known_future_features,
                               n_prediction_steps=n_prediction_steps,
                               encoder_can_be_auto_regressive=True,
+                              feature_names=feature_names,
                               is_small_preprocess=True,
                               task_type=TASK_TYPES_TO_STRING[TIMESERIES_FORECASTING],
                               uni_variant=False,
@@ -159,9 +161,11 @@ class TestForecastingNetworkBases(unittest.TestCase):
                                                      hyperparameter='__choice__',
                                                      value_range=('seq_encoder',),
                                                      default_value='seq_encoder', )
+
         encoder_choices._apply_search_space_update(update_seq)
         cs_seq = encoder_choices.get_hyperparameter_search_space(dataset_properties)
         self.assertListEqual(list(cs_seq.get_hyperparameter('__choice__').choices), ['seq_encoder'])
+
 
         encoder_choices = ForecastingNetworkChoice(dataset_properties)
         update_rnn_decoder_type = HyperparameterSearchSpaceUpdate(

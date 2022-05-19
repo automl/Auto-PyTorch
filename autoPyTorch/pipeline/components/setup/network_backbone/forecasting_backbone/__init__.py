@@ -289,7 +289,7 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
         return ['flat_network',
                 'seq_network']
 
-    def fit(self, X: Dict[str, Any], y: Any) -> autoPyTorchComponent:
+    def fit(self, X: Dict[str, Any], y: Any = None) -> autoPyTorchComponent:
         """Handy method to check if a component is fitted
 
         Args:
