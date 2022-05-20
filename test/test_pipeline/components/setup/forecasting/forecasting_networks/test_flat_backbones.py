@@ -1,5 +1,6 @@
 import copy
 import unittest
+
 from test.test_pipeline.components.setup.forecasting.forecasting_networks.test_base_components import (
     generate_fit_dict_and_dataset_property
 )
@@ -127,7 +128,7 @@ class TestFlatEncoder(unittest.TestCase):
         nbeats_cs = NBEATSDecoder.get_hyperparameter_search_space(self.dataset_properties)
 
         nbeatsI_cfg = {
-            "backcast_loss_ratio": 0.0,
+            "backcast_loss_ration": 0.0,
             "normalization": "LN",
             "activation": "relu",
 
@@ -154,7 +155,7 @@ class TestFlatEncoder(unittest.TestCase):
         }
 
         nbeatsG_cfg = {
-            "backcast_loss_ratio": 0.0,
+            "backcast_loss_ration": 0.0,
             "normalization": "NoNorm",
             "activation": "relu",
 
@@ -218,4 +219,3 @@ class TestFlatEncoder(unittest.TestCase):
                 backcast_block, forecast_block = block([None], input_tensor)
                 self.assertListEqual(list(backcast_block.shape), [10, window_size * 1])
                 self.assertListEqual(list(forecast_block.shape), [10, n_prediction_steps * 1])
-

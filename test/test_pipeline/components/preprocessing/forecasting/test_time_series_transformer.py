@@ -13,17 +13,17 @@ from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.Tim
 )
 
 
-@pytest.mark.parametrize("get_fit_dictionary_forecasting", ['uni_variant_wo_missing',
+@pytest.mark.parametrize("fit_dictionary_forecasting", ['uni_variant_wo_missing',
                                                             'uni_variant_w_missing',
                                                             'multi_variant_wo_missing',
                                                             'multi_variant_w_missing',
                                                             'multi_variant_w_missing_only_cat',
                                                             'multi_variant_w_missing_only_num',
                                                             ], indirect=True)
-def test_time_series_preprocess(get_fit_dictionary_forecasting):
-    pipeline = ForecastingPipeline(dataset_properties=get_fit_dictionary_forecasting['dataset_properties'])
-    pipeline = pipeline.fit(get_fit_dictionary_forecasting)
-    X = pipeline.transform(get_fit_dictionary_forecasting)
+def test_time_series_preprocess(fit_dictionary_forecasting):
+    pipeline = ForecastingPipeline(dataset_properties=fit_dictionary_forecasting['dataset_properties'])
+    pipeline = pipeline.fit(fit_dictionary_forecasting)
+    X = pipeline.transform(fit_dictionary_forecasting)
 
     assert 'time_series_target_transformer' in X.keys()
     target_transformer = X['time_series_target_transformer']
@@ -55,11 +55,11 @@ def test_time_series_preprocess(get_fit_dictionary_forecasting):
         assert isinstance(time_series_feature_transformer.get_column_transformer(), ColumnTransformer)
 
         # Make sure no columns are unintentionally dropped after preprocessing
-        if len(get_fit_dictionary_forecasting['dataset_properties']["numerical_columns"]) == 0:
+        if len(fit_dictionary_forecasting['dataset_properties']["numerical_columns"]) == 0:
             categorical_pipeline = time_series_feature_transformer.preprocessor.named_transformers_['categorical_pipeline']
             categorical_data = categorical_pipeline.transform(X['X_train'])
             assert features.shape[1] == categorical_data.shape[1]
-        elif len(get_fit_dictionary_forecasting['dataset_properties']["categorical_columns"]) == 0:
+        elif len(fit_dictionary_forecasting['dataset_properties']["categorical_columns"]) == 0:
             numerical_pipeline = time_series_feature_transformer.preprocessor.named_transformers_['numerical_pipeline']
             numerical_data = numerical_pipeline.transform(X['X_train'])
             assert features.shape[1] == numerical_data.shape[1]

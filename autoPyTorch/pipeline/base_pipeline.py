@@ -412,12 +412,24 @@ class BasePipeline(Pipeline):
                 # check if component is not present in include
                 if include is not None and update.node_name in include.keys():
                     if split_hyperparameter[0] not in include[update.node_name]:
-                        raise ValueError("Not found {} in include".format(split_hyperparameter[0]))
+                        hp_in_component = False
+                        for include_component in include[update.node_name]:
+                            if include_component.startswith(split_hyperparameter[0]):
+                                hp_in_component = True
+                                break
+                        if not hp_in_component:
+                            raise ValueError("Not found {} in include".format(split_hyperparameter[0]))
 
                 # check if component is present in exclude
                 if exclude is not None and update.node_name in exclude.keys():
                     if split_hyperparameter[0] in exclude[update.node_name]:
-                        raise ValueError("Found {} in exclude".format(split_hyperparameter[0]))
+                        hp_in_component = False
+                        for exclude_component in exclude[update.node_name]:
+                            if exclude_component.startswith(split_hyperparameter[0]):
+                                hp_in_component = True
+                                break
+                        if not hp_in_component:
+                            raise ValueError("Found {} in exclude".format(split_hyperparameter[0]))
 
                 components = node.get_components()
                 # if hyperparameter is __choice__, check if

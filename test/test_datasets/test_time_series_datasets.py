@@ -211,11 +211,11 @@ class TestTimeSeriesSequence(unittest.TestCase):
             seq_2.get_test_target(5)
 
 
-@pytest.mark.parametrize("get_fit_dictionary_forecasting", ['uni_variant_wo_missing',
+@pytest.mark.parametrize("fit_dictionary_forecasting", ['uni_variant_wo_missing',
                                                             'uni_variant_w_missing',
                                                             'multi_variant_wo_missing',
                                                             'uni_variant_w_missing'], indirect=True)
-def test_dataset_properties(backend, get_fit_dictionary_forecasting):
+def test_dataset_properties(backend, fit_dictionary_forecasting):
     # The fixture creates a datamanager by itself
     datamanager: TimeSeriesForecastingDataset = backend.load_datamanager()
     info = {'task_type': datamanager.task_type,
@@ -235,12 +235,12 @@ def test_dataset_properties(backend, get_fit_dictionary_forecasting):
     assert isinstance(dataset_properties['time_feature_transform'], List)
     for item in dataset_properties['time_feature_transform']:
         assert isinstance(item, Callable)
-    assert dataset_properties['uni_variant'] == (get_fit_dictionary_forecasting['X_train'] is None)
+    assert dataset_properties['uni_variant'] == (fit_dictionary_forecasting['X_train'] is None)
     assert dataset_properties['targets_have_missing_values'] == \
-           get_fit_dictionary_forecasting['y_train'].isnull().values.any()
-    if get_fit_dictionary_forecasting['X_train'] is not None:
+           fit_dictionary_forecasting['y_train'].isnull().values.any()
+    if fit_dictionary_forecasting['X_train'] is not None:
         assert dataset_properties['features_have_missing_values'] == \
-               get_fit_dictionary_forecasting['X_train'].isnull().values.any()
+               fit_dictionary_forecasting['X_train'].isnull().values.any()
 
 
 def test_freq_valeus():
@@ -275,8 +275,8 @@ def test_target_normalization():
                        np.hstack([(y - np.mean(y))/np.std(y, ddof=1) for y in Y]))
 
 
-@pytest.mark.parametrize("get_fit_dictionary_forecasting", ['uni_variant_wo_missing'], indirect=True)
-def test_dataset_index(backend, get_fit_dictionary_forecasting):
+@pytest.mark.parametrize("fit_dictionary_forecasting", ['uni_variant_wo_missing'], indirect=True)
+def test_dataset_index(backend, fit_dictionary_forecasting):
     datamanager: TimeSeriesForecastingDataset = backend.load_datamanager()
     assert np.allclose(datamanager[5][0]['past_targets'][-1].numpy(), 5.0)
     assert np.allclose(datamanager[50][0]['past_targets'][-1].numpy(), 1005.0)
@@ -292,8 +292,8 @@ def test_dataset_index(backend, get_fit_dictionary_forecasting):
     assert np.allclose(val_targets, datamanager.get_test_target(val_indices))
 
 
-@pytest.mark.parametrize("get_fit_dictionary_forecasting", ['multi_variant_wo_missing'], indirect=True)
-def test_update_dataset(backend, get_fit_dictionary_forecasting):
+@pytest.mark.parametrize("fit_dictionary_forecasting", ['multi_variant_wo_missing'], indirect=True)
+def test_update_dataset(backend, fit_dictionary_forecasting):
     datamanager: TimeSeriesForecastingDataset = backend.load_datamanager()
     X = datamanager.train_tensors[0]
     for col in X.columns:
@@ -316,8 +316,8 @@ def test_update_dataset(backend, get_fit_dictionary_forecasting):
         assert test_seq.X.shape[0] - seq_len == 2 * datamanager.n_prediction_steps
 
 
-@pytest.mark.parametrize("get_fit_dictionary_forecasting", ['multi_variant_wo_missing'], indirect=True)
-def test_test_tensors(backend, get_fit_dictionary_forecasting):
+@pytest.mark.parametrize("fit_dictionary_forecasting", ['multi_variant_wo_missing'], indirect=True)
+def test_test_tensors(backend, fit_dictionary_forecasting):
     datamanager: TimeSeriesForecastingDataset = backend.load_datamanager()
     test_tensors = datamanager.test_tensors
     forecast_horizon = datamanager.n_prediction_steps

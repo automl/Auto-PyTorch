@@ -199,6 +199,17 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                                     forbidden_regression_losses_all.append(forbidden_hp_dist)
                             """
 
+                # NBEATS only works with NoEmbedding
+                if 'network_backbone:flat_encoder:__choice__' in cs:
+                    hp_flat_encoder = cs.get_hyperparameter('network_backbone:flat_encoder:__choice__')
+                    if 'NBEATSEncoder' in hp_flat_encoder.choices:
+                        cs.add_forbidden_clause(ForbiddenAndConjunction(
+                            ForbiddenEqualsClause(hp_flat_encoder, 'NBEATSEncoder'),
+                            cs.get_hyperparameter(
+                                'network_embedding:__choice__'), 'LearnedEntityEmbedding')
+                        )
+
+
         # dist_cls and auto_regressive are only activate if the network outputs distribution
         if 'loss' in self.named_steps.keys() and 'network_backbone' in self.named_steps.keys():
             hp_loss = cs.get_hyperparameter('loss:__choice__')
@@ -225,44 +236,47 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                         forbidden_hp_dist = ForbiddenAndConjunction(forbidden_hp_dist, forbidden_hp_regression_loss)
                         forbidden_losses_all.append(forbidden_hp_dist)
 
-            decoder_auto_regressive = cs.get_hyperparameter("network_backbone:seq_encoder:decoder_auto_regressive")
-            forecast_strategy = cs.get_hyperparameter("loss:DistributionLoss:forecast_strategy")
-            use_tf = cs.get_hyperparameter("network_backbone:seq_encoder:use_temporal_fusion")
+            if "network_backbone:seq_encoder:decoder_auto_regressive" in cs:
+                decoder_auto_regressive = cs.get_hyperparameter("network_backbone:seq_encoder:decoder_auto_regressive")
+                forecast_strategy = cs.get_hyperparameter("loss:DistributionLoss:forecast_strategy")
+                use_tf = cs.get_hyperparameter("network_backbone:seq_encoder:use_temporal_fusion")
 
-            if True in decoder_auto_regressive.choices and\
-                    'sample' in forecast_strategy.choices and True in use_tf.choices:
-                cs.add_forbidden_clause(
-                    ForbiddenAndConjunction(
-                        ForbiddenEqualsClause(decoder_auto_regressive, True),
-                        ForbiddenEqualsClause(forecast_strategy, 'sample'),
-                        ForbiddenEqualsClause(use_tf, True)
+                if True in decoder_auto_regressive.choices and\
+                        'sample' in forecast_strategy.choices and True in use_tf.choices:
+                    cs.add_forbidden_clause(
+                        ForbiddenAndConjunction(
+                            ForbiddenEqualsClause(decoder_auto_regressive, True),
+                            ForbiddenEqualsClause(forecast_strategy, 'sample'),
+                            ForbiddenEqualsClause(use_tf, True)
+                        )
                     )
-                )
 
-            network_flat_encoder_hp = cs.get_hyperparameter('network_backbone:flat_encoder:__choice__')
+            if 'network_backbone:flat_encoder:__choice__' in cs:
+                network_flat_encoder_hp = cs.get_hyperparameter('network_backbone:flat_encoder:__choice__')
 
-            if 'MLPEncoder' in network_flat_encoder_hp.choices:
-                forbidden = ['MLPEncoder']
-                forbidden_deepAREncoder = [forbid for forbid in forbidden if forbid in network_flat_encoder_hp.choices]
-                for hp_ar in hp_deepAR:
-                    if True in hp_ar.choices:
-                        forbidden_hp_ar = ForbiddenEqualsClause(hp_ar, ar_forbidden)
-                        forbidden_hp_mlpencoder = ForbiddenInClause(network_flat_encoder_hp, forbidden_deepAREncoder)
-                        forbidden_hp_ar_mlp = ForbiddenAndConjunction(forbidden_hp_ar, forbidden_hp_mlpencoder)
-                        forbidden_losses_all.append(forbidden_hp_ar_mlp)
+                if 'MLPEncoder' in network_flat_encoder_hp.choices:
+                    forbidden = ['MLPEncoder']
+                    forbidden_deepAREncoder = [forbid for forbid in forbidden if forbid in network_flat_encoder_hp.choices]
+                    for hp_ar in hp_deepAR:
+                        if True in hp_ar.choices:
+                            forbidden_hp_ar = ForbiddenEqualsClause(hp_ar, ar_forbidden)
+                            forbidden_hp_mlpencoder = ForbiddenInClause(network_flat_encoder_hp, forbidden_deepAREncoder)
+                            forbidden_hp_ar_mlp = ForbiddenAndConjunction(forbidden_hp_ar, forbidden_hp_mlpencoder)
+                            forbidden_losses_all.append(forbidden_hp_ar_mlp)
 
-            forecast_strategy = cs.get_hyperparameter('loss:DistributionLoss:forecast_strategy')
-            if 'mean' in forecast_strategy.choices:
-                for hp_ar in hp_deepAR:
-                    if True in hp_ar.choices:
+            if 'loss:DistributionLoss:forecast_strategy' in cs:
+                forecast_strategy = cs.get_hyperparameter('loss:DistributionLoss:forecast_strategy')
+                if 'mean' in forecast_strategy.choices:
+                    for hp_ar in hp_deepAR:
+                        if True in hp_ar.choices:
 
-                        forbidden_hp_ar = ForbiddenEqualsClause(hp_ar, ar_forbidden)
-                        forbidden_hp_forecast_strategy = ForbiddenEqualsClause(forecast_strategy, 'mean')
-                        forbidden_hp_ar_forecast_strategy = ForbiddenAndConjunction(forbidden_hp_ar,
-                                                                                    forbidden_hp_forecast_strategy)
-                        forbidden_losses_all.append(forbidden_hp_ar_forecast_strategy)
-
-            cs.add_forbidden_clauses(forbidden_losses_all)
+                            forbidden_hp_ar = ForbiddenEqualsClause(hp_ar, ar_forbidden)
+                            forbidden_hp_forecast_strategy = ForbiddenEqualsClause(forecast_strategy, 'mean')
+                            forbidden_hp_ar_forecast_strategy = ForbiddenAndConjunction(forbidden_hp_ar,
+                                                                                        forbidden_hp_forecast_strategy)
+                            forbidden_losses_all.append(forbidden_hp_ar_forecast_strategy)
+            if forbidden_losses_all:
+                cs.add_forbidden_clauses(forbidden_losses_all)
 
             # NBEATS
             network_encoder_hp = cs.get_hyperparameter("network_backbone:__choice__")
@@ -275,21 +289,22 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             forbidden_loss_non_regression = ForbiddenInClause(hp_loss, loss_non_regression)
             forbidden_backcast = ForbiddenEqualsClause(data_loader_backcast, True)
 
-            hp_flat_encoder = cs.get_hyperparameter("network_backbone:flat_encoder:__choice__")
+            if 'network_backbone:flat_encoder:__choice__' in cs:
+                hp_flat_encoder = cs.get_hyperparameter("network_backbone:flat_encoder:__choice__")
 
-            # Ensure that NBEATS encoder only works with NBEATS decoder
-            if 'NBEATSEncoder' in hp_flat_encoder.choices:
-                forbidden_NBEATS.append(ForbiddenAndConjunction(
-                    ForbiddenEqualsClause(hp_flat_encoder, 'NBEATSEncoder'),
-                    forbidden_loss_non_regression)
-                )
-                transform_time_features = "data_loader:transform_time_features"
-                if transform_time_features in cs:
-                    hp_ttf = cs.get_hyperparameter(transform_time_features)
+                # Ensure that NBEATS encoder only works with NBEATS decoder
+                if 'NBEATSEncoder' in hp_flat_encoder.choices:
                     forbidden_NBEATS.append(ForbiddenAndConjunction(
                         ForbiddenEqualsClause(hp_flat_encoder, 'NBEATSEncoder'),
-                        ForbiddenEqualsClause(hp_ttf, True))
+                        forbidden_loss_non_regression)
                     )
+                    transform_time_features = "data_loader:transform_time_features"
+                    if transform_time_features in cs:
+                        hp_ttf = cs.get_hyperparameter(transform_time_features)
+                        forbidden_NBEATS.append(ForbiddenAndConjunction(
+                            ForbiddenEqualsClause(hp_flat_encoder, 'NBEATSEncoder'),
+                            ForbiddenEqualsClause(hp_ttf, True))
+                        )
 
             forbidden_NBEATS.append(ForbiddenAndConjunction(
                 forbidden_backcast,
@@ -320,7 +335,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             default_dataset_properties.update(dataset_properties)
 
         if not default_dataset_properties.get("uni_variant", False):
-            steps.extend([("imputer", TimeSeriesFeatureImputer(random_state=self.random_state)),
+            steps.extend([("impute", TimeSeriesFeatureImputer(random_state=self.random_state)),
                           ("scaler", BaseScaler(random_state=self.random_state)),
                           ('encoding', TimeSeriesEncoderChoice(default_dataset_properties,
                                                                random_state=self.random_state)),

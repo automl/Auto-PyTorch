@@ -220,7 +220,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             Dict[str, float]: scores for each desired metric
         """
         if not isinstance(self.model, (ForecastingDeepARNet, ForecastingSeq2SeqNet)):
-            # To save time, we simply make one step prediction for DeepAR and Seq2Seq
+            # To save time, we simply make one-step prediction for DeepAR and Seq2Seq
             self.model.eval()
         if isinstance(self.model, ForecastingDeepARNet):
             self.model.only_generate_future_dist = True

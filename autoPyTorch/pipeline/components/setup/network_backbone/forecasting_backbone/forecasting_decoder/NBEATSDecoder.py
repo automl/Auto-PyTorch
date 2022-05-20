@@ -176,7 +176,7 @@ class NBEATSDecoder(BaseForecastingDecoder):
         return ['NBEATSEncoder']
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
-        X.update({'backcast_loss_ratio': self.config['backcast_loss_ratio']})
+        X.update({'backcast_loss_ration': self.config['backcast_loss_ration']})
         return super().transform(X)
 
     @staticmethod
@@ -275,8 +275,8 @@ class NBEATSDecoder(BaseForecastingDecoder):
                 value_range=(0, 0.8),
                 default_value=0.1,
             ),
-            backcast_loss_ratio: HyperparameterSearchSpace = HyperparameterSearchSpace(
-                hyperparameter="backcast_loss_ratio",
+            backcast_loss_ration: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                hyperparameter="backcast_loss_ration",
                 value_range=(0., 1.),
                 default_value=1.,
             )
@@ -315,7 +315,7 @@ class NBEATSDecoder(BaseForecastingDecoder):
             use_dropout: if dropout is applied
             normalization: if normalization is applied
             dropout: dropout value, if use_dropout is set as True
-            backcast_loss_ratio: weight of backcast in comparison to forecast when calculating the loss.
+            backcast_loss_ration: weight of backcast in comparison to forecast when calculating the loss.
                 A weight of 1.0 means that forecast and backcast loss is weighted the same (regardless of backcast and
                 forecast lengths). Defaults to 0.0, i.e. no weight.
         Returns:
@@ -329,7 +329,7 @@ class NBEATSDecoder(BaseForecastingDecoder):
         # General Hyperparameters
         add_hyperparameter(cs, activation, CategoricalHyperparameter)
         add_hyperparameter(cs, normalization, CategoricalHyperparameter)
-        add_hyperparameter(cs, backcast_loss_ratio, UniformFloatHyperparameter)
+        add_hyperparameter(cs, backcast_loss_ration, UniformFloatHyperparameter)
 
         cs.add_hyperparameter(n_beats_type)
         # N-BEATS-G
