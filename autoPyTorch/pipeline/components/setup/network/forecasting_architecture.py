@@ -463,9 +463,10 @@ class ForecastingNet(AbstractForecastingNet):
             return x_past, x_future, x_static, loc, scale, static_context_initial_hidden, past_targets
         else:
             if past_features is not None:
-                x_past = torch.cat([truncated_past_targets, past_features], dim=-1)
-
-            x_past = self.embedding(x_past.to(device=self.device))
+                x_past = torch.cat([truncated_past_targets, past_features], dim=-1).to(device=self.device)
+                x_past = self.embedding(x_past.to(device=self.device))
+            else:
+                x_past = self.embedding(truncated_past_targets.to(device=self.device))
             if future_features is not None and length_future > 0:
                 future_features = self.decoder_embedding(future_features.to(self.device))
             return x_past, future_features, None, loc, scale, None, past_targets
@@ -494,6 +495,7 @@ class ForecastingNet(AbstractForecastingNet):
 
         decoder_output = self.decoder(x_future=x_future, encoder_output=encoder2decoder,
                                       pos_idx=(x_past.shape[1], x_past.shape[1] + self.n_prediction_steps))
+
 
         if self.has_temporal_fusion:
             decoder_output = self.temporal_fusion(encoder_output=encoder_output,
@@ -629,7 +631,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
             else:
                 decoder_input = future_targets if future_features is None else torch.cat([future_features,
                                                                                           future_targets], dim=-1)
-                decoder_input.to(self.device)
+                decoder_input = decoder_input.to(self.device)
                 decoder_input = self.decoder_embedding(decoder_input)
 
             encoder2decoder, encoder_output = self.encoder(encoder_input=x_past,
@@ -768,7 +770,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                             future_features=None if repeated_future_features is None else
                             repeated_future_features[:, [idx_pred]])
                     else:
-                        decoder_input = repeated_future_features if repeated_future_features is None else torch.cat(
+                        decoder_input = ar_future_target if repeated_future_features is None else torch.cat(
                             [repeated_future_features[:, [idx_pred], :], ar_future_target], dim=-1)
 
                         decoder_input = decoder_input.to(self.device)

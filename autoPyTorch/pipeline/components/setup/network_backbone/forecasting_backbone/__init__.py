@@ -257,9 +257,12 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
 
         choice_component = self.get_components()[choice]
 
+        updates = self._get_search_space_updates(prefix=choice)
+
         self.new_params = new_params
         sub_configuration_space = choice_component.get_hyperparameter_search_space(
             self.dataset_properties,
+            **updates
         )
 
         sub_configuration = Configuration(sub_configuration_space,

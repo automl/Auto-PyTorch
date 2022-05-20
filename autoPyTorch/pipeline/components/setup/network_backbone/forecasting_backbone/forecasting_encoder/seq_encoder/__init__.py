@@ -2,6 +2,7 @@ import os
 from collections import OrderedDict
 from typing import Dict, Optional, List, Any, Union
 from sklearn.pipeline import Pipeline
+import inspect
 
 from ConfigSpace.hyperparameters import (
     Constant,
@@ -30,6 +31,8 @@ from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone
 
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder. \
     base_forecasting_encoder import BaseForecastingEncoder
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder. \
+    base_forecasting_decoder import BaseForecastingDecoder
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import \
     ForecastingNetworkStructure
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.other_components.TemporalFusion import \
@@ -215,21 +218,17 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             cond_vs_dropout = EqualsCondition(variable_selection_use_dropout, variable_selection, True)
             cond_vs_dropoutrate = EqualsCondition(variable_selection_dropout_rate, variable_selection_use_dropout, True)
             cs.add_conditions([cond_vs_dropout, cond_vs_dropoutrate])
-        
-        add_forbidden_for_non_ar_recurrent_decoder = False
-        if static_features_shape + future_feature_shapes[-1] == 0:
-            add_forbidden_for_non_ar_recurrent_decoder = True
 
         if True in variable_selection.choices:
             cs.add_hyperparameter(share_single_variable_networks)
             cs.add_condition(EqualsCondition(share_single_variable_networks, variable_selection, True))
 
         # Compile a list of legal preprocessors for this problem
-        available_encoders = self.get_available_components(
+        available_encoders: Dict[str, BaseForecastingEncoder] = self.get_available_components(
             dataset_properties=dataset_properties,
             include=include, exclude=exclude)
 
-        available_decoders = self.get_available_components(
+        available_decoders: Dict[str, BaseForecastingDecoder] = self.get_available_components(
             dataset_properties=dataset_properties,
             include=None, exclude=exclude,
             components=self.get_decoder_components())
@@ -250,11 +249,32 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
 
         forbiddens_decoder_auto_regressive = []
 
+        # TODO this is only a temporary solution, needs to be updated when ConfigSpace allows more complex conditions!
+        # General Idea to work with auto-regressive decoders:
+        # decoder cannot be auto-regressive if it is not recurrent
+        #   decoder_auto_regressive is conditioned on the HPs that allow recurrent decoders:
+        #     encoders that only have recurrent decoders -> EqCond(dar, encoder, en_name)
+        #     decoder_types of Encoders that contain recurrent decoders -> EqCond(dar, encoder:de_type, de_name)
+        #
+        # When no future data can be fed to the decoder (no future features), decoder must be auto-regressive:
+        #   disable the recurrent decoders without auto-regressive or variable selection
+        #   this is judged by add_forbidden_for_non_ar_recurrent_decoder
+
         if True in decoder_auto_regressive.choices:
             forbidden_decoder_ar = ForbiddenEqualsClause(decoder_auto_regressive, True)
         else:
             forbidden_decoder_ar = None
-            
+
+        add_forbidden_for_non_ar_recurrent_decoder = False
+        if static_features_shape + future_feature_shapes[-1] == 0:
+            if False in decoder_auto_regressive.choices and False in variable_selection.choices:
+                add_forbidden_for_non_ar_recurrent_decoder = True
+
+        if len(decoder_auto_regressive.choices) == 1 and True in decoder_auto_regressive.choices:
+            conds_decoder_ar = None
+        else:
+            conds_decoder_ar = []
+
         for i in range(1, int(max_num_blocks) + 1):
             block_prefix = f'block_{i}:'
 
@@ -274,6 +294,23 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                     list(available_encoders.keys()),
                     default_value=default
                 )
+            if conds_decoder_ar is None:
+                # In this case we only allow encoders that has recurrent decoders
+                available_encoders_w_recurrent_decoder = []
+                for encoder_name in hp_encoder.choices:
+                    decoders = available_encoders[encoder_name].allowed_decoders()
+                    for decoder_name in decoders:
+                        if available_decoders[decoder_name].decoder_properties().recurrent:
+                            available_encoders_w_recurrent_decoder.append(encoder_name)
+                            break
+                if not available_encoders_w_recurrent_decoder:
+                    raise ValueError('If only auto-regressive decoder is allowed, at least one encoder must contain '
+                                     'recurrent decoder!')
+                hp_encoder = CategoricalHyperparameter(
+                    block_prefix + '__choice__',
+                    available_encoders_w_recurrent_decoder,
+                    default_value=available_encoders_w_recurrent_decoder[0])
+
             cs.add_hyperparameter(hp_encoder)
             if i > int(min_num_blocks):
                 cs.add_condition(
@@ -296,6 +333,23 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                     if not set(hp_decoder_choice).issubset(allowed_decoders):
                         raise ValueError(
                             'The encoder hyperparameter decoder_type must be a subset of the allowed_decoders')
+                    recurrent_decoders = []
+                    for decoder_name in allowed_decoders:
+                        if available_decoders[decoder_name].decoder_properties().recurrent:
+                            recurrent_decoders.append(decoder_name)
+                    if conds_decoder_ar is None:
+                        if recurrent_decoders:
+                            updates['decoder_type'] = HyperparameterSearchSpace('decoder_type',
+                                                                                tuple(recurrent_decoders),
+                                                                                recurrent_decoders[0]
+                                                                                )
+                            config_space = available_encoders[encoder_name].get_hyperparameter_search_space(
+                                dataset_properties,
+                                **updates)
+                            hp_decoder_choice = recurrent_decoders
+                        else:
+                            cs.add_forbidden_clause(ForbiddenEqualsClause(hp_encoder, encoder_name))
+
                     allowed_decoders = hp_decoder_choice
                 valid_decoders = []
                 for decoder_name in allowed_decoders:
@@ -375,15 +429,28 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
 
                 cs.add_conditions(conditions_to_add)
 
-                if forbidden_decoder_ar is not None:
-                    forbiddens_ar_non_recurrent = []
-                    for encoder in hp_encoder.choices:
-                        if encoder in encoder_with_single_decoder:
-                            if not available_decoders[encoder2decoder[encoder][0]].decoder_properties().recurrent:
-                                forbiddens_ar_non_recurrent.append(ForbiddenAndConjunction(
-                                    forbidden_decoder_ar,
-                                    ForbiddenEqualsClause(hp_encoder, encoder)
-                                ))
+            if conds_decoder_ar is not None or forbidden_decoder_ar is not None:
+                forbiddens_ar_non_recurrent = []
+                for encoder in hp_encoder.choices:
+                    if len(encoder2decoder[encoder]) == 1:
+                        if available_decoders[encoder2decoder[encoder][0]].decoder_properties().recurrent:
+                            # conds_decoder_ar is not None: False can be in decoder_auto_regressive. In this case,
+                            # if hp_encoder selects encoder, then decoder_auto_regressive becomes inactiavte
+                            # (indicates a default decoder_auto_regressive=False, thus we need to add another
+                            # forbidden incase add_forbidden_for_non_ar_recurrent_decoder is required)
+                            # forbidden_decoder_ar is not None: only False in decoder_auto_regressive
+                            # add_forbidden_for_non_ar_recurrent_decoder is True:False in decoder_auto_regressive
+                            if conds_decoder_ar is not None:
+                                conds_decoder_ar.append(
+                                    EqualsCondition(decoder_auto_regressive, hp_encoder, encoder)
+                                )
+                                if add_forbidden_for_non_ar_recurrent_decoder:
+                                    forbiddens_decoder_auto_regressive.append(
+                                        ForbiddenAndConjunction(
+                                            ForbiddenEqualsClause(variable_selection, False),
+                                            ForbiddenEqualsClause(hp_encoder, encoder)
+                                        )
+                                    )
                             else:
                                 if add_forbidden_for_non_ar_recurrent_decoder:
                                     forbiddens_decoder_auto_regressive.append(
@@ -395,28 +462,38 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                                             ForbiddenEqualsClause(hp_encoder, encoder)
                                         )
                                     )
-                                
-                        elif encoder in encoders_with_multi_decoder:
-                            hp_decoder_type = cs.get_hyperparameter(f'{block_prefix + encoder}:decoder_type')
-                            for decoder in hp_decoder_type.choices:
-                                if not available_decoders[decoder].decoder_properties().recurrent:
-                                    forbiddens_ar_non_recurrent.append(ForbiddenAndConjunction(
-                                        forbidden_decoder_ar,
-                                        ForbiddenEqualsClause(hp_decoder_type, decoder)
-                                    ))
-                                else:
-                                    if add_forbidden_for_non_ar_recurrent_decoder:
-                                        forbiddens_decoder_auto_regressive.append(
-                                            ForbiddenAndConjunction(
-                                                ForbiddenAndConjunction(
-                                                    ForbiddenEqualsClause(variable_selection, False),
-                                                    ForbiddenEqualsClause(decoder_auto_regressive, False)
-                                                ),
-                                                ForbiddenEqualsClause(hp_decoder_type, decoder)
-                                            )
+
+                    elif len(encoder2decoder[encoder]) > 1:
+                        hp_decoder_type = cs.get_hyperparameter(f'{block_prefix + encoder}:decoder_type')
+                        for decoder in hp_decoder_type.choices:
+                            if not available_decoders[decoder].decoder_properties().recurrent:
+                                # TODO this is a temporary solution: currently ConfigSpace is not able to correctly
+                                # activate/deactivate a complex nested configspace; Too many forbiddens might also rise
+                                # errors. Thus we only allow decoder_ar to be conditioned on the top layer hps and
+                                # put forbiddenclauses here
+                                if forbidden_decoder_ar is not None:
+                                    forbiddens_decoder_auto_regressive.append(
+                                        ForbiddenAndConjunction(
+                                            forbidden_decoder_ar,
+                                            ForbiddenEqualsClause(hp_decoder_type, decoder)
                                         )
+                                )
+                            else:
+                                if add_forbidden_for_non_ar_recurrent_decoder:
+                                    forbiddens_decoder_auto_regressive.append(
+                                        ForbiddenAndConjunction(
+                                            ForbiddenAndConjunction(
+                                                ForbiddenEqualsClause(variable_selection, False),
+                                                ForbiddenEqualsClause(decoder_auto_regressive, False)
+                                            ),
+                                            ForbiddenEqualsClause(hp_decoder_type, decoder)
+                                        )
+                                    )
+
                     if forbiddens_ar_non_recurrent:
                         cs.add_forbidden_clauses(forbiddens_ar_non_recurrent)
+        if conds_decoder_ar:
+            cs.add_condition(OrConjunction(*conds_decoder_ar))
 
 
         use_temporal_fusion = get_hyperparameter(use_temporal_fusion, CategoricalHyperparameter)
@@ -512,6 +589,8 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                         ))
 
         cs.add_forbidden_clauses(forbidden_mlp_local_layer)
+        cs.get_children_of(decoder_auto_regressive)
+
         return cs
 
     @property
@@ -538,33 +617,18 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         """
 
         params = configuration.get_dictionary()
-        num_blocks = params['num_blocks']
-        decoder_auto_regressive = params['decoder_auto_regressive']
-        use_temporal_fusion = params['use_temporal_fusion']
-        forecasting_structure_kwargs = dict(num_blocks=num_blocks,
-                                            use_temporal_fusion=use_temporal_fusion,
-                                            variable_selection=params['variable_selection'],
-                                            skip_connection=params['skip_connection'])
-        if 'share_single_variable_networks' in params:
-            forecasting_structure_kwargs['share_single_variable_networks'] = params['share_single_variable_networks']
-            del params['share_single_variable_networks']
+        decoder_auto_regressive = params.pop('decoder_auto_regressive', False)
+        net_structure_default_kwargs = inspect.signature(ForecastingNetworkStructure.__init__).parameters
 
-        del params['num_blocks']
-        del params['use_temporal_fusion']
-        del params['variable_selection']
-        del params['skip_connection']
-        del params['decoder_auto_regressive']
+        forecasting_structure_kwargs = {
+            key: params.pop(key, value.default) for key, value in net_structure_default_kwargs.items()
+            if key != 'self'
+        }
+        if not params.pop('grn_use_dropout', False):
+            forecasting_structure_kwargs['grn_dropout_rate'] = 0.0
 
-        if 'skip_connection_type' in params:
-            forecasting_structure_kwargs['skip_connection_type'] = params['skip_connection_type']
-            del params['skip_connection_type']
-            if 'grn_use_dropout' in params:
-                del params['grn_use_dropout']
-                if 'grn_dropout_rate' in params:
-                    forecasting_structure_kwargs['grn_dropout_rate'] = params['grn_dropout_rate']
-                    del params['grn_dropout_rate']
-                else:
-                    forecasting_structure_kwargs['grn_dropout_rate'] = 0.0
+        num_blocks = forecasting_structure_kwargs['num_blocks']
+        use_temporal_fusion = forecasting_structure_kwargs['use_temporal_fusion']
 
         pipeline_steps = [('net_structure', ForecastingNetworkStructure(**forecasting_structure_kwargs))]
         self.encoder_choice = []
@@ -576,8 +640,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             new_params = {}
 
             block_prefix = f'block_{i}:'
-            choice = params[block_prefix + '__choice__']
-            del params[block_prefix + '__choice__']
+            choice = params.pop(block_prefix + '__choice__')
 
             for param, value in params.items():
                 if param.startswith(block_prefix):

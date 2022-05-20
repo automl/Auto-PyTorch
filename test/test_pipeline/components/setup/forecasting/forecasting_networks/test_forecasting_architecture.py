@@ -78,6 +78,11 @@ def with_static_features(request):
     return request.param
 
 
+@pytest.fixture(params=[True, False])
+def uni_variant_data(request):
+    return request.param
+
+
 class TestForecastingNetworks:
     dataset_properties, fit_dictionary = generate_fit_dict_and_dataset_property()
 
@@ -87,7 +92,8 @@ class TestForecastingNetworks:
                              variable_selection,
                              with_static_features,
                              network_encoder,
-                             network_type):
+                             network_type,
+                             uni_variant_data):
         if network_type == 'ForecastingDeepARNet' and net_output_type != 'distribution_sample':
             return
         if network_type == 'ForecastingSeq2SeqNet' and network_encoder == 'TCNEncoder':
@@ -95,7 +101,11 @@ class TestForecastingNetworks:
         if network_type == 'NBEATSNet':
             # NBEATS only needs one pass
             if not (embedding == 'NoEmbedding' and net_output_type == 'regression' and
-                    not variable_selection and not with_static_features and network_encoder == 'RNNEncoder'):
+                    not variable_selection and not with_static_features and network_encoder == 'RNNEncoder'
+                    and not uni_variant_data):
+                return
+        if uni_variant_data:
+            if not (embedding == 'NoEmbedding' and not with_static_features):
                 return
 
         dataset_properties = copy.copy(self.dataset_properties)
@@ -129,6 +139,18 @@ class TestForecastingNetworks:
         else:
             fit_dictionary['network_embedding'] = ReducedEmbedding([10] * 5, 2)
             dataset_properties['feature_shapes'] = {'f1': 10, 'f2': 10, 'f3': 9, 'f4': 9, 'f5': 9}
+
+        if uni_variant_data:
+            fit_dictionary['X_train'] = None
+            fit_dictionary['transform_time_features'] = False
+            dataset_properties.update({'feature_shapes': {},
+                                       'feature_names': tuple(),
+                                       'known_future_features': tuple(),
+                                       'uni_variant': True,
+                                       'input_shape': (100, 0),
+                                       'static_features': tuple(),
+                                       'future_feature_shapes': (dataset_properties['n_prediction_steps'], 0),
+                                       })
 
         n_prediction_steps = dataset_properties['n_prediction_steps']
         window_size = fit_dictionary['window_size']
@@ -171,6 +193,13 @@ class TestForecastingNetworks:
                     hyperparameter='seq_encoder:decoder_auto_regressive',
                     value_range=(False,),
                     default_value=False, ))
+                if uni_variant_data and network_encoder == 'RNNEncoder':
+                    updates.append(HyperparameterSearchSpaceUpdate(
+                        node_name="network_backbone",
+                        hyperparameter='seq_encoder:block_1:RNNEncoder:decoder_type',
+                        value_range=('MLPDecoder',),
+                        default_value='MLPDecoder', ))
+
             elif network_type == 'ForecastingSeq2SeqNet':
                 updates.append(HyperparameterSearchSpaceUpdate(
                     node_name="network_backbone",
@@ -182,6 +211,7 @@ class TestForecastingNetworks:
                     hyperparameter='seq_encoder:decoder_auto_regressive',
                     value_range=(True,),
                     default_value=True, ))
+
             elif network_type == 'ForecastingDeepARNet':
                 updates.append(HyperparameterSearchSpaceUpdate(
                     node_name="network_backbone",
@@ -231,10 +261,14 @@ class TestForecastingNetworks:
         batch_size = 2
 
         past_targets = torch.ones([batch_size, 50, n_targets])
-        past_features = torch.ones([batch_size, 50, n_features_past])
-        future_features = torch.ones([batch_size, n_prediction_steps, n_features_future])
         future_targets = torch.ones([batch_size, n_prediction_steps, n_targets])
         past_observed_targets = torch.ones([batch_size, 50, n_targets]).bool()
+        if uni_variant_data:
+            past_features = None
+            future_features = None
+        else:
+            past_features = torch.ones([batch_size, 50, n_features_past])
+            future_features = torch.ones([batch_size, n_prediction_steps, n_features_future])
 
         output = neu_arch(past_targets=past_targets,
                           future_targets=future_targets,
@@ -250,6 +284,7 @@ class TestForecastingNetworks:
             output = output[0]
         if network_type in ["ForecastingNet", "ForecastingSeq2SeqNet"]:
             assert list(output.shape) == [batch_size, n_prediction_steps, n_targets]
+
         elif network_type == "ForecastingDeepARNet":
             assert list(output.shape) == [batch_size, n_prediction_steps + min(50, neu_arch.window_size) - 1, n_targets]
         else:
@@ -269,10 +304,14 @@ class TestForecastingNetworks:
         neu_arch.train()
 
         past_targets = torch.ones([batch_size, 3, n_targets])
-        past_features = torch.ones([batch_size, 3, n_features_past])
-        future_features = torch.ones([batch_size, n_prediction_steps, n_features_future])
         future_targets = torch.ones([batch_size, n_prediction_steps, n_targets])
         past_observed_targets = torch.ones([batch_size, 3, n_targets]).bool()
+        if uni_variant_data:
+            past_features = None
+            future_features = None
+        else:
+            past_features = torch.ones([batch_size, 3, n_features_past])
+            future_features = torch.ones([batch_size, n_prediction_steps, n_features_future])
 
         output = neu_arch(past_targets=past_targets,
                           future_targets=future_targets,

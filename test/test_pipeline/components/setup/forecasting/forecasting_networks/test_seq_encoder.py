@@ -60,6 +60,17 @@ class TestSeqEncoder(unittest.TestCase):
         self.assertTrue('network_decoder' in fit_dict)
         self.assertEqual(len(fit_dict['network_decoder']), num_blocks)
 
+        #test error:
+        dataset_properties = copy.copy(self.dataset_properties)
+        dataset_properties.update({'feature_shapes': {},
+                                   'feature_names': tuple(),
+                                   'known_future_features': tuple(),
+                                   'uni_variant': True,
+                                   'input_shape': (100, 0),
+                                   'static_features': tuple(),
+                                   'future_feature_shapes': (dataset_properties['n_prediction_steps'], 0),
+                                   })
+
     def test_deepar(self):
         for i, valid_encoder in enumerate(['RNNEncoder', 'TransformerEncoder', 'TCNEncoder', 'InceptionTimeEncoder']):
             seq_encoder_choice = SeqForecastingEncoderChoice(dataset_properties=self.dataset_properties)
@@ -114,7 +125,11 @@ class TestSeqEncoder(unittest.TestCase):
                                                           cache_intermediate_state=True,
                                                           )
             output = head(net_decoder(x_future=None, encoder_output=encoder2decoder))
-            self.assertListEqual(list(output.shape), [10, 1, 1])
+            try:
+                self.assertListEqual(list(output.shape), [10, 1, 1])
+            except Exception:
+                import pdb
+                pdb.set_trace()
 
             encoder2decoder, encoder_output = net_encoder(encoder_input=input_tensor_future,
                                                           additional_input=[None],

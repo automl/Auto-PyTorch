@@ -948,6 +948,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                                    'input_shape': self.input_shape,
                                    'time_feature_transform': self.time_feature_transform,
                                    'uni_variant': self.is_uni_variant,
+                                   'static_features_shape': len(self.static_features),
+                                   'future_feature_shapes': (self.n_prediction_steps, len(self.known_future_features)),
                                    'targets_have_missing_values': self.train_tensors[1].isnull().values.any(),
                                    'encoder_can_be_auto_regressive': self.encoder_can_be_auto_regressive,
                                    'features_have_missing_values': False if self.train_tensors[0] is None

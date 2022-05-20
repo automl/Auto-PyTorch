@@ -312,8 +312,7 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
         new_params = {}
 
         params = configuration.get_dictionary()
-        choice = params['__choice__']
-        del params['__choice__']
+        choice = params.pop('__choice__')
 
         for param, value in params.items():
             param = param.replace(choice + ':', '')

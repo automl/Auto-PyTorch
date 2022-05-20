@@ -32,17 +32,17 @@ class MLPDecoderModule(DecoderNetwork):
 
     def forward(self, x_future: Optional[torch.Tensor], encoder_output: torch.Tensor,
                 pos_idx: Optional[Tuple[int]] = None):
+        if not self.auto_regressive:
+            if len(encoder_output.shape) == 3:
+                encoder_output = encoder_output.squeeze(1)
+
         if x_future is None or self.auto_regressive:
             # for auto-regressive model, x_future is fed to the encoders
             x = self.global_layers(encoder_output)
             if self.local_layers is None:
                 return x
             else:
-                # auto regressive model does not have local layers
                 return self.local_layers(x)
-
-        if len(encoder_output.shape) == 3:
-            encoder_output = encoder_output.squeeze(1)
 
         if self.local_layers is None:
             x = torch.concat([encoder_output, x_future.flatten(-2)], dim=-1)

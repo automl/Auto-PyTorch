@@ -1,4 +1,5 @@
 import copy
+import itertools
 import unittest
 
 from ConfigSpace import Configuration
@@ -180,59 +181,62 @@ class TestForecastingNetworkBases(unittest.TestCase):
 
     def test_base_encoder(self):
         window_size = self.fit_dictionary['window_size']
-        for uni_variant in (True, False):
-            for variable_selection in (True, False):
-                for transform_time_features in (True, False):
-                    for is_small_preprocess in (True, False):
-                        network_structure = NetworkStructure(variable_selection=variable_selection)
+        all_settings = [(True, False)] * 4
+        for hp_values in itertools.product(*all_settings):
+            uni_variant = hp_values[0]
+            variable_selection = hp_values[1]
+            transform_time_features = hp_values[2]
+            is_small_preprocess = hp_values[3]
 
-                        dataset_properties = copy.copy(self.dataset_properties)
-                        fit_dictionary = copy.copy(self.fit_dictionary)
+            network_structure = NetworkStructure(variable_selection=variable_selection)
 
-                        dataset_properties['is_small_preprocess'] = is_small_preprocess
-                        dataset_properties['uni_variant'] = uni_variant
+            dataset_properties = copy.copy(self.dataset_properties)
+            fit_dictionary = copy.copy(self.fit_dictionary)
 
-                        fit_dictionary['dataset_properties'] = self.dataset_properties
-                        fit_dictionary['network_structure'] = network_structure
-                        fit_dictionary['transform_time_features'] = transform_time_features
-                        fit_dictionary['dataset_properties'] = dataset_properties
+            dataset_properties['is_small_preprocess'] = is_small_preprocess
+            dataset_properties['uni_variant'] = uni_variant
 
-                        encoder_block_1 = copy.deepcopy(self.encoder)
+            fit_dictionary['dataset_properties'] = self.dataset_properties
+            fit_dictionary['network_structure'] = network_structure
+            fit_dictionary['transform_time_features'] = transform_time_features
+            fit_dictionary['dataset_properties'] = dataset_properties
 
-                        encoder_block_2 = copy.deepcopy(self.encoder)
-                        encoder_block_2.block_number = 2
+            encoder_block_1 = copy.deepcopy(self.encoder)
 
-                        encoder_block_1 = encoder_block_1.fit(fit_dictionary)
-                        fit_dictionary = encoder_block_1.transform(fit_dictionary)
-                        network_encoder = fit_dictionary['network_encoder']
-                        self.assertIsInstance(network_encoder['block_1'], EncoderBlockInfo)
-                        self.assertEqual(network_encoder['block_1'].encoder_output_shape, (1, 10))
+            encoder_block_2 = copy.deepcopy(self.encoder)
+            encoder_block_2.block_number = 2
 
-                        if variable_selection:
-                            self.assertEqual(network_encoder['block_1'].encoder_input_shape, (window_size, 10))
-                        else:
-                            if uni_variant:
-                                n_input_features = 0
-                            else:
-                                if is_small_preprocess:
-                                    n_input_features = 40
-                                else:
-                                    n_input_features = 15
+            encoder_block_1 = encoder_block_1.fit(fit_dictionary)
+            fit_dictionary = encoder_block_1.transform(fit_dictionary)
+            network_encoder = fit_dictionary['network_encoder']
+            self.assertIsInstance(network_encoder['block_1'], EncoderBlockInfo)
+            self.assertEqual(network_encoder['block_1'].encoder_output_shape, (1, 10))
 
-                            if transform_time_features:
-                                n_input_features += len(dataset_properties['time_feature_transform'])
+            if variable_selection:
+                self.assertEqual(network_encoder['block_1'].encoder_input_shape, (window_size, 10))
+            else:
+                if uni_variant:
+                    n_input_features = 0
+                else:
+                    if is_small_preprocess:
+                        n_input_features = 40
+                    else:
+                        n_input_features = 15
 
-                            n_input_features += dataset_properties['output_shape'][-1]
-                            self.assertEqual(network_encoder['block_1'].encoder_input_shape, (window_size,
-                                                                                              n_input_features))
+                if transform_time_features:
+                    n_input_features += len(dataset_properties['time_feature_transform'])
 
-                        encoder_block_2 = encoder_block_2.fit(fit_dictionary)
-                        fit_dictionary = encoder_block_2.transform(fit_dictionary)
+                n_input_features += dataset_properties['output_shape'][-1]
+                self.assertEqual(network_encoder['block_1'].encoder_input_shape, (window_size,
+                                                                                  n_input_features))
 
-                        network_encoder = fit_dictionary['network_encoder']
-                        self.assertIsInstance(network_encoder['block_2'], EncoderBlockInfo)
-                        self.assertEqual(network_encoder['block_2'].encoder_output_shape, (1, 10))
-                        self.assertEqual(network_encoder['block_2'].encoder_input_shape, (1, 10))
+            encoder_block_2 = encoder_block_2.fit(fit_dictionary)
+            fit_dictionary = encoder_block_2.transform(fit_dictionary)
+
+            network_encoder = fit_dictionary['network_encoder']
+            self.assertIsInstance(network_encoder['block_2'], EncoderBlockInfo)
+            self.assertEqual(network_encoder['block_2'].encoder_output_shape, (1, 10))
+            self.assertEqual(network_encoder['block_2'].encoder_input_shape, (1, 10))
 
     def test_base_decoder(self):
         n_prediction_steps = self.dataset_properties['n_prediction_steps']
