@@ -279,9 +279,9 @@ def test_target_normalization():
 def test_dataset_index(backend, fit_dictionary_forecasting):
     datamanager: TimeSeriesForecastingDataset = backend.load_datamanager()
     assert np.allclose(datamanager[5][0]['past_targets'][-1].numpy(), 5.0)
-    assert np.allclose(datamanager[50][0]['past_targets'][-1].numpy(), 1005.0)
-    assert np.allclose(datamanager[150][0]['past_targets'][-1].numpy(), 2050.0)
-    assert np.allclose(datamanager[-1][0]['past_targets'][-1].numpy(), 9134.0)
+    assert np.allclose(datamanager[50][0]['past_targets'][-1].numpy(), 1003.0)
+    assert np.allclose(datamanager[150][0]['past_targets'][-1].numpy(), 2046.0)
+    assert np.allclose(datamanager[-1][0]['past_targets'][-1].numpy(), 9136.0)
 
     assert datamanager.get_time_series_seq(50) == datamanager.datasets[1]
 

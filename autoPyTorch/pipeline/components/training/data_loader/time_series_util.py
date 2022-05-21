@@ -181,6 +181,7 @@ class TimeSeriesSampler(SubsetRandomSampler):
                     # In this case, seq_intervals_decimal contains the entire interval of the sequence.
                     num_expected_ins_decimal.append(num_instances)
                     seq_intervals_decimal.append(interval[:2])
+                    seq_intervals_int.append(interval[1:])
                 else:
                     interval = np.linspace(idx_start, idx_end, num_interval + 1, endpoint=True, dtype=np.int)
                     # The first two item determines the first sequence interval where most of the samples need to be
