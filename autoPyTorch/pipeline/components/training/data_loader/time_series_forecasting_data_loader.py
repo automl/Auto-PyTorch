@@ -218,7 +218,8 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         self.train_transform = self.build_transform(X, mode='train')
         self.val_transform = self.build_transform(X, mode='val')
         self.test_transform = self.build_transform(X, mode='test')
-        self.feature_preprocessor = X['time_series_feature_transformer'].preprocessor
+        if 'time_series_feature_transformer' in X:
+            self.feature_preprocessor = X['time_series_feature_transformer'].preprocessor
         datamanager.update_transform(
             self.train_transform,
             train=True,
@@ -370,7 +371,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                 series_number = np.arange(len(sequence_lengths)).repeat(sequence_lengths)
                 x_all.index = series_number
 
-                if self.dataset_small_preprocess:
+                if self.dataset_small_preprocess and self.feature_preprocessor is not None:
                     self.feature_preprocessor = self.feature_preprocessor.fit(x_all)
                     x_all = self.feature_preprocessor.transform(x_all)
 
@@ -391,7 +392,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
 
                     x_all_test.index = series_number_test
 
-                    if self.dataset_small_preprocess:
+                    if self.dataset_small_preprocess and self.feature_preprocessor is not None:
                         x_all_test = self.feature_preprocessor.transform(x_all_test)
 
                     x_all_test = pd.DataFrame(x_all_test)
