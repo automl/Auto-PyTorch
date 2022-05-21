@@ -26,13 +26,16 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
             num_numerical_features=num_numerical_columns,
         )
         if "feature_shapes" in X['dataset_properties']:
-            feature_shapes = X['dataset_properties']['feature_shapes']
-            # forecasting tasks
-            feature_names = X['dataset_properties']['feature_names']
-            for idx_cat, n_output_cat in enumerate(num_output_features[num_numerical_columns:]):
-                cat_feature_name = feature_names[idx_cat + num_numerical_columns]
-                feature_shapes[cat_feature_name] = n_output_cat
-            self.feature_shapes = feature_shapes
+            if num_output_features is not None:
+                feature_shapes = X['dataset_properties']['feature_shapes']
+                # forecasting tasks
+                feature_names = X['dataset_properties']['feature_names']
+                for idx_cat, n_output_cat in enumerate(num_output_features[num_numerical_columns:]):
+                    cat_feature_name = feature_names[idx_cat + num_numerical_columns]
+                    feature_shapes[cat_feature_name] = n_output_cat
+                self.feature_shapes = feature_shapes
+            else:
+                self.feature_shapes = X['dataset_properties']['feature_shapes']
         return self
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
@@ -43,7 +46,7 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
 
     def build_embedding(self,
                         num_input_features: np.ndarray,
-                        num_numerical_features: int) -> Tuple[nn.Module, List[int]]:
+                        num_numerical_features: int) -> Tuple[nn.Module, Optional[List[int]]]:
         raise NotImplementedError
 
     def _get_args(self, X: Dict[str, Any]) -> Tuple[int, np.ndarray]:

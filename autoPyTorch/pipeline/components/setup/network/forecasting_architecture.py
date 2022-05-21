@@ -393,7 +393,6 @@ class ForecastingNet(AbstractForecastingNet):
                 past_observed_targets = past_observed_targets[:, -self.window_size:]
             past_targets, _, loc, scale = self.target_scaler(past_targets, past_observed_targets)
             truncated_past_targets = past_targets
-
         if past_features is not None:
             if self.window_size <= past_features.shape[1]:
                 past_features = past_features[:, -self.window_size:]

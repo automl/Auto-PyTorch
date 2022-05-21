@@ -159,23 +159,23 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         # Here we add custom code, like this with this
         # is not a valid configuration
         # Learned Entity Embedding is only valid when encoder is one hot encoder
-        if 'network_embedding' in self.named_steps.keys() and 'encoder' in self.named_steps.keys():
+        if 'network_embedding' in self.named_steps.keys() and 'feature_encoding' in self.named_steps.keys():
             embeddings = cs.get_hyperparameter('network_embedding:__choice__').choices
             if 'LearnedEntityEmbedding' in embeddings:
-                encoders = cs.get_hyperparameter('encoder:__choice__').choices
+                feature_encodings = cs.get_hyperparameter('feature_encoding:__choice__').choices
                 default = cs.get_hyperparameter('network_embedding:__choice__').default_value
                 possible_default_embeddings = copy.copy(list(embeddings))
                 del possible_default_embeddings[possible_default_embeddings.index(default)]
 
-                for encoder in encoders:
-                    if encoder == 'OneHotEncoder':
+                for encoding in feature_encodings:
+                    if encoding == 'OneHotEncoder':
                         continue
                     while True:
                         try:
                             cs.add_forbidden_clause(ForbiddenAndConjunction(
                                 ForbiddenEqualsClause(cs.get_hyperparameter(
                                     'network_embedding:__choice__'), 'LearnedEntityEmbedding'),
-                                ForbiddenEqualsClause(cs.get_hyperparameter('encoder:__choice__'), encoder)
+                                ForbiddenEqualsClause(cs.get_hyperparameter('feature_encoding:__choice__'), encoding)
                             ))
                             break
                         except ValueError:
@@ -199,16 +199,16 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                                     forbidden_regression_losses_all.append(forbidden_hp_dist)
                             """
 
-                # NBEATS only works with NoEmbedding
-                if 'network_backbone:flat_encoder:__choice__' in cs:
-                    hp_flat_encoder = cs.get_hyperparameter('network_backbone:flat_encoder:__choice__')
-                    if 'NBEATSEncoder' in hp_flat_encoder.choices:
-                        cs.add_forbidden_clause(ForbiddenAndConjunction(
-                            ForbiddenEqualsClause(hp_flat_encoder, 'NBEATSEncoder'),
-                            cs.get_hyperparameter(
-                                'network_embedding:__choice__'), 'LearnedEntityEmbedding')
-                        )
-
+        if 'network_embedding' in self.named_steps.keys():
+            # NBEATS only works with NoEmbedding
+            if 'network_backbone:flat_encoder:__choice__' in cs:
+                hp_flat_encoder = cs.get_hyperparameter('network_backbone:flat_encoder:__choice__')
+                if 'NBEATSEncoder' in hp_flat_encoder.choices:
+                    cs.add_forbidden_clause(ForbiddenAndConjunction(
+                        ForbiddenEqualsClause(hp_flat_encoder, 'NBEATSEncoder'),
+                        ForbiddenEqualsClause(cs.get_hyperparameter(
+                            'network_embedding:__choice__'), 'LearnedEntityEmbedding'))
+                    )
 
         # dist_cls and auto_regressive are only activate if the network outputs distribution
         if 'loss' in self.named_steps.keys() and 'network_backbone' in self.named_steps.keys():
@@ -337,7 +337,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         if not default_dataset_properties.get("uni_variant", False):
             steps.extend([("impute", TimeSeriesFeatureImputer(random_state=self.random_state)),
                           ("scaler", BaseScaler(random_state=self.random_state)),
-                          ('encoding', TimeSeriesEncoderChoice(default_dataset_properties,
+                          ('feature_encoding', TimeSeriesEncoderChoice(default_dataset_properties,
                                                                random_state=self.random_state)),
                           ("time_series_transformer", TimeSeriesFeatureTransformer(random_state=self.random_state)),
                           ("preprocessing", TimeSeriesEarlyPreprocessing(random_state=self.random_state)),

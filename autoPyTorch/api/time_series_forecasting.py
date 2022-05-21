@@ -162,9 +162,10 @@ class TimeSeriesForecastingTask(BaseTask):
             dataset_name: Optional[str] = None,
             dataset_compression: Optional[DatasetCompressionSpec] = None,
             freq: Optional[Union[str, int, List[int]]] = None,
-            start_times_train: List[pd.DatetimeIndex] = [],
-            start_times_test: Optional[List[pd.DatetimeIndex]] = None,
+            start_times: List[pd.DatetimeIndex] = [],
             n_prediction_steps: int = 1,
+            known_future_features: Tuple[Union[int, str]] = (),
+            **forecasting_dataset_kwargs,
     ) -> Tuple[TimeSeriesForecastingDataset, TimeSeriesForecastingInputValidator]:
         """
         Returns an object of `TabularDataset` and an object of
@@ -216,22 +217,23 @@ class TimeSeriesForecastingTask(BaseTask):
             dataset_compression=dataset_compression
         )
 
-        # Fit a input validator to check the provided data
+        # Fit an input validator to check the provided data
         # Also, an encoder is fit to both train and test data,
         # to prevent unseen categories during inference
-        input_validator.fit(X_train=X_train, y_train=y_train, start_times_train=start_times_train,
-                            X_test=X_test, y_test=y_test, start_times_test=start_times_test)
+        input_validator.fit(X_train=X_train, y_train=y_train, start_times=start_times,
+                            X_test=X_test, y_test=y_test)
 
         dataset = TimeSeriesForecastingDataset(
             X=X_train, Y=y_train,
             X_test=X_test, Y_test=y_test,
             freq=freq,
-            start_times_train=start_times_train,
-            start_times_test=start_times_test,
+            start_times=start_times,
             validator=input_validator,
             resampling_strategy=resampling_strategy,
             resampling_strategy_args=resampling_strategy_args,
             n_prediction_steps=n_prediction_steps,
+            known_future_features=known_future_features,
+            **forecasting_dataset_kwargs
         )
 
         return dataset, input_validator
@@ -245,8 +247,7 @@ class TimeSeriesForecastingTask(BaseTask):
             y_test: Optional[Union[List, pd.DataFrame]] = None,
             n_prediction_steps: int = 1,
             freq: Optional[Union[str, int, List[int]]] = None,
-            start_times_train: List[pd.DatetimeIndex] = [],
-            start_times_test: Optional[List[pd.DatetimeIndex]] = None,
+            start_times: List[pd.DatetimeIndex] = [],
             dataset_name: Optional[str] = None,
             budget_type: str = 'epochs',
             min_budget: Union[int, str] = 5,
@@ -266,6 +267,7 @@ class TimeSeriesForecastingTask(BaseTask):
             custom_init_setting_path: Optional[str] = None,
             min_num_test_instances: Optional[int] = None,
             dataset_compression: Union[Mapping[str, Any], bool] = False,
+            **forecasting_dataset_kwargs
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -291,10 +293,8 @@ class TimeSeriesForecastingTask(BaseTask):
             freq: Optional[Union[str, int, List[int]]]
                 frequency information, it determines the configuration space of the window size, if it is not given,
                 we will use the default configuration
-            start_times_train: : List[pd.DatetimeIndex]
+            start_times: : List[pd.DatetimeIndex]
                 A list indicating the start time of each series in the training sets
-            start_times_test: Optional[List[pd.DatetimeIndex]] = None,
-            A list indicating the start time of each series in the test sets
             dataset_name: Optional[str],
                 dataset name
             budget_type (str):
@@ -378,6 +378,8 @@ class TimeSeriesForecastingTask(BaseTask):
                 if it is set None, then full validation sets will be evaluated in each fidelity. Otherwise, the number
                 of instances in the test sets should be a value that is at least as great as this value, otherwise, the
                 number of test instance is proportional to its fidelity
+            forecasting_dataset_kwargs: Dict[Any]
+                Forecasting dataset kwargs used to initialize forecasting dataset
         Returns:
             self
 
@@ -395,9 +397,9 @@ class TimeSeriesForecastingTask(BaseTask):
             dataset_name=dataset_name,
             dataset_compression=self._dataset_compression,
             freq=freq,
-            start_times_train=start_times_train,
-            start_times_test=start_times_test,
-            n_prediction_steps=n_prediction_steps
+            start_times=start_times,
+            n_prediction_steps=n_prediction_steps,
+            **forecasting_dataset_kwargs
         )
 
         if self.dataset.base_window_size is not None or not self.customized_window_size:

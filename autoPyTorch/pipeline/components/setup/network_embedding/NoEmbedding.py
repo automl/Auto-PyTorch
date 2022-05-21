@@ -29,8 +29,8 @@ class NoEmbedding(NetworkEmbeddingComponent):
 
     def build_embedding(self,
                         num_input_features: np.ndarray,
-                        num_numerical_features: int) -> Tuple[nn.Module, List[int]]:
-        return _NoEmbedding(), list(num_input_features)
+                        num_numerical_features: int) -> Tuple[nn.Module, Optional[List[int]]]:
+        return _NoEmbedding(), None
 
     @staticmethod
     def get_hyperparameter_search_space(
