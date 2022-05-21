@@ -1,4 +1,4 @@
-from typing import Any, Union, Tuple
+from typing import Any, Union, Tuple, List
 
 import numpy as np
 import pandas as pd
@@ -16,25 +16,16 @@ class TimeSeriesScaler(BaseEstimator):
         self.dataset_is_small_preprocess = dataset_is_small_preprocess
         self.static_features = static_features
 
-    def fit(self, X: pd.DataFrame, y: Any = None) -> "TimeSeriesScaler":
+    def fit(self, X: Union[pd.DataFrame, np.ndarray], y: Any = None) -> "TimeSeriesScaler":
         """
         The transformer is transformed on the fly (for each batch)
         """
-        static_features = [static_fea for static_fea in self.static_features if static_fea in X.columns]
+        if self.dataset_is_small_preprocess:
+            static_features = [static_fea for static_fea in self.static_features if static_fea in X.columns]
+        else:
+            static_features = [static_fea for static_fea in self.static_features if static_fea < X.shape[1]]
         self.static_features = static_features
-        return self
 
-    def transform(self, X: Union[pd.DataFrame, np.ndarray]) -> Tuple[np.ndarray, ...]:
-        """
-        X = sklearn.utils.check_array(
-            X,
-            force_all_finite=True,
-            ensure_2d=False,
-            allow_nd=True,
-            accept_sparse=False,
-            accept_large_sparse=False
-        ) # type: np.ndarray
-        """
         if self.mode == "standard":
             if self.dataset_is_small_preprocess:
                 X_grouped = X.groupby(X.index)
@@ -57,7 +48,6 @@ class TimeSeriesScaler(BaseEstimator):
                 self.scale = np.where(self.scale == 0, self.loc, self.scale)
                 self.scale[self.scale == 0] = 1.
 
-            return (X - self.loc) / self.scale
 
         elif self.mode == "min_max":
             if self.dataset_is_small_preprocess:
@@ -84,8 +74,6 @@ class TimeSeriesScaler(BaseEstimator):
                 self.scale = np.where(self.scale == 0., self.loc, self.scale)
                 self.scale[self.scale == 0.0] = 1.0
 
-            return (X - self.loc) / self.scale
-
         elif self.mode == "max_abs":
             if self.dataset_is_small_preprocess:
                 X_abs = X.transform("abs")
@@ -98,8 +86,6 @@ class TimeSeriesScaler(BaseEstimator):
             max_abs_[max_abs_ == 0.0] = 1.0
             self.loc = None
             self.scale = max_abs_
-
-            return X / self.scale
 
         elif self.mode == 'mean_abs':
             if self.dataset_is_small_preprocess:
@@ -116,12 +102,39 @@ class TimeSeriesScaler(BaseEstimator):
             self.scale[self.scale == 0] = 1
             self.loc = None
 
-            return X / self.scale
-
         elif self.mode == "none":
             self.loc = None
             self.scale = None
 
+        else:
+            raise ValueError(f"Unknown mode {self.mode} for time series scaler")
+
+        return self
+
+    def transform(self, X: Union[pd.DataFrame, np.ndarray]) -> Tuple[np.ndarray, ...]:
+        """
+        X = sklearn.utils.check_array(
+            X,
+            force_all_finite=True,
+            ensure_2d=False,
+            allow_nd=True,
+            accept_sparse=False,
+            accept_large_sparse=False
+        ) # type: np.ndarray
+        """
+        if self.mode == "standard":
+            return (X - self.loc) / self.scale
+
+        elif self.mode == "min_max":
+            return (X - self.loc) / self.scale
+
+        elif self.mode == "max_abs":
+            return X / self.scale
+
+        elif self.mode == 'mean_abs':
+            return X / self.scale
+
+        elif self.mode == "none":
             return X
         else:
             raise ValueError(f"Unknown mode {self.mode} for time series scaler")

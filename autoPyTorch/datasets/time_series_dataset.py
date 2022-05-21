@@ -743,7 +743,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             start_times=start_times,
             time_features=time_features,
             is_test_set=is_test_set,
-            dataset_with_future_features=dataset_with_future_features,
             **self.sequences_builder_kwargs)
         return sequence_datasets, train_tensors, test_tensors, sequence_lengths
 
@@ -755,7 +754,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                                 X_test: Optional[pd.DataFrame] = None,
                                 Y_test: Optional[pd.DataFrame] = None,
                                 is_test_set: bool = False,
-                                dataset_with_future_features: bool = False,
                                 **sequences_kwargs: Optional[Dict]) -> Tuple[
         List[TimeSeriesSequence],
         Tuple[Optional[pd.DataFrame], pd.DataFrame],
@@ -825,7 +823,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         train_tensors = (X, Y)
         # we could guarantee that Y_test has shape [len(seq) * n_prediction_steps, num_targets]
-        test_tensors = (None, Y_test.values) if Y_test is not None else None
+        test_tensors = (X_test, Y_test.values) if Y_test is not None else None
 
         return sequence_datasets, train_tensors, test_tensors
 
