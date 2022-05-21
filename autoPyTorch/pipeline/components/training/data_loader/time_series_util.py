@@ -166,7 +166,7 @@ class TimeSeriesSampler(SubsetRandomSampler):
                                  f'However, they are {len(seq_lengths)} versus {len(num_instances_per_seqs)}')
             seq_intervals_int = []
             seq_intervals_decimal = []
-            # seq_intervals_decimal_length = []
+
             num_expected_ins_decimal = []
             idx_tracker = 0
             for seq_idx, (num_instances, seq_length) in enumerate(zip(num_instances_per_seqs, seq_lengths)):
@@ -176,15 +176,15 @@ class TimeSeriesSampler(SubsetRandomSampler):
                     idx_start = idx_tracker
 
                 num_interval = int(np.ceil(num_instances))
-                if num_interval > idx_end - idx_start:
+                if num_interval > idx_end - idx_start or num_interval == 0:
                     interval = np.linspace(idx_start, idx_end, 2, endpoint=True, dtype=np.int)
-                    # we consider
+                    # In this case, seq_intervals_decimal contains the entire interval of the sequence.
                     num_expected_ins_decimal.append(num_instances)
                     seq_intervals_decimal.append(interval[:2])
-                    seq_intervals_int.append(interval[1:])
                 else:
                     interval = np.linspace(idx_start, idx_end, num_interval + 1, endpoint=True, dtype=np.int)
-
+                    # The first two item determines the first sequence interval where most of the samples need to be
+                    # padded, we then make it the interval for the expected decimal
                     num_expected_ins_decimal.append(np.modf(num_instances)[0])
                     seq_intervals_decimal.append(interval[:2])
 

@@ -10,9 +10,6 @@ from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterS
 def network_type(request):
     return request.param
 
-@pytest.fixture(params=['NBEATSNet'])
-def network_type(request):
-    return request.param
 
 class TestTimeSeriesForecastingPipeline:
     @pytest.mark.parametrize("fit_dictionary_forecasting", ["uni_variant_wo_missing",

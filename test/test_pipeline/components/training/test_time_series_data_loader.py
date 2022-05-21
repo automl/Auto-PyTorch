@@ -433,22 +433,23 @@ class TestTimeSeriesUtil(unittest.TestCase):
     def test_time_series_sampler(self):
         indices = np.arange(100)
         seq_lengths = [5, 10, 15, 20, 50]
-        num_instances_per_seqs = [3.3, 1.3, 7.5, 10, 20.1]
+        num_instances_per_seqs = [3.3, 1.3, 0.0, 10, 20.1]
 
         sampler = TimeSeriesSampler(indices, seq_lengths, num_instances_per_seqs, min_start=2)
         self.assertEqual(sampler.num_instances, int(np.round(np.sum(num_instances_per_seqs))))
         # The first sequence does not contain enough data to allow 3.3 sequences, so it only has 1 interval
         # For the others, Interval should be np.floor(n_inst) + 1 (resulting in  np.floor(n_inst) intervals)
-        self.assertEqual(list(map(len, sampler.seq_intervals_int)), [1, 2, 8, 10, 21])
+
+        self.assertEqual(list(map(len, sampler.seq_intervals_int)), [1, 2, 1, 10, 21])
         self.assertTrue(torch.equal(sampler.seq_intervals_decimal, torch.tensor([[2, 5],
                                                                                  [7, 11],
-                                                                                 [17, 18],
+                                                                                 [17, 30],
                                                                                  [32, 33],
                                                                                  [52, 54]])))
         self.assertTrue(
             torch.allclose(sampler.num_expected_ins_decimal,
                            torch.Tensor(
-                               [3.3000e+00, 3.0000e-01, 5.0000e-01, 1.0000e-08, 1.0000e-01]).type(torch.float64))
+                               [3.3000e+00, 3.0000e-01, 1.0000e-08, 1.0000e-08, 1.0000e-01]).type(torch.float64))
         )
 
         for i in range(5):
