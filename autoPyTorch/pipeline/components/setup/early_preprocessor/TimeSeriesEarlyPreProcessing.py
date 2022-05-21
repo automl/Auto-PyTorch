@@ -1,7 +1,6 @@
 from typing import Any, Dict, Optional, Union, Tuple, List
 
 import numpy as np
-
 import pandas as pd
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
@@ -51,6 +50,7 @@ class TimeSeriesEarlyPreprocessing(EarlyPreprocessing):
                 X_train = X['backend'].load_datamanager().train_tensors[0]
 
             X['X_train'] = time_series_preprocess(dataset=X_train, transforms=transforms)
+
         feature_names = X['dataset_properties']['feature_names']
         numerical_columns = X['dataset_properties']['numerical_columns']
         categorical_columns = X['dataset_properties']['categorical_columns']

@@ -1,4 +1,5 @@
 import os
+import pdb
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 from numbers import Real
 import uuid
@@ -840,6 +841,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             ser_id = x[0]
             x_ser = x[1].transform(np.array).values
             seq.X = x_ser
+
             if X_test is not None:
                 seq.X_test = X_test_group.get_group(ser_id).transform(np.array).values
             seq.known_future_features_index = known_future_features_index

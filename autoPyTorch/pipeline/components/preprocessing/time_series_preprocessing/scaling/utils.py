@@ -48,7 +48,6 @@ class TimeSeriesScaler(BaseEstimator):
                 self.scale = np.where(self.scale == 0, self.loc, self.scale)
                 self.scale[self.scale == 0] = 1.
 
-
         elif self.mode == "min_max":
             if self.dataset_is_small_preprocess:
                 X_grouped = X.groupby(X.index)

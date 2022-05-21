@@ -2,12 +2,14 @@ from typing import Any, Dict, Optional, Union, Tuple, List
 import warnings
 from functools import partial
 
+
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import UniformIntegerHyperparameter, CategoricalHyperparameter
 from ConfigSpace.conditions import EqualsCondition
 
 import numpy as np
 import pandas as pd
+from sklearn.compose import ColumnTransformer
 
 import torch
 from torch.utils.data.sampler import SubsetRandomSampler
@@ -90,6 +92,9 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         self.time_feature_transform = []
         self.dataset_columns = []
         self.sampler_train = None
+
+        # Applied for get loader
+        self.feature_preprocessor: Optional[ColumnTransformer] = None
 
         self.add_fit_requirements(
             [FitRequirement("known_future_features", (Tuple,), user_defined=True, dataset_property=True),
@@ -213,6 +218,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         self.train_transform = self.build_transform(X, mode='train')
         self.val_transform = self.build_transform(X, mode='val')
         self.test_transform = self.build_transform(X, mode='test')
+        self.feature_preprocessor = X['time_series_feature_transformer'].preprocessor
         datamanager.update_transform(
             self.train_transform,
             train=True,
@@ -360,12 +366,38 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                     sequence_lengths[seq_idx] = len(x_seq.X)
 
                 x_all = pd.DataFrame(np.concatenate([x_seq.X for x_seq in X]), columns=self.dataset_columns)
+
                 series_number = np.arange(len(sequence_lengths)).repeat(sequence_lengths)
                 x_all.index = series_number
 
-                x_all = pd.DataFrame(self.test_transform(x_all))
+                if self.dataset_small_preprocess:
+                    self.feature_preprocessor = self.feature_preprocessor.fit(x_all)
+                    x_all = self.feature_preprocessor.transform(x_all)
+
+                x_all = pd.DataFrame(x_all)
                 x_all.index = series_number
+
                 x_all = x_all.groupby(x_all.index)
+
+                if len(self.known_future_features_index) > 0:
+                    sequence_lengths_test = [0] * num_sequences
+                    for seq_idx, x_seq in enumerate(X):
+                        sequence_lengths_test[seq_idx] = len(x_seq.X_test)
+
+                    x_all_test = pd.DataFrame(np.concatenate([x_seq.X_test for x_seq in X]),
+                                              columns=self.dataset_columns)
+
+                    series_number_test = np.arange(len(sequence_lengths_test)).repeat(sequence_lengths_test)
+
+                    x_all_test.index = series_number_test
+
+                    if self.dataset_small_preprocess:
+                        x_all_test = self.feature_preprocessor.transform(x_all_test)
+
+                    x_all_test = pd.DataFrame(x_all_test)
+                    x_all_test.index = series_number_test
+
+                    x_all_test = x_all_test.groupby(x_all_test.index)
 
             for i, x_seq in enumerate(X):
                 if not isinstance(x_seq, TimeSeriesSequence):
@@ -378,6 +410,9 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                 if self.dataset_small_preprocess and not self._is_uni_variant:
                     x_seq.X = x_all.get_group(i).transform(np.array).values
                     update_dict = {"known_future_features_index": self.known_future_features_index}
+                    if len(self.known_future_features_index) > 0:
+                        x_seq.X_test = x_all_test.get_group(i).transform(np.array).values
+
                 else:
                     update_dict = {}
                 update_dict.update(dict(freq=self.freq,
