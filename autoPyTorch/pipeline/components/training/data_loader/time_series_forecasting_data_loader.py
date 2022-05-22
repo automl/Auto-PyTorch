@@ -477,7 +477,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                                         HyperparameterSearchSpace(hyperparameter='window_size',
                                                                   value_range=(20, 50),
                                                                   default_value=30),
-                                        num_batch_per_epoch: HyperparameterSearchSpace =
+                                        num_batches_per_epoch: HyperparameterSearchSpace =
                                         HyperparameterSearchSpace(hyperparameter="num_batches_per_epoch",
                                                                   value_range=(30, 100),
                                                                   default_value=50),
@@ -510,7 +510,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             batch_size (int): batch size
             window_size (int): window size, (if activate) this value directly determines the window_size of the
                                data loader
-            num_batch_per_epoch (int): how many batches are trained at each iteration
+            num_batches_per_epoch (int): how many batches are trained at each iteration
             sample_strategy(str): how samples are distributed. if it is LengthUnifrom, then every single data point
                                   has the same probability to be sampled, in which case longer sequence will occupy more
                                   samples. If it is SeqUniform, then every sequence has the same probability to be
@@ -527,7 +527,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         """
         cs = ConfigurationSpace()
         add_hyperparameter(cs, batch_size, UniformIntegerHyperparameter)
-        add_hyperparameter(cs, num_batch_per_epoch, UniformIntegerHyperparameter)
+        add_hyperparameter(cs, num_batches_per_epoch, UniformIntegerHyperparameter)
         add_hyperparameter(cs, sample_strategy, CategoricalHyperparameter)
 
         if dataset_properties is None:

@@ -345,6 +345,20 @@ class TestTimeSeriesForecastingDataSets(unittest.TestCase):
             self.assertTrue(seq.is_test_set)
             self.assertEqual(seq.freq, time_series_dataloader.freq)
 
+        class DummyEncoder:
+            def fit(self, data):
+                return self
+
+            def transform(self, data: pd.DataFrame):
+                return np.concatenate([data.values, data.values], axis=-1)
+
+        transform = DummyEncoder()
+        time_series_dataloader.feature_preprocessor = transform
+        _ = time_series_dataloader.get_loader(X=copy.deepcopy(x_test))
+        test_set = loader_init_mock.call_args[0][0]
+        for seq_raw, seq in zip(x_test, test_set):
+            self.assertTrue(seq.X.shape[-1] == 2 * seq_raw.X.shape[-1])
+
 
 class TestTimeSeriesUtil(unittest.TestCase):
     def test_test_seq_length(self):

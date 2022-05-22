@@ -30,8 +30,8 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
                  random_state: Optional[np.random.RandomState] = None
                  ):
         super().__init__(dataset_properties, random_state)
-        self.include_components = None
-        self.exclude_components = None
+        self.include_components = {}
+        self.exclude_components = {}
 
         self.default_components = OrderedDict(
             {"flat_encoder": FlatForecastingEncoderChoice(dataset_properties=self.dataset_properties,
@@ -88,7 +88,6 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
 
         if include is not None:
             include_top = set()
-            self.include_components = {}
             for incl in include:
                 if incl not in available_comp:
                     for comp in available_comp.keys():
@@ -106,7 +105,6 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
                 raise ValueError(f"Trying to include unknown component: {include}")
             include = list(include_top)
         elif exclude is not None:
-            self.exclude_components = {}
             for excl in exclude:
                 for comp in available_comp.keys():
                     if excl.startswith(comp):
@@ -174,7 +172,6 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
             dataset_properties = {}
 
         cs = ConfigurationSpace()
-
         # Compile a list of legal preprocessors for this problem
         available_encoders = self.get_available_components(
             dataset_properties=dataset_properties,

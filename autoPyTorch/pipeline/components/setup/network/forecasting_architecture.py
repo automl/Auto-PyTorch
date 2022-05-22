@@ -529,11 +529,11 @@ class ForecastingNet(AbstractForecastingNet):
                 elif self.aggregation == 'median':
                     return torch.median(samples, 0)[0]
                 else:
-                    raise ValueError(f'Unknown aggregation: {self.aggregation}')
+                    raise NotImplementedError(f'Unknown aggregation: {self.aggregation}')
             else:
-                raise ValueError(f'Unknown forecast_strategy: {self.forecast_strategy}')
+                raise NotImplementedError(f'Unknown forecast_strategy: {self.forecast_strategy}')
         else:
-            raise ValueError(f'Unknown output_type: {self.output_type}')
+            raise NotImplementedError(f'Unknown output_type: {self.output_type}')
 
     def predict(self,
                 past_targets: torch.Tensor,

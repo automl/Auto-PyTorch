@@ -159,56 +159,57 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         # Here we add custom code, like this with this
         # is not a valid configuration
         # Learned Entity Embedding is only valid when encoder is one hot encoder
-        if 'network_embedding' in self.named_steps.keys() and 'feature_encoding' in self.named_steps.keys():
+        if 'network_embedding' in self.named_steps.keys():
             embeddings = cs.get_hyperparameter('network_embedding:__choice__').choices
             if 'LearnedEntityEmbedding' in embeddings:
-                feature_encodings = cs.get_hyperparameter('feature_encoding:__choice__').choices
-                default = cs.get_hyperparameter('network_embedding:__choice__').default_value
-                possible_default_embeddings = copy.copy(list(embeddings))
-                del possible_default_embeddings[possible_default_embeddings.index(default)]
+                if 'feature_encoding' in self.named_steps.keys():
+                    feature_encodings = cs.get_hyperparameter('feature_encoding:__choice__').choices
+                    default = cs.get_hyperparameter('network_embedding:__choice__').default_value
+                    possible_default_embeddings = copy.copy(list(embeddings))
+                    del possible_default_embeddings[possible_default_embeddings.index(default)]
 
-                for encoding in feature_encodings:
-                    if encoding == 'OneHotEncoder':
-                        continue
-                    while True:
-                        try:
-                            cs.add_forbidden_clause(ForbiddenAndConjunction(
-                                ForbiddenEqualsClause(cs.get_hyperparameter(
-                                    'network_embedding:__choice__'), 'LearnedEntityEmbedding'),
-                                ForbiddenEqualsClause(cs.get_hyperparameter('feature_encoding:__choice__'), encoding)
-                            ))
-                            break
-                        except ValueError:
-                            # change the default and try again
+                    for encoding in feature_encodings:
+                        if encoding == 'OneHotEncoder':
+                            continue
+                        while True:
                             try:
-                                default = possible_default_embeddings.pop()
-                            except IndexError:
-                                raise ValueError("Cannot find a legal default configuration")
-                            cs.get_hyperparameter('network_embedding:__choice__').default_value = default
-                            """
-                            # in this case we cannot deactivate the hps, we might need to think about this
-                            if 'RegressionLoss' in hp_loss.choices:
-                                forbidden_hp_regression_loss = ForbiddenEqualsClause(hp_loss, 'RegressionLoss')
-                                for hp_dist in hp_distribution_children:
-                                    forbidden_hp_dist = ForbiddenEqualsClause(hp_dist, True)
-                                    forbidden_hp_dist = AndConjunction(forbidden_hp_dist, forbidden_hp_regression_loss)
-                                    forbidden_regression_losses_all.append(forbidden_hp_dist)
-                            else:
-                                for hp_dist in hp_distribution_children:
-                                    forbidden_hp_dist = ForbiddenEqualsClause(hp_dist, True)
-                                    forbidden_regression_losses_all.append(forbidden_hp_dist)
-                            """
+                                cs.add_forbidden_clause(ForbiddenAndConjunction(
+                                    ForbiddenEqualsClause(cs.get_hyperparameter(
+                                        'network_embedding:__choice__'), 'LearnedEntityEmbedding'),
+                                    ForbiddenEqualsClause(
+                                        cs.get_hyperparameter('feature_encoding:__choice__'), encoding
+                                    )))
+                                break
+                            except ValueError:
+                                # change the default and try again
+                                try:
+                                    default = possible_default_embeddings.pop()
+                                except IndexError:
+                                    raise ValueError("Cannot find a legal default configuration")
+                                cs.get_hyperparameter('network_embedding:__choice__').default_value = default
+                                """
+                                # in this case we cannot deactivate the hps, we might need to think about this
+                                if 'RegressionLoss' in hp_loss.choices:
+                                    forbidden_hp_regression_loss = ForbiddenEqualsClause(hp_loss, 'RegressionLoss')
+                                    for hp_dist in hp_distribution_children:
+                                        forbidden_hp_dist = ForbiddenEqualsClause(hp_dist, True)
+                                        forbidden_hp_dist = AndConjunction(forbidden_hp_dist, 
+                                                                           forbidden_hp_regression_loss)
+                                        forbidden_regression_losses_all.append(forbidden_hp_dist)
+                                else:
+                                    for hp_dist in hp_distribution_children:
+                                        forbidden_hp_dist = ForbiddenEqualsClause(hp_dist, True)
+                                        forbidden_regression_losses_all.append(forbidden_hp_dist)
+                                """
 
-        if 'network_embedding' in self.named_steps.keys():
-            # NBEATS only works with NoEmbedding
-            if 'network_backbone:flat_encoder:__choice__' in cs:
-                hp_flat_encoder = cs.get_hyperparameter('network_backbone:flat_encoder:__choice__')
-                if 'NBEATSEncoder' in hp_flat_encoder.choices:
-                    cs.add_forbidden_clause(ForbiddenAndConjunction(
-                        ForbiddenEqualsClause(hp_flat_encoder, 'NBEATSEncoder'),
-                        ForbiddenEqualsClause(cs.get_hyperparameter(
-                            'network_embedding:__choice__'), 'LearnedEntityEmbedding'))
-                    )
+                if 'network_backbone:flat_encoder:__choice__' in cs:
+                    hp_flat_encoder = cs.get_hyperparameter('network_backbone:flat_encoder:__choice__')
+                    if 'NBEATSEncoder' in hp_flat_encoder.choices:
+                        cs.add_forbidden_clause(ForbiddenAndConjunction(
+                            ForbiddenEqualsClause(hp_flat_encoder, 'NBEATSEncoder'),
+                            ForbiddenEqualsClause(cs.get_hyperparameter(
+                                'network_embedding:__choice__'), 'LearnedEntityEmbedding'))
+                        )
 
         # dist_cls and auto_regressive are only activate if the network outputs distribution
         if 'loss' in self.named_steps.keys() and 'network_backbone' in self.named_steps.keys():
