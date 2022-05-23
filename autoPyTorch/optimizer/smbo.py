@@ -285,7 +285,6 @@ class AutoMLSMBO(object):
 
         self.initial_configurations = initial_configurations if len(initial_configurations) > 0 else None
 
-
     def reset_data_manager(self) -> None:
         if self.datamanager is not None:
             del self.datamanager

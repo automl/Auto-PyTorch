@@ -260,7 +260,7 @@ class BaseTask(ABC):
                 raise ValueError("Expected search space updates to be of instance"
                                  " HyperparameterSearchSpaceUpdates got {}".format(type(self.search_space_updates)))
 
-        self.time_series_forecasting = False
+        self.time_series_forecasting = task_type == 'time_series_forecasting'
 
     @abstractmethod
     def build_pipeline(
@@ -1125,7 +1125,6 @@ class BaseTask(ABC):
             self._scoring_functions = [self._metric]
 
         self.search_space = self.get_search_space(dataset)
-
 
         # Incorporate budget to pipeline config
         if budget_type not in ('epochs', 'runtime') and (budget_type in FORECASTING_BUDGET_TYPE

@@ -1,5 +1,4 @@
 import os
-import pdb
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 from numbers import Real
 import uuid
@@ -93,6 +92,7 @@ def compute_time_features(start_time: pd.Timestamp,
 
 
 class TimeSeriesSequence(Dataset):
+    _is_test_set = False
     def __init__(self,
                  X: Optional[np.ndarray],
                  Y: np.ndarray,
@@ -137,7 +137,7 @@ class TimeSeriesSequence(Dataset):
             X_test = X_test[:, np.newaxis]
 
         self.X_test = X_test
-        self.Y_tet = Y_test
+        self.Y_test = Y_test
 
         self.time_feature_transform = time_feature_transform
 
@@ -161,7 +161,8 @@ class TimeSeriesSequence(Dataset):
 
         self.transform_time_features = False
         self._cached_time_features: Optional[np.ndarray] = time_features
-        self._is_test_set = is_test_set
+
+        self.future_observed_target = None
         self.is_test_set = is_test_set
 
     @property
@@ -170,14 +171,13 @@ class TimeSeriesSequence(Dataset):
 
     @is_test_set.setter
     def is_test_set(self, value: bool):
-        if value != self._is_test_set and self.known_future_features_index:
-            if self.X_test is None:
-                raise ValueError("If future features are required, X_test must be given for"
-                                 " setting TimeSeriesSequence as test set!")
-            if value is True:
-                self.X = np.concatenate([self.X, self.X_test])
-            else:
-                self.X = self.X[:-len(self.X_test)]
+        if value and value != self._is_test_set:
+            if self.known_future_features_index:
+                if self.X_test is None:
+                    raise ValueError('When future features are known, X_test '
+                                     'for Time Series Sequences must be given!')
+        if self.Y_test is not None:
+            self.future_observed_target = ~np.isnan(self.Y_test)
         self._is_test_set = value
 
     def __getitem__(self, index: int, train: bool = True) \
@@ -202,9 +202,12 @@ class TimeSeriesSequence(Dataset):
             past_features = self.X[:index + 1]
 
             if self.known_future_features_index:
-                future_features = self.X[
-                                  index + 1: index + self.n_prediction_steps + 1, self.known_future_features_index
-                                  ]
+                if not self.is_test_set:
+                    future_features = self.X[
+                                      index + 1: index + self.n_prediction_steps + 1, self.known_future_features_index
+                                      ]
+                else:
+                    future_features = self.X_test[:, self.known_future_features_index]
             else:
                 future_features = None
         else:
@@ -242,7 +245,13 @@ class TimeSeriesSequence(Dataset):
         # In case of prediction, the targets are not provided
         targets = self.Y
         if self.is_test_set:
-            future_targets = None
+            if self.Y_test is not None:
+                future_targets = {
+                    'future_targets': torch.from_numpy(self.Y_test),
+                    'future_observed_targets': torch.from_numpy(self.future_observed_target)
+                }
+            else:
+                future_targets = None
         else:
             future_targets = targets[index + 1: index + self.n_prediction_steps + 1]
             future_targets = torch.from_numpy(future_targets)
@@ -320,29 +329,49 @@ class TimeSeriesSequence(Dataset):
         if index < 0:
             index = self.__len__() + index
         if index >= self.__len__() - 1:
-            return copy.copy(self)
+            # TODO consider X_test?
+            val_set = copy.deepcopy(self)
+            if val_set.X is not None:
+                val_set.X_test = val_set.X[-self.n_prediction_steps:]
+                val_set.X = val_set.X[:-self.n_prediction_steps]
+            val_set.Y_test = val_set.Y[-self.n_prediction_steps:]
+            val_set.Y = val_set.Y[:-self.n_prediction_steps]
+            val_set.future_observed_target = val_set.observed_target[-self.n_prediction_steps:]
+            val_set.observed_target = val_set.observed_target[:-self.n_prediction_steps]
+            val_set.is_test_set = True
+
+            return val_set
         else:
             if self.X is not None:
-                X = self.X[:index + 1 + self.n_prediction_steps]
+                X = self.X[:index + 1]
             else:
                 X = None
+            if self.known_future_features_index:
+                X_test = self.X[index + 1: index + 1 + self.n_prediction_steps]
+            else:
+                X_test = None
             if self._cached_time_features is None:
                 cached_time_features = None
             else:
                 cached_time_features = self._cached_time_features[:index + 1 + self.n_prediction_steps]
 
-            return TimeSeriesSequence(X=X,
-                                      Y=self.Y[:index + 1 + self.n_prediction_steps],
-                                      start_time=self.start_time,
-                                      freq=self.freq,
-                                      time_feature_transform=self.time_feature_transform,
-                                      train_transforms=self.train_transform,
-                                      val_transforms=self.val_transform,
-                                      n_prediction_steps=self.n_prediction_steps,
-                                      known_future_features_index=self.known_future_features_index,
-                                      sp=self.sp,
-                                      compute_mase_coefficient_value=False,
-                                      time_features=cached_time_features)
+            val_set = TimeSeriesSequence(X=X,
+                                         Y=self.Y[:index + 1],
+                                         X_test=X_test,
+                                         Y_test=self.Y[index + 1: index + 1 + self.n_prediction_steps],
+                                         start_time=self.start_time,
+                                         freq=self.freq,
+                                         time_feature_transform=self.time_feature_transform,
+                                         train_transforms=self.train_transform,
+                                         val_transforms=self.val_transform,
+                                         n_prediction_steps=self.n_prediction_steps,
+                                         known_future_features_index=self.known_future_features_index,
+                                         sp=self.sp,
+                                         compute_mase_coefficient_value=False,
+                                         time_features=cached_time_features,
+                                         is_test_set=True)
+
+            return val_set
 
     def get_test_target(self, test_idx: int):
         if self.is_test_set:
@@ -518,7 +547,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             future_feature_shapes: Tuple[int, int] = (self.seq_length_min, len(known_future_features))
         self.encoder_can_be_auto_regressive = (self.input_shape[-1] == future_feature_shapes[-1])
 
-
         if len(self.train_tensors) == 2 and self.train_tensors[1] is not None:
             self.output_type: str = type_of_target(self.train_tensors[1][0].fillna(method="pad"))
 
@@ -685,7 +713,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                                                      Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]] = None,
                                                  Y_test: Optional[
                                                      Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]] = None,
-                                                 is_test_set: bool = False) ->[
+                                                 is_test_set: bool = False) -> [
 
     ]:
         """
@@ -714,8 +742,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 training tensors
         """
         dataset_with_future_features = X is not None and len(self.known_future_features) > 0
-        if dataset_with_future_features and X_test is None:
-            raise ValueError('When constructing test sets and known future features exist, X_test must be given!')
         X, Y, sequence_lengths = self.validator.transform(X, Y)
         time_features = self.compute_time_features(start_times,
                                                    sequence_lengths,
@@ -1195,9 +1221,4 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         test_sets = copy.deepcopy(self.datasets)
         for test_seq in test_sets:
             test_seq.is_test_set = True
-            if len(self.known_future_features) > 0:
-                if test_seq.X_test is None:
-                    raise ValueError("If future features are required, X_test must be given!")
-                test_seq.X = np.concatenate([test_seq.X, test_seq.X_test])
         return test_sets
-

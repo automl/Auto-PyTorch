@@ -128,7 +128,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             logger_port: int = None,
             all_supported_metrics: bool = True,
             search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
-            **eval_func_kwargs: Dict):
+            **eval_func_kwargs: Any):
 
         self.backend = backend
 
@@ -151,7 +151,6 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         elif isinstance(self.resampling_strategy, NoResamplingStrategyTypes):
             eval_function = functools.partial(eval_train_function, **eval_func_kwargs)
             self.output_y_hat_optimization = False
-
         self.worst_possible_result = cost_for_crash
 
         eval_function = functools.partial(

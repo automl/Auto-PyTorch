@@ -83,6 +83,7 @@ def read_forecasting_init_configurations(config_space: ConfigurationSpace,
             configuration = Configuration(config_space, configuration_dict)
             initial_configurations.append(configuration)
         except Exception as e:
+            continue
             warnings.warn(f"Failed to convert {configuration_dict} into"
                           f" a Configuration with error {e}. "
                           f"Therefore, it can't be used as an initial "

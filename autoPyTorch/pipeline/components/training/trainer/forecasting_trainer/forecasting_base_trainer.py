@@ -176,6 +176,8 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             if isinstance(self.model, ForecastingDeepARNet) and self.model.encoder_bijective_seq_output:
                 if self.window_size > past_target.shape[1]:
                     all_targets = torch.cat([past_target[:, 1:, ], future_targets_values], dim=1)
+                    future_observed_targets = torch.cat([past_observed_targets[:, 1:, ],
+                                                         future_observed_targets], dim=1)
                 else:
                     if self.window_size == 1:
                         all_targets = future_targets_values

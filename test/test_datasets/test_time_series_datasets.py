@@ -38,7 +38,7 @@ class TestTimeSeriesSequence(unittest.TestCase):
         self.y_test = rng.rand(self.n_prediction_steps, 1)
         self.time_feature_transform = [DayOfMonth(), ConstantTransform(10.0)]
         self.known_future_features_index = [0, 2]
-        self.seq_uni = TimeSeriesSequence(X=None, Y=self.y, Y_test=self.y_test,
+        self.seq_uni = TimeSeriesSequence(X=None, Y=self.y,
                                           n_prediction_steps=self.n_prediction_steps,
                                           time_feature_transform=self.time_feature_transform)
         self.seq_multi = TimeSeriesSequence(X=self.x_data,
@@ -77,7 +77,7 @@ class TestTimeSeriesSequence(unittest.TestCase):
 
         self.assertTrue(self.seq_uni[-2][0]["past_targets"].size, self.data_length - self.n_prediction_steps - 2 + 1)
 
-    def test_get_val_seq_and_test_targets(self):
+    def test_uni_get_val_seq_and_test_targets(self):
         val_seq = self.seq_uni.get_val_seq_set(-1)
         self.assertEqual(len(val_seq), len(self.seq_uni))
 
@@ -91,6 +91,22 @@ class TestTimeSeriesSequence(unittest.TestCase):
 
         test_targets = self.seq_uni.get_test_target(5)
         self.assertTrue(np.all(self.y[5 + 1: 5 + 1 + self.n_prediction_steps] == test_targets))
+
+    def test_multi_get_val_seq(self):
+        val_seq = self.seq_multi_with_future.get_val_seq_set(-1)
+        self.assertTrue(len(val_seq), len(self.seq_multi_with_future))
+
+        val_seq = self.seq_multi_with_future.get_val_seq_set(3)
+        self.assertTrue(np.array_equal(val_seq.X, self.seq_multi_with_future.X[:4]))
+        self.assertTrue(np.array_equal(val_seq.X_test, self.seq_multi_with_future.X[4:7]))
+
+        val_seq = self.seq_multi_with_future.get_val_seq_set(len(self.seq_multi_with_future) - 1)
+        self.assertTrue(len(val_seq), len(self.seq_multi_with_future))
+
+        val_seq = self.seq_multi_with_future.get_val_seq_set(len(self.seq_multi_with_future) - 2)
+
+        self.assertTrue(np.array_equal(val_seq.X, self.seq_multi_with_future.X[:6]))
+        self.assertTrue(np.array_equal(val_seq.X_test, self.seq_multi_with_future.X[6:9]))
 
     def test_uni_get_update_time_features(self):
         self.seq_uni.update_attribute(transform_time_features=True)
@@ -172,7 +188,7 @@ class TestTimeSeriesSequence(unittest.TestCase):
 
     def test_multi_to_test_set(self):
         self.seq_multi_with_future.is_test_set = True
-        self.assertEqual(len(self.seq_multi_with_future.X), len(self.x_data) + len(self.x_test_data))
+        self.assertEqual(len(self.seq_multi_with_future.X), len(self.x_data))
         data, _ = self.seq_multi_with_future[-1]
 
         self.assertTrue(np.allclose(data["past_features"].numpy(), self.x_data))
@@ -197,11 +213,13 @@ class TestTimeSeriesSequence(unittest.TestCase):
 
     def test_exception(self):
         seq_1 = TimeSeriesSequence(X=self.x_data, Y=self.y, X_test=None,
-                                   known_future_features_index=self.known_future_features_index)
+                                   known_future_features_index=self.known_future_features_index,
+                                   is_test_set=False)
+
         with self.assertRaises(ValueError):
             seq_1.is_test_set = True
 
-        seq_2 = TimeSeriesSequence(X=self.x_data, Y=self.y, X_test=None,
+        seq_2 = TimeSeriesSequence(X=self.x_data, Y=self.y, X_test=self.x_test_data,
                                    is_test_set=True)
 
         with self.assertRaises(ValueError):
@@ -288,6 +306,7 @@ def test_dataset_index(backend, fit_dictionary_forecasting):
     # test for validation indices
     val_indices = datamanager.splits[0][1]
     val_set = [datamanager.get_validation_set(val_idx) for val_idx in val_indices]
+
     val_targets = np.concatenate([val_seq[-1][1]['future_targets'].numpy() for val_seq in val_set])
     assert np.allclose(val_targets, datamanager.get_test_target(val_indices))
 
@@ -313,7 +332,7 @@ def test_update_dataset(backend, fit_dictionary_forecasting):
     new_test_seq = datamanager.generate_test_seqs()
     for seq_len, test_seq in zip(seq_lengths, new_test_seq):
         # seq_len is len(y) - n_prediction_steps, here we expand X_test with another n_prediction_steps
-        assert test_seq.X.shape[0] - seq_len == 2 * datamanager.n_prediction_steps
+        assert test_seq.X.shape[0] - seq_len == datamanager.n_prediction_steps
 
 
 @pytest.mark.parametrize("fit_dictionary_forecasting", ['multi_variant_wo_missing'], indirect=True)
@@ -322,7 +341,7 @@ def test_test_tensors(backend, fit_dictionary_forecasting):
     test_tensors = datamanager.test_tensors
     forecast_horizon = datamanager.n_prediction_steps
     n_seq = len(datamanager.datasets)
-    assert test_tensors[0] is None
+    assert test_tensors[0].shape == (n_seq * forecast_horizon, datamanager.num_features)
     assert test_tensors[1].shape == (n_seq * forecast_horizon, datamanager.num_targets)
 
     datamanager2 = TimeSeriesForecastingDataset(X=None, Y=[[1, 2]])

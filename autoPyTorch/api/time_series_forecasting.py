@@ -1,5 +1,3 @@
-import os
-import uuid
 from typing import Any, Callable, Dict, List, Optional, Union, Tuple, Mapping
 
 import numpy as np
@@ -247,7 +245,7 @@ class TimeSeriesForecastingTask(BaseTask):
             y_test: Optional[Union[List, pd.DataFrame]] = None,
             n_prediction_steps: int = 1,
             freq: Optional[Union[str, int, List[int]]] = None,
-            start_times: List[pd.DatetimeIndex] = [],
+            start_times: Optional[List[pd.DatetimeIndex]] = None,
             dataset_name: Optional[str] = None,
             budget_type: str = 'epochs',
             min_budget: Union[int, str] = 5,

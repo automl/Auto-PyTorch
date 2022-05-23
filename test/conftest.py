@@ -740,6 +740,7 @@ def get_forecasting_datamangaer(X, y, validator, with_y_test=True, forecast_hori
     else:
         X_test = None
         known_future_features = None
+
     if with_y_test:
         y_test = []
         for y_seq in y:
@@ -861,6 +862,12 @@ def get_forecasting_datamanager(request):
     X, y, validator = get_forecasting_data(request.param)
     datamanager = get_forecasting_datamangaer(X, y, validator)
     return datamanager
+
+
+@pytest.fixture
+def forecasting_toy_dataset(request):
+    x, y, _ = get_forecasting_data(request.param)
+    return x, y
 
 
 @pytest.fixture(params=['epochs'])

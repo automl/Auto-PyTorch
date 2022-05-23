@@ -42,6 +42,41 @@ class TestTimeSeriesForecastingTrainEvaluator(unittest.TestCase):
         TestTrainEvaluator.tearDown(self)
 
     @unittest.mock.patch('autoPyTorch.pipeline.time_series_forecasting.TimeSeriesForecastingPipeline')
+    def test_budget_type_choices(self, pipeline_mock):
+        D = get_forecasting_dataset()
+        n_prediction_steps = D.n_prediction_steps
+        pipeline_mock.predict.side_effect = \
+            lambda X, batch_size=None: np.tile([0.], (len(X), n_prediction_steps))
+        pipeline_mock.side_effect = lambda **kwargs: pipeline_mock
+        pipeline_mock.get_additional_run_info.return_value = None
+
+        configuration = unittest.mock.Mock(spec=Configuration)
+        backend_api = create(self.tmp_dir, self.output_dir, prefix='autoPyTorch')
+        backend_api.load_datamanager = lambda: D
+        queue_ = multiprocessing.Queue()
+
+        budget_value = 0.1
+
+        for budget_type in ['resolution', 'num_seq', 'num_sample_per_seq']:
+            evaluator = TimeSeriesForecastingTrainEvaluator(backend_api,
+                                                            queue_,
+                                                            configuration=configuration,
+                                                            metric=mean_MASE_forecasting, budget=0,
+                                                            pipeline_config={'budget_type': budget_type,
+                                                                             budget_type: 0.1},
+                                                            min_num_test_instances=100)
+            self.assertTrue('epochs' not in evaluator.fit_dictionary)
+            if budget_type == 'resolution':
+                self.assertTrue('sample_interval' in evaluator.fit_dictionary)
+                self.assertEqual(int(np.ceil(1.0 / budget_value)), evaluator.fit_dictionary['sample_interval'])
+            elif budget_type == 'num_seq':
+                self.assertTrue('fraction_seq' in evaluator.fit_dictionary)
+                self.assertEqual(budget_value, evaluator.fit_dictionary['fraction_seq'])
+            if budget_type == 'num_sample_per_seq':
+                self.assertTrue('fraction_samples_per_seq' in evaluator.fit_dictionary)
+                self.assertEqual(budget_value, evaluator.fit_dictionary['fraction_samples_per_seq'])
+
+    @unittest.mock.patch('autoPyTorch.pipeline.time_series_forecasting.TimeSeriesForecastingPipeline')
     def test_holdout(self, pipeline_mock):
         pipeline_mock.fit_dictionary = {'budget_type': 'epochs', 'epochs': 50}
         D = get_forecasting_dataset()
@@ -62,6 +97,7 @@ class TestTimeSeriesForecastingTrainEvaluator(unittest.TestCase):
                                                         metric=mean_MASE_forecasting, budget=0,
                                                         pipeline_config={'budget_type': 'epochs', 'epochs': 50},
                                                         min_num_test_instances=100)
+        self.assertTrue('epochs' in evaluator.fit_dictionary)
         evaluator.file_output = unittest.mock.Mock(spec=evaluator.file_output)
         evaluator.file_output.return_value = (None, {})
 
