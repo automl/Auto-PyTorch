@@ -26,7 +26,7 @@ from autoPyTorch.pipeline.components.training.data_loader.time_series_forecastin
 )
 
 
-class TestTimeSeriesForecastingDataSets(unittest.TestCase):
+class TestTimeSeriesForecastingDataLoader(unittest.TestCase):
     def setUp(self) -> None:
         feature_names = ['f1']
         feature_shapes = {'f1': 1}
@@ -328,7 +328,7 @@ class TestTimeSeriesForecastingDataSets(unittest.TestCase):
         x_test = TimeSeriesSequence(X=np.array([1, 2, 3, 4, 5]),
                                     Y=np.array([1, 2, 3, 4, 5]),
                                     X_test=np.array([1, 2, 3]))
-        test_loader = time_series_dataloader.get_loader(X=x_test)
+        test_loader = time_series_dataloader.get_loader(X=copy.deepcopy(x_test))
         self.assertIsInstance(test_loader, torch.utils.data.DataLoader)
         self.assertIsInstance(test_loader.dataset, TestSequenceDataset)
         test_set = loader_init_mock.call_args[0][0]
@@ -336,7 +336,7 @@ class TestTimeSeriesForecastingDataSets(unittest.TestCase):
         self.assertEqual(len(test_set), 1)
 
         x_test = [x_test, x_test]
-        _ = time_series_dataloader.get_loader(X=x_test)
+        _ = time_series_dataloader.get_loader(X=copy.deepcopy(x_test))
         test_set = loader_init_mock.call_args[0][0]
         self.assertEqual(len(test_set), len(x_test))
 
@@ -354,7 +354,15 @@ class TestTimeSeriesForecastingDataSets(unittest.TestCase):
 
         transform = DummyEncoder()
         time_series_dataloader.feature_preprocessor = transform
-        _ = time_series_dataloader.get_loader(X=copy.deepcopy(x_test))
+        x_test_copy = copy.deepcopy(x_test)
+        _ = time_series_dataloader.get_loader(X=x_test_copy)
+
+        test_set = loader_init_mock.call_args[0][0]
+        for seq_raw, seq in zip(x_test, test_set):
+            self.assertTrue(seq.X.shape[-1] == 2 * seq_raw.X.shape[-1])
+
+        # ensure that we do not transform the dataset twice
+        _ = time_series_dataloader.get_loader(X=x_test_copy)
         test_set = loader_init_mock.call_args[0][0]
         for seq_raw, seq in zip(x_test, test_set):
             self.assertTrue(seq.X.shape[-1] == 2 * seq_raw.X.shape[-1])

@@ -360,52 +360,54 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         if isinstance(X, TimeSeriesSequence):
             X = [X]
         if isinstance(X, List):
-            num_sequences = len(X)
-            sequence_lengths = [0] * num_sequences
-            for seq_idx, x_seq in enumerate(X):
-                sequence_lengths[seq_idx] = len(x_seq.X)
-            series_number = np.arange(len(sequence_lengths)).repeat(sequence_lengths)
+            if self.dataset_small_preprocess and not self._is_uni_variant:
 
-            if len(self.known_future_features_index) > 0:
-                sequence_lengths_test = [0] * num_sequences
+                num_sequences = len(X)
+                sequence_lengths = [0] * num_sequences
                 for seq_idx, x_seq in enumerate(X):
-                    sequence_lengths_test[seq_idx] = len(x_seq.X_test)
-                series_number_test = np.arange(len(sequence_lengths_test)).repeat(sequence_lengths_test)
-
-            if self.dataset_small_preprocess and not self._is_uni_variant and not X[0].is_pre_processed:
-
-                x_all = pd.DataFrame(np.concatenate([x_seq.X for x_seq in X]), columns=self.dataset_columns)
-
-                x_all.index = series_number
-
-                if self.dataset_small_preprocess and self.feature_preprocessor is not None:
-                    self.feature_preprocessor = self.feature_preprocessor.fit(x_all)
-                    x_all = self.feature_preprocessor.transform(x_all.copy())
-
-                x_all = pd.DataFrame(x_all)
-                x_all.index = series_number
+                    sequence_lengths[seq_idx] = len(x_seq.X)
+                series_number = np.arange(len(sequence_lengths)).repeat(sequence_lengths)
 
                 if len(self.known_future_features_index) > 0:
-                    x_all_test = pd.DataFrame(np.concatenate([x_seq.X_test for x_seq in X]),
-                                              columns=self.dataset_columns)
+                    sequence_lengths_test = [0] * num_sequences
+                    for seq_idx, x_seq in enumerate(X):
+                        sequence_lengths_test[seq_idx] = len(x_seq.X_test)
+                    series_number_test = np.arange(len(sequence_lengths_test)).repeat(sequence_lengths_test)
 
-                    x_all_test.index = series_number_test
+                if not X[0].is_pre_processed:
+
+                    x_all = pd.DataFrame(np.concatenate([x_seq.X for x_seq in X]), columns=self.dataset_columns)
+
+                    x_all.index = series_number
 
                     if self.dataset_small_preprocess and self.feature_preprocessor is not None:
-                        x_all_test = self.feature_preprocessor.transform(x_all_test.copy())
+                        self.feature_preprocessor = self.feature_preprocessor.fit(x_all)
+                        x_all = self.feature_preprocessor.transform(x_all.copy())
 
-                    x_all_test = pd.DataFrame(x_all_test)
-                    x_all_test.index = series_number_test
+                    x_all = pd.DataFrame(x_all)
+                    x_all.index = series_number
 
-            else:
-                x_all = pd.DataFrame(np.concatenate([x_seq.X for x_seq in X]))
-                x_all.index = series_number
-                if len(self.known_future_features_index) > 0:
-                    x_all_test = pd.DataFrame(np.concatenate([x_seq.X_test for x_seq in X]))
-                    x_all_test.index = series_number_test
+                    if len(self.known_future_features_index) > 0:
+                        x_all_test = pd.DataFrame(np.concatenate([x_seq.X_test for x_seq in X]),
+                                                  columns=self.dataset_columns)
 
-            x_all = x_all.groupby(x_all.index)
-            x_all_test = x_all_test.groupby(x_all_test.index)
+                        x_all_test.index = series_number_test
+
+                        if self.dataset_small_preprocess and self.feature_preprocessor is not None:
+                            x_all_test = self.feature_preprocessor.transform(x_all_test.copy())
+
+                        x_all_test = pd.DataFrame(x_all_test)
+                        x_all_test.index = series_number_test
+
+                else:
+                    x_all = pd.DataFrame(np.concatenate([x_seq.X for x_seq in X]))
+                    x_all.index = series_number
+                    if len(self.known_future_features_index) > 0:
+                        x_all_test = pd.DataFrame(np.concatenate([x_seq.X_test for x_seq in X]))
+                        x_all_test.index = series_number_test
+
+                x_all = x_all.groupby(x_all.index)
+                x_all_test = x_all_test.groupby(x_all_test.index)
 
             for i, x_seq in enumerate(X):
                 if not isinstance(x_seq, TimeSeriesSequence):
