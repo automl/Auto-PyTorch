@@ -46,4 +46,3 @@ class ForecastingPipeline(TimeSeriesForecastingPipeline):
                       ])
 
         return steps
-

@@ -121,4 +121,3 @@ def test_crossvalfuncs():
     # We cannot do a split, thus the two splits are the same
 
     assert np.all(sp2[1][1] == sp2[0][1])
-

@@ -495,7 +495,6 @@ class ForecastingNet(AbstractForecastingNet):
         decoder_output = self.decoder(x_future=x_future, encoder_output=encoder2decoder,
                                       pos_idx=(x_past.shape[1], x_past.shape[1] + self.n_prediction_steps))
 
-
         if self.has_temporal_fusion:
             decoder_output = self.temporal_fusion(encoder_output=encoder_output,
                                                   decoder_output=decoder_output,
@@ -791,7 +790,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                                                               past_observed_targets=past_observed_targets,
                                                               decoder_length=idx_pred + 1,
                                                               static_embedding=repeated_x_static,
-                                                              )[:, -1:,]
+                                                              )[:, -1:, ]
 
                     net_output = self.head(decoder_output)
                     samples = net_output.sample().cpu()

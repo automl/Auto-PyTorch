@@ -126,7 +126,7 @@ class TCNEncoder(BaseForecastingEncoder):
     def build_encoder(self, input_shape: Tuple[int, ...]) -> nn.Module:
         num_channels = [self.config["num_filters_1"]]
         kernel_size = [self.config["kernel_size_1"]]
-        dropout = self.config[f"dropout"] if self.config["use_dropout"] else 0.0
+        dropout = self.config["dropout"] if self.config["use_dropout"] else 0.0
         for i in range(2, self.config["num_blocks"] + 1):
             num_channels.append(self.config[f"num_filters_{i}"])
             kernel_size.append(self.config[f"kernel_size_{i}"])
@@ -194,7 +194,6 @@ class TCNEncoder(BaseForecastingEncoder):
 
         use_dropout = get_hyperparameter(use_dropout, CategoricalHyperparameter)
         cs.add_hyperparameter(use_dropout)
-
 
         dropout_hp = get_hyperparameter(dropout, UniformFloatHyperparameter)
         cs.add_hyperparameter(dropout_hp)

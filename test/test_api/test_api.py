@@ -409,7 +409,7 @@ def test_tabular_regression(openml_name, resampling_strategy, backend, resamplin
 @unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_train_function', new=dummy_eval_train_function)
 @pytest.mark.parametrize('forecasting_toy_dataset', ['multi_variant_wo_missing'], indirect=True)
 @pytest.mark.parametrize('resampling_strategy,resampling_strategy_args',
-                         (#(HoldoutValTypes.time_series_hold_out_validation, None),
+                         ((HoldoutValTypes.time_series_hold_out_validation, None),
                           (CrossValTypes.time_series_cross_validation, {'num_splits': CV_NUM_SPLITS}),
                           ))
 def test_time_series_forecasting(forecasting_toy_dataset, resampling_strategy, backend, resampling_strategy_args):
@@ -465,8 +465,7 @@ def test_time_series_forecasting(forecasting_toy_dataset, resampling_strategy, b
 
     # Internal dataset has expected settings
     assert estimator.dataset.task_type == 'time_series_forecasting'
-    expected_num_splits = HOLDOUT_NUM_SPLITS if resampling_strategy ==\
-                                                HoldoutValTypes.time_series_hold_out_validation\
+    expected_num_splits = HOLDOUT_NUM_SPLITS if resampling_strategy == HoldoutValTypes.time_series_hold_out_validation \
         else CV_NUM_SPLITS
     assert estimator.resampling_strategy == resampling_strategy
     assert estimator.dataset.resampling_strategy == resampling_strategy
@@ -1094,5 +1093,3 @@ def test_task_inference(ans, task_class, backend):
             estimator.get_dataset(X, y)
     else:
         estimator.get_dataset(X, y)
-
-

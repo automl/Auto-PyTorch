@@ -58,6 +58,7 @@ setuptools.setup(
             "pre-commit",
             "pytest-cov",
             'pytest-forked',
+            'pytest-subtests',
             "codecov",
             "pep8",
             "mypy",

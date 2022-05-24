@@ -2,7 +2,7 @@ from enum import Enum
 
 import torch
 from torch import nn
-from typing import Dict, Optional, Tuple, List, NamedTuple
+from typing import Tuple, NamedTuple
 
 
 class EncoderProperties(NamedTuple):
@@ -63,6 +63,4 @@ class EncoderOutputForm(Enum):
     NoOutput = 0
     HiddenStates = 1  # RNN -> RNN
     Sequence = 2  # Transformer -> Transformer
-    SequenceLast = 3 #RNN/TCN/Transformer -> MLP
-
-
+    SequenceLast = 3  # RNN/TCN/Transformer -> MLP

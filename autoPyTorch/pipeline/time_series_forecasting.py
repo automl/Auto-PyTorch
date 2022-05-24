@@ -193,7 +193,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                                     forbidden_hp_regression_loss = ForbiddenEqualsClause(hp_loss, 'RegressionLoss')
                                     for hp_dist in hp_distribution_children:
                                         forbidden_hp_dist = ForbiddenEqualsClause(hp_dist, True)
-                                        forbidden_hp_dist = AndConjunction(forbidden_hp_dist, 
+                                        forbidden_hp_dist = AndConjunction(forbidden_hp_dist,
                                                                            forbidden_hp_regression_loss)
                                         forbidden_regression_losses_all.append(forbidden_hp_dist)
                                 else:
@@ -257,11 +257,14 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
 
                 if 'MLPEncoder' in network_flat_encoder_hp.choices:
                     forbidden = ['MLPEncoder']
-                    forbidden_deepAREncoder = [forbid for forbid in forbidden if forbid in network_flat_encoder_hp.choices]
+                    forbidden_deepAREncoder = [
+                        forbid for forbid in forbidden if forbid in network_flat_encoder_hp.choices
+                    ]
                     for hp_ar in hp_deepAR:
                         if True in hp_ar.choices:
                             forbidden_hp_ar = ForbiddenEqualsClause(hp_ar, ar_forbidden)
-                            forbidden_hp_mlpencoder = ForbiddenInClause(network_flat_encoder_hp, forbidden_deepAREncoder)
+                            forbidden_hp_mlpencoder = ForbiddenInClause(network_flat_encoder_hp,
+                                                                        forbidden_deepAREncoder)
                             forbidden_hp_ar_mlp = ForbiddenAndConjunction(forbidden_hp_ar, forbidden_hp_mlpencoder)
                             forbidden_losses_all.append(forbidden_hp_ar_mlp)
 
@@ -339,7 +342,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             steps.extend([("impute", TimeSeriesFeatureImputer(random_state=self.random_state)),
                           ("scaler", BaseScaler(random_state=self.random_state)),
                           ('feature_encoding', TimeSeriesEncoderChoice(default_dataset_properties,
-                                                               random_state=self.random_state)),
+                                                                       random_state=self.random_state)),
                           ("time_series_transformer", TimeSeriesFeatureTransformer(random_state=self.random_state)),
                           ("preprocessing", TimeSeriesEarlyPreprocessing(random_state=self.random_state)),
                           ])

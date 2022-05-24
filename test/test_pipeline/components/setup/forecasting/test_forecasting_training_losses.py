@@ -96,4 +96,3 @@ class TestForecastingTrainingLoss(unittest.TestCase):
             train_loss = fit_dictionary['loss']
 
             self.assertEqual(train_loss, loss_type)
-

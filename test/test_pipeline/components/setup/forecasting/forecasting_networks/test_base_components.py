@@ -167,7 +167,6 @@ class TestForecastingNetworkBases(unittest.TestCase):
         cs_seq = encoder_choices.get_hyperparameter_search_space(dataset_properties)
         self.assertListEqual(list(cs_seq.get_hyperparameter('__choice__').choices), ['seq_encoder'])
 
-
         encoder_choices = ForecastingNetworkChoice(dataset_properties)
         update_rnn_decoder_type = HyperparameterSearchSpaceUpdate(
             node_name="network_backbone",

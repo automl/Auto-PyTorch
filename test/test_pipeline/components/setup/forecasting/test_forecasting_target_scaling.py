@@ -200,7 +200,7 @@ class TestTargetScalar(unittest.TestCase):
         self.assertTrue(torch.equal(transformed_past_target[2], torch.zeros([10, 1])))
 
         self.assertTrue(torch.equal(transformed_future_targets[0], torch.ones([10, 1]) * 10))
-        self.assertTrue(torch.allclose(transformed_future_targets[1], torch.ones([10, 1]) * 12.0618,  atol=1e-4))
+        self.assertTrue(torch.allclose(transformed_future_targets[1], torch.ones([10, 1]) * 12.0618, atol=1e-4))
         self.assertTrue(torch.equal(transformed_future_targets[2], torch.ones([10, 1]) * 6.))
 
         self.assertTrue(

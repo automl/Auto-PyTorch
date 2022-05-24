@@ -4,7 +4,6 @@ import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import Constant
 
-
 import torch
 from torch import nn
 
@@ -12,11 +11,8 @@ import numpy as np
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
-from autoPyTorch.pipeline.components.setup.network_backbone.\
-    forecasting_backbone.forecasting_decoder.base_forecasting_decoder import (
-    BaseForecastingDecoder,
-    DecoderProperties
-)
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder. \
+    base_forecasting_decoder import BaseForecastingDecoder, DecoderProperties
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import (
     DecoderNetwork
 )
@@ -31,7 +27,7 @@ class RNN_Module(DecoderNetwork):
                  num_layers: int,
                  cell_type: str,
                  dropout: float,
-                 lagged_value: Optional[Union[List, np.ndarray]]=None):
+                 lagged_value: Optional[Union[List, np.ndarray]] = None):
         super().__init__()
         if cell_type == 'lstm':
             cell = nn.LSTM

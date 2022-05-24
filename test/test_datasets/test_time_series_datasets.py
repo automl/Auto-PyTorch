@@ -238,9 +238,9 @@ class TestTimeSeriesSequence(unittest.TestCase):
 
 
 @pytest.mark.parametrize("fit_dictionary_forecasting", ['uni_variant_wo_missing',
-                                                            'uni_variant_w_missing',
-                                                            'multi_variant_wo_missing',
-                                                            'uni_variant_w_missing'], indirect=True)
+                                                        'uni_variant_w_missing',
+                                                        'multi_variant_wo_missing',
+                                                        'uni_variant_w_missing'], indirect=True)
 def test_dataset_properties(backend, fit_dictionary_forecasting):
     # The fixture creates a datamanager by itself
     datamanager: TimeSeriesForecastingDataset = backend.load_datamanager()
@@ -298,7 +298,7 @@ def test_target_normalization():
     assert np.allclose(dataset.y_mean.values, np.vstack([np.mean(y) for y in Y]))
     assert np.allclose(dataset.y_std.values, np.vstack([np.std(y, ddof=1) for y in Y]))
     assert np.allclose(dataset.train_tensors[1].values.flatten(),
-                       np.hstack([(y - np.mean(y))/np.std(y, ddof=1) for y in Y]))
+                       np.hstack([(y - np.mean(y)) / np.std(y, ddof=1) for y in Y]))
 
 
 @pytest.mark.parametrize("fit_dictionary_forecasting", ['uni_variant_wo_missing'], indirect=True)

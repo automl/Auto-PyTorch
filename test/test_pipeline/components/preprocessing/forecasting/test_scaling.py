@@ -2,7 +2,6 @@ import unittest
 
 import numpy as np
 import pandas as pd
-from numpy.testing import assert_allclose
 
 from sklearn.base import BaseEstimator
 from sklearn.compose import make_column_transformer
@@ -76,8 +75,7 @@ class TestScaling(unittest.TestCase):
                                                              [0., -0.80178373, 0.33824071],
                                                              [0., -0.80178373, 1.24021595]])))
 
-
-        # second column is static features, those it need to be the mean and std value across all sequences
+        # second column is static features. It needs to be the mean and std value across all sequences
         scaler.dataset_is_small_preprocess = False
         scaler.static_features = self.static_features_column
         scaler = scaler.fit(self.raw_data[0])

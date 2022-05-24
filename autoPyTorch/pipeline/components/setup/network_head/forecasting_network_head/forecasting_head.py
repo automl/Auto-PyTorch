@@ -4,13 +4,9 @@ import numpy as np
 import torch
 from torch import nn
 from ConfigSpace import ConfigurationSpace
-from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformFloatHyperparameter, \
-    UniformIntegerHyperparameter
-from ConfigSpace.conditions import EqualsCondition
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import NetworkStructure
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import (
     DecoderBlockInfo
 )
@@ -19,9 +15,6 @@ from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import \
     ALL_DISTRIBUTIONS, DisForecastingStrategy
 from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.NBEATS_head import build_NBEATS_network
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
-
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.cells import TemporalFusionLayer
 
 
 class QuantileHead(nn.Module):
@@ -58,7 +51,7 @@ class ForecastingHead(NetworkHeadComponent):
             FitRequirement('network_decoder', (Dict,), user_defined=False, dataset_property=False),
             FitRequirement('n_prediction_heads', (int,), user_defined=False, dataset_property=False),
             FitRequirement('output_shape', (Iterable,), user_defined=True, dataset_property=True),
-            FitRequirement('net_output_type', (str, ), user_defined=False, dataset_property=False),
+            FitRequirement('net_output_type', (str,), user_defined=False, dataset_property=False),
             FitRequirement('n_prediction_steps', (int,), user_defined=False, dataset_property=True)
 
         ]
@@ -168,10 +161,10 @@ class ForecastingHead(NetworkHeadComponent):
                    output_shape: Tuple[int, ...],
                    auto_regressive: bool = False,
                    decoder_has_local_layer: bool = True,
-                   net_output_type: str="distribution",
+                   net_output_type: str = "distribution",
                    dist_cls: Optional[str] = None,
                    n_prediction_heads: int = 1,
-                   num_quantiles:int = 3,
+                   num_quantiles: int = 3,
                    ) -> nn.Module:
         """
         Builds the head module and returns it
@@ -184,7 +177,7 @@ class ForecastingHead(NetworkHeadComponent):
             net_output_type (str): network output type
             dist_cls (Optional[str]): output distribution, only works if required_net_out_put_type is 'distribution'
             n_prediction_heads (Dict): additional paramter for initializing architectures. How many heads to predict
-            num_quantile (int): number of quantile losses
+            num_quantiles (int): number of quantile losses
 
         Returns:
             nn.Module: head module

@@ -5,13 +5,10 @@ import pandas as pd
 from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
 
-from scipy import sparse
-
 from autoPyTorch.data.utils import DatasetCompressionSpec
 from autoPyTorch.data.tabular_validator import TabularInputValidator
 from autoPyTorch.data.time_series_feature_validator import TimeSeriesFeatureValidator
 from autoPyTorch.data.time_series_target_validator import TimeSeriesTargetValidator
-from autoPyTorch.data.base_feature_validator import SupportedFeatTypes
 
 
 class TimeSeriesForecastingInputValidator(TabularInputValidator):

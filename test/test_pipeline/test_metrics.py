@@ -18,8 +18,7 @@ from autoPyTorch.constants import (
 from autoPyTorch.metrics import (accuracy,
                                  balanced_accuracy,
                                  mean_squared_error,
-                                 compute_mase_coefficient,
-                                 median_MAPE_forecasting)
+                                 compute_mase_coefficient)
 from autoPyTorch.pipeline.components.training.metrics.base import (
     _PredictMetric,
     _ThresholdMetric,
@@ -56,7 +55,7 @@ def test_get_no_name_regression(output_type):
 
 
 @pytest.mark.parametrize('output_type', ['continuous', 'continuous-multioutput'])
-def test_get_no_name_regression(output_type):
+def test_get_no_name_forecasting(output_type):
     dataset_properties = {'task_type': 'time_series_forecasting',
                           'output_type': output_type}
     metrics = get_metrics(dataset_properties)
@@ -216,7 +215,9 @@ def test_forecastingcomputation():
     n_prediction_steps = 5
     n_targets = 2
 
-    y_true = np.expand_dims([np.arange(n_prediction_steps) + i * 10 for i in range(n_seq)], -1).repeat(n_targets, axis=-1)
+    y_true = np.expand_dims(
+        [np.arange(n_prediction_steps) + i * 10 for i in range(n_seq)], -1
+    ).repeat(n_targets, axis=-1)
     y_pred = y_true + 1
     score_mean = scorer_mean(y_true=y_true, y_pred=y_pred, sp=1, n_prediction_steps=n_prediction_steps)
     score_median = scorer_median(y_true=y_true, y_pred=y_pred, sp=1, n_prediction_steps=n_prediction_steps)
@@ -265,7 +266,6 @@ def test_sign_flip():
 
     score = scorer(y_true, y_pred)
     assert score == pytest.approx(-1.0)
-
 
 
 def test_classification_only_metric():

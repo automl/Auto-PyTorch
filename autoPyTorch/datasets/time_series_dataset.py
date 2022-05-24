@@ -205,9 +205,8 @@ class TimeSeriesSequence(Dataset):
 
             if self.known_future_features_index:
                 if not self.is_test_set:
-                    future_features = self.X[
-                                      index + 1: index + self.n_prediction_steps + 1, self.known_future_features_index
-                                      ]
+                    future_features = self.X[index + 1: index + self.n_prediction_steps + 1,
+                                      self.known_future_features_index]
                 else:
                     future_features = self.X_test[:, self.known_future_features_index]
             else:
@@ -523,12 +522,11 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         self.normalize_y = normalize_y
 
-        sequence_datasets, train_tensors, test_tensors, sequence_lengths = self.transform_data_into_time_series_sequence(
-            X, Y,
-            start_times=self.start_times,
-            X_test=X_test,
-            Y_test=Y_test, )
-
+        training_sets = self.transform_data_into_time_series_sequence(X, Y,
+                                                                      start_times=self.start_times,
+                                                                      X_test=X_test,
+                                                                      Y_test=Y_test, )
+        sequence_datasets, train_tensors, test_tensors, sequence_lengths = training_sets
         Y = train_tensors[1]
 
         ConcatDataset.__init__(self, datasets=sequence_datasets)

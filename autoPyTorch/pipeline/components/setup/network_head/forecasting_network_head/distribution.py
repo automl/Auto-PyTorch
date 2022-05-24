@@ -29,7 +29,6 @@ from torch.distributions import (
     Beta,
     Distribution,
     Gamma,
-    NegativeBinomial,
     Normal,
     Poisson,
     StudentT,
@@ -185,7 +184,7 @@ class PoissonOutput(ProjectionLayer):
     def arg_dims(self) -> Dict[str, int]:
         return {"rate": 1}
 
-    def domain_map(self, rate: torch.Tensor) -> Tuple[torch.Tensor,]:
+    def domain_map(self, rate: torch.Tensor) -> Tuple[torch.Tensor]:
         rate_pos = F.softplus(rate).clone()
         return rate_pos.squeeze(-1),
 
@@ -207,7 +206,6 @@ class DisForecastingStrategy(NamedTuple):
     forecast_strategy: str = "sample"
     num_samples: int = 100
     aggregation: str = "mean"
-
 
 # TODO find components that are compatible with beta, gamma and poisson distribution!
 

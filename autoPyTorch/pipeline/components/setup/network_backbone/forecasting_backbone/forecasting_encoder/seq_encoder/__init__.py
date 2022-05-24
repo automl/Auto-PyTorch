@@ -5,6 +5,7 @@ from sklearn.pipeline import Pipeline
 import inspect
 
 from ConfigSpace.hyperparameters import (
+    Hyperparameter,
     Constant,
     CategoricalHyperparameter,
     UniformFloatHyperparameter,
@@ -35,8 +36,8 @@ from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone
     base_forecasting_decoder import BaseForecastingDecoder
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import \
     ForecastingNetworkStructure
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.other_components.TemporalFusion import \
-    TemporalFusion
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.other_components. \
+    TemporalFusion import TemporalFusion
 
 directory = os.path.split(__file__)[0]
 _encoders = find_components(__package__,
@@ -401,7 +402,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                     # parent_hyperparameter=parent_hyperparameter
                 )
 
-                hps = cs.get_hyperparameters()  # type: List[CSH.Hyperparameter]
+                hps = cs.get_hyperparameters()  # type: List[Hyperparameter]
                 conditions_to_add = []
                 for hp in hps:
                     # TODO consider if this will raise any unexpected behavior
@@ -477,7 +478,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                                             forbidden_decoder_ar,
                                             ForbiddenEqualsClause(hp_decoder_type, decoder)
                                         )
-                                )
+                                    )
                             else:
                                 if add_forbidden_for_non_ar_recurrent_decoder:
                                     forbiddens_decoder_auto_regressive.append(
@@ -494,7 +495,6 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                         cs.add_forbidden_clauses(forbiddens_ar_non_recurrent)
         if conds_decoder_ar:
             cs.add_condition(OrConjunction(*conds_decoder_ar))
-
 
         use_temporal_fusion = get_hyperparameter(use_temporal_fusion, CategoricalHyperparameter)
         cs.add_hyperparameter(use_temporal_fusion)
@@ -694,7 +694,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                     new_params[param] = value
             temporal_fusion = TemporalFusion(self.random_state,
                                              **new_params)
-            pipeline_steps.extend([(f'temporal_fusion', temporal_fusion)])
+            pipeline_steps.extend([('temporal_fusion', temporal_fusion)])
 
         self.pipeline = Pipeline(pipeline_steps)
         self.choice = self.encoder_choice[0]

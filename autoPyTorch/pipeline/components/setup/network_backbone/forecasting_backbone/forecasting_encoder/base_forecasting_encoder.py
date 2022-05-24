@@ -1,9 +1,6 @@
 import numpy as np
 from collections import OrderedDict
 
-import pandas as pd
-from scipy.sparse import csr_matrix
-
 import torchvision
 from autoPyTorch.utils.common import FitRequirement
 from torch import nn
@@ -45,7 +42,7 @@ class BaseForecastingEncoder(autoPyTorchComponent):
             FitRequirement('uni_variant', (bool,), user_defined=False, dataset_property=True),
             FitRequirement('input_shape', (Iterable,), user_defined=True, dataset_property=True),
             FitRequirement('output_shape', (Iterable,), user_defined=True, dataset_property=True),
-            FitRequirement('network_structure', (NetworkStructure,),  user_defined=False, dataset_property=False),
+            FitRequirement('network_structure', (NetworkStructure,), user_defined=False, dataset_property=False),
             FitRequirement('transform_time_features', (bool,), user_defined=False, dataset_property=False),
             FitRequirement('time_feature_transform', (Iterable,), user_defined=False, dataset_property=True),
             FitRequirement('network_embedding', (nn.Module, ), user_defined=False, dataset_property=False),
@@ -87,8 +84,7 @@ class BaseForecastingEncoder(autoPyTorchComponent):
             if variable_selection:
                 in_features = self.n_encoder_output_feature()
             elif self.encoder_properties().lagged_input and hasattr(self, 'lagged_value'):
-                in_features = len(self.lagged_value) * output_shape[-1] + \
-                              input_shape[-1]
+                in_features = len(self.lagged_value) * output_shape[-1] + input_shape[-1]
             else:
                 in_features = output_shape[-1] + input_shape[-1]
 
@@ -133,7 +129,7 @@ class BaseForecastingEncoder(autoPyTorchComponent):
                                                                          encoder_output_shape=self.encoder_output_shape,
                                                                          n_hidden_states=self.n_hidden_states())
 
-        X.update({f'network_encoder': network_encoder})
+        X.update({'network_encoder': network_encoder})
         return X
 
     @abstractmethod
@@ -143,9 +139,7 @@ class BaseForecastingEncoder(autoPyTorchComponent):
         Builds the backbone module and returns it
 
         Args:
-            targets_shape (Tuple[int, ...]): shape of target
             input_shape (Tuple[int, ...]): input feature shape
-            static_feature_shape (int): static feature shape.
 
         Returns:
             nn.Module: backbone module

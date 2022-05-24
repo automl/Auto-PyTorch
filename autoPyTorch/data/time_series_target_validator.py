@@ -67,4 +67,3 @@ class TimeSeriesTargetValidator(TabularTargetValidator):
     @property
     def allow_missing_values(self) -> bool:
         return True
-

@@ -1,5 +1,5 @@
 from collections import Counter
-from typing import Any, Dict, List, Tuple, Union, Optional
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 

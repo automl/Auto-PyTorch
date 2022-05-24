@@ -60,7 +60,7 @@ class TestSeqEncoder(unittest.TestCase):
         self.assertTrue('network_decoder' in fit_dict)
         self.assertEqual(len(fit_dict['network_decoder']), num_blocks)
 
-        #test error:
+        # test error:
         dataset_properties = copy.copy(self.dataset_properties)
         dataset_properties.update({'feature_shapes': {},
                                    'feature_names': tuple(),

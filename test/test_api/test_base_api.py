@@ -170,7 +170,7 @@ def test_no_resampling_error(backend):
         (0.01, 1.0, 'num_seq', {'budget_type': 'num_seq', 'num_seq': 1.0}),
         (0.01, 1.0, 'num_sample_per_seq', {'budget_type': 'num_sample_per_seq', 'num_sample_per_seq': 1.0}),
     ])
-def test_pipeline_get_budget(fit_dictionary_forecasting, min_budget, max_budget, budget_type, expected):
+def test_pipeline_get_budget_forecasting(fit_dictionary_forecasting, min_budget, max_budget, budget_type, expected):
     BaseTask.__abstractmethods__ = set()
     estimator = BaseTask(task_type='time_series_forecasting', ensemble_size=0)
     # Fixture pipeline config

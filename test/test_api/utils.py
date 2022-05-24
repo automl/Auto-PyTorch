@@ -2,7 +2,7 @@ import os
 
 from smac.runhistory.runhistory import DataOrigin, RunHistory, RunKey, RunValue, StatusType
 
-from autoPyTorch.constants import REGRESSION_TASKS, CLASSIFICATION_TASKS, FORECASTING_TASKS
+from autoPyTorch.constants import REGRESSION_TASKS, FORECASTING_TASKS
 from autoPyTorch.evaluation.abstract_evaluator import (
     DummyClassificationPipeline,
     DummyRegressionPipeline,

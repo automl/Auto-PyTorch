@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Union, Tuple, List
+from typing import Any, Dict, Optional, Union, Tuple, List, Callable
 import warnings
 from functools import partial
 
@@ -12,7 +12,6 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 
 import torch
-from torch.utils.data.sampler import SubsetRandomSampler
 
 import torchvision
 

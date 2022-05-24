@@ -260,7 +260,7 @@ class VariableSelector(nn.Module):
 
         if time_feature_names:
             for name in time_feature_names:
-                feature_names2tensor_idx[name] = [idx_tracker, idx_tracker+1]
+                feature_names2tensor_idx[name] = [idx_tracker, idx_tracker + 1]
                 future_feature_name2tensor_idx[name] = [idx_tracker_future, idx_tracker_future + 1]
                 idx_tracker += 1
                 idx_tracker_future += 1
@@ -369,7 +369,6 @@ class VariableSelector(nn.Module):
         n_hidden_states = 0
         if network_encoder['block_1'].encoder_properties.has_hidden_states:
             n_hidden_states = network_encoder['block_1'].n_hidden_states
-
 
         static_context_initial_hidden = [GatedResidualNetwork(input_size=self.hidden_size,
                                                               hidden_size=self.hidden_size,

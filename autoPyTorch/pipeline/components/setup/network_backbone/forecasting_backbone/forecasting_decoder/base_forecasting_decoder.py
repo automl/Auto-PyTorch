@@ -1,8 +1,7 @@
-from abc import abstractmethod, ABC
-from typing import Any, Dict, Iterable, Tuple, List, Optional, NamedTuple
+from abc import abstractmethod
+from typing import Any, Dict, Iterable, Tuple, List, Optional
 from collections import OrderedDict
 
-import torch
 from torch import nn
 
 from autoPyTorch.utils.common import FitRequirement
@@ -140,13 +139,13 @@ class BaseForecastingDecoder(autoPyTorchComponent):
             decoder_output_shape=(self.n_prediction_heads, self.n_decoder_output_features)
         )
         if self.is_last_decoder:
-            X.update({f'network_decoder': network_decoder,
+            X.update({'network_decoder': network_decoder,
                       'n_prediction_heads': self.n_prediction_heads,
                       'n_decoder_output_features': self.n_decoder_output_features,
                       'auto_regressive': self.auto_regressive})
         else:
-            X.update({f'network_decoder': network_decoder,
-                      f'n_decoder_output_features': self.n_decoder_output_features,
+            X.update({'network_decoder': network_decoder,
+                      'n_decoder_output_features': self.n_decoder_output_features,
                       })
 
         return X
@@ -176,7 +175,7 @@ class BaseForecastingDecoder(autoPyTorchComponent):
                        encoder_output_shape: Tuple[int, ...],
                        future_variable_input: Tuple[int, ...],
                        n_prediction_heads: int,
-                       dataset_properties:Dict) -> Tuple[nn.Module, int]:
+                       dataset_properties: Dict) -> Tuple[nn.Module, int]:
         """
         Builds the head module and returns it
 
@@ -204,4 +203,3 @@ class BaseForecastingDecoder(autoPyTorchComponent):
             str: Name of the head
         """
         return str(cls.get_properties()["shortname"])
-

@@ -4,15 +4,14 @@ from torch import nn
 
 from ConfigSpace import ConfigurationSpace
 
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.base_forecasting_encoder import (
-    BaseForecastingEncoder, EncoderProperties
-)
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.\
+    base_forecasting_encoder import BaseForecastingEncoder, EncoderProperties
 from autoPyTorch.pipeline.components.setup.network_backbone.utils import get_output_shape
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.utils.common import FitRequirement
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.flat_encoder.MLPEncoder import \
-    TimeSeriesMLP
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.flat_encoder.\
+    MLPEncoder import TimeSeriesMLP
 
 
 class NBEATSEncoder(BaseForecastingEncoder):
@@ -44,7 +43,6 @@ class NBEATSEncoder(BaseForecastingEncoder):
         self.check_requirements(X, y)
         self.window_size = X["window_size"]
 
-        input_shape = X["dataset_properties"]['input_shape']
         # n-BEATS only requires targets as its input
         # TODO add support for multi-variant
         output_shape = X["dataset_properties"]['output_shape']

@@ -244,7 +244,6 @@ class TestTimeSeriesForecastingTrainEvaluator(unittest.TestCase):
         configuration = unittest.mock.Mock(spec=Configuration)
         backend_api = create(self.tmp_dir, self.output_dir, prefix='autoPyTorch')
         backend_api.load_datamanager = lambda: D
-        queue_ = multiprocessing.Queue()
 
         ae = TimeSeriesForecastingTrainEvaluator(backend_api,
                                                  queue_mock,

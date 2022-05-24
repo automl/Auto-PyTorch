@@ -13,11 +13,12 @@ from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_head.utils import _activations
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
-from autoPyTorch.pipeline.components.setup.network_backbone.\
+from autoPyTorch.pipeline.components.setup.network_backbone. \
     forecasting_backbone.forecasting_decoder.base_forecasting_decoder import BaseForecastingDecoder, DecoderProperties
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import (
     DecoderNetwork
 )
+
 
 class NBEATSBLock(DecoderNetwork):
     def __init__(self,
@@ -74,7 +75,8 @@ class NBEATSBLock(DecoderNetwork):
         if self.use_dropout:
             layers.append(nn.Dropout(self.dropout_rate))
 
-    def forward(self, x_future: Optional[torch.Tensor], encoder_output: torch.Tensor, pos_idx: Optional[Tuple[int]] = None):
+    def forward(self, x_future: Optional[torch.Tensor], encoder_output: torch.Tensor,
+                pos_idx: Optional[Tuple[int]] = None):
         if self.backcast_head is None and self.forecast_head is None:
             # used to compute head dimensions
             return self.backbone(encoder_output)
@@ -141,21 +143,20 @@ class NBEATSDecoder(BaseForecastingDecoder):
                     else:
                         raise ValueError(f"Unsupported stack_type {stack_type}")
 
-                    stacks[stack_idx - 1].append(NBEATSBLock(in_features,
-                                                             stack_idx=stack_idx,
-                                                             stack_type=stack_type,
-                                                             num_blocks=self.config['num_blocks_i_%d' % stack_idx],
-                                                             num_layers=self.config['num_layers_i_%d' % stack_idx],
-                                                             width=self.config['width_i_%d' % stack_idx],
-                                                             normalization=self.config['normalization'],
-                                                             activation=self.config['activation'],
-                                                             weight_sharing=self.config[f'weight_sharing_i_%d' %
-                                                                                        stack_idx],
-                                                             expansion_coefficient_length=ecl,
-                                                             use_dropout=self.config['use_dropout_i'],
-                                                             dropout_rate=self.config.get('dropout_i_%d' %
-                                                                                          stack_idx, None),
-                                                             ))
+                    stacks[stack_idx - 1].append(NBEATSBLock(
+                        in_features,
+                        stack_idx=stack_idx,
+                        stack_type=stack_type,
+                        num_blocks=self.config['num_blocks_i_%d' % stack_idx],
+                        num_layers=self.config['num_layers_i_%d' % stack_idx],
+                        width=self.config['width_i_%d' % stack_idx],
+                        normalization=self.config['normalization'],
+                        activation=self.config['activation'],
+                        weight_sharing=self.config['weight_sharing_i_%d' % stack_idx],
+                        expansion_coefficient_length=ecl,
+                        use_dropout=self.config['use_dropout_i'],
+                        dropout_rate=self.config.get('dropout_i_%d' % stack_idx, None),
+                    ))
         else:
             raise ValueError(f"Unsupported n_beats_type: {n_beats_type}")
         return stacks, stacks[-1][-1].width

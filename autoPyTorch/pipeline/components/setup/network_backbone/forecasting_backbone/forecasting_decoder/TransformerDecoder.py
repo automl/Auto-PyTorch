@@ -16,16 +16,16 @@ from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.utils.common import add_hyperparameter
 
-from autoPyTorch.pipeline.components.setup.network_backbone. \
-    forecasting_backbone.forecasting_decoder.base_forecasting_decoder import (
-    BaseForecastingDecoder,
-    DecoderProperties
-)
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.\
+    base_forecasting_decoder import BaseForecastingDecoder, DecoderProperties
+
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import (
     DecoderNetwork
 )
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import \
-    PositionalEncoding, build_transformer_layers
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import (
+    PositionalEncoding,
+    build_transformer_layers
+)
 
 from autoPyTorch.utils.common import HyperparameterSearchSpace, get_hyperparameter, FitRequirement
 
@@ -69,7 +69,8 @@ class _TransformerDecoder(DecoderNetwork):
         if self.use_positional_decoder:
             output = self.pos_encoding(output, pos_idx)
         if self.training:
-            output = self.transformer_decoder_layers(output, encoder_output, tgt_mask=self.tgt_mask.to(encoder_output.device))
+            output = self.transformer_decoder_layers(output, encoder_output,
+                                                     tgt_mask=self.tgt_mask.to(encoder_output.device))
         else:
             output = self.transformer_decoder_layers(output, encoder_output)
         return output

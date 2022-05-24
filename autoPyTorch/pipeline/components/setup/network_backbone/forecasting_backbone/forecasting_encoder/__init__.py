@@ -379,7 +379,3 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
     def transform(self, X: Dict) -> Dict:
         assert self.pipeline is not None, "Cannot call transform before the object is initialized"
         return self.pipeline.transform(X)
-
-    @property
-    def _defaults_network(self):
-        return ['MLPEncoder']

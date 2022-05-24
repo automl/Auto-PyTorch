@@ -68,8 +68,8 @@ class TestEncoders(unittest.TestCase):
         idx_cat = 0
         for i, fea_name in enumerate(dataset_properties['feature_names']):
             if i in dataset_properties['categorical_columns']:
-                self.assertEqual( dataset_properties['feature_shapes'][fea_name],
-                                  len(dataset_properties['categories'][idx_cat]))
+                self.assertEqual(dataset_properties['feature_shapes'][fea_name],
+                                 len(dataset_properties['categories'][idx_cat]))
                 idx_cat += 1
             else:
                 assert dataset_properties['feature_shapes'][fea_name] == 1
@@ -91,4 +91,4 @@ class TestEncoders(unittest.TestCase):
 
         dataset_properties = X['dataset_properties']
         for i, fea_name in enumerate(dataset_properties['feature_names']):
-            self.assertEqual( dataset_properties['feature_shapes'][fea_name], 1)
+            self.assertEqual(dataset_properties['feature_shapes'][fea_name], 1)

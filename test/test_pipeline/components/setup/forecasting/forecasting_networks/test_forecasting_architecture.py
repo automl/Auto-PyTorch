@@ -9,7 +9,6 @@ from test.test_pipeline.components.setup.forecasting.forecasting_networks.test_b
 )
 
 from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.TargetStandardScaler import TargetStandardScaler
-from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.TargetNoScaler import TargetNoScaler
 from autoPyTorch.pipeline.components.setup.network_embedding.NoEmbedding import _NoEmbedding
 
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone import ForecastingNetworkChoice
@@ -100,8 +99,8 @@ class TestForecastingNetworks:
             return
         if network_type == 'NBEATSNet':
             # NBEATS only needs one pass
-            if not (embedding == 'NoEmbedding' and net_output_type == 'regression' and
-                    not variable_selection and not with_static_features and network_encoder == 'RNNEncoder'
+            if not (embedding == 'NoEmbedding' and net_output_type == 'regression'
+                    and not variable_selection and not with_static_features and network_encoder == 'RNNEncoder'
                     and not uni_variant_data):
                 return
         if uni_variant_data:
@@ -125,9 +124,10 @@ class TestForecastingNetworks:
         fit_dictionary['target_scaler'] = TargetStandardScaler().fit(fit_dictionary)
 
         if net_output_type.startswith("distribution"):
-            fit_dictionary['dist_forecasting_strategy'] = DisForecastingStrategy(list(ALL_DISTRIBUTIONS.keys())[0],
-                                                                                 forecast_strategy=
-                                                                                 net_output_type.split("_")[1])
+            fit_dictionary['dist_forecasting_strategy'] = DisForecastingStrategy(
+                list(ALL_DISTRIBUTIONS.keys())[0],
+                forecast_strategy=net_output_type.split("_")[1]
+            )
             net_output_type = net_output_type.split("_")[0]
         elif net_output_type == 'quantile':
             fit_dictionary['quantile_values'] = [0.5, 0.1, 0.9]

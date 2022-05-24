@@ -1,7 +1,6 @@
 import functools
 import traceback
 import unittest
-import pytest
 
 import numpy as np
 from numpy.linalg import LinAlgError
@@ -279,4 +278,3 @@ def get_dataset_getters():
             get_abalone_datamanager,
             get_regression_datamanager,
             get_forecasting_dataset]
-

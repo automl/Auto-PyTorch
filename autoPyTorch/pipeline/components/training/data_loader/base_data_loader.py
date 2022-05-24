@@ -109,7 +109,6 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
 
         train_dataset = datamanager.get_dataset(split_id=X['split_id'], train=True)
 
-
         self.train_data_loader = torch.utils.data.DataLoader(
             train_dataset,
             batch_size=min(self.batch_size, len(train_dataset)),

@@ -23,8 +23,8 @@ def get_output_shape(network: torch.nn.Module, input_shape: Tuple[int, ...], has
     Can and should be overridden by subclasses that know the output shape
     without running a dummy forward pass.
     :param input_shape: shape of the input
-    :param has_hidden_states: bool, if the network backbone contains a hidden_states. if yes, the network will return a Tuple,
-    we will then only consider the first item
+    :param has_hidden_states: bool, if the network backbone contains a hidden_states. if yes,
+        the network will return a Tuple, we will then only consider the first item
     :return: output_shape
     """
     placeholder = torch.randn((2, *input_shape), dtype=torch.float)

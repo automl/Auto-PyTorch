@@ -1,4 +1,3 @@
-import copy
 import unittest
 
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.encoding import (

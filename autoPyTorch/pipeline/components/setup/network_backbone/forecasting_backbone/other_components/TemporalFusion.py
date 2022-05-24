@@ -1,19 +1,19 @@
 import numpy as np
 
 from ConfigSpace import ConfigurationSpace
-from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformFloatHyperparameter, \
+from ConfigSpace.hyperparameters import (
+    CategoricalHyperparameter,
+    UniformFloatHyperparameter,
     UniformIntegerHyperparameter
+)
 from ConfigSpace.conditions import EqualsCondition
 from autoPyTorch.utils.common import FitRequirement
-from typing import Any, Dict, Iterable, Optional, Tuple, List, Union, NamedTuple
+from typing import Any, Dict, Iterable, Optional, List
 
-from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import NetworkStructure
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import (
-    EncoderProperties, EncoderBlockInfo, EncoderNetwork
-)
+
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.cells import TemporalFusionLayer
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 
@@ -30,7 +30,7 @@ class TemporalFusion(autoPyTorchComponent):
                  attention_d_model_log: int = 4,
                  use_dropout: bool = False,
                  dropout_rate: Optional[float] = None, ):
-        autoPyTorchComponent.__init__(self)
+        autoPyTorchComponent.__init__(self, random_state=random_state)
         self.add_fit_requirements(
             self._required_fit_requirements
         )

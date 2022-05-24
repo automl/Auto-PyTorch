@@ -81,7 +81,7 @@ def _pipeline_predict(pipeline: BasePipeline,
                       batch_size: int,
                       logger: PicklableClientLogger,
                       task: int,
-                      forecasting_task: bool=False) -> np.ndarray:
+                      forecasting_task: bool = False) -> np.ndarray:
     @typing.no_type_check
     def send_warnings_to_log(
             message, category, filename, lineno, file=None, line=None):
@@ -168,25 +168,25 @@ class BaseTask(ABC):
     """
 
     def __init__(
-        self,
-        seed: int = 1,
-        n_jobs: int = 1,
-        n_threads: int = 1,
-        logging_config: Optional[Dict] = None,
-        ensemble_size: int = 50,
-        ensemble_nbest: int = 50,
-        max_models_on_disc: int = 50,
-        temporary_directory: Optional[str] = None,
-        output_directory: Optional[str] = None,
-        delete_tmp_folder_after_terminate: bool = True,
-        delete_output_folder_after_terminate: bool = True,
-        include_components: Optional[Dict[str, Any]] = None,
-        exclude_components: Optional[Dict[str, Any]] = None,
-        backend: Optional[Backend] = None,
-        resampling_strategy: ResamplingStrategies = HoldoutValTypes.holdout_validation,
-        resampling_strategy_args: Optional[Dict[str, Any]] = None,
-        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
-        task_type: Optional[str] = None
+            self,
+            seed: int = 1,
+            n_jobs: int = 1,
+            n_threads: int = 1,
+            logging_config: Optional[Dict] = None,
+            ensemble_size: int = 50,
+            ensemble_nbest: int = 50,
+            max_models_on_disc: int = 50,
+            temporary_directory: Optional[str] = None,
+            output_directory: Optional[str] = None,
+            delete_tmp_folder_after_terminate: bool = True,
+            delete_output_folder_after_terminate: bool = True,
+            include_components: Optional[Dict[str, Any]] = None,
+            exclude_components: Optional[Dict[str, Any]] = None,
+            backend: Optional[Backend] = None,
+            resampling_strategy: ResamplingStrategies = HoldoutValTypes.holdout_validation,
+            resampling_strategy_args: Optional[Dict[str, Any]] = None,
+            search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
+            task_type: Optional[str] = None
     ) -> None:
 
         if isinstance(resampling_strategy, NoResamplingStrategyTypes) and ensemble_size != 0:
@@ -264,11 +264,11 @@ class BaseTask(ABC):
 
     @abstractmethod
     def build_pipeline(
-        self,
-        dataset_properties: Dict[str, BaseDatasetPropertiesType],
-        include_components: Optional[Dict[str, Any]] = None,
-        exclude_components: Optional[Dict[str, Any]] = None,
-        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+            self,
+            dataset_properties: Dict[str, BaseDatasetPropertiesType],
+            include_components: Optional[Dict[str, Any]] = None,
+            exclude_components: Optional[Dict[str, Any]] = None,
+            search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
     ) -> BasePipeline:
         """
         Build pipeline according to current task
@@ -301,15 +301,15 @@ class BaseTask(ABC):
 
     @abstractmethod
     def _get_dataset_input_validator(
-        self,
-        X_train: Union[List, pd.DataFrame, np.ndarray],
-        y_train: Union[List, pd.DataFrame, np.ndarray],
-        X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        resampling_strategy: Optional[ResamplingStrategies] = None,
-        resampling_strategy_args: Optional[Dict[str, Any]] = None,
-        dataset_name: Optional[str] = None,
-        dataset_compression: Optional[DatasetCompressionSpec] = None,
+            self,
+            X_train: Union[List, pd.DataFrame, np.ndarray],
+            y_train: Union[List, pd.DataFrame, np.ndarray],
+            X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+            y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+            resampling_strategy: Optional[ResamplingStrategies] = None,
+            resampling_strategy_args: Optional[Dict[str, Any]] = None,
+            dataset_name: Optional[str] = None,
+            dataset_compression: Optional[DatasetCompressionSpec] = None,
     ) -> Tuple[BaseDataset, BaseInputValidator]:
         """
         Returns an object of a child class of `BaseDataset` and
@@ -347,15 +347,15 @@ class BaseTask(ABC):
         raise NotImplementedError
 
     def get_dataset(
-        self,
-        X_train: Union[List, pd.DataFrame, np.ndarray],
-        y_train: Union[List, pd.DataFrame, np.ndarray],
-        X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        resampling_strategy: Optional[ResamplingStrategies] = None,
-        resampling_strategy_args: Optional[Dict[str, Any]] = None,
-        dataset_name: Optional[str] = None,
-        dataset_compression: Optional[DatasetCompressionSpec] = None,
+            self,
+            X_train: Union[List, pd.DataFrame, np.ndarray],
+            y_train: Union[List, pd.DataFrame, np.ndarray],
+            X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+            y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+            resampling_strategy: Optional[ResamplingStrategies] = None,
+            resampling_strategy_args: Optional[Dict[str, Any]] = None,
+            dataset_name: Optional[str] = None,
+            dataset_compression: Optional[DatasetCompressionSpec] = None,
     ) -> BaseDataset:
         """
         Returns an object of a child class of `BaseDataset` according to the current task.
@@ -619,9 +619,9 @@ class BaseTask(ABC):
             None
         """
         if (
-            hasattr(self, '_is_dask_client_internally_created')
-            and self._is_dask_client_internally_created
-            and self._dask_client
+                hasattr(self, '_is_dask_client_internally_created')
+                and self._is_dask_client_internally_created
+                and self._dask_client
         ):
             self._dask_client.shutdown()
             self._dask_client.close()
@@ -914,26 +914,26 @@ class BaseTask(ABC):
         return
 
     def _search(
-        self,
-        optimize_metric: str,
-        dataset: BaseDataset,
-        budget_type: str = 'epochs',
-        min_budget: Union[int, float] = 5,
-        max_budget: Union[int, float] = 50,
-        total_walltime_limit: int = 100,
-        func_eval_time_limit_secs: Optional[int] = None,
-        enable_traditional_pipeline: bool = True,
-        memory_limit: Optional[int] = 4096,
-        smac_scenario_args: Optional[Dict[str, Any]] = None,
-        get_smac_object_callback: Optional[Callable] = None,
-        tae_func: Optional[Callable] = None,
-        all_supported_metrics: bool = True,
-        precision: int = 32,
-        disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
-        load_models: bool = True,
-        portfolio_selection: Optional[str] = None,
-        dask_client: Optional[dask.distributed.Client] = None,
-        **kwargs: Dict[str, Any]
+            self,
+            optimize_metric: str,
+            dataset: BaseDataset,
+            budget_type: str = 'epochs',
+            min_budget: Union[int, float] = 5,
+            max_budget: Union[int, float] = 50,
+            total_walltime_limit: int = 100,
+            func_eval_time_limit_secs: Optional[int] = None,
+            enable_traditional_pipeline: bool = True,
+            memory_limit: Optional[int] = 4096,
+            smac_scenario_args: Optional[Dict[str, Any]] = None,
+            get_smac_object_callback: Optional[Callable] = None,
+            tae_func: Optional[Callable] = None,
+            all_supported_metrics: bool = True,
+            precision: int = 32,
+            disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
+            load_models: bool = True,
+            portfolio_selection: Optional[str] = None,
+            dask_client: Optional[dask.distributed.Client] = None,
+            **kwargs: Dict[str, Any]
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -1097,8 +1097,8 @@ class BaseTask(ABC):
         self._all_supported_metrics = all_supported_metrics
         self._disable_file_output = disable_file_output if disable_file_output is not None else []
         if (
-            DisableFileOutputParameters.y_optimization in self._disable_file_output
-            and self.ensemble_size > 1
+                DisableFileOutputParameters.y_optimization in self._disable_file_output
+                and self.ensemble_size > 1
         ):
             self._logger.warning(f"No ensemble will be created when {DisableFileOutputParameters.y_optimization}"
                                  f" is in disable_file_output")
@@ -1339,10 +1339,10 @@ class BaseTask(ABC):
         return self
 
     def _get_fit_dictionary(
-        self,
-        dataset_properties: Dict[str, BaseDatasetPropertiesType],
-        dataset: BaseDataset,
-        split_id: int = 0
+            self,
+            dataset_properties: Dict[str, BaseDatasetPropertiesType],
+            dataset: BaseDataset,
+            split_id: int = 0
     ) -> Dict[str, Any]:
         X_test = dataset.test_tensors[0].copy() if dataset.test_tensors is not None else None
         y_test = dataset.test_tensors[1].copy() if dataset.test_tensors is not None else None
@@ -1367,9 +1367,9 @@ class BaseTask(ABC):
         return X
 
     def refit(
-        self,
-        dataset: BaseDataset,
-        split_id: int = 0
+            self,
+            dataset: BaseDataset,
+            split_id: int = 0
     ) -> "BaseTask":
         """
         Refit all models found with fit to new data.
@@ -1435,28 +1435,28 @@ class BaseTask(ABC):
         return self
 
     def fit_pipeline(
-        self,
-        configuration: Configuration,
-        *,
-        dataset: Optional[BaseDataset] = None,
-        X_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        y_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
-        dataset_name: Optional[str] = None,
-        resampling_strategy: Optional[Union[HoldoutValTypes, CrossValTypes, NoResamplingStrategyTypes]] = None,
-        resampling_strategy_args: Optional[Dict[str, Any]] = None,
-        run_time_limit_secs: int = 60,
-        memory_limit: Optional[int] = None,
-        eval_metric: Optional[str] = None,
-        all_supported_metrics: bool = False,
-        budget_type: Optional[str] = None,
-        include_components: Optional[Dict[str, Any]] = None,
-        exclude_components: Optional[Dict[str, Any]] = None,
-        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
-        budget: Optional[float] = None,
-        pipeline_options: Optional[Dict] = None,
-        disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
+            self,
+            configuration: Configuration,
+            *,
+            dataset: Optional[BaseDataset] = None,
+            X_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+            y_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+            X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+            y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+            dataset_name: Optional[str] = None,
+            resampling_strategy: Optional[Union[HoldoutValTypes, CrossValTypes, NoResamplingStrategyTypes]] = None,
+            resampling_strategy_args: Optional[Dict[str, Any]] = None,
+            run_time_limit_secs: int = 60,
+            memory_limit: Optional[int] = None,
+            eval_metric: Optional[str] = None,
+            all_supported_metrics: bool = False,
+            budget_type: Optional[str] = None,
+            include_components: Optional[Dict[str, Any]] = None,
+            exclude_components: Optional[Dict[str, Any]] = None,
+            search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
+            budget: Optional[float] = None,
+            pipeline_options: Optional[Dict] = None,
+            disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
     ) -> Tuple[Optional[BasePipeline], RunInfo, RunValue, BaseDataset]:
         """
         Fit a pipeline on the given task for the budget.
@@ -1571,8 +1571,8 @@ class BaseTask(ABC):
 
         if dataset is None:
             if (
-                X_train is not None
-                and y_train is not None
+                    X_train is not None
+                    and y_train is not None
             ):
                 raise ValueError("No dataset provided, must provide X_train, y_train tensors")
             dataset = self.get_dataset(X_train=X_train,
@@ -1685,12 +1685,12 @@ class BaseTask(ABC):
         return fitted_pipeline, run_info, run_value, dataset
 
     def _get_fitted_pipeline(
-        self,
-        dataset_name: str,
-        pipeline_idx: int,
-        run_info: RunInfo,
-        run_value: RunValue,
-        disable_file_output: List[Union[str, DisableFileOutputParameters]]
+            self,
+            dataset_name: str,
+            pipeline_idx: int,
+            run_info: RunInfo,
+            run_value: RunValue,
+            disable_file_output: List[Union[str, DisableFileOutputParameters]]
     ) -> Optional[BasePipeline]:
 
         if self._logger is None:
@@ -1716,10 +1716,10 @@ class BaseTask(ABC):
         )
 
     def predict(
-        self,
-        X_test: np.ndarray,
-        batch_size: Optional[int] = None,
-        n_jobs: int = 1
+            self,
+            X_test: np.ndarray,
+            batch_size: Optional[int] = None,
+            n_jobs: int = 1
     ) -> np.ndarray:
         """Generate the estimator predictions.
         Generate the predictions based on the given examples from the test set.
@@ -1771,9 +1771,9 @@ class BaseTask(ABC):
         return predictions
 
     def score(
-        self,
-        y_pred: np.ndarray,
-        y_test: Union[np.ndarray, pd.DataFrame]
+            self,
+            y_pred: np.ndarray,
+            y_test: Union[np.ndarray, pd.DataFrame]
     ) -> Dict[str, float]:
         """Calculate the score on the test set.
         Calculate the evaluation measure on the test set.
@@ -1818,8 +1818,8 @@ class BaseTask(ABC):
             self._backend.context.delete_directories(force=False)
 
     def get_incumbent_results(
-        self,
-        include_traditional: bool = False
+            self,
+            include_traditional: bool = False
     ) -> Tuple[Configuration, Dict[str, Union[int, str, float]]]:
         """
         Get Incumbent config and the corresponding results
@@ -1920,13 +1920,13 @@ class BaseTask(ABC):
         )
 
     def plot_perf_over_time(
-        self,
-        metric_name: str,
-        ax: Optional[plt.Axes] = None,
-        plot_setting_params: PlotSettingParams = PlotSettingParams(),
-        color_label_settings: ColorLabelSettings = ColorLabelSettings(),
-        *args: Any,
-        **kwargs: Any
+            self,
+            metric_name: str,
+            ax: Optional[plt.Axes] = None,
+            plot_setting_params: PlotSettingParams = PlotSettingParams(),
+            color_label_settings: ColorLabelSettings = ColorLabelSettings(),
+            *args: Any,
+            **kwargs: Any
     ) -> None:
         """
         Visualize the performance over time using matplotlib.

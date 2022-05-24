@@ -1,11 +1,11 @@
 import logging
-from typing import Optional, Union, Tuple, List
+from typing import Optional, Union, List
 import pandas as pd
 import numpy as np
 from scipy.sparse import issparse
 
 from sklearn.base import BaseEstimator
-from autoPyTorch.data.tabular_feature_validator import TabularFeatureValidator, SupportedFeatTypes
+from autoPyTorch.data.tabular_feature_validator import TabularFeatureValidator
 from autoPyTorch.utils.logging_ import PicklableClientLogger
 
 
