@@ -187,127 +187,136 @@ class TestForecastingNetworkBases(unittest.TestCase):
             variable_selection = hp_values[1]
             transform_time_features = hp_values[2]
             is_small_preprocess = hp_values[3]
+            with self.subTest(uni_variant=uni_variant,
+                              variable_selection=variable_selection,
+                              transform_time_features=transform_time_features,
+                              is_small_preprocess=is_small_preprocess):
+                network_structure = NetworkStructure(variable_selection=variable_selection)
 
-            network_structure = NetworkStructure(variable_selection=variable_selection)
+                dataset_properties = copy.copy(self.dataset_properties)
+                fit_dictionary = copy.copy(self.fit_dictionary)
 
-            dataset_properties = copy.copy(self.dataset_properties)
-            fit_dictionary = copy.copy(self.fit_dictionary)
+                dataset_properties['is_small_preprocess'] = is_small_preprocess
+                dataset_properties['uni_variant'] = uni_variant
 
-            dataset_properties['is_small_preprocess'] = is_small_preprocess
-            dataset_properties['uni_variant'] = uni_variant
+                fit_dictionary['dataset_properties'] = self.dataset_properties
+                fit_dictionary['network_structure'] = network_structure
+                fit_dictionary['transform_time_features'] = transform_time_features
+                fit_dictionary['dataset_properties'] = dataset_properties
 
-            fit_dictionary['dataset_properties'] = self.dataset_properties
-            fit_dictionary['network_structure'] = network_structure
-            fit_dictionary['transform_time_features'] = transform_time_features
-            fit_dictionary['dataset_properties'] = dataset_properties
+                encoder_block_1 = copy.deepcopy(self.encoder)
 
-            encoder_block_1 = copy.deepcopy(self.encoder)
+                encoder_block_2 = copy.deepcopy(self.encoder)
+                encoder_block_2.block_number = 2
 
-            encoder_block_2 = copy.deepcopy(self.encoder)
-            encoder_block_2.block_number = 2
+                encoder_block_1 = encoder_block_1.fit(fit_dictionary)
+                fit_dictionary = encoder_block_1.transform(fit_dictionary)
+                network_encoder = fit_dictionary['network_encoder']
+                self.assertIsInstance(network_encoder['block_1'], EncoderBlockInfo)
+                self.assertEqual(network_encoder['block_1'].encoder_output_shape, (1, 10))
 
-            encoder_block_1 = encoder_block_1.fit(fit_dictionary)
-            fit_dictionary = encoder_block_1.transform(fit_dictionary)
-            network_encoder = fit_dictionary['network_encoder']
-            self.assertIsInstance(network_encoder['block_1'], EncoderBlockInfo)
-            self.assertEqual(network_encoder['block_1'].encoder_output_shape, (1, 10))
-
-            if variable_selection:
-                self.assertEqual(network_encoder['block_1'].encoder_input_shape, (window_size, 10))
-            else:
-                if uni_variant:
-                    n_input_features = 0
+                if variable_selection:
+                    self.assertEqual(network_encoder['block_1'].encoder_input_shape, (window_size, 10))
                 else:
-                    if is_small_preprocess:
-                        n_input_features = 40
+                    if uni_variant:
+                        n_input_features = 0
                     else:
-                        n_input_features = 15
+                        if is_small_preprocess:
+                            n_input_features = 40
+                        else:
+                            n_input_features = 15
 
-                if transform_time_features:
-                    n_input_features += len(dataset_properties['time_feature_transform'])
+                    if transform_time_features:
+                        n_input_features += len(dataset_properties['time_feature_transform'])
 
-                n_input_features += dataset_properties['output_shape'][-1]
-                self.assertEqual(network_encoder['block_1'].encoder_input_shape, (window_size,
-                                                                                  n_input_features))
+                    n_input_features += dataset_properties['output_shape'][-1]
+                    self.assertEqual(network_encoder['block_1'].encoder_input_shape, (window_size,
+                                                                                      n_input_features))
 
-            encoder_block_2 = encoder_block_2.fit(fit_dictionary)
-            fit_dictionary = encoder_block_2.transform(fit_dictionary)
+                encoder_block_2 = encoder_block_2.fit(fit_dictionary)
+                fit_dictionary = encoder_block_2.transform(fit_dictionary)
 
-            network_encoder = fit_dictionary['network_encoder']
-            self.assertIsInstance(network_encoder['block_2'], EncoderBlockInfo)
-            self.assertEqual(network_encoder['block_2'].encoder_output_shape, (1, 10))
-            self.assertEqual(network_encoder['block_2'].encoder_input_shape, (1, 10))
+                network_encoder = fit_dictionary['network_encoder']
+                self.assertIsInstance(network_encoder['block_2'], EncoderBlockInfo)
+                self.assertEqual(network_encoder['block_2'].encoder_output_shape, (1, 10))
+                self.assertEqual(network_encoder['block_2'].encoder_input_shape, (1, 10))
 
     def test_base_decoder(self):
         n_prediction_steps = self.dataset_properties['n_prediction_steps']
         for variable_selection in (True, False):
-            network_structure = NetworkStructure(variable_selection=variable_selection, num_blocks=2)
-            dataset_properties = copy.copy(self.dataset_properties)
-            fit_dictionary = copy.copy(self.fit_dictionary)
+            with self.subTest(variable_selection=variable_selection):
+                network_structure = NetworkStructure(variable_selection=variable_selection, num_blocks=2)
+                dataset_properties = copy.copy(self.dataset_properties)
+                fit_dictionary = copy.copy(self.fit_dictionary)
 
-            fit_dictionary['network_structure'] = network_structure
-            fit_dictionary['dataset_properties'] = dataset_properties
+                fit_dictionary['network_structure'] = network_structure
+                fit_dictionary['dataset_properties'] = dataset_properties
 
-            encoder_block_1 = copy.deepcopy(self.encoder)
-            encoder_block_2 = copy.deepcopy(self.encoder)
-            encoder_block_2.block_number = 2
+                encoder_block_1 = copy.deepcopy(self.encoder)
+                encoder_block_2 = copy.deepcopy(self.encoder)
+                encoder_block_2.block_number = 2
 
-            encoder_block_1 = encoder_block_1.fit(fit_dictionary)
-            fit_dictionary = encoder_block_1.transform(fit_dictionary)
-            encoder_block_2 = encoder_block_2.fit(fit_dictionary)
-            fit_dictionary = encoder_block_2.transform(fit_dictionary)
+                encoder_block_1 = encoder_block_1.fit(fit_dictionary)
+                fit_dictionary = encoder_block_1.transform(fit_dictionary)
+                encoder_block_2 = encoder_block_2.fit(fit_dictionary)
+                fit_dictionary = encoder_block_2.transform(fit_dictionary)
 
-            decoder1 = copy.deepcopy(self.decoder_w_local)
-            decoder1 = decoder1.fit(fit_dictionary)
-            self.assertEqual(decoder1.n_prediction_heads, n_prediction_steps)
-            fit_dictionary = decoder1.transform(fit_dictionary)
+                decoder1 = copy.deepcopy(self.decoder_w_local)
+                decoder1 = decoder1.fit(fit_dictionary)
+                self.assertEqual(decoder1.n_prediction_heads, n_prediction_steps)
+                fit_dictionary = decoder1.transform(fit_dictionary)
 
-            network_decoder = fit_dictionary['network_decoder']
-            self.assertIsInstance(network_decoder['block_1'], DecoderBlockInfo)
-            if variable_selection:
-                self.assertEqual(network_decoder['block_1'].decoder_input_shape,
-                                 (n_prediction_steps, 10))  # Pure variable selection
-                self.assertEqual(network_decoder['block_1'].decoder_output_shape,
-                                 (n_prediction_steps, 26))  # 10 (input features) + 16 (n_output_dims)
-            else:
-                self.assertEqual(network_decoder['block_1'].decoder_input_shape,
-                                 (n_prediction_steps, 52))  # 50 (input features) + 2 (time_transforms)
-                self.assertEqual(network_decoder['block_1'].decoder_output_shape,
-                                 (n_prediction_steps, 68))  # 52 (input features) + 16 (n_out_dims)
-
-            for name, decoder in self.decoders.items():
-                fit_dictionary_ = copy.deepcopy(fit_dictionary)
-                decoder2 = copy.deepcopy(decoder)
-                decoder2.block_number = 2
-                decoder2 = decoder2.fit(fit_dictionary_)
-                fit_dictionary_ = decoder2.transform(fit_dictionary_)
-                self.assertTrue(decoder2.is_last_decoder)
-                if name == 'ar':
-                    self.assertEqual(fit_dictionary_['n_prediction_heads'], 1)
-                else:
-                    self.assertEqual(fit_dictionary_['n_prediction_heads'], n_prediction_steps)
-                n_prediction_heads = fit_dictionary_['n_prediction_heads']
-
-                network_decoder = fit_dictionary_['network_decoder']['block_2']
-                self.assertIsInstance(network_decoder, DecoderBlockInfo)
+                network_decoder = fit_dictionary['network_decoder']
+                self.assertIsInstance(network_decoder['block_1'], DecoderBlockInfo)
                 if variable_selection:
-                    self.assertEqual(network_decoder.decoder_input_shape, (n_prediction_heads, 26))
-
-                    if name == 'non_ar_w_local':
-                        self.assertEqual(network_decoder.decoder_output_shape, (n_prediction_heads, 42))  # 26+16
-                    elif name == 'non_ar_wo_local':
-                        self.assertEqual(network_decoder.decoder_output_shape, (n_prediction_heads, 32))  # num_global
-                    elif name == 'ar':
-                        self.assertEqual(network_decoder.decoder_output_shape, (n_prediction_heads, 32))  # 32
+                    self.assertEqual(network_decoder['block_1'].decoder_input_shape,
+                                     (n_prediction_steps, 10))  # Pure variable selection
+                    self.assertEqual(network_decoder['block_1'].decoder_output_shape,
+                                     (n_prediction_steps, 26))  # 10 (input features) + 16 (n_output_dims)
                 else:
-                    self.assertEqual(network_decoder.decoder_input_shape, (n_prediction_heads, 68))
+                    self.assertEqual(network_decoder['block_1'].decoder_input_shape,
+                                     (n_prediction_steps, 52))  # 50 (input features) + 2 (time_transforms)
+                    self.assertEqual(network_decoder['block_1'].decoder_output_shape,
+                                     (n_prediction_steps, 68))  # 52 (input features) + 16 (n_out_dims)
 
-                    if name == 'non_ar_w_local':
-                        self.assertEqual(network_decoder.decoder_output_shape, (n_prediction_heads, 84))  # 26+16
-                    elif name == 'non_ar_wo_local':
-                        self.assertEqual(network_decoder.decoder_output_shape, (n_prediction_heads, 32))  # num_global
-                    elif name == 'ar':
-                        self.assertEqual(network_decoder.decoder_output_shape, (n_prediction_heads, 32))  # 32
+                for name, decoder in self.decoders.items():
+                    with self.subTest(decoder_name=name):
+                        fit_dictionary_ = copy.deepcopy(fit_dictionary)
+                        decoder2 = copy.deepcopy(decoder)
+                        decoder2.block_number = 2
+                        decoder2 = decoder2.fit(fit_dictionary_)
+                        fit_dictionary_ = decoder2.transform(fit_dictionary_)
+                        self.assertTrue(decoder2.is_last_decoder)
+                        if name == 'ar':
+                            self.assertEqual(fit_dictionary_['n_prediction_heads'], 1)
+                        else:
+                            self.assertEqual(fit_dictionary_['n_prediction_heads'], n_prediction_steps)
+                        n_prediction_heads = fit_dictionary_['n_prediction_heads']
+
+                        network_decoder = fit_dictionary_['network_decoder']['block_2']
+                        self.assertIsInstance(network_decoder, DecoderBlockInfo)
+                        if variable_selection:
+                            self.assertEqual(network_decoder.decoder_input_shape, (n_prediction_heads, 26))
+
+                            if name == 'non_ar_w_local':
+                                # 26+16
+                                self.assertEqual(network_decoder.decoder_output_shape, (n_prediction_heads, 42))
+                            elif name == 'non_ar_wo_local':
+                                # num_global
+                                self.assertEqual(network_decoder.decoder_output_shape, (n_prediction_heads, 32))
+                            elif name == 'ar':
+                                self.assertEqual(network_decoder.decoder_output_shape, (n_prediction_heads, 32))  # 32
+                        else:
+                            self.assertEqual(network_decoder.decoder_input_shape, (n_prediction_heads, 68))
+
+                            if name == 'non_ar_w_local':
+                                # 26+16
+                                self.assertEqual(network_decoder.decoder_output_shape, (n_prediction_heads, 84))
+                            elif name == 'non_ar_wo_local':
+                                # num_global
+                                self.assertEqual(network_decoder.decoder_output_shape, (n_prediction_heads, 32))
+                            elif name == 'ar':
+                                self.assertEqual(network_decoder.decoder_output_shape, (n_prediction_heads, 32))  # 32
 
     def test_forecasting_heads(self):
         variable_selection = False
@@ -334,50 +343,50 @@ class TestForecastingNetworkBases(unittest.TestCase):
 
         quantiles = [0.5, 0.1, 0.9]
         for name, decoder in self.decoders.items():
-            fit_dictionary_ = copy.deepcopy(fit_dictionary)
-            decoder = decoder.fit(fit_dictionary_)
-            fit_dictionary_ = decoder.transform(fit_dictionary_)
+            with self.subTest(decoder_name=name):
+                fit_dictionary_ = copy.deepcopy(fit_dictionary)
+                decoder = decoder.fit(fit_dictionary_)
+                fit_dictionary_ = decoder.transform(fit_dictionary_)
 
-            for net_output_type in ['regression', 'distribution', 'quantile']:
+                for net_output_type in ['regression', 'distribution', 'quantile']:
+                    def eval_heads_output(fit_dict):
+                        head = ForecastingHead()
+                        head = head.fit(fit_dict)
+                        fit_dictionary_copy = head.transform(fit_dict)
 
-                def eval_heads_output(fit_dict):
-                    head = ForecastingHead()
-                    head = head.fit(fit_dict)
-                    fit_dictionary_copy = head.transform(fit_dict)
+                        encoder = fit_dictionary_copy['network_encoder']['block_1'].encoder
+                        decoder = fit_dictionary_copy['network_decoder']['block_1'].decoder
 
-                    encoder = fit_dictionary_copy['network_encoder']['block_1'].encoder
-                    decoder = fit_dictionary_copy['network_decoder']['block_1'].decoder
+                        head = fit_dictionary_copy['network_head']
+                        output = head(decoder(input_tensor_future, encoder(input_tensor, output_seq=False)))
+                        if name != "ar":
+                            if net_output_type == 'regression':
+                                self.assertListEqual(list(output.shape), [10, n_prediction_steps, 1])
+                            elif net_output_type == 'distribution':
+                                self.assertListEqual(list(output.sample().shape), [10, n_prediction_steps, 1])
+                            elif net_output_type == 'quantile':
+                                self.assertEqual(len(output), len(quantiles))
+                                for output_quantile in output:
+                                    self.assertListEqual(list(output_quantile.shape), [10, n_prediction_steps, 1])
+                        else:
+                            if net_output_type == 'regression':
+                                self.assertListEqual(list(output.shape), [10, 1, 1])
+                            elif net_output_type == 'distribution':
+                                self.assertListEqual(list(output.sample().shape), [10, 1, 1])
+                            elif net_output_type == 'quantile':
+                                self.assertEqual(len(output), len(quantiles))
+                                for output_quantile in output:
+                                    self.assertListEqual(list(output_quantile.shape), [10, 1, 1])
+                    with self.subTest(net_output_type=net_output_type):
+                        fit_dictionary_copy = copy.deepcopy(fit_dictionary_)
+                        fit_dictionary_copy['net_output_type'] = net_output_type
 
-                    head = fit_dictionary_copy['network_head']
-                    output = head(decoder(input_tensor_future, encoder(input_tensor, output_seq=False)))
-                    if name != "ar":
-                        if net_output_type == 'regression':
-                            self.assertListEqual(list(output.shape), [10, n_prediction_steps, 1])
-                        elif net_output_type == 'distribution':
-                            self.assertListEqual(list(output.sample().shape), [10, n_prediction_steps, 1])
+                        if net_output_type == 'distribution':
+                            for dist in ALL_DISTRIBUTIONS.keys():
+                                fit_dictionary_copy['dist_forecasting_strategy'] = DisForecastingStrategy(dist_cls=dist)
+                                eval_heads_output(fit_dictionary_copy)
                         elif net_output_type == 'quantile':
-                            self.assertEqual(len(output), len(quantiles))
-                            for output_quantile in output:
-                                self.assertListEqual(list(output_quantile.shape), [10, n_prediction_steps, 1])
-                    else:
-                        if net_output_type == 'regression':
-                            self.assertListEqual(list(output.shape), [10, 1, 1])
-                        elif net_output_type == 'distribution':
-                            self.assertListEqual(list(output.sample().shape), [10, 1, 1])
-                        elif net_output_type == 'quantile':
-                            self.assertEqual(len(output), len(quantiles))
-                            for output_quantile in output:
-                                self.assertListEqual(list(output_quantile.shape), [10, 1, 1])
-
-                fit_dictionary_copy = copy.deepcopy(fit_dictionary_)
-                fit_dictionary_copy['net_output_type'] = net_output_type
-
-                if net_output_type == 'distribution':
-                    for dist in ALL_DISTRIBUTIONS.keys():
-                        fit_dictionary_copy['dist_forecasting_strategy'] = DisForecastingStrategy(dist_cls=dist)
-                        eval_heads_output(fit_dictionary_copy)
-                elif net_output_type == 'quantile':
-                    fit_dictionary_copy['quantile_values'] = quantiles
-                    eval_heads_output(fit_dictionary_copy)
-                else:
-                    eval_heads_output(fit_dictionary_copy)
+                            fit_dictionary_copy['quantile_values'] = quantiles
+                            eval_heads_output(fit_dictionary_copy)
+                        else:
+                            eval_heads_output(fit_dictionary_copy)

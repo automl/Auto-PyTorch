@@ -73,141 +73,141 @@ class TestSeqEncoder(unittest.TestCase):
 
     def test_deepar(self):
         for i, valid_encoder in enumerate(['RNNEncoder', 'TransformerEncoder', 'TCNEncoder', 'InceptionTimeEncoder']):
-            seq_encoder_choice = SeqForecastingEncoderChoice(dataset_properties=self.dataset_properties)
-            update_ar = HyperparameterSearchSpaceUpdate(node_name="network_backbone",
-                                                        hyperparameter='auto_regressive',
-                                                        value_range=(True,),
-                                                        default_value=True, )
-            update_rnn_mlp = HyperparameterSearchSpaceUpdate(node_name="network_backbone",
-                                                             hyperparameter='decoder_type',
-                                                             value_range=('MLPDecoder',),
-                                                             default_value='MLPDecoder', )
-            update_transformer_mlp = HyperparameterSearchSpaceUpdate(node_name="network_backbone",
-                                                                     hyperparameter='decoder_type',
-                                                                     value_range=('MLPDecoder',),
-                                                                     default_value='MLPDecoder', )
-            seq_encoder_choice._cs_updates = {"block_1:RNNEncoder:decoder_type": update_rnn_mlp,
-                                              "block_1:TransformerEncoder:decoder_type": update_transformer_mlp,
-                                              "block_1:MLPDecoder:auto_regressive": update_ar}
+            with self.subTest(valid_encoder=valid_encoder):
+                seq_encoder_choice = SeqForecastingEncoderChoice(dataset_properties=self.dataset_properties)
+                update_ar = HyperparameterSearchSpaceUpdate(node_name="network_backbone",
+                                                            hyperparameter='auto_regressive',
+                                                            value_range=(True,),
+                                                            default_value=True, )
+                update_rnn_mlp = HyperparameterSearchSpaceUpdate(node_name="network_backbone",
+                                                                 hyperparameter='decoder_type',
+                                                                 value_range=('MLPDecoder',),
+                                                                 default_value='MLPDecoder', )
+                update_transformer_mlp = HyperparameterSearchSpaceUpdate(node_name="network_backbone",
+                                                                         hyperparameter='decoder_type',
+                                                                         value_range=('MLPDecoder',),
+                                                                         default_value='MLPDecoder', )
+                seq_encoder_choice._cs_updates = {"block_1:RNNEncoder:decoder_type": update_rnn_mlp,
+                                                  "block_1:TransformerEncoder:decoder_type": update_transformer_mlp,
+                                                  "block_1:MLPDecoder:auto_regressive": update_ar}
 
-            cs_seq = seq_encoder_choice.get_hyperparameter_search_space(dataset_properties=self.dataset_properties,
-                                                                        include=[valid_encoder])
-            sample = cs_seq.get_default_configuration()
+                cs_seq = seq_encoder_choice.get_hyperparameter_search_space(dataset_properties=self.dataset_properties,
+                                                                            include=[valid_encoder])
+                sample = cs_seq.get_default_configuration()
 
-            seq_encoder_choice.set_hyperparameters(sample)
+                seq_encoder_choice.set_hyperparameters(sample)
 
-            fit_dict = copy.copy(self.fit_dictionary)
-            fit_dict['dataset_properties'] = self.dataset_properties
+                fit_dict = copy.copy(self.fit_dictionary)
+                fit_dict['dataset_properties'] = self.dataset_properties
 
-            encoder_choices = seq_encoder_choice.fit(fit_dict)
-            fit_dict = encoder_choices.transform(fit_dict)
+                encoder_choices = seq_encoder_choice.fit(fit_dict)
+                fit_dict = encoder_choices.transform(fit_dict)
 
-            head = ForecastingHead()
-            head = head.fit(fit_dict)
-            fit_dict = head.transform(fit_dict)
+                head = ForecastingHead()
+                head = head.fit(fit_dict)
+                fit_dict = head.transform(fit_dict)
 
-            net_encoder = StackedEncoder(fit_dict['network_structure'], False,
-                                         fit_dict['network_encoder'], fit_dict['network_decoder'])
-            net_decoder = StackedDecoder(fit_dict['network_structure'], net_encoder.encoder,
-                                         fit_dict['network_encoder'],
-                                         fit_dict['network_decoder'])
+                net_encoder = StackedEncoder(fit_dict['network_structure'], False,
+                                             fit_dict['network_encoder'], fit_dict['network_decoder'])
+                net_decoder = StackedDecoder(fit_dict['network_structure'], net_encoder.encoder,
+                                             fit_dict['network_encoder'],
+                                             fit_dict['network_decoder'])
 
-            head = fit_dict['network_head']
-            if i < 2:
-                input_tensor = torch.randn([10, 20, 59])  # 53 + 6(lag values)
-                input_tensor_future = torch.randn([10, 1, 59])
-            else:
-                input_tensor = torch.randn([10, 20, 53])  # no lag
-                input_tensor_future = torch.randn([10, 1, 53])
+                head = fit_dict['network_head']
+                if i < 2:
+                    input_tensor = torch.randn([10, 20, 59])  # 53 + 6(lag values)
+                    input_tensor_future = torch.randn([10, 1, 59])
+                else:
+                    input_tensor = torch.randn([10, 20, 53])  # no lag
+                    input_tensor_future = torch.randn([10, 1, 53])
 
-            encoder2decoder, encoder_output = net_encoder(encoder_input=input_tensor,
-                                                          additional_input=[None],
-                                                          cache_intermediate_state=True,
-                                                          )
-            output = head(net_decoder(x_future=None, encoder_output=encoder2decoder))
-            try:
+                encoder2decoder, encoder_output = net_encoder(encoder_input=input_tensor,
+                                                              additional_input=[None],
+                                                              cache_intermediate_state=True,
+                                                              )
+                output = head(net_decoder(x_future=None, encoder_output=encoder2decoder))
                 self.assertListEqual(list(output.shape), [10, 1, 1])
-            except Exception:
-                import pdb
-                pdb.set_trace()
 
-            encoder2decoder, encoder_output = net_encoder(encoder_input=input_tensor_future,
-                                                          additional_input=[None],
-                                                          output_seq=False, cache_intermediate_state=True,
-                                                          incremental_update=True
-                                                          )
-            output = head(net_decoder(x_future=None, encoder_output=encoder2decoder))
-            self.assertListEqual(list(output.shape), [10, 1, 1])
+                encoder2decoder, encoder_output = net_encoder(encoder_input=input_tensor_future,
+                                                              additional_input=[None],
+                                                              output_seq=False, cache_intermediate_state=True,
+                                                              incremental_update=True
+                                                              )
+                output = head(net_decoder(x_future=None, encoder_output=encoder2decoder))
+                self.assertListEqual(list(output.shape), [10, 1, 1])
 
     def test_seq2seq(self):
         n_prediction_steps = self.dataset_properties['n_prediction_steps']
 
         for i, valid_encoder in enumerate(['RNNEncoder', 'TransformerEncoder']):
-            seq_encoder_choice = SeqForecastingEncoderChoice(dataset_properties=self.dataset_properties)
+            with self.subTest(valid_encoder=valid_encoder):
+                seq_encoder_choice = SeqForecastingEncoderChoice(dataset_properties=self.dataset_properties)
 
-            update_rnn_rnn = HyperparameterSearchSpaceUpdate(node_name="network_backbone",
-                                                             hyperparameter='decoder_type',
-                                                             value_range=('RNNDecoder',),
-                                                             default_value='RNNDecoder', )
-            update_trans_trans = HyperparameterSearchSpaceUpdate(node_name="network_backbone",
+                update_rnn_rnn = HyperparameterSearchSpaceUpdate(node_name="network_backbone",
                                                                  hyperparameter='decoder_type',
-                                                                 value_range=('TransformerDecoder',),
-                                                                 default_value='TransformerDecoder', )
+                                                                 value_range=('RNNDecoder',),
+                                                                 default_value='RNNDecoder', )
+                update_trans_trans = HyperparameterSearchSpaceUpdate(node_name="network_backbone",
+                                                                     hyperparameter='decoder_type',
+                                                                     value_range=('TransformerDecoder',),
+                                                                     default_value='TransformerDecoder', )
 
-            seq_encoder_choice._cs_updates = {"block_1:RNNEncoder:decoder_type": update_rnn_rnn,
-                                              "block_1:TransformerEncoder:decoder_type": update_trans_trans}
-            decoder_auto_regressive = HyperparameterSearchSpace(
-                hyperparameter="decoder_auto_regressive",
-                value_range=(True,),
-                default_value=True,
-            )
+                seq_encoder_choice._cs_updates = {"block_1:RNNEncoder:decoder_type": update_rnn_rnn,
+                                                  "block_1:TransformerEncoder:decoder_type": update_trans_trans}
+                decoder_auto_regressive = HyperparameterSearchSpace(
+                    hyperparameter="decoder_auto_regressive",
+                    value_range=(True,),
+                    default_value=True,
+                )
 
-            cs_seq = seq_encoder_choice.get_hyperparameter_search_space(dataset_properties=self.dataset_properties,
-                                                                        decoder_auto_regressive=decoder_auto_regressive,
-                                                                        include=[valid_encoder])
-            sample = cs_seq.get_default_configuration()
+                cs_seq = seq_encoder_choice.get_hyperparameter_search_space(
+                    dataset_properties=self.dataset_properties,
+                    decoder_auto_regressive=decoder_auto_regressive,
+                    include=[valid_encoder]
+                )
+                sample = cs_seq.get_default_configuration()
 
-            seq_encoder_choice.set_hyperparameters(sample)
+                seq_encoder_choice.set_hyperparameters(sample)
 
-            fit_dict = copy.copy(self.fit_dictionary)
-            fit_dict['dataset_properties'] = self.dataset_properties
+                fit_dict = copy.copy(self.fit_dictionary)
+                fit_dict['dataset_properties'] = self.dataset_properties
 
-            encoder_choices = seq_encoder_choice.fit(fit_dict)
-            fit_dict = encoder_choices.transform(fit_dict)
+                encoder_choices = seq_encoder_choice.fit(fit_dict)
+                fit_dict = encoder_choices.transform(fit_dict)
 
-            head = ForecastingHead()
-            head = head.fit(fit_dict)
-            fit_dict = head.transform(fit_dict)
+                head = ForecastingHead()
+                head = head.fit(fit_dict)
+                fit_dict = head.transform(fit_dict)
 
-            net_encoder = StackedEncoder(fit_dict['network_structure'], False,
-                                         fit_dict['network_encoder'], fit_dict['network_decoder'])
-            net_decoder = StackedDecoder(fit_dict['network_structure'], net_encoder.encoder,
-                                         fit_dict['network_encoder'],
-                                         fit_dict['network_decoder'])
+                net_encoder = StackedEncoder(fit_dict['network_structure'], False,
+                                             fit_dict['network_encoder'], fit_dict['network_decoder'])
+                net_decoder = StackedDecoder(fit_dict['network_structure'], net_encoder.encoder,
+                                             fit_dict['network_encoder'],
+                                             fit_dict['network_decoder'])
 
-            head = fit_dict['network_head']
+                head = fit_dict['network_head']
 
-            input_tensor = torch.randn([10, 20, 59])  # 53 + 6(lag values)
-            input_tensor_future = torch.randn([10, n_prediction_steps, 59])
+                input_tensor = torch.randn([10, 20, 59])  # 53 + 6(lag values)
+                input_tensor_future = torch.randn([10, n_prediction_steps, 59])
 
-            encoder2decoder, encoder_output = net_encoder(encoder_input=input_tensor,
-                                                          additional_input=[None],
-                                                          cache_intermediate_state=True,
-                                                          )
-            output = head(net_decoder(x_future=input_tensor_future, encoder_output=encoder2decoder))
-            self.assertListEqual(list(output.shape), [10, n_prediction_steps, 1])
+                encoder2decoder, encoder_output = net_encoder(encoder_input=input_tensor,
+                                                              additional_input=[None],
+                                                              cache_intermediate_state=True,
+                                                              )
+                output = head(net_decoder(x_future=input_tensor_future, encoder_output=encoder2decoder))
+                self.assertListEqual(list(output.shape), [10, n_prediction_steps, 1])
 
-            net_encoder.eval()
-            net_decoder.eval()
-            input_tensor_future = torch.randn([10, 1, 59])
+                net_encoder.eval()
+                net_decoder.eval()
+                input_tensor_future = torch.randn([10, 1, 59])
 
-            encoder2decoder, encoder_output = net_encoder(encoder_input=input_tensor_future,
-                                                          additional_input=[None],
-                                                          output_seq=False, cache_intermediate_state=True,
-                                                          incremental_update=True
-                                                          )
-            output = head(net_decoder(x_future=input_tensor_future, encoder_output=encoder2decoder))
-            self.assertListEqual(list(output.shape), [10, 1, 1])
+                encoder2decoder, encoder_output = net_encoder(encoder_input=input_tensor_future,
+                                                              additional_input=[None],
+                                                              output_seq=False, cache_intermediate_state=True,
+                                                              incremental_update=True
+                                                              )
+                output = head(net_decoder(x_future=input_tensor_future, encoder_output=encoder2decoder))
+                self.assertListEqual(list(output.shape), [10, 1, 1])
 
     def test_seq_models(self):
         update = HyperparameterSearchSpaceUpdate(node_name="network_backbone",
@@ -234,11 +234,11 @@ class TestSeqEncoder(unittest.TestCase):
             hp_decoder_auto_regressive = hp_values[2]
             hp_skip_connection = hp_values[3]
             hp_skip_connection_type = hp_values[4]
-            with self.subTest(hp_variable_selection=hp_values[0],
-                              hp_use_temporal_fusion=hp_values[1],
-                              hp_decoder_auto_regressive=hp_values[2],
-                              hp_skip_connection=hp_values[3],
-                              hp_skip_connection_type=hp_values[4]):
+            with self.subTest(hp_variable_selection=hp_variable_selection,
+                              hp_use_temporal_fusion=hp_use_temporal_fusion,
+                              hp_decoder_auto_regressive=hp_decoder_auto_regressive,
+                              hp_skip_connection=hp_skip_connection,
+                              hp_skip_connection_type=hp_skip_connection_type):
                 variable_selection = HyperparameterSearchSpace('variable_selection',
                                                                (hp_variable_selection,), hp_variable_selection)
                 use_temporal_fusion = HyperparameterSearchSpace('use_temporal_fusion',

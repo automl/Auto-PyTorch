@@ -93,29 +93,30 @@ class TestFlatEncoder(unittest.TestCase):
         fit_dict = encoder.transform(fit_dict)
 
         for name, decoder in decoders.items():
-            fit_dict_ = copy.copy(fit_dict)
+            with self.subTest(decoder_name=name):
+                fit_dict_ = copy.copy(fit_dict)
 
-            decoder = decoder.fit(fit_dict_)
-            fit_dict_ = decoder.transform(fit_dict_)
+                decoder = decoder.fit(fit_dict_)
+                fit_dict_ = decoder.transform(fit_dict_)
 
-            input_tensor = torch.randn([10, 20, 3 + fit_dict_['X_train'].shape[-1]])
-            input_tensor_future = torch.randn([10, n_prediction_steps, 2 + fit_dict_['X_train'].shape[-1]])
+                input_tensor = torch.randn([10, 20, 3 + fit_dict_['X_train'].shape[-1]])
+                input_tensor_future = torch.randn([10, n_prediction_steps, 2 + fit_dict_['X_train'].shape[-1]])
 
-            head = ForecastingHead()
-            head = head.fit(fit_dict_)
-            fit_dict_ = head.transform(fit_dict_)
+                head = ForecastingHead()
+                head = head.fit(fit_dict_)
+                fit_dict_ = head.transform(fit_dict_)
 
-            net_encoder = StackedEncoder(network_structure, False,
-                                         fit_dict_['network_encoder'], fit_dict_['network_decoder'])
-            net_decoder = StackedDecoder(network_structure, net_encoder.encoder, fit_dict_['network_encoder'],
-                                         fit_dict_['network_decoder'])
+                net_encoder = StackedEncoder(network_structure, False,
+                                             fit_dict_['network_encoder'], fit_dict_['network_decoder'])
+                net_decoder = StackedDecoder(network_structure, net_encoder.encoder, fit_dict_['network_encoder'],
+                                             fit_dict_['network_decoder'])
 
-            head = fit_dict_['network_head']
+                head = fit_dict_['network_head']
 
-            encoder2decoder, _ = net_encoder(input_tensor, [None])
-            output = head(net_decoder(input_tensor_future, encoder2decoder))
+                encoder2decoder, _ = net_encoder(input_tensor, [None])
+                output = head(net_decoder(input_tensor_future, encoder2decoder))
 
-            self.assertListEqual(list(output.shape), [10, n_prediction_steps, 1])
+                self.assertListEqual(list(output.shape), [10, n_prediction_steps, 1])
 
     def test_nbeats_network(self):
         n_prediction_steps = self.dataset_properties['n_prediction_steps']
@@ -186,36 +187,37 @@ class TestFlatEncoder(unittest.TestCase):
         fit_dict = encoder.transform(fit_dict)
 
         for decoder_idx, decoder in enumerate([nbeats_i, nbeats_g]):
-            fit_dict = copy.copy(fit_dict)
-            fit_dict_ = copy.copy(fit_dict)
+            with self.subTest(decoder_idx=decoder_idx):
+                fit_dict = copy.copy(fit_dict)
+                fit_dict_ = copy.copy(fit_dict)
 
-            decoder = decoder.fit(fit_dict_)
-            fit_dict_ = decoder.transform(fit_dict_)
+                decoder = decoder.fit(fit_dict_)
+                fit_dict_ = decoder.transform(fit_dict_)
 
-            input_tensor = torch.randn([10, 20, 1])
+                input_tensor = torch.randn([10, 20, 1])
 
-            head = ForecastingHead()
-            head = head.fit(fit_dict_)
-            fit_dict_ = head.transform(fit_dict_)
+                head = ForecastingHead()
+                head = head.fit(fit_dict_)
+                fit_dict_ = head.transform(fit_dict_)
 
-            encoder_net = fit_dict_['network_encoder']['block_1'].encoder
-            decoder_net = fit_dict_['network_decoder']['block_1'].decoder
-            idx_tracker = 0
-            if decoder_idx == 0:
-                # only check nbeats_i
-                for i_stack in range(1, 1 + nbeatsI_cfg['num_stacks_i']):
-                    num_blocks = nbeatsI_cfg[f'num_blocks_i_{i_stack}']
-                    idx_end = idx_tracker + num_blocks
-                    num_individual_models = len(set(decoder_net[idx_tracker:idx_end]))
-                    if nbeatsI_cfg[f'weight_sharing_i_{i_stack}']:
-                        self.assertEqual(num_individual_models, 1)
-                    else:
-                        self.assertEqual(num_individual_models, num_blocks)
-                    idx_tracker = idx_end
+                encoder_net = fit_dict_['network_encoder']['block_1'].encoder
+                decoder_net = fit_dict_['network_decoder']['block_1'].decoder
+                idx_tracker = 0
+                if decoder_idx == 0:
+                    # only check nbeats_i
+                    for i_stack in range(1, 1 + nbeatsI_cfg['num_stacks_i']):
+                        num_blocks = nbeatsI_cfg[f'num_blocks_i_{i_stack}']
+                        idx_end = idx_tracker + num_blocks
+                        num_individual_models = len(set(decoder_net[idx_tracker:idx_end]))
+                        if nbeatsI_cfg[f'weight_sharing_i_{i_stack}']:
+                            self.assertEqual(num_individual_models, 1)
+                        else:
+                            self.assertEqual(num_individual_models, num_blocks)
+                        idx_tracker = idx_end
 
-            input_tensor = encoder_net(input_tensor, output_seq=False)
+                input_tensor = encoder_net(input_tensor, output_seq=False)
 
-            for block in decoder_net:
-                backcast_block, forecast_block = block([None], input_tensor)
-                self.assertListEqual(list(backcast_block.shape), [10, window_size * 1])
-                self.assertListEqual(list(forecast_block.shape), [10, n_prediction_steps * 1])
+                for block in decoder_net:
+                    backcast_block, forecast_block = block([None], input_tensor)
+                    self.assertListEqual(list(backcast_block.shape), [10, window_size * 1])
+                    self.assertListEqual(list(forecast_block.shape), [10, n_prediction_steps * 1])
