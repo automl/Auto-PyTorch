@@ -272,10 +272,14 @@ class AutoMLSMBO(object):
             # if suggested_init_models is an empty list, and  custom_init_setting_path is not provided, we
             # do not provide any initial configurations
             if suggested_init_models is None or suggested_init_models or custom_init_setting_path is not None:
+                datamanager = self.backend.load_datamanager()
+                dataset_properties = datamanager.get_dataset_properties([])
                 initial_configurations = read_forecasting_init_configurations(
                     config_space=config_space,
                     suggested_init_models=suggested_init_models,
-                    custom_init_setting_path=custom_init_setting_path)
+                    custom_init_setting_path=custom_init_setting_path,
+                    dataset_properties=dataset_properties
+                )
             # proxy-validation sets
             self.min_num_test_instances = kwargs.get('min_num_test_instances', None)
         else:

@@ -15,10 +15,21 @@
         "optimizer:AdamOptimizer:beta1": 0.9,
         "optimizer:AdamOptimizer:beta2": 0.999,
         "network_init:__choice__": "XavierInit",
-        "network_init:XavierInit:bias_strategy": "Zero",
+        "network_init:XavierInit:bias_strategy": "Normal",
         "target_scaler:__choice__": "TargetMeanAbsScaler",
         "trainer:__choice__": "ForecastingStandardTrainer",
         "network_embedding:__choice__": "NoEmbedding"
+    },
+    "feature_preprocessing": {
+        "feature_encoding:__choice__": "OneHotEncoder",
+        "scaler:scaling_mode": "standard",
+        "network_embedding:__choice__": "NoEmbedding"
+    },
+    "feature_imputer": {
+        "imputer:numerical_strategy": "ffill"
+    },
+    "target_imputer": {
+        "target_imputer:numerical_strategy": "ffill"
     },
     "models": {
         "MLP": {
@@ -50,7 +61,7 @@
             "network_backbone:seq_encoder:use_temporal_fusion": false,
             "network_backbone:seq_encoder:variable_selection": false,
             "network_backbone:seq_encoder:block_1:__choice__": "RNNEncoder",
-            "network_backbone:seq_encoder:decoder_auto_regressive": true,
+            "network_backbone:seq_encoder:decoder_auto_regressive": false,
             "network_backbone:seq_encoder:block_1:RNNEncoder:cell_type": "lstm",
             "network_backbone:seq_encoder:block_1:RNNEncoder:num_layers": 2,
             "network_backbone:seq_encoder:block_1:RNNEncoder:hidden_size": 40,
@@ -145,7 +156,6 @@
             "network_backbone:seq_encoder:block_1:__choice__": "TransformerEncoder",
             "network_backbone:seq_encoder:block_1:TransformerEncoder:d_model_log": 5,
             "network_backbone:seq_encoder:block_1:TransformerEncoder:activation": "gelu",
-            "network_backbone:seq_encoder:block_1:TransformerEncoder:norm_first": true,
             "network_backbone:seq_encoder:block_1:TransformerEncoder:num_layers": 1,
             "network_backbone:seq_encoder:block_1:TransformerEncoder:decoder_type": "TransformerDecoder",
             "network_backbone:seq_encoder:block_1:TransformerEncoder:use_dropout": true,
@@ -159,7 +169,6 @@
             "network_backbone:seq_encoder:block_1:TransformerEncoder:layer_norm_eps_output": 1e-05,
             "network_backbone:seq_encoder:block_1:TransformerDecoder:activation": "gelu",
             "network_backbone:seq_encoder:block_1:TransformerDecoder:num_layers": 1,
-            "network_backbone:seq_encoder:block_1:TransformerDecoder:norm_first": true,
             "network_backbone:seq_encoder:block_1:TransformerDecoder:use_dropout": true,
             "network_backbone:seq_encoder:block_1:TransformerDecoder:use_positional_decoder": true,
             "network_backbone:seq_encoder:block_1:TransformerDecoder:dropout_positional_decoder": 0.1,
@@ -171,6 +180,7 @@
             "network_backbone:seq_encoder:block_1:TransformerDecoder:layer_norm_eps_output": 1e-05
         },
         "NBEATS-I": {
+            "target_scaler:__choice__": "TargetNoScaler",
             "data_loader:backcast": true,
             "data_loader:backcast_period": 2,
             "loss:__choice__": "RegressionLoss",
@@ -199,7 +209,6 @@
             "network_backbone:flat_encoder:NBEATSDecoder:dropout_i_2": 0.1
         },
         "NBEATS-G": {
-            "target_scaler:__choice__": "TargetNoScaler",
             "loss:__choice__": "RegressionLoss",
             "loss:RegressionLoss:loss_name": "mape",
             "network_backbone:__choice__": "flat_encoder",
@@ -229,7 +238,7 @@
             "network_backbone:seq_encoder:variable_selection": true,
             "network_backbone:seq_encoder:variable_selection_use_dropout": true,
             "network_backbone:seq_encoder:variable_selection_dropout_rate": 0.1,
-            "network_backbone:seq_encoder:share_single_variable_networks": false,
+            "network_backbone:seq_encoder:share_single_variable_networks": true,
             "network_backbone:seq_encoder:skip_connection_type": "gate_add_norm",
             "network_backbone:seq_encoder:grn_use_dropout": true,
             "network_backbone:seq_encoder:grn_dropout_rate": 0.1,

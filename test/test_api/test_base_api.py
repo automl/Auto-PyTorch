@@ -160,3 +160,44 @@ def test_no_resampling_error(backend):
             seed=42,
             ensemble_size=1
         )
+
+
+@pytest.mark.parametrize("fit_dictionary_forecasting", ['uni_variant_wo_missing'], indirect=True)
+@pytest.mark.parametrize(
+    "min_budget,max_budget,budget_type,expected", [
+        (5, 75, 'epochs', {'budget_type': 'epochs', 'epochs': 75}),
+        (0.01, 1.0, 'resolution', {'budget_type': 'resolution', 'resolution': 1.0}),
+        (0.01, 1.0, 'num_seq', {'budget_type': 'num_seq', 'num_seq': 1.0}),
+        (0.01, 1.0, 'num_sample_per_seq', {'budget_type': 'num_sample_per_seq', 'num_sample_per_seq': 1.0}),
+    ])
+def test_pipeline_get_budget(fit_dictionary_forecasting, min_budget, max_budget, budget_type, expected):
+    BaseTask.__abstractmethods__ = set()
+    estimator = BaseTask(task_type='time_series_forecasting', ensemble_size=0)
+    # Fixture pipeline config
+    default_pipeline_config = {
+        'device': 'cpu', 'budget_type': 'epochs', 'epochs': 50, 'runtime': 3600,
+        'torch_num_threads': 1, 'early_stopping': 20, 'use_tensorboard_logger': False,
+        'metrics_during_training': True, 'optimize_metric': 'mean_MASE_forecasting'
+    }
+    default_pipeline_config.update(expected)
+
+    # Create pre-requisites
+    dataset = fit_dictionary_forecasting['backend'].load_datamanager()
+    pipeline_fit = unittest.mock.Mock()
+
+    smac = unittest.mock.Mock()
+    smac.solver.runhistory = RunHistory()
+    smac.solver.intensifier.traj_logger.trajectory = []
+    smac.solver.tae_runner = unittest.mock.Mock(spec=SerialRunner)
+    smac.solver.tae_runner.budget_type = 'epochs'
+    with unittest.mock.patch('autoPyTorch.optimizer.smbo.get_smac_object') as smac_mock:
+        smac_mock.return_value = smac
+        estimator._search(optimize_metric='mean_MASE_forecasting', dataset=dataset, tae_func=pipeline_fit,
+                          min_budget=min_budget, max_budget=max_budget, budget_type=budget_type,
+                          enable_traditional_pipeline=False,
+                          total_walltime_limit=20, func_eval_time_limit_secs=10,
+                          memory_limit=8192,
+                          load_models=False)
+        assert list(smac_mock.call_args)[1]['ta_kwargs']['pipeline_config'] == default_pipeline_config
+        assert list(smac_mock.call_args)[1]['max_budget'] == max_budget
+        assert list(smac_mock.call_args)[1]['initial_budget'] == min_budget

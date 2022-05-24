@@ -202,6 +202,14 @@ class TestTimeSeriesSequence(unittest.TestCase):
         seq_2 = self.seq_multi_with_future.get_val_seq_set(6)
         self.assertEqual(len(seq_2), 6 + 1)
 
+    def test_get_target_values(self):
+        last_visible_target = self.seq_uni.get_target_values(-1)
+        self.assertEqual(last_visible_target, self.seq_uni[-1][0]['past_targets'][-1].numpy())
+
+        self.seq_uni.is_test_set = True
+        last_visible_target = self.seq_uni.get_target_values(-1)
+        self.assertEqual(last_visible_target, self.seq_uni[-1][0]['past_targets'][-1].numpy())
+
     def test_transformation(self):
         self.seq_multi.update_transform(ZeroTransformer(), train=True)
         data, _ = self.seq_multi[-1]

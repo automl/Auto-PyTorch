@@ -35,10 +35,14 @@ def read_return_initial_configurations(
 def read_forecasting_init_configurations(config_space: ConfigurationSpace,
                                          suggested_init_models: Optional[List[str]] = None,
                                          custom_init_setting_path: Optional[str] = None,
+                                         dataset_properties: Dict = {}
                                          ):
     forecasting_init_path = os.path.join(os.path.dirname(__file__), '../configs/forecasting_init_cfgs.json')
     initial_configurations_dict: List[Dict] = list()
     initial_configurations = []
+    uni_variant = dataset_properties.get('uni_variant', True)
+    targets_have_missing_values = dataset_properties.get('targets_have_missing_values', False)
+    features_have_missing_values = dataset_properties.get('features_have_missing_values', False)
 
     if suggested_init_models or suggested_init_models is None:
         with open(forecasting_init_path, 'r') as f:
@@ -63,6 +67,13 @@ def read_forecasting_init_configurations(config_space: ConfigurationSpace,
                 cfg_tmp['data_loader:window_size'] = window_size
 
             cfg_tmp.update(model_cfg)
+            if not uni_variant:
+                cfg_tmp.update(forecasting_init_dict['feature_preprocessing'])
+                if features_have_missing_values:
+                    cfg_tmp.update(forecasting_init_dict['feature_imputer'])
+            if targets_have_missing_values:
+                cfg_tmp.update(forecasting_init_dict['target_imputer'])
+
             initial_configurations_dict.append(cfg_tmp)
 
     if custom_init_setting_path is not None:
@@ -83,7 +94,6 @@ def read_forecasting_init_configurations(config_space: ConfigurationSpace,
             configuration = Configuration(config_space, configuration_dict)
             initial_configurations.append(configuration)
         except Exception as e:
-            continue
             warnings.warn(f"Failed to convert {configuration_dict} into"
                           f" a Configuration with error {e}. "
                           f"Therefore, it can't be used as an initial "

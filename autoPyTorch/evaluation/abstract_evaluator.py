@@ -327,9 +327,10 @@ class DummyTimeSeriesForecastingPipeline(DummyClassificationPipeline):
         y_train = subsampler(X['y_train'], X['train_indices'])
         return DummyClassifier.fit(self, np.ones((y_train.shape[0], 1)), y_train, sample_weight)
 
+
     def _genreate_dummy_forecasting(self, X):
         if isinstance(X[0], TimeSeriesSequence):
-            X_tail = [x.Y[-1 - self.n_prediction_steps] for x in X]
+            X_tail = [x.get_target_values(-1) for x in X]
         else:
             X_tail = [x[-1] for x in X]
         return X_tail
@@ -801,6 +802,7 @@ class AbstractEvaluator(object):
             additional_info (Dict):
                 Additional run information, like train/test loss
         """
+
         self.duration = time.time() - self.starttime
 
         if file_output:

@@ -8,7 +8,7 @@ import unittest.mock
 from ConfigSpace import Configuration
 
 import numpy as np
-
+from smac.tae import StatusType
 
 from autoPyTorch.automl_common.common.utils.backend import create
 from autoPyTorch.datasets.resampling_strategy import CrossValTypes
@@ -112,7 +112,7 @@ class TestTimeSeriesForecastingTrainEvaluator(unittest.TestCase):
         self.assertRaises(queue.Empty, evaluator.queue.get, timeout=1)
 
         self.assertEqual(evaluator.file_output.call_count, 1)
-        self.assertEqual(result, 4592.0)
+        self.assertAlmostEqual(result, 4591.5, places=4)
         self.assertEqual(pipeline_mock.fit.call_count, 1)
         # As forecasting inference could be quite expensive, we only allow one opt prediction and test prediction
         self.assertEqual(pipeline_mock.predict.call_count, 2)
@@ -164,7 +164,7 @@ class TestTimeSeriesForecastingTrainEvaluator(unittest.TestCase):
         self.assertRaises(queue.Empty, evaluator.queue.get, timeout=1)
 
         self.assertEqual(evaluator.file_output.call_count, 1)
-        self.assertAlmostEqual(result, 4587.208333333334)
+        self.assertAlmostEqual(result, 4590.06977, places=4)
         self.assertEqual(pipeline_mock.fit.call_count, 3)
         # 3 calls because of the 3 times validation evaluations, however, we only evaluate test target once
         self.assertEqual(pipeline_mock.predict.call_count, 4)
@@ -183,7 +183,7 @@ class TestTimeSeriesForecastingTrainEvaluator(unittest.TestCase):
     @unittest.mock.patch('autoPyTorch.pipeline.time_series_forecasting.TimeSeriesForecastingPipeline')
     def test_proxy_val_set(self, pipeline_mock):
         pipeline_mock.fit_dictionary = {'budget_type': 'epochs', 'epochs': 0.1}
-        D = get_forecasting_dataset()
+        D = get_forecasting_dataset(n_prediction_steps=5)
         n_prediction_steps = D.n_prediction_steps
         pipeline_mock.predict.side_effect = \
             lambda X, batch_size=None: np.tile([0.], (len(X), n_prediction_steps))
@@ -211,10 +211,11 @@ class TestTimeSeriesForecastingTrainEvaluator(unittest.TestCase):
         self.assertEqual(len(rval), 1)
         result = rval[0]['loss']
 
-        self.assertEqual(result, 925.2)
+        self.assertAlmostEqual(result, 925.2, places=4)
         res = evaluator.file_output.call_args[0][0].reshape(-1, n_prediction_steps, evaluator.num_targets)
 
         n_evaluated_pip_mock = 0
+        val_split = D.splits[0][1]
 
         for i_seq, seq_output in enumerate(res):
             if i_seq % 3 == 0 and n_evaluated_pip_mock < 3:
@@ -222,4 +223,57 @@ class TestTimeSeriesForecastingTrainEvaluator(unittest.TestCase):
                 assert np.all(seq_output == 0.)
             else:
                 # predict with dummy predictor
-                assert np.all(seq_output == D.datasets[i_seq][-1][0]['past_targets'][-1].numpy())
+                assert np.all(seq_output == D.get_validation_set(val_split[i_seq])[-1][0]['past_targets'][-1].numpy())
+
+    @unittest.mock.patch('autoPyTorch.pipeline.time_series_forecasting.TimeSeriesForecastingPipeline')
+    @unittest.mock.patch('multiprocessing.Queue', )
+    def test_finish_up(self, pipeline_mock, queue_mock):
+        pipeline_mock.fit_dictionary = {'budget_type': 'epochs', 'epochs': 50}
+
+        rs = np.random.RandomState(1)
+        D = get_forecasting_dataset(n_prediction_steps=3)
+
+        n_prediction_steps = D.n_prediction_steps
+
+        pipeline_mock.predict.side_effect = \
+            lambda X, batch_size=None: np.tile([0.], (len(X), n_prediction_steps))
+
+        pipeline_mock.side_effect = lambda **kwargs: pipeline_mock
+        pipeline_mock.get_additional_run_info.return_value = None
+
+        configuration = unittest.mock.Mock(spec=Configuration)
+        backend_api = create(self.tmp_dir, self.output_dir, prefix='autoPyTorch')
+        backend_api.load_datamanager = lambda: D
+        queue_ = multiprocessing.Queue()
+
+        ae = TimeSeriesForecastingTrainEvaluator(backend_api,
+                                                 queue_mock,
+                                                 configuration=configuration,
+                                                 metric=mean_MASE_forecasting, budget=0.3,
+                                                 pipeline_config={'budget_type': 'epochs', 'epochs': 50},
+                                                 min_num_test_instances=1)
+
+        val_splits = D.splits[0][1]
+        mase_val = ae.generate_mase_coefficient_for_validation(val_splits)
+
+        ae.Y_optimization = rs.rand(len(val_splits) * n_prediction_steps, D.num_targets) * mase_val
+        predictions_ensemble = rs.rand(len(val_splits) * n_prediction_steps, D.num_targets) * mase_val
+        predictions_test = rs.rand(len(D.datasets) * n_prediction_steps, D.num_targets)
+
+        metric_kwargs = {'sp': ae.seasonality,
+                         'n_prediction_steps': ae.n_prediction_steps,
+                         'mase_coefficient': ae.generate_mase_coefficient_for_test_set()}
+
+        # NaNs in prediction ensemble
+        ae.finish_up(
+            loss={'mean_MASE_forecasting': 0.1},
+            train_loss=None,
+            opt_pred=predictions_ensemble,
+            valid_pred=None,
+            test_pred=predictions_test,
+            additional_run_info=None,
+            file_output=True,
+            status=StatusType.SUCCESS,
+            **metric_kwargs
+        )
+        self.assertTrue('test_loss' in queue_mock.put.call_args.args[0]['additional_run_info'])

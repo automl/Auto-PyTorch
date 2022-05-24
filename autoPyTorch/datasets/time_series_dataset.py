@@ -93,6 +93,8 @@ def compute_time_features(start_time: pd.Timestamp,
 
 class TimeSeriesSequence(Dataset):
     _is_test_set = False
+    is_pre_processed = False
+
     def __init__(self,
                  X: Optional[np.ndarray],
                  Y: np.ndarray,
@@ -156,7 +158,7 @@ class TimeSeriesSequence(Dataset):
                 self.mase_coefficient = compute_mase_coefficient(self.Y[:-n_prediction_steps], sp=self.sp)
 
         else:
-            self.mase_coefficient = 1.0
+            self.mase_coefficient = np.asarray([1.0])
         self.known_future_features_index = known_future_features_index
 
         self.transform_time_features = False
@@ -281,6 +283,19 @@ class TimeSeriesSequence(Dataset):
 
     def __len__(self) -> int:
         return self.Y.shape[0] if self.is_test_set else self.Y.shape[0] - self.n_prediction_steps
+
+    def get_target_values(self, index: int):
+        """
+        Get the visible targets in the datasets without generating a tensor. This can be used to create a dummy pipeline
+        Args:
+            index: target index
+
+        Returns:
+            y: the last visible target value
+        """
+        if index < 0:
+            index = self.__len__() + index
+        return self.Y[index]
 
     def cache_time_features(self, ):
         if self._cached_time_features is None:
@@ -871,6 +886,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             if X_test is not None:
                 seq.X_test = X_test_group.get_group(ser_id).transform(np.array).values
             seq.known_future_features_index = known_future_features_index
+            seq.is_pre_processed = True
 
         return self
 
@@ -1052,25 +1068,26 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                     n_repeats = int(np.ceil(100.0 / num_seqs))
                 else:
                     n_repeats = int(np.round(minimal_seq_length / (50 * n_prediction_steps)))
+
+        if n_repeats is None:
+            n_repeats = 1
+        if resampling_strategy == CrossValTypes.time_series_cross_validation:
+            n_repeats = min(n_repeats, minimal_seq_length // (5 * n_prediction_steps * num_splits))
+        elif resampling_strategy == CrossValTypes.time_series_ts_cross_validation:
+            seasonality_h_value = int(np.round(
+                (n_prediction_steps // int(freq_value) + 1) * freq_value)
+            )
+            while minimal_seq_length // 5 < (num_splits - 1) * n_repeats * seasonality_h_value - n_prediction_steps:
+                n_repeats -= 1
+
+        elif resampling_strategy == HoldoutValTypes.time_series_hold_out_validation:
+            n_repeats = min(n_repeats, minimal_seq_length // (5 * n_prediction_steps) - 1)
+
         else:
-            if n_repeats is None:
-                n_repeats = 1
-            if resampling_strategy == CrossValTypes.time_series_cross_validation:
-                n_repeats = min(n_repeats, minimal_seq_length // (5 * n_prediction_steps * num_splits))
-            elif resampling_strategy == CrossValTypes.time_series_ts_cross_validation:
-                seasonality_h_value = int(np.round(
-                    (n_prediction_steps // int(freq_value) + 1) * freq_value)
-                )
-                while minimal_seq_length // 5 < (num_splits - 1) * n_repeats * seasonality_h_value - n_prediction_steps:
-                    n_repeats -= 1
+            n_repeats = 1
 
-            elif resampling_strategy == HoldoutValTypes.time_series_hold_out_validation:
-                n_repeats = min(n_repeats, minimal_seq_length // (5 * n_prediction_steps) - 1)
+        n_repeats = max(n_repeats, 1)
 
-            else:
-                n_repeats = 1
-
-            n_repeats = max(n_repeats, 1)
         if n_repeats is None:
             n_repeats = 1
 

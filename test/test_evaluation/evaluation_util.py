@@ -246,7 +246,7 @@ def get_500_classes_datamanager(resampling_strategy=HoldoutValTypes.holdout_vali
 
 
 def get_forecasting_dataset(n_seq=10,
-                            n_prediction_steps=5,
+                            n_prediction_steps=3,
                             resampling_strategy=HoldoutValTypes.time_series_hold_out_validation):
     base_length = 50
     X = []

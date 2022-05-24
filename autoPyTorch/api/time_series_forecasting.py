@@ -472,7 +472,7 @@ class TimeSeriesForecastingTask(BaseTask):
                                                                                  is_test_set=True
                                                                                  )
         flattened_res = super(TimeSeriesForecastingTask, self).predict(X_test, batch_size, n_jobs)
-        if self.dataset.num_target == 1:
+        if self.dataset.num_targets == 1:
             forecasting = flattened_res.reshape([-1, self.dataset.n_prediction_steps])
         else:
             forecasting = flattened_res.reshape([-1, self.dataset.n_prediction_steps, self.dataset.num_target])

@@ -1,3 +1,4 @@
+import copy
 import warnings
 from multiprocessing.queues import Queue
 from typing import Any, Dict, List, Optional, Tuple, Union, Sequence
@@ -107,27 +108,32 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                                                                                         test_indices=test_split,
                                                                                         add_pipeline_to_self=True)
 
-            mase_coefficient = self.generate_mase_coefficient_for_validation(test_split)
+            mase_coefficient_val = self.generate_mase_coefficient_for_validation(test_split)
 
             forecasting_kwargs = {'sp': self.seasonality,
                                   'n_prediction_steps': self.n_prediction_steps,
-                                  'mase_coefficient': mase_coefficient,
                                   }
+            forecasting_kwargs_val = copy.copy(forecasting_kwargs)
+            forecasting_kwargs_val['mase_coefficient'] = mase_coefficient_val
+            if self.y_test is not None:
+                mase_coefficient_test = self.generate_mase_coefficient_for_test_set()
+                forecasting_kwargs['mase_coefficient'] = mase_coefficient_test
 
             train_loss = None
-            loss = self._loss(self.Y_optimization, y_opt_pred, **forecasting_kwargs)
+
+            loss = self._loss(self.Y_optimization, y_opt_pred, **forecasting_kwargs_val)
 
             additional_run_info = pipeline.get_additional_run_info() if hasattr(
                 pipeline, 'get_additional_run_info') else {}
 
             status = StatusType.SUCCESS
-
-            self.Y_optimization *= mase_coefficient
+            # self.Y_optimization and y_opt_pred need to be applied to construct ensembles. We simply scale them here
+            self.Y_optimization *= mase_coefficient_val
 
             self.finish_up(
                 loss=loss,
                 train_loss=train_loss,
-                opt_pred=y_opt_pred * mase_coefficient,
+                opt_pred=y_opt_pred * mase_coefficient_val,
                 valid_pred=y_valid_pred,
                 test_pred=y_test_pred,
                 additional_run_info=additional_run_info,
@@ -153,10 +159,17 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             # weights for opt_losses.
             opt_fold_weights = [np.NaN] * self.num_folds
 
-            mase_coefficient_all = []
+            mase_coefficient_val_all = []
             for train_split, test_split in self.splits:
                 mase_coefficient = self.generate_mase_coefficient_for_validation(test_split)
-                mase_coefficient_all.append(mase_coefficient)
+                mase_coefficient_val_all.append(mase_coefficient)
+
+            forecasting_kwargs = {'sp': self.seasonality,
+                                  'n_prediction_steps': self.n_prediction_steps}
+
+            if self.y_test is not None:
+                mase_coefficient_test = self.generate_mase_coefficient_for_test_set()
+                forecasting_kwargs['mase_coefficient'] = mase_coefficient_test
 
             for i, (train_split, test_split) in enumerate(self.splits):
                 if i > 0:
@@ -181,16 +194,14 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                 # the average.
                 train_fold_weights[i] = len(train_split)
 
-                forecasting_kwargs = {'mase_coefficient': mase_coefficient_all[i],
-                                      'sp': self.seasonality,
-                                      'n_prediction_steps': self.n_prediction_steps,
-                                      }
+                forecasting_kwargs_val = copy.copy(forecasting_kwargs)
+                forecasting_kwargs_val['mase_coefficient'] = mase_coefficient_val_all[i]
 
                 # Compute validation loss of this fold and store it.
                 optimization_loss = self._loss(
                     self.Y_targets[i],
                     opt_pred,
-                    **forecasting_kwargs
+                    **forecasting_kwargs_val
                 )
                 opt_losses[i] = optimization_loss
                 # number of optimization data points for this fold.
@@ -219,10 +230,10 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             Y_train_targets = self.Y_train_targets
 
             Y_optimization_preds = np.concatenate(
-                [Y_optimization_pred[i] * mase_coefficient_all[i] for i in range(self.num_folds)
+                [Y_optimization_pred[i] * mase_coefficient_val_all[i] for i in range(self.num_folds)
                  if Y_optimization_pred[i] is not None])
             Y_targets = np.concatenate([
-                Y_targets[i] * mase_coefficient_all[i] for i in range(self.num_folds)
+                Y_targets[i] * mase_coefficient_val_all[i] for i in range(self.num_folds)
                 if Y_targets[i] is not None
             ])
 
@@ -231,7 +242,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             Y_valid_preds = None
 
             if self.y_test is not None:
-                Y_test_preds = np.array([Y_test_pred[i] * mase_coefficient_all[0]
+                Y_test_preds = np.array([Y_test_pred[i] * mase_coefficient_val_all[0]
                                          for i in range(self.num_folds)
                                          if Y_test_pred[i] is not None])
                 # Average the predictions of several pipelines
@@ -278,6 +289,27 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             for seq_idx, test_idx in enumerate(test_split):
                 mase_coefficient[seq_idx] = self.datamanager.get_time_series_seq(test_idx).mase_coefficient
 
+        mase_coefficient = np.repeat(mase_coefficient, self.n_prediction_steps, axis=0)
+        return mase_coefficient
+
+    def generate_mase_coefficient_for_test_set(self) -> np.ndarray:
+        """
+        Compute the denominator for Mean Absolute Scaled Losses,
+        For detail, please check sktime.performance_metrics.forecasting._functions.mean_absolute_scaled_error
+
+        Parameters:
+        ----------
+        test_split: Sequence
+            test splits, consistent of int
+        Return:
+        ----------
+        mase_coefficient: np.ndarray(self.num_sequence * self.n_prediction_steps)
+            inverse of the mase_denominator
+        """
+        mase_coefficient = np.ones([len(self.datamanager.datasets), self.num_targets])
+        if any(mase_loss in self.additional_metrics for mase_loss in MASE_LOSSES) or self.metric in MASE_LOSSES:
+            for seq_idx, test_idx in enumerate(self.datamanager.datasets):
+                mase_coefficient[seq_idx] = self.datamanager.datasets[seq_idx].mase_coefficient
         mase_coefficient = np.repeat(mase_coefficient, self.n_prediction_steps, axis=0)
         return mase_coefficient
 
