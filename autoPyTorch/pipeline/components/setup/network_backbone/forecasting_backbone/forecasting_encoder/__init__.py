@@ -1,7 +1,7 @@
 import os
 import warnings
 from collections import OrderedDict
-from typing import Dict, Optional, List, Any, Type
+from typing import Dict, Optional, List, Any, Type, Callable
 from abc import abstractmethod
 from sklearn.pipeline import Pipeline
 
@@ -25,6 +25,8 @@ from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone
 )
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder import \
     decoders, decoder_addons
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.\
+    base_forecasting_decoder import BaseForecastingDecoder
 
 directory = os.path.split(__file__)[0]
 _encoders = find_components(__package__,
@@ -41,12 +43,11 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
     """
 
     def __init__(self,
-
-                 **kwargs,
+                 **kwargs: Any,
                  ):
         super().__init__(**kwargs)
         self.pipeline = None
-        self.decoder_choice = None
+        self.decoder_choice: Optional[List[BaseForecastingDecoder]] = None
 
     @abstractmethod
     def get_components(self) -> Dict[str, Type[autoPyTorchComponent]]:
@@ -61,14 +62,14 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
         """
         raise NotImplementedError
 
-    def get_decoder_components(self) -> Dict[str, autoPyTorchComponent]:
+    def get_decoder_components(self) -> Dict[str, Type[autoPyTorchComponent]]:
         components = OrderedDict()
         components.update(decoders)
         components.update(decoder_addons.components)
         return components
 
     @property
-    def additional_components(self):
+    def additional_components(self) -> List[Callable]:
         # This function is deigned to add additional components rather than the components in __choice__
         return [self.get_decoder_components]
 
@@ -209,8 +210,8 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
             )
         cs.add_hyperparameter(hp_encoder)
 
-        decoder2encoder = {key: [] for key in available_decoders.keys()}
-        encoder2decoder = {}
+        decoder2encoder: Dict[str, List[str]] = {key: [] for key in available_decoders.keys()}
+        encoder2decoder: Dict[str, List[str]] = {}
         for encoder_name in hp_encoder.choices:
             updates = self._get_search_space_updates(prefix=encoder_name)
             config_space = available_encoders[encoder_name].get_hyperparameter_search_space(dataset_properties,
@@ -351,7 +352,7 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
 
         self.new_params = new_params
         self.choice = self.get_components()[choice](**new_params)
-        self.decoder_choice = decoder_components[decoder_type](**decoder_params)
+        self.decoder_choice = decoder_components[decoder_type](**decoder_params)  # type: ignore[index]
 
         self.pipeline = Pipeline([('net_structure', ForecastingNetworkStructure()),
                                   ('encoder', self.choice),
@@ -359,7 +360,7 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
         return self
 
     @property
-    def _defaults_network(self):
+    def _defaults_network(self) -> List[str]:
         return ['MLPEncoder', 'RNNEncoder', 'NBEATSEncoder']
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> autoPyTorchComponent:

@@ -102,11 +102,11 @@ class MASELoss(AbstractForecastingLoss):
 
 
 class QuantileLoss(AbstractForecastingLoss):
-    def __init__(self, reduction: str = 'mean', quantiles: List[float] = [0.5], loss_weights=None) -> None:
+    def __init__(self, reduction: str = 'mean', quantiles: List[float] = [0.5]) -> None:
         super(QuantileLoss, self).__init__(reduction=reduction)
         self.quantiles = quantiles
 
-    def set_quantiles(self, quantiles=List[float]):
+    def set_quantiles(self, quantiles: List[float]) -> None:
         self.quantiles = quantiles
 
     def forward(self,

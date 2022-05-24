@@ -29,13 +29,12 @@ class TimeSeriesMLP(EncoderNetwork):
             window_size (int): T
             fill_lower_resolution_seq: if sequence with lower resolution needs to be filled with 0
         (for multi-fidelity problems with resolution as fidelity)
-            fill_kwargs: filling information
         """
         super().__init__()
         self.window_size = window_size
         self.network = network
 
-    def forward(self, x: torch.Tensor, output_seq: bool = False):
+    def forward(self, x: torch.Tensor, output_seq: bool = False) -> torch.Tensor:
         """
 
         Args:
@@ -64,7 +63,7 @@ class TimeSeriesMLP(EncoderNetwork):
         return x
 
 
-class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
+class MLPEncoder(BaseForecastingEncoder, MLPBackbone):  # type:ignore[misc]
     _fixed_seq_length = True
     window_size = 1
 
@@ -73,7 +72,7 @@ class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
         return EncoderProperties(bijective_seq_output=False, fixed_input_seq_length=True)
 
     @staticmethod
-    def allowed_decoders():
+    def allowed_decoders() -> List[str]:
         """
         decoder that is compatible with the encoder
         """
@@ -132,7 +131,7 @@ class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(
+    def get_hyperparameter_search_space(  # type: ignore
             dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
             num_groups: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_groups",
                                                                               value_range=(1, 5),

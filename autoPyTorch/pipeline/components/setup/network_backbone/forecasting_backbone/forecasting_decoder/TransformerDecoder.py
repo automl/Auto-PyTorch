@@ -64,7 +64,10 @@ class _TransformerDecoder(DecoderNetwork):
                                                                 norm=norm)
         self.tgt_mask = nn.Transformer.generate_square_subsequent_mask(n_prediction_steps)
 
-    def forward(self, x_future: torch.Tensor, encoder_output: torch.Tensor, pos_idx: Optional[Tuple[int]] = None):
+    def forward(self,
+                x_future: torch.Tensor,
+                encoder_output: torch.Tensor,
+                pos_idx: Optional[Tuple[int]] = None) -> torch.Tensor:
         output = self.input_layer(x_future)
         if self.use_positional_decoder:
             output = self.pos_encoding(output, pos_idx)
@@ -77,10 +80,10 @@ class _TransformerDecoder(DecoderNetwork):
 
 
 class ForecastingTransformerDecoder(BaseForecastingDecoder):
-    def __init__(self, **kwargs: Dict):
+    def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
         # RNN is naturally auto-regressive. However, we will not consider it as a decoder for deep AR model
-        self.transformer_encoder_kwargs = None
+        self.transformer_encoder_kwargs: Optional[dict] = None
         self.lagged_value = [1, 2, 3, 4, 5, 6, 7]
 
     def _build_decoder(self,
@@ -88,6 +91,7 @@ class ForecastingTransformerDecoder(BaseForecastingDecoder):
                        future_variable_input: Tuple[int, ...],
                        n_prediction_heads: int,
                        dataset_properties: Dict) -> Tuple[nn.Module, int]:
+        assert self.transformer_encoder_kwargs is not None
         d_model = 2 ** self.transformer_encoder_kwargs['d_model_log']
         transformer_decoder_layers = build_transformer_layers(d_model=d_model, config=self.config, layer_type='decoder')
         n_prediction_steps = dataset_properties['n_prediction_steps']
@@ -113,7 +117,7 @@ class ForecastingTransformerDecoder(BaseForecastingDecoder):
         return fit_requirement
 
     @staticmethod
-    def decoder_properties():
+    def decoder_properties() -> DecoderProperties:
         return DecoderProperties(recurrent=True,
                                  lagged_input=True,
                                  mask_on_future_target=True)
@@ -136,7 +140,7 @@ class ForecastingTransformerDecoder(BaseForecastingDecoder):
         }
 
     @property
-    def fitted_encoder(self):
+    def fitted_encoder(self) -> List[str]:
         return ['TransformerEncoder']
 
     @staticmethod

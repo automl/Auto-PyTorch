@@ -27,7 +27,7 @@ class NBEATSEncoder(BaseForecastingEncoder):
         return EncoderProperties(fixed_input_seq_length=True)
 
     @staticmethod
-    def allowed_decoders():
+    def allowed_decoders() -> List[str]:
         """
         decoder that is compatible with the encoder
         """
@@ -51,13 +51,13 @@ class NBEATSEncoder(BaseForecastingEncoder):
             input_shape=output_shape,
         )
 
-        self.input_shape = [self.window_size, output_shape[-1]]
+        self.input_shape = [self.window_size, output_shape[-1]]  # type: ignore[assignment]
 
         has_hidden_states = self.encoder_properties().has_hidden_states
-        self.encoder_output_shape = get_output_shape(self.encoder, self.input_shape, has_hidden_states)
+        self.encoder_output_shape = get_output_shape(self.encoder, self.input_shape, has_hidden_states)  # type: ignore
         return self
 
-    def n_encoder_output_feature(self):
+    def n_encoder_output_feature(self) -> None:  # type: ignore
         # THIS function should never be called!!!
         raise NotImplementedError
 

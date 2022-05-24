@@ -11,7 +11,7 @@ from ConfigSpace.hyperparameters import (
 import torch
 from torch import nn
 from torch.nn.utils import weight_norm
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.\
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder. \
     base_forecasting_encoder import BaseForecastingEncoder
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import (
     EncoderNetwork
@@ -103,7 +103,7 @@ class _TemporalConvNet(EncoderNetwork):
         self.receptive_field = receptive_field
         self.network = nn.Sequential(*layers)
 
-    def forward(self, x: torch.Tensor, output_seq=False) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, output_seq: bool = False) -> torch.Tensor:
         # swap sequence and feature dimensions for use with convolutional nets
         x = x.transpose(1, 2).contiguous()
         x = self.network(x)
@@ -144,7 +144,7 @@ class TCNEncoder(BaseForecastingEncoder):
         return self.config[f"num_filters_{num_blocks}"]
 
     @staticmethod
-    def allowed_decoders():
+    def allowed_decoders() -> List[str]:
         """
         decoder that is compatible with the encoder
         """

@@ -24,7 +24,7 @@ class EncoderBlockInfo(NamedTuple):
 class EncoderNetwork(nn.Module):
     def forward(self,
                 x: torch.Tensor,
-                output_seq: bool = False):
+                output_seq: bool = False) -> torch.Tensor:
         """
         Base forecasting network, its output needs to be a 2-d or 3-d Tensor:
         When the decoder is an auto-regressive model, then it needs to output a 3-d Tensor, in which case, output_seq

@@ -57,7 +57,7 @@ class NBEATSBLock(DecoderNetwork):
         self.backcast_head = None
         self.forecast_head = None
 
-    def build_backbone(self):
+    def build_backbone(self) -> List[nn.Module]:
         layers: List[nn.Module] = list()
         n_in_features = self.n_in_features
         for _ in range(self.num_layers):
@@ -76,7 +76,7 @@ class NBEATSBLock(DecoderNetwork):
             layers.append(nn.Dropout(self.dropout_rate))
 
     def forward(self, x_future: Optional[torch.Tensor], encoder_output: torch.Tensor,
-                pos_idx: Optional[Tuple[int]] = None):
+                pos_idx: Optional[Tuple[int]] = None) -> Union[torch.Module, Tuple[torch.Module, torch.Module]]:
         if self.backcast_head is None and self.forecast_head is None:
             # used to compute head dimensions
             return self.backbone(encoder_output)
@@ -91,7 +91,6 @@ class NBEATSDecoder(BaseForecastingDecoder):
     _fixed_seq_length = True
     window_size = 1
     fill_lower_resolution_seq = False
-    fill_kwargs = {}
 
     @staticmethod
     def decoder_properties() -> DecoderProperties:
@@ -101,11 +100,11 @@ class NBEATSDecoder(BaseForecastingDecoder):
                        encoder_output_shape: Tuple[int, ...],
                        future_variable_input: Tuple[int, ...],
                        n_prediction_heads: int,
-                       dataset_properties: Dict) -> Tuple[nn.Module, int]:
+                       dataset_properties: Dict) -> Tuple[List[List[NBEATSBLock]], int]:
         in_features = encoder_output_shape[-1]
         n_beats_type = self.config['n_beats_type']
         if n_beats_type == 'G':
-            stacks = [[] for _ in range(self.config['num_stacks_g'])]
+            stacks: List[List[NBEATSBLock]] = [[] for _ in range(self.config['num_stacks_g'])]
             for stack_idx in range(1, self.config['num_stacks_g'] + 1):
                 for block_idx in range(self.config['num_blocks_g']):
                     if self.config['weight_sharing_g'] and block_idx > 0:
@@ -127,7 +126,7 @@ class NBEATSDecoder(BaseForecastingDecoder):
                                                              ))
 
         elif n_beats_type == 'I':
-            stacks = [[] for _ in range(self.config['num_stacks_i'])]
+            stacks: List[List[NBEATSBLock]] = [[] for _ in range(self.config['num_stacks_i'])]  # type:ignore
             for stack_idx in range(1, self.config['num_stacks_i'] + 1):
                 for block_idx in range(self.config['num_blocks_i_%d' % stack_idx]):
                     if self.config['weight_sharing_i_%d' % stack_idx] and block_idx > 0:
@@ -173,7 +172,7 @@ class NBEATSDecoder(BaseForecastingDecoder):
         }
 
     @property
-    def fitted_encoder(self):
+    def fitted_encoder(self) -> List[str]:
         return ['NBEATSEncoder']
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:

@@ -15,7 +15,7 @@ class TransposeLinear(nn.Module):
         super().__init__()
         self.register_buffer('weights', weights)
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return x.mm(self.weights)
 
 
@@ -34,7 +34,8 @@ def linspace(backcast_length: int, forecast_length: int, centered: bool = False)
     return b_ls, f_ls
 
 
-def get_generic_heads(block_width: int, thetas_dim: int, forecast_length: int, backcast_length: int):
+def get_generic_heads(block_width: int, thetas_dim: int,
+                      forecast_length: int, backcast_length: int) -> Tuple[nn.Module, nn.Module]:
     backcast_head = nn.Sequential(nn.Linear(block_width, thetas_dim, bias=False),
                                   nn.Linear(thetas_dim, backcast_length, bias=False))
     forecast_head = nn.Sequential(nn.Linear(block_width, thetas_dim, bias=False),
@@ -42,7 +43,8 @@ def get_generic_heads(block_width: int, thetas_dim: int, forecast_length: int, b
     return backcast_head, forecast_head
 
 
-def get_trend_heads(block_width: int, thetas_dim: int, forecast_length: int, backcast_length: int):
+def get_trend_heads(block_width: int, thetas_dim: int,
+                    forecast_length: int, backcast_length: int) -> Tuple[nn.Module, nn.Module]:
     base_layer = nn.Linear(block_width, thetas_dim, bias=False)
 
     backcast_linspace, forecast_linspace = linspace(backcast_length, forecast_length, centered=True)
@@ -60,12 +62,13 @@ def get_trend_heads(block_width: int, thetas_dim: int, forecast_length: int, bac
     return backcast_head, forecast_head
 
 
-def get_seasonality_heads(block_width: int, thetas_dim: int, forecast_length: int, backcast_length: int):
+def get_seasonality_heads(block_width: int, thetas_dim: int,
+                          forecast_length: int, backcast_length: int) -> Tuple[nn.Module, nn.Module]:
     base_layer = nn.Linear(block_width, forecast_length, bias=False)
 
     backcast_linspace, forecast_linspace = linspace(backcast_length, forecast_length, centered=False)
 
-    def get_frequencies(n):
+    def get_frequencies(n: int) -> np.ndarray:
         return np.linspace(0, (backcast_length + forecast_length) / thetas_dim, n)
 
     p1, p2 = (forecast_length // 2, forecast_length // 2) if forecast_length % 2 == 0 else \

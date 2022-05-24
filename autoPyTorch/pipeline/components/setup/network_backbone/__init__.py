@@ -188,7 +188,7 @@ class NetworkBackboneChoice(autoPyTorchChoice):
         return cs
 
     @property
-    def _defaults_network(self):
+    def _defaults_network(self) -> List[str]:
         return [
             'ShapedMLPBackbone',
             'MLPBackbone',

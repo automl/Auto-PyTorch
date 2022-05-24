@@ -103,13 +103,13 @@ class BaseForecastingEncoder(autoPyTorchComponent):
 
         has_hidden_states = self.encoder_properties().has_hidden_states
         self.encoder_output_shape = get_output_shape(self.encoder, input_shape, has_hidden_states)
-        if self.n_encoder_output_feature() != self.encoder_output_shape[-1]:
+        if self.n_encoder_output_feature() != self.encoder_output_shape[-1]:  # type: ignore
             raise ValueError(f'n_encoder_output_feature ({ self.n_encoder_output_feature()}) '
                              f'must equal to the output dimension f({self.encoder_output_shape})')
         return self
 
     @staticmethod
-    def allowed_decoders():
+    def allowed_decoders() -> List[str]:
         raise NotImplementedError
 
     @abstractmethod
@@ -123,6 +123,8 @@ class BaseForecastingEncoder(autoPyTorchComponent):
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         X['dataset_properties'].update({'input_shape': self.input_shape})
         network_encoder = X.get('network_encoder', OrderedDict())
+        assert self.input_shape is not None
+        assert self.encoder_output_shape is not None
         network_encoder[f'block_{self.block_number}'] = EncoderBlockInfo(encoder=self.encoder,
                                                                          encoder_properties=self.encoder_properties(),
                                                                          encoder_input_shape=self.input_shape,

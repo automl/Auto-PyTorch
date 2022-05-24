@@ -21,7 +21,9 @@ class DecoderBlockInfo(NamedTuple):
 
 
 class DecoderNetwork(nn.Module):
-    def forward(self, x_future: torch.Tensor, encoder_output: torch.Tensor, pos_idx: Optional[Tuple[int]] = None):
+    def forward(self, x_future: torch.Tensor,
+                encoder_output: torch.Tensor,
+                pos_idx: Optional[Tuple[int]] = None) -> torch.Tensor:
         """
         Base forecasting Decoder Network, its output needs to be a 3-d Tensor:
 
@@ -29,6 +31,7 @@ class DecoderNetwork(nn.Module):
         Args:
             x_future: torch.Tensor(B, L_future, N_out), the future features
             encoder_output: torch.Tensor(B, L_encoder, N), output of the encoder network, or the hidden states
+            pos_idx: positional index, indicating the position of the forecasted tensor, used for transformer
         Returns:
             net_output: torch.Tensor with shape either (B, L_future, N)
 

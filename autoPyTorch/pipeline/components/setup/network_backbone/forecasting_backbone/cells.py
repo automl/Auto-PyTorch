@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, List, Tuple, Union
+from typing import Any, Dict, Optional, List, Tuple, Union, Set
 
 import torch
 from torch import nn
@@ -95,14 +95,14 @@ class TemporalFusionLayer(nn.Module):
                 decoder_output: torch.Tensor,
                 past_observed_targets: torch.BoolTensor,
                 decoder_length: int,
-                static_embedding: Optional[torch.Tensor] = None):
+                static_embedding: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         Args:
             encoder_output: the output of the last layer of encoder network
             decoder_output: the output of the last layer of decoder network
             past_observed_targets: observed values in the past
             decoder_length: length of decoder network
-            static_embedding: output of static variable selection network (if applible)
+            static_embedding: output of static variable selection network (if available)
         """
 
         if self.decoder_proj_layer is not None:
@@ -147,15 +147,15 @@ class TemporalFusionLayer(nn.Module):
             return output
 
     @property
-    def device(self):
+    def device(self) -> torch.device:
         return self._device
 
     @device.setter
-    def device(self, device: torch.device):
+    def device(self, device: torch.device) -> None:
         self.to(device)
         self._device = device
 
-    def get_attention_mask(self, past_observed_targets: torch.BoolTensor, decoder_length: int):
+    def get_attention_mask(self, past_observed_targets: torch.BoolTensor, decoder_length: int) -> torch.Tensor:
         """
         https://github.com/jdb78/pytorch-forecasting/blob/master/pytorch_forecasting/models/
         temporal_fusion_transformer/__init__.py
@@ -193,11 +193,11 @@ class VariableSelector(nn.Module):
                  dataset_properties: Dict[str, Any],
                  network_encoder: Dict[str, EncoderBlockInfo],
                  auto_regressive: bool = False,
-                 feature_names: Tuple[str] = (),
-                 known_future_features: Tuple[str] = tuple(),
+                 feature_names: Union[Tuple[str], Tuple[()]] = (),
+                 known_future_features: Union[Tuple[str], Tuple[()]] = (),
                  feature_shapes: Dict[str, int] = {},
-                 static_features: Tuple[Union[str, int]] = (),
-                 time_feature_names: Tuple[str] = (),
+                 static_features: Union[Tuple[Union[str, int]], Tuple[()]] = (),
+                 time_feature_names: Union[Tuple[str], Tuple[()]] = (),
                  ):
         """
         Variable Selector. This models follows the implementation from
@@ -232,13 +232,13 @@ class VariableSelector(nn.Module):
         idx_tracker = 0
         idx_tracker_future = 0
 
-        static_features = set(static_features)
+        static_features = set(static_features)  # type: ignore[assignment]
         static_features_input_size = {}
 
         # static_features should always be known beforehand
-        known_future_features = tuple(known_future_features)
-        feature_names = tuple(feature_names)
-        time_feature_names = tuple(time_feature_names)
+        known_future_features = tuple(known_future_features)  # type: ignore[assignment]
+        feature_names = tuple(feature_names)  # type: ignore[assignment]
+        time_feature_names = tuple(time_feature_names)  # type: ignore[assignment]
 
         if feature_names:
             for name in feature_names:
@@ -273,7 +273,7 @@ class VariableSelector(nn.Module):
             placeholder_features = 'placeholder_features'
             i = 0
 
-            self.placeholder_features = []
+            self.placeholder_features: List[str] = []
             while placeholder_features in feature_names or placeholder_features in self.placeholder_features:
                 i += 1
                 placeholder_features = f'placeholder_features_{i}'
@@ -287,8 +287,8 @@ class VariableSelector(nn.Module):
             decoder_input_sizes[name] = self.hidden_size
             self.placeholder_features.append(placeholder_features)
 
-        feature_names = time_feature_names + feature_names
-        known_future_features = time_feature_names + known_future_features
+        feature_names = time_feature_names + feature_names  # type: ignore[assignment]
+        known_future_features = time_feature_names + known_future_features  # type: ignore[assignment]
 
         self.feature_names = feature_names
         self.feature_names2tensor_idx = feature_names2tensor_idx
@@ -381,11 +381,11 @@ class VariableSelector(nn.Module):
         self.cached_static_embedding = None
 
     @property
-    def device(self):
+    def device(self) -> torch.device:
         return self._device
 
     @device.setter
-    def device(self, device: torch.device):
+    def device(self, device: torch.device) -> None:
         self.to(device)
         self._device = device
 
@@ -398,7 +398,7 @@ class VariableSelector(nn.Module):
                 batch_size: int = 0,
                 cache_static_contex: bool = False,
                 use_cached_static_contex: bool = False,
-                ):
+                ) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor], torch.Tensor, Optional[torch.Tensor]]:
         if x_past is None and x_future is None:
             raise ValueError('Either past input or future inputs need to be given!')
         if length_past == 0 and length_future == 0:
@@ -409,6 +409,7 @@ class VariableSelector(nn.Module):
             if len(self.static_input_sizes) > 0:
                 static_embedding, _ = self.static_variable_selection(x_static)
             else:
+                assert x_future is not None and x_past is not None
                 model_dtype = next(iter(x_past.values())).dtype if length_past > 0 else next(
                     iter(x_future.values())).dtype
                 static_embedding = torch.zeros(
@@ -585,7 +586,7 @@ class StackedDecoder(nn.Module):
                  ):
         super().__init__()
         self.num_blocks = network_structure.num_blocks
-        self.first_block = None
+        self.first_block = -1
         self.skip_connection = network_structure.skip_connection
 
         self.decoder_has_hidden_states = []
@@ -593,7 +594,7 @@ class StackedDecoder(nn.Module):
         for i in range(1, self.num_blocks + 1):
             block_id = f'block_{i}'
             if block_id in decoder_info:
-                self.first_block = i if self.first_block is None else self.first_block
+                self.first_block = i if self.first_block == -1 else self.first_block
                 decoder[block_id] = decoder_info[block_id].decoder
                 if decoder_info[block_id].decoder_properties.has_hidden_states:
                     self.decoder_has_hidden_states.append(True)

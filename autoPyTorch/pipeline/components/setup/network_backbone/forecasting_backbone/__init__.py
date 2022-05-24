@@ -30,8 +30,8 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
                  random_state: Optional[np.random.RandomState] = None
                  ):
         super().__init__(dataset_properties, random_state)
-        self.include_components = {}
-        self.exclude_components = {}
+        self.include_components: Dict[str, List[str]] = {}
+        self.exclude_components: Dict[str, List[str]] = {}
 
         self.default_components = OrderedDict(
             {"flat_encoder": FlatForecastingEncoderChoice(dataset_properties=self.dataset_properties,
@@ -285,7 +285,7 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
             self.get_components()[sub_module_name]._apply_search_space_update(update_sub_module)
 
     @property
-    def _defaults_network(self):
+    def _defaults_network(self) -> List[str]:
         return ['flat_network',
                 'seq_network']
 

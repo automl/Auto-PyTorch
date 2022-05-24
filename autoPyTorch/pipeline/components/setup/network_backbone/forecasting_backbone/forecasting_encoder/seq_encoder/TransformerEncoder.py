@@ -27,7 +27,7 @@ class _TransformerEncoder(EncoderNetwork):
                  in_features: int,
                  d_model: int,
                  num_layers: int,
-                 transformer_encoder_layers: [nn.Module],
+                 transformer_encoder_layers: nn.Module,
                  use_positional_encoder: bool,
                  use_layer_norm_output: bool,
                  dropout_pe: float = 0.0,
@@ -39,12 +39,12 @@ class _TransformerEncoder(EncoderNetwork):
         else:
             self.lagged_value = lagged_value
         if in_features != d_model:
-            self.input_layer = [nn.Linear(in_features, d_model, bias=False)]
+            input_layer = [nn.Linear(in_features, d_model, bias=False)]
         else:
-            self.input_layer = []
+            input_layer = []
         if use_positional_encoder:
-            self.input_layer.append(PositionalEncoding(d_model, dropout_pe))
-        self.input_layer = nn.Sequential(*self.input_layer)
+            input_layer.append(PositionalEncoding(d_model, dropout_pe))
+        self.input_layer = nn.Sequential(*input_layer)
 
         self.use_layer_norm_output = use_layer_norm_output
         if use_layer_norm_output:
@@ -77,7 +77,7 @@ class TransformerEncoder(BaseForecastingEncoder):
     """
     _fixed_seq_length = False
 
-    def __init__(self, **kwargs: Dict):
+    def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
         self.lagged_value = [1, 2, 3, 4, 5, 6, 7]
 
@@ -102,14 +102,14 @@ class TransformerEncoder(BaseForecastingEncoder):
         return 2 ** self.config['d_model_log']
 
     @staticmethod
-    def allowed_decoders():
+    def allowed_decoders() -> List[str]:
         """
         decoder that is compatible with the encoder
         """
         return ['MLPDecoder', 'TransformerDecoder']
 
     @staticmethod
-    def encoder_properties():
+    def encoder_properties() -> EncoderProperties:
         return EncoderProperties(lagged_input=True,
                                  causality=False)
 

@@ -4,6 +4,7 @@ from typing import Dict, Optional, List, Any, Union
 from sklearn.pipeline import Pipeline
 import inspect
 
+import ConfigSpace as CS
 from ConfigSpace.hyperparameters import (
     Hyperparameter,
     Constant,
@@ -70,7 +71,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         components.update(_addons.components)
         return components
 
-    def get_hyperparameter_search_space(
+    def get_hyperparameter_search_space(  # type: ignore
             self,
             dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
             num_blocks: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_blocks",
@@ -227,12 +228,12 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         # Compile a list of legal preprocessors for this problem
         available_encoders: Dict[str, BaseForecastingEncoder] = self.get_available_components(
             dataset_properties=dataset_properties,
-            include=include, exclude=exclude)
+            include=include, exclude=exclude)  # type:ignore[assignment]
 
         available_decoders: Dict[str, BaseForecastingDecoder] = self.get_available_components(
             dataset_properties=dataset_properties,
             include=None, exclude=exclude,
-            components=self.get_decoder_components())
+            components=self.get_decoder_components())  # type:ignore[assignment]
 
         if len(available_encoders) == 0:
             raise ValueError("No Encoder found")
@@ -262,7 +263,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         #   this is judged by add_forbidden_for_non_ar_recurrent_decoder
 
         if True in decoder_auto_regressive.choices:
-            forbidden_decoder_ar = ForbiddenEqualsClause(decoder_auto_regressive, True)
+            forbidden_decoder_ar: Optional[ForbiddenEqualsClause] = ForbiddenEqualsClause(decoder_auto_regressive, True)
         else:
             forbidden_decoder_ar = None
 
@@ -272,7 +273,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                 add_forbidden_for_non_ar_recurrent_decoder = True
 
         if len(decoder_auto_regressive.choices) == 1 and True in decoder_auto_regressive.choices:
-            conds_decoder_ar = None
+            conds_decoder_ar: Optional[List[CS.conditions.ConditionComponent]] = None
         else:
             conds_decoder_ar = []
 
@@ -318,7 +319,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                     GreaterThanCondition(hp_encoder, num_blocks, i - 1)
                 )
 
-            decoder2encoder = {key: [] for key in available_decoders.keys()}
+            decoder2encoder: Dict[str, List[str]] = {key: [] for key in available_decoders.keys()}
             encoder2decoder = {}
             for encoder_name in hp_encoder.choices:
                 updates = self._get_search_space_updates(prefix=block_prefix + encoder_name)
@@ -393,8 +394,8 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                         encoders_with_multi_decoder.append(encoder)
                     else:
                         encoder_with_single_decoder.append(encoder)
-                encoders_with_multi_decoder = set(encoders_with_multi_decoder)
-                encoder_with_single_decoder = set(encoder_with_single_decoder)
+                encoders_with_multi_decoder = set(encoders_with_multi_decoder)  # type:ignore[assignment]
+                encoder_with_single_decoder = set(encoder_with_single_decoder)  # type:ignore[assignment]
 
                 cs.add_configuration_space(
                     block_prefix + decoder_name,
@@ -431,7 +432,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                 cs.add_conditions(conditions_to_add)
 
             if conds_decoder_ar is not None or forbidden_decoder_ar is not None:
-                forbiddens_ar_non_recurrent = []
+                forbiddens_ar_non_recurrent: List[CS.forbidden.AbstractForbiddenClause] = []
                 for encoder in hp_encoder.choices:
                     if len(encoder2decoder[encoder]) == 1:
                         if available_decoders[encoder2decoder[encoder][0]].decoder_properties().recurrent:
@@ -510,7 +511,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             )
 
         for encoder_name, encoder in available_encoders.items():
-            encoder_is_casual = encoder.encoder_properties()
+            encoder_is_casual = encoder.encoder_properties()  # type: ignore
             if not encoder_is_casual:
                 # we do not allow non-casual encoder to appear in the lower layer of the network. e.g, if we have an
                 # encoder with 3 blocks, then non_casual encoder is only allowed to appear in the third layer
@@ -529,9 +530,9 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         cs.add_forbidden_clauses(forbiddens_decoder_auto_regressive)
 
         if self.deepAR_decoder_name in available_decoders:
-            deep_ar_hp = ':'.join([self.deepAR_decoder_prefix, self.deepAR_decoder_name, 'auto_regressive'])
-            if deep_ar_hp in cs:
-                deep_ar_hp = cs.get_hyperparameter(deep_ar_hp)
+            deep_ar_hp_name = ':'.join([self.deepAR_decoder_prefix, self.deepAR_decoder_name, 'auto_regressive'])
+            if deep_ar_hp_name in cs:
+                deep_ar_hp = cs.get_hyperparameter(deep_ar_hp_name)
                 if True in deep_ar_hp.choices:
                     forbidden_deep_ar = ForbiddenEqualsClause(deep_ar_hp, True)
                     if min_num_blocks == 1:
@@ -594,7 +595,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         return cs
 
     @property
-    def _defaults_network(self):
+    def _defaults_network(self) -> List[str]:
         return ['RNNEncoder', 'NBEATSEncoder']
 
     def set_hyperparameters(self,
@@ -632,7 +633,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
 
         pipeline_steps = [('net_structure', ForecastingNetworkStructure(**forecasting_structure_kwargs))]
         self.encoder_choice = []
-        self.decoder_choice = []
+        self.decoder_choice: List[BaseForecastingEncoder] = []
 
         decoder_components = self.get_decoder_components()
 
@@ -681,7 +682,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             if 'auto_regressive' not in decoder_params:
                 decoder_params['auto_regressive'] = decoder_auto_regressive
             encoder = self.get_components()[choice](**new_params)
-            decoder = decoder_components[decoder_type](**decoder_params)
+            decoder = decoder_components[decoder_type](**decoder_params)  # type:ignore
             pipeline_steps.extend([(f'encoder_{i}', encoder), (f'decoder_{i}', decoder)])
             self.encoder_choice.append(encoder)
             self.decoder_choice.append(decoder)

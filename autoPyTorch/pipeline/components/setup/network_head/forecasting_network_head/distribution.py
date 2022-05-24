@@ -17,7 +17,7 @@
 # Additionally, scale information is not presented here to avoid
 
 
-from typing import Dict, Tuple, NamedTuple
+from typing import Dict, Tuple, NamedTuple, Any, Type
 
 from abc import abstractmethod
 
@@ -50,22 +50,22 @@ class ProjectionLayer(nn.Module):
                  n_prediction_heads: int,
                  auto_regressive: bool,
                  decoder_has_local_layer: bool,
-                 **kwargs, ):
+                 **kwargs: Any, ):
         super().__init__(**kwargs)
 
         # we consider all the prediction steps holistically. thus, the output of the poj layer is
         # n_prediction_steps * dim *output_shape
 
-        def build_single_proj_layer(arg_dim):
+        def build_single_proj_layer(arg_dim: int) -> nn.Module:
             """
             build a single proj layer given the input dims, the output is unflattened to fit the required output_shape
             and n_prediction_steps.
             we note that output_shape's first dimensions is always n_prediction_steps
             Args:
-                arg_dim: dimension of the target distribution
+                arg_dim (int): dimension of the target distribution
 
             Returns:
-
+                proj_layer (nn.Module): projection layer that maps the decoder output to parameterize distributions
             """
             if decoder_has_local_layer:
                 return nn.Sequential(nn.Linear(num_in_features, np.prod(output_shape).item() * arg_dim),
@@ -99,12 +99,12 @@ class ProjectionLayer(nn.Module):
         raise NotImplementedError
 
     @abstractmethod
-    def domain_map(self, *args: torch.Tensor) -> Tuple[torch.Tensor]:
+    def domain_map(self, *args: torch.Tensor) -> Tuple[torch.Tensor, ...]:
         raise NotImplementedError
 
     @property
     @abstractmethod
-    def dist_cls(self) -> type(Distribution):
+    def dist_cls(self) -> Type[Distribution]:
         raise NotImplementedError
 
 
@@ -113,12 +113,12 @@ class NormalOutput(ProjectionLayer):
     def arg_dims(self) -> Dict[str, int]:
         return {"loc": 1, "scale": 1}
 
-    def domain_map(self, loc: torch.Tensor, scale: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def domain_map(self, loc: torch.Tensor, scale: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:  # type: ignore
         scale = F.softplus(scale) + 1e-10
         return loc.squeeze(-1), scale.squeeze(-1)
 
     @property
-    def dist_cls(self) -> type(Distribution):
+    def dist_cls(self) -> Type[Distribution]:
         return Normal
 
 
@@ -127,14 +127,17 @@ class StudentTOutput(ProjectionLayer):
     def arg_dims(self) -> Dict[str, int]:
         return {"df": 1, "loc": 1, "scale": 1}
 
-    def domain_map(self, df: torch.Tensor, loc: torch.Tensor, scale: torch.Tensor) \
-            -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def domain_map(  # type: ignore[override]
+            self, df: torch.Tensor, loc: torch.Tensor, scale: torch.Tensor
+    ) -> Tuple[torch.Tensor,
+               torch.Tensor,
+               torch.Tensor]:
         scale = F.softplus(scale) + 1e-10
         df = 2.0 + F.softplus(df)
         return df.squeeze(-1), loc.squeeze(-1), scale.squeeze(-1)
 
     @property
-    def dist_cls(self) -> type(Distribution):
+    def dist_cls(self) -> Type[Distribution]:
         return StudentT
 
 
@@ -145,8 +148,9 @@ class BetaOutput(ProjectionLayer):
     def arg_dims(self) -> Dict[str, int]:
         return {"concentration1": 1, "concentration0": 1}
 
-    def domain_map(self, concentration1: torch.Tensor, concentration0: torch.Tensor) \
-            -> Tuple[torch.Tensor, torch.Tensor]:
+    def domain_map(  # type: ignore[override]
+            self, concentration1: torch.Tensor, concentration0: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         # TODO we need to adapt epsilon value given the datatype of this module
         epsilon = 1e-10
         concentration1 = F.softplus(concentration1) + epsilon
@@ -154,7 +158,7 @@ class BetaOutput(ProjectionLayer):
         return concentration1.squeeze(-1), concentration0.squeeze(-1)
 
     @property
-    def dist_cls(self) -> type(Distribution):
+    def dist_cls(self) -> Type[Distribution]:
         # TODO consider constraints on Beta!!!
         return Beta
 
@@ -166,8 +170,9 @@ class GammaOutput(ProjectionLayer):
     def arg_dims(self) -> Dict[str, int]:
         return {"concentration": 1, "rate": 1}
 
-    def domain_map(self, concentration: torch.Tensor, rate: torch.Tensor) \
-            -> Tuple[torch.Tensor, torch.Tensor]:
+    def domain_map(  # type: ignore[override]
+            self, concentration: torch.Tensor, rate: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         # TODO we need to adapt epsilon value given the datatype of this module
         epsilon = 1e-10
         concentration = F.softplus(concentration) + epsilon
@@ -175,7 +180,7 @@ class GammaOutput(ProjectionLayer):
         return concentration.squeeze(-1), rate.squeeze(-1)
 
     @property
-    def dist_cls(self) -> type(Distribution):
+    def dist_cls(self) -> Type[Distribution]:
         return Gamma
 
 
@@ -184,12 +189,12 @@ class PoissonOutput(ProjectionLayer):
     def arg_dims(self) -> Dict[str, int]:
         return {"rate": 1}
 
-    def domain_map(self, rate: torch.Tensor) -> Tuple[torch.Tensor]:
+    def domain_map(self, rate: torch.Tensor) -> Tuple[torch.Tensor]:  # type: ignore[override]
         rate_pos = F.softplus(rate).clone()
         return rate_pos.squeeze(-1),
 
     @property
-    def dist_cls(self) -> type(Distribution):
+    def dist_cls(self) -> Type[Distribution]:
         return Poisson
 
 
@@ -198,7 +203,7 @@ ALL_DISTRIBUTIONS = {'studentT': StudentTOutput,
                      # 'beta': BetaOutput,
                      # 'gamma': GammaOutput,
                      # 'poisson': PoissonOutput
-                     }  # type: Dict[str, ProjectionLayer]
+                     }  # type: Dict[str, Type[ProjectionLayer]]
 
 
 class DisForecastingStrategy(NamedTuple):

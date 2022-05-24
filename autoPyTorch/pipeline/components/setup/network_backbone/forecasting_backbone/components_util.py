@@ -37,7 +37,7 @@ class ForecastingNetworkStructure(BaseEstimator):
         self.skip_connection = skip_connection
         self.skip_connection_type = skip_connection_type
         self.grn_dropout_rate = grn_dropout_rate
-        self.network_structure = None
+        self.network_structure: Optional[NetworkStructure] = None
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         self.network_structure = NetworkStructure(num_blocks=self.num_blocks,
@@ -68,14 +68,14 @@ class AddLayer(nn.Module):
             self.fc = nn.Linear(skip_size, input_size)
         self.norm = nn.LayerNorm(input_size)
 
-    def forward(self, input: torch.Tensor, skip: torch.Tensor):
+    def forward(self, input: torch.Tensor, skip: torch.Tensor) -> torch.Tensor:
         if hasattr(self, 'fc'):
             return self.norm(input + self.fc(skip))
         else:
             return self.norm(input)
 
 
-def build_transformer_layers(d_model: int, config: Dict[str, Any], layer_type='encoder'):
+def build_transformer_layers(d_model: int, config: Dict[str, Any], layer_type: str = 'encoder') -> nn.Module:
     nhead = 2 ** config['n_head_log']
     dim_feedforward = 2 ** config['d_feed_forward_log']
     dropout = config.get('dropout', 0.0)
@@ -114,7 +114,7 @@ class PositionalEncoding(nn.Module):
         >>> pos_encoder = PositionalEncoding(d_model)
     """
 
-    def __init__(self, d_model, dropout=0.1, max_len=5000):
+    def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 5000):
         super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(p=dropout)
 
@@ -126,7 +126,7 @@ class PositionalEncoding(nn.Module):
         pe = pe.unsqueeze(0)
         self.register_buffer('pe', pe)
 
-    def forward(self, x, pos_idx: Optional[Tuple[int]] = None):
+    def forward(self, x: torch.Tensor, pos_idx: Optional[Tuple[int]] = None) -> torch.Tensor:
         r"""Inputs of forward function
         Args:
             x: the sequence fed to the positional encoder model (required).
@@ -141,5 +141,5 @@ class PositionalEncoding(nn.Module):
         if pos_idx is None:
             x = x + self.pe[:, :x.size(1), :]
         else:
-            x = x + self.pe[:, pos_idx[0]: pos_idx[1], :]
+            x = x + self.pe[:, pos_idx[0]: pos_idx[1], :]  # type: ignore
         return self.dropout(x)

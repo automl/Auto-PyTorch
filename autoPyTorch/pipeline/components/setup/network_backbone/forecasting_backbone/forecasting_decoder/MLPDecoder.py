@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Tuple, Union, Any
+from typing import Dict, Optional, Tuple, Union, Any, List
 
 import numpy as np
 import torch
@@ -31,7 +31,7 @@ class MLPDecoderModule(DecoderNetwork):
         self.auto_regressive = auto_regressive
 
     def forward(self, x_future: Optional[torch.Tensor], encoder_output: torch.Tensor,
-                pos_idx: Optional[Tuple[int]] = None):
+                pos_idx: Optional[Tuple[int]] = None) ->torch.Tensor:
         if not self.auto_regressive:
             if len(encoder_output.shape) == 3:
                 encoder_output = encoder_output.squeeze(1)
@@ -103,7 +103,7 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
         return super().transform(X)
 
     @property
-    def fitted_encoder(self):
+    def fitted_encoder(self) -> List[str]:
         return ['RNNEncoder', 'TCNEncoder', 'MLEncoder', 'NBEATSEncoder']
 
     @staticmethod

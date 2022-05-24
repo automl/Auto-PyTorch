@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, List
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -114,7 +114,7 @@ class _InceptionTime(nn.Module):
             n_inputs = block.get_n_outputs()
         self.receptive_field = receptive_field
 
-    def forward(self, x: torch.Tensor, output_seq=False) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, output_seq: bool = False) -> torch.Tensor:
         # swap sequence and feature dimensions for use with convolutional nets
         x = x.transpose(1, 2).contiguous()
         res = x
@@ -151,7 +151,7 @@ class InceptionTimeEncoder(BaseForecastingEncoder):
         return self.config['num_filters'] * 4
 
     @staticmethod
-    def allowed_decoders():
+    def allowed_decoders() -> List[str]:
         """
         decoder that is compatible with the encoder
         """

@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 from ConfigSpace import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
@@ -39,7 +40,7 @@ class TemporalFusion(autoPyTorchComponent):
         self.use_dropout = use_dropout
         self.dropout_rate = dropout_rate
 
-        self.temporal_fusion = None
+        self.temporal_fusion: Optional[torch.nn.Module] = None
         self.n_decoder_output_features = 0
 
     @property
@@ -51,7 +52,7 @@ class TemporalFusion(autoPyTorchComponent):
             FitRequirement('network_structure', (NetworkStructure,), user_defined=False, dataset_property=False),
         ]
 
-    def fit(self, X: Dict[str, Any], y: Any = None) -> "autoPyTorchComponent":
+    def fit(self, X: Dict[str, Any], y: Any = None) -> autoPyTorchComponent:
         network_structure = X['network_structure']  # type: NetworkStructure
 
         self.temporal_fusion = TemporalFusionLayer(window_size=X['window_size'],

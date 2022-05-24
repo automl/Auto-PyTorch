@@ -40,7 +40,7 @@ class ForecastingHead(NetworkHeadComponent):
 
         self.add_fit_requirements(self._required_fit_requirements)
         self.head: Optional[nn.Module] = None
-        self.output_shape = None
+        self.output_shape: Optional[Tuple[int]] = None
 
     @property
     def _required_fit_requirements(self) -> List[FitRequirement]:
@@ -76,7 +76,7 @@ class ForecastingHead(NetworkHeadComponent):
             # if the decoder is a stacked block, we directly build head inside the decoder
             if net_output_type != 'regression':
                 raise ValueError("decoder with multi block structure only allow regression loss!")
-            self.output_shape = (X['dataset_properties']['n_prediction_steps'], output_shape[-1])
+            self.output_shape = (X['dataset_properties']['n_prediction_steps'], output_shape[-1])  # type: ignore
             return self
 
         num_quantiles = 0
@@ -93,13 +93,13 @@ class ForecastingHead(NetworkHeadComponent):
 
         auto_regressive = X.get('auto_regressive', False)
 
-        head_input_shape = X["n_decoder_output_features"]
+        head_n_in_features: int = X["n_decoder_output_features"]
         n_prediction_heads = X["n_prediction_heads"]
 
         decoder_has_local_layer = X.get('mlp_has_local_layer', True)
 
         head_components = self.build_head(
-            input_shape=head_input_shape,
+            head_n_in_features=head_n_in_features,
             output_shape=output_shape,
             auto_regressive=auto_regressive,
             decoder_has_local_layer=decoder_has_local_layer,
@@ -126,6 +126,7 @@ class ForecastingHead(NetworkHeadComponent):
             decoder = X['network_decoder']
             # NBEATS is a flat encoder, it only has one decoder
             first_decoder = decoder['block_1']
+            assert self.output_shape is not None
             nbeats_decoder = build_NBEATS_network(first_decoder.decoder, self.output_shape)
             decoder['block_1'] = DecoderBlockInfo(decoder=nbeats_decoder,
                                                   decoder_properties=first_decoder.decoder_properties,
@@ -156,8 +157,8 @@ class ForecastingHead(NetworkHeadComponent):
             'handles_time_series': True,
         }
 
-    def build_head(self,
-                   input_shape: Tuple[int, ...],
+    def build_head(self,  # type: ignore[override]
+                   head_n_in_features: int,
                    output_shape: Tuple[int, ...],
                    auto_regressive: bool = False,
                    decoder_has_local_layer: bool = True,
@@ -170,7 +171,7 @@ class ForecastingHead(NetworkHeadComponent):
         Builds the head module and returns it
 
         Args:
-            input_shape (Tuple[int, ...]): shape of the input to the head (usually the shape of the backbone output)
+            head_n_in_features (int): shape of the input to the head (usually the shape of the backbone output)
             output_shape (Tuple[int, ...]): shape of the output of the head
             auto_regressive (bool): if the network is auto-regressive
             decoder_has_local_layer (bool): if the decoder has local layer
@@ -183,7 +184,8 @@ class ForecastingHead(NetworkHeadComponent):
             nn.Module: head module
         """
         if net_output_type == 'distribution':
-            proj_layer = ALL_DISTRIBUTIONS[dist_cls](num_in_features=input_shape,
+            assert dist_cls is not None
+            proj_layer = ALL_DISTRIBUTIONS[dist_cls](num_in_features=head_n_in_features,
                                                      output_shape=output_shape[1:],
                                                      n_prediction_heads=n_prediction_heads,
                                                      auto_regressive=auto_regressive,
@@ -192,22 +194,25 @@ class ForecastingHead(NetworkHeadComponent):
             return proj_layer
         elif net_output_type == 'regression':
             if decoder_has_local_layer:
-                proj_layer = nn.Sequential(nn.Linear(input_shape, np.product(output_shape[1:])))
+                proj_layer = nn.Sequential(nn.Linear(head_n_in_features, np.product(output_shape[1:])))
             else:
                 proj_layer = nn.Sequential(
-                    nn.Linear(input_shape, n_prediction_heads * np.product(output_shape[1:])),
+                    nn.Linear(head_n_in_features, n_prediction_heads * np.product(output_shape[1:])),
                     nn.Unflatten(-1, (n_prediction_heads, *output_shape[1:])),
                 )
             return proj_layer
         elif net_output_type == "quantile":
             if decoder_has_local_layer:
-                proj_layer = [nn.Sequential(nn.Linear(input_shape, np.product(output_shape[1:])))
-                              for _ in range(num_quantiles)]
+                proj_layer = [  # type: ignore[assignment]
+                    nn.Sequential(nn.Linear(head_n_in_features, np.product(output_shape[1:])))
+                    for _ in range(num_quantiles)
+                ]
             else:
-                proj_layer = [nn.Sequential(
-                    nn.Linear(input_shape, n_prediction_heads * np.product(output_shape[1:])),
-                    nn.Unflatten(-1, (n_prediction_heads, *output_shape[1:])),
-                ) for _ in range(num_quantiles)]
+                proj_layer = [  # type: ignore[assignment]
+                    nn.Sequential(
+                        nn.Linear(head_n_in_features, n_prediction_heads * np.product(output_shape[1:])),
+                        nn.Unflatten(-1, (n_prediction_heads, *output_shape[1:])),
+                    ) for _ in range(num_quantiles)]
             proj_layer = QuantileHead(proj_layer)
             return proj_layer
         else:

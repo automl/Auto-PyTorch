@@ -80,7 +80,7 @@ class RNNEncoder(BaseForecastingEncoder):
     """
     _fixed_seq_length = False
 
-    def __init__(self, **kwargs: Dict):
+    def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
         self.lagged_value = [1, 2, 3, 4, 5, 6, 7]
 
@@ -100,9 +100,11 @@ class RNNEncoder(BaseForecastingEncoder):
             return 2
         elif self.config['cell_type'] == 'gru':
             return 1
+        else:
+            raise NotImplementedError
 
     @staticmethod
-    def allowed_decoders():
+    def allowed_decoders() -> List[str]:
         """
         decoder that is compatible with the encoder
         """

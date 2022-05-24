@@ -22,17 +22,17 @@ class BaseForecastingDecoder(autoPyTorchComponent):
     def __init__(self,
                  block_number: int = 1,
                  auto_regressive: bool = False,
-                 **kwargs: Dict[str, Any]):
+                 **kwargs: Any):
         super().__init__()
         self.block_number = block_number
         self.add_fit_requirements(self._required_fit_requirements)
         self.auto_regressive = auto_regressive
         self.config = kwargs
         self.decoder: Optional[nn.Module] = None
-        self.n_decoder_output_features = None
-        self.decoder_input_shape = None
+        self.n_decoder_output_features: Optional[int] = None
+        self.decoder_input_shape: Optional[Tuple[int, ...]] = None
         self.n_prediction_heads = 1
-        self.is_last_decoder = False
+        self.is_last_decoder: Optional[bool] = False
 
     @property
     def _required_fit_requirements(self) -> List[FitRequirement]:
@@ -132,6 +132,8 @@ class BaseForecastingDecoder(autoPyTorchComponent):
         # 'n_prediction_heads' and 'n_decoder_output_features' are only applied to the head such that they could be
         # overwritten by the following decoders
         network_decoder = X.get('network_decoder', OrderedDict())
+        assert self.decoder_input_shape is not None
+        assert self.n_decoder_output_features is not None
         network_decoder[f'block_{self.block_number}'] = DecoderBlockInfo(
             decoder=self.decoder,
             decoder_properties=self.decoder_properties(),
