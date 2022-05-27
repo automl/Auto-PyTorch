@@ -846,6 +846,13 @@ def input_data_forecastingfeaturetest(request):
             {'A': 3, 'B': 2},
             {'A': 2, 'B': 4},
         ], dtype='category'), None, [2, 2]
+    elif request.param == 'pandas_multi_seq_w_idx':
+        return pd.DataFrame([
+            {'A': 1, 'B': 2},
+            {'A': 1, 'B': 4},
+            {'A': 3, 'B': 2},
+            {'A': 2, 'B': 4},
+        ], dtype='category', index=[0, 0, 1, 1]), None, None
     elif request.param == 'pandas_with_static_features_multi_series':
         return pd.DataFrame([
             {'A': 1, 'B': 2},

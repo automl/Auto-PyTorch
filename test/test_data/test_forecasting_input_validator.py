@@ -68,6 +68,40 @@ def test_multi_variant_validator_with_series_id(input_data_forecastingfeaturetes
     assert series_idx not in x_transformed
 
 
+@pytest.mark.parametrize(
+    'input_data_forecastingfeaturetest',
+    (
+        'pandas_wo_seriesid',
+        'pandas_w_seriesid',
+        'pandas_only_seriesid',
+        'pandas_without_seriesid',
+        'pandas_with_static_features',
+        'pandas_multi_seq',
+        'pandas_multi_seq_w_idx',
+        'pandas_with_static_features_multi_series',
+    ),
+    indirect=True
+)
+def test_transform_pds(input_data_forecastingfeaturetest):
+    data, series_idx, _ = input_data_forecastingfeaturetest
+    validator = TimeSeriesForecastingInputValidator(is_classification=False)
+    # start_times = [pd.Timestamp('2000-01-01')]
+    start_times = None
+    x = data
+    y = pd.DataFrame(range(len(data)))
+    validator.fit(x, y, start_times=start_times, series_idx=series_idx)
+
+    x_transformed, y_transformed, sequence_lengths = validator.transform(x, y)
+    assert np.all(sequence_lengths == y_transformed.index.value_counts(sort=False).values)
+
+    if x_transformed is not None:
+        assert series_idx not in x_transformed
+        assert np.all(sequence_lengths == x_transformed.index.value_counts(sort=False).values)
+    if series_idx is not None:
+        for seq_len, group in zip(sequence_lengths, data.groupby(series_idx)):
+            assert seq_len == len(group[1])
+
+
 def test_forecasting_validator():
     df = pd.DataFrame([
         {'category': 'one', 'int': 1, 'float': 1.0, 'bool': True},

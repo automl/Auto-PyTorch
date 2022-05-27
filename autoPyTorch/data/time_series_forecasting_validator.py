@@ -7,7 +7,7 @@ from sklearn.exceptions import NotFittedError
 
 from autoPyTorch.data.utils import DatasetCompressionSpec
 from autoPyTorch.data.tabular_validator import TabularInputValidator
-from autoPyTorch.data.time_series_feature_validator import TimeSeriesFeatureValidator
+from autoPyTorch.data.time_series_feature_validator import TimeSeriesFeatureValidator, df2index
 from autoPyTorch.data.time_series_target_validator import TimeSeriesTargetValidator
 
 
@@ -59,57 +59,73 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
         """
         self.series_idx = series_idx
 
-        if start_times is None:
-            start_times = [pd.Timestamp('1900-01-01')] * len(y_train)
-        else:
-            assert len(start_times) == len(y_train), 'start_times_train must have the same length as y_train!'
-
-        self.start_times = start_times
-
         if X_train is None:
             self._is_uni_variant = True
-        if isinstance(y_train, List):
-            # X_train and y_train are stored as lists
-            y_train_stacked = self.join_series(y_train)
-            if y_test is not None:
-                y_test_stacked, seq_y_test_length = self.join_series(y_test, return_seq_lengths=True)
+
+        if self._is_uni_variant:
+            self.feature_validator.num_features = 0
+            self.feature_validator.numerical_columns = []
+            self.feature_validator.categorical_columns = []
+            if isinstance(y_train, List):
+                n_seqs = len(y_train)
+                y_train = self.join_series(y_train)
+                if y_test is not None:
+                    y_test = self.join_series(y_test, return_seq_lengths=False)
+                else:
+                    y_test = None
+            elif isinstance(y_train, pd.DataFrame):
+                n_seqs = len(y_train.index.unique())
             else:
-                y_test_stacked = None
+                raise NotImplementedError
 
-            if self._is_uni_variant:
-                self.feature_validator.num_features = 0
-                self.feature_validator.numerical_columns = []
-                self.feature_validator.categorical_columns = []
-
-                self.target_validator.fit(y_train_stacked, y_test_stacked)
-
-                self._is_fitted = True
-            else:
+            self.target_validator.fit(y_train, y_test)
+            self._is_fitted = True
+        else:
+            if isinstance(y_train, List):
                 # Check that the data is valid
                 if len(X_train) != len(y_train):
                     raise ValueError("Inconsistent number of sequences for features and targets,"
                                      " {} for features and {} for targets".format(len(X_train), len(y_train), ))
-                X_train_stacked, sequence_lengths = self.join_series(X_train, return_seq_lengths=True)
-                X_test_stacked = self.join_series(X_test) if X_test is not None else None
-                if X_test_stacked is not None and y_test_stacked is not None:
-                    if len(X_test_stacked) != len(y_test_stacked):
+                n_seqs = len(y_train)
+
+                # X_train and y_train are stored as lists
+                y_train = self.join_series(y_train)
+                if y_test is not None:
+                    y_test = self.join_series(y_test, return_seq_lengths=False)
+
+                X_train, sequence_lengths = self.join_series(X_train, return_seq_lengths=True)
+                X_test = self.join_series(X_test) if X_test is not None else None
+                if X_test is not None and y_test is not None:
+                    if len(X_test) != len(y_test):
                         raise ValueError("Inconsistent number of test datapoints for features and targets,"
                                          " {} for features and {} for targets".format(len(X_test), len(y_test), ))
+            elif isinstance(y_train, (pd.DataFrame, pd.Series)):
+                sequence_lengths = None
+                if series_idx is not None:
+                    n_seqs = len(X_train.groupby(series_idx))
+                else:
+                    n_seqs = len(y_train.index.unique())
+            else:
+                raise NotImplementedError
 
-                self.feature_validator.fit(X_train_stacked, X_test_stacked,
-                                           series_idx=series_idx, sequence_lengths=sequence_lengths)
-                self.target_validator.fit(y_train_stacked, y_test_stacked)
+            self.feature_validator.fit(X_train, X_test,
+                                       series_idx=series_idx, sequence_lengths=sequence_lengths)
+            self.target_validator.fit(y_train, y_test)
 
-                if self.feature_validator.only_contain_series_idx:
-                    self._is_uni_variant = True
+            if self.feature_validator.only_contain_series_idx:
+                self._is_uni_variant = True
 
-                self._is_fitted = True
+            self._is_fitted = True
 
-                self.feature_names = self.feature_validator.get_reordered_columns()
-                self.feature_shapes = {feature_name: 1 for feature_name in self.feature_names}
+            self.feature_names = self.feature_validator.get_reordered_columns()
+            self.feature_shapes = {feature_name: 1 for feature_name in self.feature_names}
+
+        if start_times is None:
+            start_times = [pd.Timestamp('1900-01-01')] * n_seqs
         else:
-            # TODO X_train and y_train are pd.DataFrame
-            raise NotImplementedError
+            assert len(start_times) == n_seqs, 'start_times_train must have the same length as y_train!'
+
+        self.start_times = start_times
 
         return self
 
@@ -118,7 +134,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
             X: Optional[Union[List, pd.DataFrame]],
             y: Optional[Union[List, pd.DataFrame]] = None,
             validate_for_future_features: bool = False
-    ) -> Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame], List[int]]:
+    ) -> Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame], np.ndarray]:
         """
         transform the data with the fitted validator
         Args:
@@ -130,7 +146,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
             raise NotFittedError("Cannot call transform on a validator that is not fitted")
         if validate_for_future_features and y is None:
             if X is None:
-                return None, None, []
+                return None, None, np.asarray([])
             if isinstance(X, List):
                 num_sequences = len(X)
                 sequence_lengths = [0] * num_sequences
@@ -139,9 +155,14 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                 sequence_lengths = np.asarray(sequence_lengths)
                 x_transformed, _ = self._transform_X(X, sequence_lengths)
                 return x_transformed, None, sequence_lengths
+            elif isinstance(X, pd.DataFrame):
+                if self.series_idx is not None:
+                    X = X.sort_values(self.series_idx)
+                x_transformed, _ = self._transform_X(X, None)
+                return x_transformed, None, X.index.value_counts(sort=False).values
+
             else:
                 raise NotImplementedError
-
         else:
             if y is None:
                 raise ValueError('Targets must be given!')
@@ -169,25 +190,66 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                     return None, y_transformed, sequence_lengths
 
                 return x_transformed, y_transformed, sequence_lengths
+            elif isinstance(y, (pd.DataFrame, pd.Series)):
+                if self.series_idx is not None:
+                    if isinstance(y, pd.Series):
+                        y_columns = [y.name]
+                    else:
+                        if isinstance(y.columns, pd.RangeIndex):
+                            y_columns = [f'target_{i}' for i in y.columns]
+                            y.columns = y_columns
+                        y_columns = y.columns
+                    xy = pd.concat([X, y], axis=1)
+                    xy.sort_values(self.feature_validator.series_idx, inplace=True)
+
+                    y = xy[y_columns]
+                    X = xy.drop(y_columns, axis=1)
+                    del xy
+
+                x_transformed, series_number = self._transform_X(X, None)
+
+                if self._is_uni_variant:
+                    y_transformed: pd.DataFrame = self.target_validator.transform(y, series_number)
+                    return None, y_transformed, y_transformed.index.value_counts(sort=False).values
+
+                y_transformed: pd.DataFrame = self.target_validator.transform(y, x_transformed.index)
+                return x_transformed, y_transformed, y_transformed.index.value_counts(sort=False).values
+
             else:
                 raise NotImplementedError
 
     def _transform_X(self,
                      X: Optional[Union[List, pd.DataFrame]],
-                     sequence_lengths: np.ndarray) -> Tuple[pd.DataFrame, Union[np.ndarray, pd.Index]]:
+                     sequence_lengths: Optional[np.ndarray] = None) -> Tuple[pd.DataFrame,
+                                                                             Optional[Union[np.ndarray, pd.Index]]]:
         if self.series_idx is None:
-            series_number = np.arange(len(sequence_lengths)).repeat(sequence_lengths)
-            if not self._is_uni_variant:
-                x_stacked = self.join_series(X)
-                x_transformed = self.feature_validator.transform(x_stacked,
-                                                                 index=series_number)
-            else:
+            if self._is_uni_variant:
                 x_transformed = None
+                if sequence_lengths is not None:
+                    series_number = np.arange(len(sequence_lengths)).repeat(sequence_lengths)
+                else:
+                    series_number = None
+            else:
+                if isinstance(X, List):
+                    assert sequence_lengths is not None
+                    series_number = np.arange(len(sequence_lengths)).repeat(sequence_lengths)
+                    x_stacked = self.join_series(X)
+                    x_transformed = self.feature_validator.transform(x_stacked,
+                                                                     index=series_number)
+                elif isinstance(X, pd.DataFrame):
+                    series_number = X.index
+                    x_transformed = self.feature_validator.transform(X)
+                else:
+                    raise NotImplementedError
         else:
-            # In this case X can only contain pd.DataFrame, see ```time_series_feature_validator.py```
-            x_stacked = pd.concat(X)
-
-            series_number = pd.MultiIndex.from_frame(pd.DataFrame(x_stacked[self.series_idx]))
+            if isinstance(X, List):
+                # In this case X can only contain pd.DataFrame, see ```time_series_feature_validator.py```
+                x_stacked = pd.concat(X)
+            elif isinstance(X, pd.DataFrame):
+                x_stacked = X
+            else:
+                raise NotImplementedError
+            series_number = df2index(x_stacked[self.series_idx])
 
             if not self._is_uni_variant:
                 x_transformed = self.feature_validator.transform(x_stacked,

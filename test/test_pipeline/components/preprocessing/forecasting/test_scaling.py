@@ -77,17 +77,9 @@ class TestScaling(unittest.TestCase):
 
         # second column is static features. It needs to be the mean and std value across all sequences
         scaler.dataset_is_small_preprocess = False
-        scaler.static_features = self.static_features_column
-        scaler = scaler.fit(self.raw_data[0])
 
-        self.assertTrue(np.allclose(scaler.loc, np.asarray([[1., 2., 3]])))
-        self.assertTrue(np.allclose(scaler.scale, np.asarray([[1., 2., 3.]])))
-
-        transformed_test = scaler.transform(self.raw_data[0])
-        self.assertIsInstance(transformed_test, np.ndarray)
-        # should have the same value as the second part of transformed except for the static values
-        self.assertTrue(np.allclose(transformed_test[:, [0, -1]], transformed[:len(self.raw_data[0]), [0, -1]]))
-        self.assertTrue(np.all(transformed_test[:, 1] == 0.))
+        transformed_test = np.concatenate([scaler.transform(raw_data) for raw_data in self.raw_data])
+        self.assertTrue(np.allclose(transformed_test[:, [0, -1]], transformed_test[:, [0, -1]]))
 
     def test_min_max(self):
         scaler = TimeSeriesScaler(mode='min_max',
@@ -112,22 +104,10 @@ class TestScaling(unittest.TestCase):
 
         scaler.dataset_is_small_preprocess = False
         scaler.static_features = self.static_features_column
-        scaler = scaler.fit(self.raw_data[0])
 
-        self.assertTrue(np.allclose(scaler.loc, np.asarray([[0., 2., 3.]])))
-        self.assertTrue(np.allclose(scaler.scale, np.asarray([[2., 2., 3.]])))
+        transformed_test = np.concatenate([scaler.transform(raw_data) for raw_data in self.raw_data])
+        self.assertTrue(np.allclose(transformed_test[:, [0, -1]], transformed_test[:, [0, -1]]))
 
-        idx_start = 0
-        for i, raw_data in enumerate(self.raw_data):
-            idx_end = idx_start + len(raw_data)
-            scaler = scaler.fit(raw_data)
-
-            transformed_test = scaler.transform(self.raw_data[i])
-            self.assertIsInstance(transformed_test, np.ndarray)
-            # should have the same value as the second part of transformed except for the static values
-            self.assertTrue(np.allclose(transformed_test[:, [0, -1]], transformed_data[idx_start:idx_end, [0, -1]]))
-            self.assertTrue(np.all(transformed_test[:, 1] == 0.))
-            idx_start = idx_end
 
     def test_max_abs_scaler(self):
         scaler = TimeSeriesScaler(mode='max_abs',
@@ -152,22 +132,9 @@ class TestScaling(unittest.TestCase):
                                                                   [0., 0.5, 1.]])))
 
         scaler.dataset_is_small_preprocess = False
-        scaler.static_features = self.static_features_column
-        scaler = scaler.fit(self.raw_data[0])
-        self.assertIsNone(scaler.loc)
-        self.assertTrue(np.allclose(scaler.scale, np.asarray([[2., 2., 3.]])))
 
-        idx_start = 0
-        for i, raw_data in enumerate(self.raw_data):
-            idx_end = idx_start + len(raw_data)
-            scaler = scaler.fit(raw_data)
-
-            transformed_test = scaler.transform(self.raw_data[i])
-            self.assertIsInstance(transformed_test, np.ndarray)
-            # should have the same value as the second part of transformed except for the static values
-            self.assertTrue(np.allclose(transformed_test[:, [0, -1]], transformed_data[idx_start:idx_end, [0, -1]]))
-            self.assertTrue(np.all(transformed_test[:, 1] == 1.))
-            idx_start = idx_end
+        transformed_test = np.concatenate([scaler.transform(raw_data) for raw_data in self.raw_data])
+        self.assertTrue(np.allclose(transformed_test[:, [0, -1]], transformed_test[:, [0, -1]]))
 
     def test_mean_abs_scaler(self):
         scaler = TimeSeriesScaler(mode='mean_abs',
@@ -192,20 +159,8 @@ class TestScaling(unittest.TestCase):
         scaler.static_features = self.static_features_column
         scaler = scaler.fit(self.raw_data[0])
 
-        self.assertIsNone(scaler.loc)
-        self.assertTrue(np.allclose(scaler.scale, np.asarray([[1., 2., 3.]])))
-
-        idx_start = 0
-        for i, raw_data in enumerate(self.raw_data):
-            idx_end = idx_start + len(raw_data)
-            scaler = scaler.fit(raw_data)
-
-            transformed_test = scaler.transform(self.raw_data[i])
-            self.assertIsInstance(transformed_test, np.ndarray)
-            # should have the same value as the second part of transformed except for the static values
-            self.assertTrue(np.allclose(transformed_test[:, [0, -1]], transformed_data[idx_start:idx_end, [0, -1]]))
-            self.assertTrue(np.all(transformed_test[:, 1] == 1.))
-            idx_start = idx_end
+        transformed_test = np.concatenate([scaler.transform(raw_data) for raw_data in self.raw_data])
+        self.assertTrue(np.allclose(transformed_test[:, [0, -1]], transformed_test[:, [0, -1]]))
 
     def test_no_scaler(self):
         scaler = TimeSeriesScaler(mode='none',
@@ -220,22 +175,9 @@ class TestScaling(unittest.TestCase):
         self.assertIsNone(scaler.scale)
 
         scaler.dataset_is_small_preprocess = False
-        scaler.static_features = self.static_features_column
-        scaler = scaler.fit(self.raw_data[0])
 
-        idx_start = 0
-        for i, raw_data in enumerate(self.raw_data):
-            idx_end = idx_start + len(raw_data)
-            scaler = scaler.fit(raw_data)
-
-            transformed_test = scaler.transform(self.raw_data[i])
-            self.assertIsInstance(transformed_test, np.ndarray)
-            # should have the same value as the second part of transformed except for the static values
-            self.assertTrue(np.allclose(transformed_test[:, [0, -1]], transformed_data[idx_start:idx_end, [0, -1]]))
-
-            self.assertIsNone(scaler.loc)
-            self.assertIsNone(scaler.scale)
-            idx_start = idx_end
+        transformed_test = np.concatenate([scaler.transform(raw_data) for raw_data in self.raw_data])
+        self.assertTrue(np.allclose(transformed_test[:, [0, -1]], transformed_test[:, [0, -1]]))
 
         with self.assertRaises(ValueError):
             scaler = TimeSeriesScaler(mode='random',

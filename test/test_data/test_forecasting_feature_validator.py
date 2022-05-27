@@ -20,6 +20,7 @@ from autoPyTorch.data.time_series_feature_validator import TimeSeriesFeatureVali
         'pandas_without_seriesid',
         'pandas_with_static_features',
         'pandas_multi_seq',
+        'pandas_multi_seq_w_idx',
         'pandas_with_static_features_multi_series',
     ),
     indirect=True
@@ -42,7 +43,8 @@ def test_forecasting_validator_supported_types(input_data_forecastingfeaturetest
     transformed_X = validator.transform(data, index)
     assert isinstance(transformed_X, pd.DataFrame)
     if series_idx is None and seq_lengths is None:
-        assert np.all(transformed_X.index == 0)
+        if not (isinstance(data, pd.DataFrame) and len(data.index.unique() > 1)):
+            assert np.all(transformed_X.index == 0)
     else:
         if series_idx is not None:
             assert series_idx not in transformed_X

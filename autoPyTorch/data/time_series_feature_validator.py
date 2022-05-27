@@ -3,10 +3,19 @@ from typing import Optional, Union, List
 import pandas as pd
 import numpy as np
 from scipy.sparse import issparse
+from sklearn.preprocessing import OrdinalEncoder
 
 from sklearn.base import BaseEstimator
 from autoPyTorch.data.tabular_feature_validator import TabularFeatureValidator
 from autoPyTorch.utils.logging_ import PicklableClientLogger
+
+
+def df2index(df: Union[pd.DataFrame, pd.Series]) -> np.ndarray:
+    if isinstance(df, pd.Series):
+        seq_lengths = df.value_counts().values
+    else:
+        seq_lengths = np.unique(OrdinalEncoder().fit_transform(df), axis=0, return_counts=True)[1]
+    return np.arange(len(seq_lengths)).repeat(seq_lengths)
 
 
 class TimeSeriesFeatureValidator(TabularFeatureValidator):
@@ -61,7 +70,8 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
                                          f"is not part of {X_train.columns.tolist()}")
                 if X_train[list(series_idx)].isnull().values.any():
                     raise ValueError('NaN should not exit in Series ID!')
-                index = pd.MultiIndex.from_frame(pd.DataFrame(X_train[series_idx]))
+                index = df2index(df=X_train[series_idx])
+
                 self.only_contain_series_idx = len(X_train.columns) == len(series_idx)
 
                 if self.only_contain_series_idx:
@@ -73,8 +83,12 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
                     return self
 
                 X_train = X_train.drop(series_idx, axis=1)
+                X_train.index = index
 
-                X_test = X_test.drop(series_idx, axis=1) if X_test is not None else None
+                if X_test is not None:
+                    index = df2index(df=X_test[series_idx])
+                    X_test = X_test.drop(series_idx, axis=1)
+                    X_test.index = index
 
                 super().fit(X_train, X_test)
             else:
@@ -82,10 +96,15 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
                                           f"X_train is {type(X_train)} ")
         else:
             super().fit(X_train, X_test)
+
+        X_train_has_idx = isinstance(X_train, pd.DataFrame)
         X_train = pd.DataFrame(X_train)
         if index is None:
             if sequence_lengths is None:
-                index = np.zeros(len(X_train))
+                if not X_train_has_idx:
+                    index = np.zeros(len(X_train))
+                else:
+                    index = X_train.index
             else:
                 if np.sum(sequence_lengths) != len(X_train):
                     raise ValueError("The Sum of Sequence length must equal to the length of hte dataset")
@@ -109,12 +128,16 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
             else:
                 raise NotImplementedError(f"series idx only works with pandas.DataFrame but the type of "
                                           f"X_train is {type(X)} ")
+        X_has_idx = isinstance(X, pd.DataFrame)
+        if X_has_idx and index is None:
+            index = X.index
         X = super(TimeSeriesFeatureValidator, self).transform(X)
         if X.ndim == 1:
             X = np.expand_dims(X, -1)
         X: pd.DataFrame = pd.DataFrame(X, columns=self.get_reordered_columns())
         if index is None:
-            index = np.array([0] * len(X))
+            if not X_has_idx:
+                index = np.array([0] * len(X))
         else:
             if len(index) != X.shape[0]:
                 raise ValueError('Given index must have length as the input features!')

@@ -51,10 +51,14 @@ class TimeSeriesTargetValidator(TabularTargetValidator):
             pd.DataFrame:
                 The transformed array
         """
+        y_has_idx = isinstance(y, pd.DataFrame)
+        if y_has_idx and index is None:
+            index = y.index
         y: ArrayType = super().transform(y)
 
         if index is None:
-            index = np.array([0] * y.shape[0])
+            if not y_has_idx:
+                index = np.array([0] * y.shape[0])
         else:
             if len(index) != y.shape[0]:
                 raise ValueError('Index must have length as the input targets!')
