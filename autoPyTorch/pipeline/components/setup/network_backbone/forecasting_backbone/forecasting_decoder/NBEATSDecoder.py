@@ -76,7 +76,7 @@ class NBEATSBLock(DecoderNetwork):
             layers.append(nn.Dropout(self.dropout_rate))
 
     def forward(self, x_future: Optional[torch.Tensor], encoder_output: torch.Tensor,
-                pos_idx: Optional[Tuple[int]] = None) -> Union[torch.Module, Tuple[torch.Module, torch.Module]]:
+                pos_idx: Optional[Tuple[int]] = None) -> Union[nn.Module, Tuple[nn.Module, nn.Module]]:
         if self.backcast_head is None and self.forecast_head is None:
             # used to compute head dimensions
             return self.backbone(encoder_output)

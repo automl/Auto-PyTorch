@@ -64,6 +64,7 @@ class TemporalFusion(autoPyTorchComponent):
                                                    dropout=self.dropout_rate
                                                    )
         self.n_decoder_output_features = 2 ** self.attention_d_model_log
+        return self
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         X.update({"n_decoder_output_features": self.n_decoder_output_features,

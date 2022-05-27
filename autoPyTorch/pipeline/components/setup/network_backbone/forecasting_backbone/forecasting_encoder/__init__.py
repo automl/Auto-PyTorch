@@ -50,7 +50,7 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
         self.decoder_choice: Optional[List[BaseForecastingDecoder]] = None
 
     @abstractmethod
-    def get_components(self) -> Dict[str, Type[autoPyTorchComponent]]:
+    def get_components(self) -> Dict[str, Type[autoPyTorchComponent]]:  # type: ignore[override]
         """Returns the available backbone components
 
         Args:
@@ -73,12 +73,12 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
         # This function is deigned to add additional components rather than the components in __choice__
         return [self.get_decoder_components]
 
-    def get_available_components(
+    def get_available_components(  # type: ignore[override]
             self,
             dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
             include: List[str] = None,
             exclude: List[str] = None,
-            components: Optional[Dict[str, autoPyTorchComponent]] = None
+            components: Optional[Dict[str, Type[autoPyTorchComponent]]] = None
     ) -> Dict[str, Type[autoPyTorchComponent]]:
         """Filters out components based on user provided
         include/exclude directives, as well as the dataset properties
@@ -90,6 +90,7 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
              to remove from the configuration space
          dataset_properties (Optional[Dict[str, Union[str, int]]]): Caracteristics
              of the dataset to guide the pipeline choices of components
+         components (Optional[Dict[str, Type[autoPyTorchComponent]]]): components
 
         Returns:
             Dict[str, autoPyTorchComponent]: A filtered dict of learning
@@ -106,7 +107,7 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
         if components is None:
             available_comp = self.get_components()
         else:
-            available_comp = components
+            available_comp = components  # type: ignore[assignment]
 
         if include is not None:
             for incl in include:
@@ -214,9 +215,9 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
         encoder2decoder: Dict[str, List[str]] = {}
         for encoder_name in hp_encoder.choices:
             updates = self._get_search_space_updates(prefix=encoder_name)
-            config_space = available_encoders[encoder_name].get_hyperparameter_search_space(dataset_properties,
-                                                                                            # type: ignore
-                                                                                            **updates)
+            config_space = available_encoders[encoder_name].get_hyperparameter_search_space(
+                dataset_properties,  # type: ignore
+                **updates)
             parent_hyperparameter = {'parent': hp_encoder, 'value': encoder_name}
             cs.add_configuration_space(
                 encoder_name,
@@ -242,9 +243,10 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
             if not decoder2encoder[decoder_name]:
                 continue
             updates = self._get_search_space_updates(prefix=decoder_name)
-            config_space = available_decoders[decoder_name].get_hyperparameter_search_space(dataset_properties,
-                                                                                            # type: ignore
-                                                                                            **updates)
+            config_space = available_decoders[decoder_name].get_hyperparameter_search_space(
+                dataset_properties,  # type: ignore
+                **updates
+            )
             compatible_encoders = decoder2encoder[decoder_name]
             encoders_with_multi_decoder = []
             encoder_with_uni_decoder = []

@@ -1,11 +1,9 @@
 import os
 from collections import OrderedDict
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 import ConfigSpace.hyperparameters as CSH
 from ConfigSpace.configuration_space import ConfigurationSpace
-
-import numpy as np
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
@@ -205,6 +203,6 @@ class NetworkEmbeddingChoice(autoPyTorchChoice):
         self.dataset_properties_ = dataset_properties
         return cs
 
-    def transform(self, X: np.ndarray) -> np.ndarray:
+    def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         assert self.choice is not None, "Cannot call transform before the object is initialized"
         return self.choice.transform(X)

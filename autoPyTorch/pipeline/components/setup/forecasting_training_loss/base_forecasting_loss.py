@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, Optional, Callable
 
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 
@@ -8,8 +8,8 @@ from autoPyTorch.utils.common import FitRequirement
 class ForecastingLossComponents(autoPyTorchComponent):
     _required_properties = ["name", "handles_tabular", "handles_image", "handles_time_series",
                             'handles_regression', 'handles_classification']
-    loss = None
-    net_output_type = None
+    loss: Optional[Callable] = None
+    net_output_type: Optional[str] = None
 
     def __init__(self,
                  **kwargs: Any):

@@ -26,15 +26,15 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
         super().__init__(logger)
         self.only_contain_series_idx = False
         self.static_features = ()
-        self.series_idx: Optional[Union[List[Union[str, int]]]] = None
+        self.series_idx: Optional[List[Union[str, int]]] = None
 
-    def get_reordered_columns(self):
+    def get_reordered_columns(self) -> List[str]:
         return self.transformed_columns + [col for col in self.column_order if col not in set(self.transformed_columns)]
 
     def fit(self,
             X_train: Union[pd.DataFrame, np.ndarray],
             X_test: Union[pd.DataFrame, np.ndarray] = None,
-            series_idx: Optional[Union[List[Union[str, int]], str, int]] = None,
+            series_idx: Optional[List[Union[str, int]]] = None,
             sequence_lengths: Optional[List[int]] = None) -> BaseEstimator:
         """
 
@@ -46,7 +46,7 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
             X_test (Union[pd.DataFrame, np.ndarray]):
                 An optional set of data that is going to be validated
 
-            series_idx (Optional[Union[str, int]]):
+            series_idx (Optional[List[Union[str, int]]]):
                 Series Index, to identify each individual series
 
             sequence_lengths (Optional[List[int]]):
@@ -86,6 +86,7 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
                 X_train.index = index
 
                 if X_test is not None:
+                    assert isinstance(X_test, pd.DataFrame)
                     index = df2index(df=X_test[series_idx])
                     X_test = X_test.drop(series_idx, axis=1)
                     X_test.index = index
@@ -111,11 +112,11 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
                 index = np.arange(len(sequence_lengths)).repeat(sequence_lengths)
         X_train.index = index
 
-        static_features: pd.Series = (X_train.groupby(X_train.index).nunique() <= 1).all()
+        static_features: pd.Series = (X_train.groupby(X_train.index).nunique() <= 1).all()  # type: ignore[assignment]
         self.static_features = tuple(idx for idx in static_features.index if static_features[idx])
         return self
 
-    def transform(
+    def transform(  # type: ignore[override]
             self,
             X: Union[pd.DataFrame, np.ndarray],
             index: Optional[Union[pd.Index, np.ndarray]] = None,
@@ -130,10 +131,10 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
                                           f"X_train is {type(X)} ")
         X_has_idx = isinstance(X, pd.DataFrame)
         if X_has_idx and index is None:
-            index = X.index
+            index = X.index  # type: ignore[union-attr]
         X = super(TimeSeriesFeatureValidator, self).transform(X)
         if X.ndim == 1:
-            X = np.expand_dims(X, -1)
+            X = np.expand_dims(X, -1)  # type: ignore[union-attr]
         X: pd.DataFrame = pd.DataFrame(X, columns=self.get_reordered_columns())
         if index is None:
             if not X_has_idx:

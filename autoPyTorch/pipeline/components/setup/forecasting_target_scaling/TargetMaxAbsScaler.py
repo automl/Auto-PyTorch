@@ -5,7 +5,7 @@ from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import Bas
 
 class TargetMaxAbsScaler(BaseTargetScaler):
     @property
-    def scaler_mode(self):
+    def scaler_mode(self) -> str:
         return 'max_abs'
 
     @staticmethod

@@ -138,7 +138,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
 
         return self
 
-    def get_loader(self, X: np.ndarray, y: Optional[np.ndarray] = None, batch_size: int = np.inf,
+    def get_loader(self, X: np.ndarray, y: Optional[np.ndarray] = None, batch_size: int = np.iinfo(np.int32).max,
                    ) -> torch.utils.data.DataLoader:
         """
         Creates a data loader object from the provided data,

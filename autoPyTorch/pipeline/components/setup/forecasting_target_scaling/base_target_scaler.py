@@ -35,7 +35,7 @@ class BaseTargetScaler(autoPyTorchComponent):
         return self
 
     @property
-    def scaler_mode(self):
+    def scaler_mode(self) -> str:
         raise NotImplementedError
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:

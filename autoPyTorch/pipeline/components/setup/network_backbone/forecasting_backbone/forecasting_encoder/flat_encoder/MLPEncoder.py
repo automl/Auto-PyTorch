@@ -159,7 +159,7 @@ class MLPEncoder(BaseForecastingEncoder, MLPBackbone):  # type:ignore[misc]
                                                                            default_value=0.1,
                                                                            ),
     ) -> ConfigurationSpace:
-        cs = MLPBackbone.get_hyperparameter_search_space(dataset_properties=dataset_properties,
+        cs = MLPBackbone.get_hyperparameter_search_space(dataset_properties=dataset_properties,  # type: ignore
                                                          num_groups=num_groups,
                                                          activation=activation,
                                                          use_dropout=use_dropout,

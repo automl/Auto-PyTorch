@@ -49,7 +49,7 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
             Dict[str, autoPyTorchComponent]: all basebackbone components available
                 as choices for learning rate scheduling
         """
-        return self.default_components
+        return self.default_components  # type: ignore[return-value]
 
     def get_available_components(
             self,

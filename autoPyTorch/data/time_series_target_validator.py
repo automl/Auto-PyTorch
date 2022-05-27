@@ -53,19 +53,19 @@ class TimeSeriesTargetValidator(TabularTargetValidator):
         """
         y_has_idx = isinstance(y, pd.DataFrame)
         if y_has_idx and index is None:
-            index = y.index
-        y: ArrayType = super().transform(y)
+            index = y.index  # type: ignore[union-attr]
+        y: ArrayType = super().transform(y)  # type: ignore[no-redef]
 
         if index is None:
             if not y_has_idx:
-                index = np.array([0] * y.shape[0])
+                index = np.array([0] * y.shape[0])  # type: ignore[union-attr]
         else:
-            if len(index) != y.shape[0]:
+            if len(index) != y.shape[0]:  # type: ignore[union-attr]
                 raise ValueError('Index must have length as the input targets!')
-        if y.ndim == 1:
+        if y.ndim == 1:  # type: ignore[union-attr]
             y = np.expand_dims(y, -1)
-        y: pd.DataFrame = pd.DataFrame(y)
-        y.index = index
+        y: pd.DataFrame = pd.DataFrame(y)  # type: ignore[no-redef]
+        y.index = index   # type: ignore
         return y
 
     @property

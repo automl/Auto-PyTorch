@@ -69,7 +69,7 @@ class TrainerChoice(autoPyTorchChoice):
         self.checkpoint_dir: Optional[str] = None
 
     @property
-    def _fit_requirements(self) -> Optional[List[FitRequirement]]:
+    def _fit_requirements(self) -> List[FitRequirement]:
         return [FitRequirement("lr_scheduler", (_LRScheduler,), user_defined=False, dataset_property=False),
                 FitRequirement("num_run", (int,), user_defined=False, dataset_property=False),
                 FitRequirement(
@@ -217,7 +217,7 @@ class TrainerChoice(autoPyTorchChoice):
 
         return cast(autoPyTorchComponent, self.choice)
 
-    def prepare_trainer(self, X):
+    def prepare_trainer(self, X: Dict) -> None:
         """
         prepare trainer, forecasting tasks require more parameters
         """
@@ -246,7 +246,7 @@ class TrainerChoice(autoPyTorchChoice):
             step_interval=X['step_interval']
         )
 
-    def get_budget_tracker(self, X):
+    def get_budget_tracker(self, X: Dict) -> BudgetTracker:
         return BudgetTracker(
             budget_type=X['budget_type'],
             max_runtime=X['runtime'] if 'runtime' in X else None,

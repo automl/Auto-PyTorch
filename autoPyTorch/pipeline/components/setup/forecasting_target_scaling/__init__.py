@@ -6,6 +6,7 @@ import ConfigSpace.hyperparameters as CSH
 from ConfigSpace.configuration_space import ConfigurationSpace
 
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import (
     ThirdPartyComponents,
     autoPyTorchComponent,
@@ -47,16 +48,14 @@ class TargetScalerChoice(autoPyTorchChoice):
         return components
 
     def get_hyperparameter_search_space(self,
-                                        dataset_properties: Optional[Dict[str, Any]] = None,
+                                        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
                                         default: Optional[str] = None,
                                         include: Optional[List[str]] = None,
                                         exclude: Optional[List[str]] = None) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
         if dataset_properties is None:
-            dataset_properties = dict()
-
-        dataset_properties = {**self.dataset_properties, **dataset_properties}
+            dataset_properties:  Dict[str, BaseDatasetPropertiesType] = self.dataset_properties  # type: ignore
 
         available_scalers = self.get_available_components(dataset_properties=dataset_properties,
                                                           include=include,
@@ -89,5 +88,5 @@ class TargetScalerChoice(autoPyTorchChoice):
                                        parent_hyperparameter=parent_hyperparameter)
 
         self.configuration_space = cs
-        self.dataset_properties = dataset_properties
+        self.dataset_properties = dataset_properties  # type: ignore[assignment]
         return cs

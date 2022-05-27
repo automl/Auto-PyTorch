@@ -1,4 +1,4 @@
-from typing import Optional, Sequence, List, Iterator, Sized, Union
+from typing import Optional, Sequence, List, Iterator, Sized, Union, Mapping
 
 import numpy as np
 
@@ -26,9 +26,9 @@ class TestSequenceDataset(TransformSubset):
 
 def pad_sequence_with_minimal_length(sequences: List[torch.Tensor],
                                      seq_minimal_length: int = 1,
-                                     seq_max_length: int = np.inf,
-                                     batch_first=True,
-                                     padding_value=0.0) -> torch.Tensor:
+                                     seq_max_length: int = np.iinfo(np.int32).max,
+                                     batch_first: bool = True,
+                                     padding_value: float = 0.0) -> torch.Tensor:
     r"""
     This function is quite similar to  torch.nn.utils.rnn.pad_sequence except that we constraint the sequence to be
     at least seq_minimal_length and at most seq_max_length
@@ -69,21 +69,22 @@ class PadSequenceCollector:
 
     """
 
-    def __init__(self, window_size: int, sample_interval, target_padding_value: float = 0.0,
-                 seq_max_length: int = np.inf):
+    def __init__(self, window_size: int, sample_interval: int = 1, target_padding_value: float = 0.0,
+                 seq_max_length: int = np.iinfo(np.int32).max):
         self.window_size = window_size
         self.sample_interval = sample_interval
         self.target_padding_value = target_padding_value
         self.seq_max_length = seq_max_length
 
-    def __call__(self, batch, sample_interval=1, seq_minimal_length=1, padding_value=0.0):
+    def __call__(self, batch: Sequence[torch.Tensor], sample_interval: int = 1,
+                 seq_minimal_length: int = 1, padding_value: float = 0.0) -> Union[torch.Tensor, Mapping]:
         elem = batch[0]
         elem_type = type(elem)
         if isinstance(elem, torch.Tensor):
-            seq = pad_sequence_with_minimal_length(batch,
-                                                   seq_minimal_length=seq_minimal_length,
-                                                   seq_max_length=self.seq_max_length,
-                                                   batch_first=True, padding_value=padding_value)  # type: torch.Tensor
+            seq: torch.Tensor = pad_sequence_with_minimal_length(batch,  # type: ignore[arg-type]
+                                                                 seq_minimal_length=seq_minimal_length,
+                                                                 seq_max_length=self.seq_max_length,
+                                                                 batch_first=True, padding_value=padding_value)
 
             if sample_interval > 1:
                 subseq_length = seq.shape[1]
@@ -128,7 +129,7 @@ class PadSequenceCollector:
 class TimeSeriesSampler(SubsetRandomSampler):
     def __init__(self,
                  indices: Sequence[int],
-                 seq_lengths: Sequence[int],
+                 seq_lengths: Union[Sequence[int], np.ndarray],
                  num_instances_per_seqs: Optional[Union[List[float], np.ndarray]] = None,
                  min_start: int = 0,
                  generator: Optional[torch.Generator] = None) -> None:
@@ -146,7 +147,7 @@ class TimeSeriesSampler(SubsetRandomSampler):
         ----------
         indices: Sequence[int]
             The set of all the possible indices that can be sampled from
-        seq_lengths: Sequence[int]
+        seq_lengths:  Union[Sequence[int], np.ndarray]
             lengths of each sequence, applied to unsqueeze indices
         num_instances_per_seqs: Optional[List[int]]=None
             expected number of instances to be sampled in each sequence, if it is None, all the sequences will be
@@ -177,13 +178,13 @@ class TimeSeriesSampler(SubsetRandomSampler):
 
                 num_interval = int(np.ceil(num_instances))
                 if num_interval > idx_end - idx_start or num_interval == 0:
-                    interval = np.linspace(idx_start, idx_end, 2, endpoint=True, dtype=np.int)
+                    interval = np.linspace(idx_start, idx_end, 2, endpoint=True, dtype=np.intp)
                     # In this case, seq_intervals_decimal contains the entire interval of the sequence.
                     num_expected_ins_decimal.append(num_instances)
                     seq_intervals_decimal.append(interval[:2])
                     seq_intervals_int.append(interval[1:])
                 else:
-                    interval = np.linspace(idx_start, idx_end, num_interval + 1, endpoint=True, dtype=np.int)
+                    interval = np.linspace(idx_start, idx_end, num_interval + 1, endpoint=True, dtype=np.intp)
                     # The first two item determines the first sequence interval where most of the samples need to be
                     # padded, we then make it the interval for the expected decimal
                     num_expected_ins_decimal.append(np.modf(num_instances)[0])
@@ -192,7 +193,7 @@ class TimeSeriesSampler(SubsetRandomSampler):
                     seq_intervals_int.append(interval[1:])
                 idx_tracker += seq_length
 
-            num_expected_ins_decimal = np.stack(num_expected_ins_decimal)
+            num_expected_ins_decimal_stacked = np.stack(num_expected_ins_decimal)
 
             self.seq_lengths = seq_lengths
             self.seq_lengths_sum = np.sum(seq_lengths)
@@ -201,9 +202,9 @@ class TimeSeriesSampler(SubsetRandomSampler):
             self.seq_intervals_decimal = torch.from_numpy(np.stack(seq_intervals_decimal))
             self.seq_intervals_int = seq_intervals_int
 
-            self.num_expected_ins_decimal = torch.from_numpy(num_expected_ins_decimal) + 1e-8
+            self.num_expected_ins_decimal = torch.from_numpy(num_expected_ins_decimal_stacked) + 1e-8
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[int]:
         if self.iter_all_seqs:
             return super().__iter__()
         samples = torch.ones(self.num_instances, dtype=torch.int)
@@ -239,7 +240,7 @@ class TimeSeriesSampler(SubsetRandomSampler):
 
         yield from (samples[i] for i in torch.randperm(self.num_instances, generator=self.generator))
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.num_instances
 
 

@@ -19,7 +19,7 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparamet
 
 class DistributionLoss(ForecastingLossComponents):
     loss = LogProbLoss
-    net_output_type = 'distribution'
+    net_output_type = 'distribution'  # type: ignore[assignment]
 
     def __init__(self,
                  dist_cls: str,

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Iterable, Tuple
+from typing import Any, Dict, Optional, Iterable, Tuple, List
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 
@@ -35,7 +35,7 @@ class ForecastingNetworkComponent(NetworkComponent):
         super(ForecastingNetworkComponent, self).__init__(network=network, random_state=random_state)
 
     @property
-    def _required_fit_requirements(self):
+    def _required_fit_requirements(self) -> List[FitRequirement]:
         return [
             FitRequirement('dataset_properties', (Dict,), user_defined=False, dataset_property=True),
             FitRequirement('window_size', (int,), user_defined=False, dataset_property=False),
@@ -162,13 +162,3 @@ class ForecastingNetworkComponent(NetworkComponent):
             Y_batch_preds.append(Y_batch_pred.cpu())
 
         return torch.cat(Y_batch_preds, 0).cpu().numpy()
-
-    @staticmethod
-    def get_hyperparameter_search_space(
-            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
-    ) -> ConfigurationSpace:
-        """
-        """
-        cs = ConfigurationSpace()
-
-        return cs

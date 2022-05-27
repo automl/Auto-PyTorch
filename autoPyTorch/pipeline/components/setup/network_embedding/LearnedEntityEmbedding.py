@@ -34,7 +34,7 @@ class _LearnedEntityEmbedding(nn.Module):
         # list of number of categories of categorical data
         # or 0 for numerical data
         self.num_input_features = num_input_features
-        categorical_features = self.num_input_features > 0
+        categorical_features: np.ndarray = self.num_input_features > 0
 
         self.num_categorical_features = self.num_input_features[categorical_features]
 
@@ -119,7 +119,7 @@ class PartialLearnedEntityEmbedding(_LearnedEntityEmbedding):
                  num_input_features: np.ndarray,
                  num_numerical_features: int,
                  embed_features: List[bool],
-                 num_output_dimensions: Optional[List[int]],
+                 num_output_dimensions: List[int],
                  ee_layers: nn.Module
                  ):
         super(_LearnedEntityEmbedding, self).__init__()
@@ -127,7 +127,7 @@ class PartialLearnedEntityEmbedding(_LearnedEntityEmbedding):
         # list of number of categories of categorical data
         # or 0 for numerical data
         self.num_input_features = num_input_features
-        categorical_features = self.num_input_features > 0
+        categorical_features: np.ndarray = self.num_input_features > 0
 
         self.num_categorical_features = self.num_input_features[categorical_features]
 

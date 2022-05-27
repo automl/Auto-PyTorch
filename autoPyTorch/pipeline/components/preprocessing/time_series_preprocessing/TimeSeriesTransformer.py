@@ -66,6 +66,7 @@ class TimeSeriesFeatureTransformer(autoPyTorchTimeSeriesPreprocessingComponent):
             X_train = X['X_train']
         else:
             X_train = X['backend'].load_datamanager().train_tensors[0]
+
         self.preprocessor.fit(X_train)
         return self
 

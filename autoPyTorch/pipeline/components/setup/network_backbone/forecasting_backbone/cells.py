@@ -377,8 +377,8 @@ class VariableSelector(nn.Module):
                                                               ) for _ in range(n_hidden_states)]
 
         self.static_context_initial_hidden = nn.ModuleList(static_context_initial_hidden)
-        self.cached_static_contex = None
-        self.cached_static_embedding = None
+        self.cached_static_contex: Optional[torch.Tensor] = None
+        self.cached_static_embedding: Optional[torch.Tensor] = None
 
     @property
     def device(self) -> torch.device:
@@ -409,9 +409,13 @@ class VariableSelector(nn.Module):
             if len(self.static_input_sizes) > 0:
                 static_embedding, _ = self.static_variable_selection(x_static)
             else:
-                assert x_future is not None and x_past is not None
-                model_dtype = next(iter(x_past.values())).dtype if length_past > 0 else next(
-                    iter(x_future.values())).dtype
+                if length_past > 0:
+                    assert x_past is not None, "x_past must be given when length_past is greater than 0!"
+                    model_dtype = next(iter(x_past.values())).dtype
+                else:
+                    assert x_future is not None, "x_future must be given when length_future is greater than 0!"
+                    model_dtype = next(iter(x_future.values())).dtype
+
                 static_embedding = torch.zeros(
                     (batch_size, self.hidden_size), dtype=model_dtype, device=self.device
                 )

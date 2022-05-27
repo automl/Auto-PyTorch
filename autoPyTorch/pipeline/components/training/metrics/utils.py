@@ -121,7 +121,7 @@ def calculate_score(
         prediction: np.ndarray,
         task_type: int,
         metrics: Iterable[autoPyTorchMetric],
-        **score_kwargs: Dict) -> Dict[str, float]:
+        **score_kwargs: Any) -> Dict[str, float]:
     score_dict = dict()
     if task_type in FORECASTING_TASKS:
         cprediction = sanitize_array(prediction)

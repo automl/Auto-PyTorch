@@ -161,6 +161,7 @@ class TimeSeriesForecastingTask(BaseTask):
             dataset_compression: Optional[DatasetCompressionSpec] = None,
             freq: Optional[Union[str, int, List[int]]] = None,
             start_times: List[pd.DatetimeIndex] = [],
+            series_idx: Optional[Union[List[Union[str, int]], str, int]] = None,
             n_prediction_steps: int = 1,
             known_future_features: Tuple[Union[int, str]] = (),
             **forecasting_dataset_kwargs,
@@ -218,7 +219,7 @@ class TimeSeriesForecastingTask(BaseTask):
         # Fit an input validator to check the provided data
         # Also, an encoder is fit to both train and test data,
         # to prevent unseen categories during inference
-        input_validator.fit(X_train=X_train, y_train=y_train, start_times=start_times,
+        input_validator.fit(X_train=X_train, y_train=y_train, start_times=start_times, series_idx=series_idx,
                             X_test=X_test, y_test=y_test)
 
         dataset = TimeSeriesForecastingDataset(
@@ -226,6 +227,7 @@ class TimeSeriesForecastingTask(BaseTask):
             X_test=X_test, Y_test=y_test,
             freq=freq,
             start_times=start_times,
+            series_idx=series_idx,
             validator=input_validator,
             resampling_strategy=resampling_strategy,
             resampling_strategy_args=resampling_strategy_args,
@@ -246,6 +248,7 @@ class TimeSeriesForecastingTask(BaseTask):
             n_prediction_steps: int = 1,
             freq: Optional[Union[str, int, List[int]]] = None,
             start_times: Optional[List[pd.DatetimeIndex]] = None,
+            series_idx: Optional[Union[List[Union[str, int]], str, int]] = None,
             dataset_name: Optional[str] = None,
             budget_type: str = 'epochs',
             min_budget: Union[int, str] = 5,
@@ -293,6 +296,8 @@ class TimeSeriesForecastingTask(BaseTask):
                 we will use the default configuration
             start_times: : List[pd.DatetimeIndex]
                 A list indicating the start time of each series in the training sets
+            series_idx: Optional[Union[List[Union[str, int]], str, int]]
+                variable in X indicating series indices
             dataset_name: Optional[str],
                 dataset name
             budget_type (str):
@@ -396,6 +401,7 @@ class TimeSeriesForecastingTask(BaseTask):
             dataset_compression=self._dataset_compression,
             freq=freq,
             start_times=start_times,
+            series_idx=series_idx,
             n_prediction_steps=n_prediction_steps,
             **forecasting_dataset_kwargs
         )

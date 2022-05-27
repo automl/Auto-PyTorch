@@ -141,5 +141,5 @@ class PositionalEncoding(nn.Module):
         if pos_idx is None:
             x = x + self.pe[:, :x.size(1), :]
         else:
-            x = x + self.pe[:, pos_idx[0]: pos_idx[1], :]  # type: ignore
+            x = x + self.pe[:, pos_idx[0]: pos_idx[1], :]  # type: ignore[misc]
         return self.dropout(x)

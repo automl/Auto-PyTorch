@@ -39,7 +39,7 @@ from autoPyTorch.pipeline.components.training.trainer import TrainerChoice
 
 class ForecastingTrainerChoice(TrainerChoice):
     @property
-    def _fit_requirements(self) -> Optional[List[FitRequirement]]:
+    def _fit_requirements(self) -> List[FitRequirement]:
         fit_requirements = super()._fit_requirements
         fit_requirements.extend([FitRequirement("target_scaler", (BaseTargetScaler,),
                                                 user_defined=False, dataset_property=False),
@@ -47,7 +47,7 @@ class ForecastingTrainerChoice(TrainerChoice):
                                 )
         return fit_requirements
 
-    def get_budget_tracker(self, X):
+    def get_budget_tracker(self, X: Dict) -> BudgetTracker:
         if 'epochs' in X:
             max_epochs = X['epochs']
         elif X['budget_type'] in FORECASTING_BUDGET_TYPE:
@@ -60,7 +60,7 @@ class ForecastingTrainerChoice(TrainerChoice):
             max_epochs=max_epochs,
         )
 
-    def prepare_trainer(self, X):
+    def prepare_trainer(self, X: Dict) -> None:
         # Support additional user metrics
         metrics = get_metrics(dataset_properties=X['dataset_properties'])
         if 'additional_metrics' in X:

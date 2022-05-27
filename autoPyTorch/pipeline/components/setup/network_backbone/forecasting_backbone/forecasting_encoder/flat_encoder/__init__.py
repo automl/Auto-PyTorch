@@ -4,7 +4,7 @@ from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone
 
 import os
 from collections import OrderedDict
-from typing import Dict, Union, Optional
+from typing import Dict, Union, Optional, Type
 
 from autoPyTorch.pipeline.components.base_component import (
     ThirdPartyComponents,
@@ -27,7 +27,7 @@ def add_encoder(encoder: BaseForecastingEncoder) -> None:
 
 
 class FlatForecastingEncoderChoice(AbstractForecastingEncoderChoice):
-    def get_components(self) -> Dict[str, autoPyTorchComponent]:
+    def get_components(self) -> Dict[str, Type[autoPyTorchComponent]]:
         """Returns the available backbone components
 
         Args:

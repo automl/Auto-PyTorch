@@ -51,7 +51,7 @@ TIME_SERIES_CLASSIFICATION_INPUT = Tuple[np.ndarray, np.ndarray]
 
 def extract_feature_index(feature_shapes: Dict[str, int],
                           feature_names: Tuple[str],
-                          queried_features: Tuple[str]) -> Tuple[int]:
+                          queried_features: Union[Tuple[Union[str, int]], Tuple[()]]) -> Tuple[int]:
     """
     extract the index of a set of queried_features from the extracted feature_shapes
     Args:
@@ -68,10 +68,10 @@ def extract_feature_index(feature_shapes: Dict[str, int],
     value_ranges = df_range[list(queried_features)].T.values
     feature_index: List[int] = sum([list(range(*value_r)) for value_r in value_ranges], [])
     feature_index.sort()
-    return tuple(feature_index)
+    return tuple(feature_index)  # type: ignore[return-value]
 
 
-def compute_time_features(start_time: pd.Timestamp,
+def compute_time_features(start_time: pd.DatetimeIndex,
                           date_period_length: int,
                           time_feature_length: int,
                           freq: str,
@@ -100,7 +100,7 @@ class TimeSeriesSequence(Dataset):
                  Y: np.ndarray,
                  start_time: Optional[pd.DatetimeIndex] = None,
                  freq: str = '1Y',
-                 time_feature_transform: List[TimeFeature] = [],
+                 time_feature_transform: List[TimeFeature] = [ConstantTransform],
                  X_test: Optional[np.ndarray] = None,
                  Y_test: Optional[np.ndarray] = None,
                  train_transforms: Optional[torchvision.transforms.Compose] = None,
@@ -109,16 +109,29 @@ class TimeSeriesSequence(Dataset):
                  sp: int = 1,
                  known_future_features_index: Optional[List[int]] = None,
                  compute_mase_coefficient_value: bool = True,
-                 time_features=None,
-                 is_test_set=False,
-                 ):
+                 time_features: Optional[np.ndarray] = None,
+                 is_test_set: bool = False,
+                 ) -> None:
         """
         A dataset representing a time series sequence.
         Args:
-            seed:
-            train_transforms:
-            val_transforms:
-            n_prediction_steps: int, how many steps need to be predicted in advance
+            X (Optional[np.ndarray]): past features
+            Y (np.ndarray): past targets
+            start_time (Optional[pd.DatetimeIndex]): times of the first timestep of the series
+            freq (str): frequency that the data is sampled
+            time_feature_transform (List[TimeFeature]) available time features applied to the series
+            X_test (Optional[np.ndarray]): known future features
+            Y_test (Optional[np.ndarray]): future targets
+            train_transforms (Optional[torchvision.transforms.Compose]): training transforms, used to transform
+                training features
+            val_transforms (Optional[torchvision.transforms.Compose]): validation transforms, used to transform
+                training features
+            n_prediction_steps (int): how many steps need to be predicted in advance
+            known_future_features_index (int), indices of the known future index
+            compute_mase_coefficient_value (bool): if the mase coefficient for this series is pre-computed
+            time_features (Optional[np.ndarray]): pre-computed time features
+            is_test_set (bool): if this dataset is test sets. Test sequence will simply make X_test and Y_test as future
+                features and future targets
         """
         self.n_prediction_steps = n_prediction_steps
 
@@ -168,11 +181,11 @@ class TimeSeriesSequence(Dataset):
         self.is_test_set = is_test_set
 
     @property
-    def is_test_set(self):
+    def is_test_set(self) -> bool:
         return self._is_test_set
 
     @is_test_set.setter
-    def is_test_set(self, value: bool):
+    def is_test_set(self, value: bool) -> None:
         if value and value != self._is_test_set:
             if self.known_future_features_index:
                 if self.X_test is None:
@@ -205,10 +218,12 @@ class TimeSeriesSequence(Dataset):
 
             if self.known_future_features_index:
                 if not self.is_test_set:
-                    future_features = self.X[index + 1: index + self.n_prediction_steps + 1,
-                                      self.known_future_features_index]
+                    future_features = \
+                        self.X[index + 1: index + self.n_prediction_steps + 1, self.known_future_features_index]
                 else:
-                    future_features = self.X_test[:, self.known_future_features_index]
+                    if index < self.__len__() - 1:
+                        raise ValueError('Test Sequence is only allowed to be accessed with the last index!')
+                    future_features = self.X_test[:, self.known_future_features_index]  # type: ignore[index]
             else:
                 future_features = None
         else:
@@ -229,16 +244,19 @@ class TimeSeriesSequence(Dataset):
                 self.cache_time_features()
 
                 if past_features is not None:
-                    past_features = np.hstack([past_features, self._cached_time_features[:index + 1]])
+                    past_features = np.hstack(
+                        [past_features, self._cached_time_features[:index + 1]]  # type: ignore[index]
+                    )
                 else:
-                    past_features = self._cached_time_features[:index + 1]
+                    past_features = self._cached_time_features[:index + 1]   # type: ignore[index]
                 if future_features is not None:
                     future_features = np.hstack([
                         future_features,
-                        self._cached_time_features[index + 1:index + self.n_prediction_steps + 1]
+                        self._cached_time_features[index + 1:index + self.n_prediction_steps + 1]  # type: ignore[index]
                     ])
                 else:
-                    future_features = self._cached_time_features[index + 1:index + self.n_prediction_steps + 1]
+                    future_features = self._cached_time_features[index + 1:  # type: ignore[index]
+                                                                 index + self.n_prediction_steps + 1]
 
         if future_features is not None and future_features.shape[0] == 0:
             future_features = None
@@ -283,7 +301,7 @@ class TimeSeriesSequence(Dataset):
     def __len__(self) -> int:
         return self.Y.shape[0] if self.is_test_set else self.Y.shape[0] - self.n_prediction_steps
 
-    def get_target_values(self, index: int):
+    def get_target_values(self, index: int) -> np.ndarray:
         """
         Get the visible targets in the datasets without generating a tensor. This can be used to create a dummy pipeline
         Args:
@@ -296,7 +314,10 @@ class TimeSeriesSequence(Dataset):
             index = self.__len__() + index
         return self.Y[index]
 
-    def cache_time_features(self, ):
+    def cache_time_features(self, ) -> None:
+        """
+        compute time features if it is not cached. For test sets, we also need to compute the time features for future
+        """
         if self._cached_time_features is None:
             periods = self.Y.shape[0]
             if self.is_test_set:
@@ -361,7 +382,7 @@ class TimeSeriesSequence(Dataset):
             else:
                 X = None
             if self.known_future_features_index:
-                X_test = self.X[index + 1: index + 1 + self.n_prediction_steps]
+                X_test = self.X[index + 1: index + 1 + self.n_prediction_steps]  # type: ignore[index]
             else:
                 X_test = None
             if self._cached_time_features is None:
@@ -387,7 +408,7 @@ class TimeSeriesSequence(Dataset):
 
             return val_set
 
-    def get_test_target(self, test_idx: int):
+    def get_test_target(self, test_idx: int) -> np.ndarray:
         if self.is_test_set:
             raise ValueError("get_test_target is not supported for test sequences!")
         if test_idx < 0:
@@ -395,7 +416,7 @@ class TimeSeriesSequence(Dataset):
         Y_future = self.Y[test_idx + 1: test_idx + self.n_prediction_steps + 1]
         return Y_future
 
-    def update_attribute(self, **kwargs):
+    def update_attribute(self, **kwargs: Any) -> None:
         for key, value in kwargs.items():
             if not hasattr(self, key):
                 raise ValueError('Trying to update invalid attribute for TimeSeriesSequence!')
@@ -412,11 +433,12 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                  X_test: Optional[Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]] = None,
                  Y_test: Optional[Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]] = None,
                  start_times: Optional[List[pd.DatetimeIndex]] = None,
-                 known_future_features: Optional[Tuple[Union[str, int]]] = None,
+                 series_idx: Optional[Union[List[Union[str, int]], str, int]] = None,
+                 known_future_features: Optional[Union[Tuple[Union[str, int]], Tuple[()]]] = None,
                  time_feature_transform: Optional[List[TimeFeature]] = None,
                  freq: Optional[Union[str, int, List[int]]] = None,
-                 resampling_strategy: Optional[Union[
-                     CrossValTypes, HoldoutValTypes]] = HoldoutValTypes.time_series_hold_out_validation,
+                 resampling_strategy: Optional[
+                     Union[CrossValTypes, HoldoutValTypes]] = HoldoutValTypes.time_series_hold_out_validation,
                  resampling_strategy_args: Optional[Dict[str, Any]] = None,
                  shuffle: Optional[bool] = True,
                  seed: Optional[int] = 42,
@@ -448,14 +470,14 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.seasonality = int(seasonality)
 
         self.freq: str = freq
-        self.freq_value: int = freq_value
+        self.freq_value: Real = freq_value
 
         self.n_prediction_steps = n_prediction_steps
 
+        if dataset_name is None:
+            dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
         self.dataset_name = dataset_name
 
-        if self.dataset_name is None:
-            self.dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
         # Data Validation
         if validator is None:
             validator = TimeSeriesForecastingInputValidator(is_classification=False)
@@ -466,7 +488,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                              f"but receive {type(validator)}")
 
         if not self.validator._is_fitted:
-            self.validator.fit(X_train=X, y_train=Y, X_test=X_test, y_test=Y_test,
+            self.validator.fit(X_train=X, y_train=Y, X_test=X_test, y_test=Y_test, series_idx=series_idx,
                                start_times=start_times)
 
         self.is_uni_variant = self.validator._is_uni_variant
@@ -504,12 +526,12 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         # Construct time series sequences
         if known_future_features is None:
-            known_future_features = tuple()
+            known_future_features = tuple()  # type: ignore[assignment]
         known_future_features_index = extract_feature_index(self.feature_shapes,
-                                                            self.feature_names,
-                                                            queried_features=known_future_features)
+                                                            self.feature_names,  # type: ignore[arg-type]
+                                                            queried_features=known_future_features)  # type: ignore
 
-        self.known_future_features = tuple(known_future_features)
+        self.known_future_features = tuple(known_future_features)  # type: ignore[arg-type]
 
         # initialize datasets
         self.sequences_builder_kwargs = {"freq": self.freq,
@@ -527,37 +549,37 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                                                                       X_test=X_test,
                                                                       Y_test=Y_test, )
         sequence_datasets, train_tensors, test_tensors, sequence_lengths = training_sets
-        Y = train_tensors[1]
+        Y: pd.DataFrame = train_tensors[1]  # type: ignore[no-redef]
 
         ConcatDataset.__init__(self, datasets=sequence_datasets)
 
         self.num_sequences = len(Y)
-        self.sequence_lengths_train = np.asarray(sequence_lengths) - n_prediction_steps
+        self.sequence_lengths_train: np.ndarray = np.asarray(sequence_lengths) - n_prediction_steps
 
         self.seq_length_min = int(np.min(self.sequence_lengths_train))
         self.seq_length_median = int(np.median(self.sequence_lengths_train))
         self.seq_length_max = int(np.max(self.sequence_lengths_train))
 
-        if freq_value > self.seq_length_median:
+
+        if int(freq_value) > self.seq_length_median:
             self.base_window_size = self.seq_length_median
         else:
-            self.base_window_size = freq_value
+            self.base_window_size = int(freq_value)
 
-        self.train_tensors = train_tensors
+        self.train_tensors: Tuple[Optional[pd.DataFrame], pd.DataFrame] = train_tensors
 
-        self.test_tensors = test_tensors
+        self.test_tensors: Optional[Tuple[Optional[pd.DataFrame], pd.DataFrame]] = test_tensors
         self.val_tensors = None
 
-        self.task_type: Optional[str] = None
         self.issparse: bool = issparse(self.train_tensors[0])
 
-        self.input_shape: Tuple[int, int] = (self.seq_length_min, self.num_features)
+        self.input_shape: Tuple[int, int] = (self.seq_length_min, self.num_features)  # type: ignore[assignment]
 
         # process known future features
         if known_future_features is None:
             future_feature_shapes: Tuple[int, int] = (self.seq_length_min, 0)
         else:
-            future_feature_shapes: Tuple[int, int] = (self.seq_length_min, len(known_future_features))
+            future_feature_shapes = (self.seq_length_min, len(known_future_features))
         self.encoder_can_be_auto_regressive = (self.input_shape[-1] == future_feature_shapes[-1])
 
         if len(self.train_tensors) == 2 and self.train_tensors[1] is not None:
@@ -569,10 +591,10 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 self.output_type = "continuous"
 
             if STRING_TO_OUTPUT_TYPES[self.output_type] in CLASSIFICATION_OUTPUTS:
-                num_targets = len(np.unique(Y))
+                num_targets: int = len(np.unique(Y))
             else:
-                num_targets = Y.shape[-1] if Y.ndim > 1 else 1
-            self.output_shape = [self.n_prediction_steps, num_targets]
+                num_targets = Y.shape[-1] if Y.ndim > 1 else 1  # type: ignore[union-attr]
+            self.output_shape = [self.n_prediction_steps, num_targets]  # type: ignore
         else:
             raise ValueError('Forecasting dataset must contain target values!')
 
@@ -580,7 +602,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.is_small_preprocess = True
 
         # dataset split
-        self.task_type = TASK_TYPES_TO_STRING[TIMESERIES_FORECASTING]
+        self.task_type: str = TASK_TYPES_TO_STRING[TIMESERIES_FORECASTING]
 
         self.numerical_features: List[int] = self.numerical_columns
         self.categorical_features: List[int] = self.categorical_columns
@@ -592,7 +614,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             sequence_lengths=sequence_lengths,
             n_prediction_steps=n_prediction_steps,
             freq_value=self.freq_value,
-            resampling_strategy=resampling_strategy,
+            resampling_strategy=resampling_strategy,  # type: ignore[arg-type]
             resampling_strategy_args=resampling_strategy_args
         )
 
@@ -610,7 +632,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             self.holdout_validators = HoldOutFuncs.get_holdout_validators(
                 HoldoutValTypes.time_series_hold_out_validation)
 
-        self.splits = self.get_splits_from_resampling_strategy()
+        self.splits = self.get_splits_from_resampling_strategy()  # type: ignore[assignment]
 
         # TODO doing experiments to give the most proper way of defining these two values
         if lagged_value is None:
@@ -664,7 +686,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         series in a dataset share the same start time, we could only compute the features for longest possible series
         and reuse them
         """
-        series_lengths_max = {}
+        series_lengths_max: Dict[pd.DatetimeIndex, int] = {}
         for start_t, seq_l in zip(start_times, seq_lengths):
             if start_t not in series_lengths_max or seq_l > series_lengths_max[start_t]:
                 series_lengths_max[start_t] = seq_l
@@ -687,26 +709,28 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             sample_idx = idx - self.cumulative_sizes[dataset_idx - 1]
         return dataset_idx, sample_idx
 
-    def __len__(self):
+    def __len__(self) -> int:
         return ConcatDataset.__len__(self)
 
-    def __getitem__(self, idx, train=True):
-        dataset_idx, sample_idx = self._get_dataset_indices(idx)
+    def __getitem__(self, idx: int,  # type: ignore[override]
+                    train: bool = True) -> Tuple[Dict[str, torch.Tensor], Optional[Dict[str, torch.Tensor]]]:
+        dataset_idx, sample_idx = self._get_dataset_indices(idx)  # type: ignore[misc]
         return self.datasets[dataset_idx].__getitem__(sample_idx, train)
 
-    def get_validation_set(self, idx):
-        dataset_idx, sample_idx = self._get_dataset_indices(idx)
+    def get_validation_set(self, idx: int) -> TimeSeriesSequence:
+        dataset_idx, sample_idx = self._get_dataset_indices(idx)  # type: ignore[misc]
         return self.datasets[dataset_idx].get_val_seq_set(sample_idx)
 
-    def get_time_series_seq(self, idx) -> TimeSeriesSequence:
+    def get_time_series_seq(self, idx: int) -> TimeSeriesSequence:
         dataset_idx = self._get_dataset_indices(idx, True)
-        return self.datasets[dataset_idx]
+        return self.datasets[dataset_idx]  # type: ignore[index]
 
     def get_test_target(self, test_indices: np.ndarray) -> np.ndarray:
         test_indices = np.where(test_indices < 0, test_indices + len(self), test_indices)
         y_test = np.ones([len(test_indices), self.n_prediction_steps, self.num_targets])
         y_test_argsort = np.argsort(test_indices)
-        dataset_idx = self._get_dataset_indices(test_indices[y_test_argsort[0]], only_dataset_idx=True)
+        dataset_idx: int = self._get_dataset_indices(test_indices[y_test_argsort[0]],  # type: ignore[assignment]
+                                                     only_dataset_idx=True)
 
         for y_i in y_test_argsort:
             test_idx = test_indices[y_i]
@@ -726,8 +750,11 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                                                      Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]] = None,
                                                  Y_test: Optional[
                                                      Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]] = None,
-                                                 is_test_set: bool = False) -> [
-
+                                                 is_test_set: bool = False,) -> Tuple[
+        List[TimeSeriesSequence],
+        Tuple[Optional[pd.DataFrame], pd.DataFrame],
+        Optional[Tuple[Optional[pd.DataFrame], pd.DataFrame]],
+        List[int]
     ]:
         """
         Transform the raw data into a list of TimeSeriesSequence that can be processed by AutoPyTorch Time Series
@@ -746,13 +773,14 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 flattened test target array with size N_all (the sum of all the series sequences) and number of targets
             is_test_set: Optional[List[pd.DatetimeIndex]]
                 if the genereated sequecne used for test
-            sequences_kwargs: Dict
-                additional arguments for test sets
         Returns:
             sequence_datasets : List[TimeSeriesSequence]
                 a list of datasets
-            train_tensors: Tuple[List[np.ndarray], List[np.ndarray]]
+            train_tensors: Tuple[Optional[pd.DataFrame], pd.DataFrame]
                 training tensors
+            test_tensors: Optional[Tuple[Optional[pd.DataFrame], pd.DataFrame]]
+                test tensors
+
         """
         dataset_with_future_features = X is not None and len(self.known_future_features) > 0
         X, Y, sequence_lengths = self.validator.transform(X, Y)
@@ -765,7 +793,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             X_test, Y_test, _ = self.validator.transform(X_test, Y_test,
                                                          validate_for_future_features=dataset_with_future_features)
 
-        y_groups = Y.groupby(Y.index)
+        y_groups: pd.DataFrameGroupBy = Y.groupby(Y.index)  # type: ignore[union-attr]
         if self.normalize_y:
             mean = y_groups.agg("mean")
             std = y_groups.agg("std")
@@ -790,11 +818,11 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
     def make_sequences_datasets(X: Optional[pd.DataFrame],
                                 Y: pd.DataFrame,
                                 start_times: List[pd.DatetimeIndex],
-                                time_features: Optional[Dict[pd.Timestamp, np.ndarray]] = None,
+                                time_features: Optional[Dict[pd.DatetimeIndex, np.ndarray]] = None,
                                 X_test: Optional[pd.DataFrame] = None,
                                 Y_test: Optional[pd.DataFrame] = None,
                                 is_test_set: bool = False,
-                                **sequences_kwargs: Optional[Dict]) -> Tuple[
+                                **sequences_kwargs: Any) -> Tuple[
         List[TimeSeriesSequence],
         Tuple[Optional[pd.DataFrame], pd.DataFrame],
         Optional[Tuple[Optional[pd.DataFrame], pd.DataFrame]]
@@ -856,7 +884,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 start_time=start_time,
                 X_test=x_test_ser,
                 Y_test=y_test_ser,
-                time_features=time_features[start_time][:len(y_ser)],
+                time_features=time_features[start_time][:len(y_ser)] if time_features is not None else None,
                 is_test_set=is_test_set,
                 **sequences_kwargs)
             sequence_datasets.append(sequence)
@@ -915,16 +943,16 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         return self
 
     @property
-    def transform_time_features(self):
+    def transform_time_features(self) -> bool:
         return self._transform_time_features
 
     @transform_time_features.setter
-    def transform_time_features(self, value: bool):
-        self._transform_time_feature = value
+    def transform_time_features(self, value: bool) -> None:
+        self._transform_time_features = value
         for seq in self.datasets:
             seq.transform_time_features = value
 
-    def get_splits_from_resampling_strategy(self) -> List[Tuple[List[int], List[int]]]:
+    def get_splits_from_resampling_strategy(self) -> List[Tuple[List[int], Optional[List[int]]]]:
         """
         Creates a set of splits based on a resampling strategy provided, apart from the
         'get_splits_from_resampling_strategy' implemented in base_dataset, here we will get self.upper_sequence_length
@@ -955,7 +983,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             else:
                 n_repeats = 1
             # Create the split if it was not created before
-            splits.extend(self.create_cross_val_splits(
+            splits.extend(self.create_cross_val_splits(  # type: ignore[arg-type]
                 cross_val_type=self.resampling_strategy,
                 num_splits=cast(int, num_splits),
                 n_repeats=n_repeats
@@ -964,7 +992,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             splits.append(self.create_refit_split())
         else:
             raise ValueError(f"Unsupported resampling strategy={self.resampling_strategy}")
-        return splits
+        return splits  # type: ignore[return-value]
 
     def get_required_dataset_info(self) -> Dict[str, Any]:
         """
@@ -984,7 +1012,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
     def get_dataset_properties(self, dataset_requirements: List[FitRequirement]) -> Dict[str, Any]:
         dataset_properties = super().get_dataset_properties(dataset_requirements=dataset_requirements)
         dataset_properties.update({'n_prediction_steps': self.n_prediction_steps,
-                                   'sp': self.seasonality,  # For metric computation,
+                                   'sp': self.seasonality,  # For metric computation
                                    'input_shape': self.input_shape,
                                    'time_feature_transform': self.time_feature_transform,
                                    'uni_variant': self.is_uni_variant,
@@ -1000,8 +1028,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
     def get_split_strategy(sequence_lengths: List[int],
                            n_prediction_steps: int,
                            freq_value: Real,
-                           resampling_strategy: Optional[Union[
-                               CrossValTypes, HoldoutValTypes]] = HoldoutValTypes.time_series_hold_out_validation,
+                           resampling_strategy: Union[
+                               CrossValTypes, HoldoutValTypes] = HoldoutValTypes.time_series_hold_out_validation,
                            resampling_strategy_args: Optional[Dict[str, Any]] = None, ) -> \
             Tuple[Union[CrossValTypes, HoldoutValTypes], Optional[Dict[str, Any]]]:
         """
@@ -1099,7 +1127,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             self,
             cross_val_type: CrossValTypes,
             num_splits: int,
-            n_repeats=1,
+            n_repeats: int = 1,
     ) -> List[Tuple[Union[List[int], np.ndarray], Union[List[int], np.ndarray]]]:
         """
         This function creates the cross validation split for the given task.
@@ -1127,11 +1155,10 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         kwargs = {"n_prediction_steps": self.n_prediction_steps}
         if cross_val_type == CrossValTypes.time_series_ts_cross_validation:
             seasonality_h_value = int(np.round((self.n_prediction_steps // int(self.freq_value) + 1) * self.freq_value))
-            kwargs.update({'seasonality_h_value': seasonality_h_value,
-                           'freq_value': self.freq_value})
+            kwargs.update({'seasonality_h_value': seasonality_h_value})
         kwargs["n_repeats"] = n_repeats
 
-        splits = [[() for _ in range(len(self.datasets))] for _ in range(num_splits)]
+        splits: List[List[Tuple]] = [[() for _ in range(len(self.datasets))] for _ in range(num_splits)]
 
         for idx_seq, dataset in enumerate(self.datasets):
             split = self.cross_validators[cross_val_type.name](self.random_state,
@@ -1147,11 +1174,11 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         #  first_split = [([0], [1]), ([2], [3])] ....
         splits_merged = []
         for i in range(num_splits):
-            split = splits[i]
+            split = splits[i]  # type: ignore[assignment]
             train_indices = np.hstack([sp[0] for sp in split])
             test_indices = np.hstack([sp[1] for sp in split])
             splits_merged.append((train_indices, test_indices))
-        return splits_merged
+        return splits_merged  # type: ignore[return-value]
 
     def create_holdout_val_split(
             self,
@@ -1191,7 +1218,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                                                                    indices=np.arange(len(dataset)) + idx_start,
                                                                    **kwargs)
             for idx_split in range(2):
-                splits[idx_split][idx_seq] = split[idx_split]
+                splits[idx_split][idx_seq] = split[idx_split]  # type: ignore[call-overload]
             idx_start += self.sequence_lengths_train[idx_seq]
 
         train_indices = np.hstack([sp for sp in splits[0]])
@@ -1228,7 +1255,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
     def create_refit_set(self) -> "TimeSeriesForecastingDataset":
         refit_set: TimeSeriesForecastingDataset = copy.deepcopy(self)
-        refit_set.resampling_strategy = None
+        refit_set.resampling_strategy = None  # type: ignore[assignment]
         refit_set.splits = refit_set.get_splits_from_resampling_strategy()
         return refit_set
 

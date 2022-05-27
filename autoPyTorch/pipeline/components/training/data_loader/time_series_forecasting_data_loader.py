@@ -1,7 +1,6 @@
-from typing import Any, Dict, Optional, Union, Tuple, List, Callable
+from typing import Any, Dict, Optional, Union, Tuple, List, Callable, Iterator
 import warnings
 from functools import partial
-
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import UniformIntegerHyperparameter, CategoricalHyperparameter
@@ -10,10 +9,11 @@ from ConfigSpace.conditions import EqualsCondition
 import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
-
 import torch
 
 import torchvision
+
+from gluonts.time_feature import TimeFeature
 
 from autoPyTorch.datasets.time_series_dataset import (
     TimeSeriesForecastingDataset,
@@ -53,18 +53,23 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                  window_size: int = 1,
                  num_batches_per_epoch: Optional[int] = 50,
                  n_prediction_steps: int = 1,
-                 sample_strategy='SeqUniform',
-                 transform_time_features=False,
+                 sample_strategy: str = 'SeqUniform',
+                 transform_time_features: bool = False,
                  random_state: Optional[np.random.RandomState] = None) -> None:
         """
         initialize a dataloader
         Args:
             batch_size: batch size
-            sequence_length: length of each sequence
-            sample_interval: sample interval ,its value is the interval of the resolution
+            backcast (bool): if backcast is applied, where window_size is determined on the forecasting horizon
+            backcast_period (int): backcast period, window_size is computed by horizon * backcast_period
+            window_size(int): windows size, activate when backcast is false
+            num_batches_per_epoch (int): number of batches per epoch
+            n_prediction_steps (int): forecasting horizon
+            sample_strategy (str): sample strategy, if all the sequences are expected to be sampled with the same size
+                or all the time steps are expected to be sampled with the same size
+            transform_time_features (bool): if time features are transformed
+            random_state (Optional[np.random.RandomState]): random states
 
-            num_batches_per_epoch: how
-            n_prediction_steps: how many steps to predict in advance
         """
         super().__init__(batch_size=batch_size, random_state=random_state)
         self.backcast = backcast
@@ -81,16 +86,16 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         # self.subseq_length = self.sample_interval * (self.window_size - 1) + 1
         self.sample_strategy = sample_strategy
         self.num_batches_per_epoch = num_batches_per_epoch if num_batches_per_epoch is not None else np.inf
-        self.padding_collector = None
+        self.padding_collector: Optional[Callable] = None
 
         self.known_future_features_index = None
         self._is_uni_variant = False
 
         self.transform_time_features = transform_time_features
         self.freq = "1Y"
-        self.time_feature_transform = []
-        self.dataset_columns = []
-        self.sampler_train = None
+        self.time_feature_transform: List[TimeFeature] = []
+        self.dataset_columns: List[Union[int, str]] = []
+        self.sampler_train: Optional[Union[Iterator, torch.utils.data.sampler.Sampler]] = None
 
         # Applied for get loader
         self.feature_preprocessor: Optional[ColumnTransformer] = None
@@ -153,7 +158,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                                                           replace=False)
 
         if self.sample_strategy == 'LengthUniform':
-            available_seq_length = seq_train_length - min_start
+            available_seq_length: np.ndarray = seq_train_length - min_start
             available_seq_length = np.where(available_seq_length <= 0, 0, available_seq_length)
             num_instances_per_seqs = num_instances_epoch / np.sum(available_seq_length) * available_seq_length
         elif self.sample_strategy == 'SeqUniform':
@@ -202,7 +207,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             feature_names=X['dataset_properties']['feature_names'],
             queried_features=X['dataset_properties']['known_future_features']
         )
-        self.known_future_features_index = tuple(known_future_features_index)
+        self.known_future_features_index = known_future_features_index
 
         self.padding_collector = PadSequenceCollector(self.window_size, sample_interval, padding_value,
                                                       max_lagged_value)
@@ -349,7 +354,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         return torchvision.transforms.Compose(candidate_transformations)
 
     def get_loader(self, X: Union[np.ndarray, TimeSeriesSequence], y: Optional[np.ndarray] = None,
-                   batch_size: int = np.inf,
+                   batch_size: int = np.iinfo(np.int32).max,
                    ) -> torch.utils.data.DataLoader:
         """
         Creates a data loader object from the provided data,
@@ -367,6 +372,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                     sequence_lengths[seq_idx] = len(x_seq.X)
                 series_number = np.arange(len(sequence_lengths)).repeat(sequence_lengths)
 
+                assert self.known_future_features_index is not None
                 if len(self.known_future_features_index) > 0:
                     sequence_lengths_test = [0] * num_sequences
                     for seq_idx, x_seq in enumerate(X):
@@ -418,16 +424,16 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                     x_seq._cached_time_features = None
 
                 if self.dataset_small_preprocess and not self._is_uni_variant:
-                    x_seq.X = x_all.get_group(i).transform(np.array).values
-                    update_dict = {"known_future_features_index": self.known_future_features_index}
-                    if len(self.known_future_features_index) > 0:
-                        x_seq.X_test = x_all_test.get_group(i).transform(np.array).values
+                    x_seq.X = x_all.get_group(i).transform(np.array).values  # type: ignore[has-type]
+                    update_dict: Dict[str, Any] = {"known_future_features_index": self.known_future_features_index}
+                    if len(self.known_future_features_index) > 0:  # type: ignore[arg-type]
+                        x_seq.X_test = x_all_test.get_group(i).transform(np.array).values  # type: ignore[has-type]
 
                 else:
                     update_dict = {}
-                update_dict.update(dict(freq=self.freq,
-                                        transform_time_features=self.transform_time_features,
-                                        time_feature_transform=self.time_feature_transform, ))
+                update_dict.update({'freq': self.freq,
+                                    'transform_time_features': self.transform_time_features,
+                                    'time_feature_transform': self.time_feature_transform, })
 
                 x_seq.update_attribute(**update_dict)
                 if self.transform_time_features:

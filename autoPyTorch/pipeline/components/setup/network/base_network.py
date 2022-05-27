@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, List
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 
@@ -32,7 +32,7 @@ class NetworkComponent(autoPyTorchTrainingComponent):
         self.final_activation: Optional[torch.nn.Module] = None
 
     @property
-    def _required_fit_requirements(self):
+    def _required_fit_requirements(self) -> List[FitRequirement]:
         return [
             FitRequirement("network_head", (torch.nn.Module,), user_defined=False, dataset_property=False),
             FitRequirement("network_backbone", (torch.nn.Module,), user_defined=False, dataset_property=False),

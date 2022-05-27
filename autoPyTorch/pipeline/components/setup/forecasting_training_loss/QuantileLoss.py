@@ -26,7 +26,7 @@ class NetworkQuantileLoss(ForecastingLossComponents):
         self.quantiles = [0.5, lower_quantile, upper_quantile]
         # To make it compatible with
         # autoPyTorch.pipeline.components.training.trainer.forecasting_trainer.forecasting_base_trainer
-        self.loss = partial(QuantileLoss, quantiles=self.quantiles)
+        self.loss = partial(QuantileLoss, quantiles=self.quantiles)  # type: ignore[assignment]
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         X.update({"quantile_values": self.quantiles})

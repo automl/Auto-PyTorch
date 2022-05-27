@@ -17,7 +17,7 @@ from autoPyTorch.pipeline.components.preprocessing.base_preprocessing import (
 def get_preprocess_transforms(X: Dict[str, Any],
                               preprocess_type: Union[Type[aPTPre], Type[aPTTPre]] = aPTPre) \
         -> List[Union[Type[aPTPre], Type[aPTTPre]]]:
-    candidate_transforms: List[preprocess_type] = list()
+    candidate_transforms = []
     for key, value in X.items():
         if isinstance(value, preprocess_type):
             candidate_transforms.append(copy.deepcopy(value))

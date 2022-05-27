@@ -1,6 +1,6 @@
 import os
 from collections import OrderedDict
-from typing import Dict, Optional, List, Any, Union
+from typing import Dict, Optional, List, Any, Union, Type
 from sklearn.pipeline import Pipeline
 import inspect
 
@@ -56,7 +56,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
     deepAR_decoder_prefix = 'block_1'
     tf_prefix = "temporal_fusion"
 
-    def get_components(self) -> Dict[str, autoPyTorchComponent]:
+    def get_components(self) -> Dict[str, Type[autoPyTorchComponent]]:  # type: ignore[override]
         """Returns the available backbone components
 
         Args:
@@ -71,7 +71,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         components.update(_addons.components)
         return components
 
-    def get_hyperparameter_search_space(  # type: ignore
+    def get_hyperparameter_search_space(  # type: ignore[override]
             self,
             dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
             num_blocks: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_blocks",

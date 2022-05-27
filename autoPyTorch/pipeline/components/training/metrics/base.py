@@ -47,7 +47,7 @@ class ForecastingMetricMixin:
                  sp: int,
                  n_prediction_steps: int,
                  horizon_weight: Optional[List[float]] = None
-                 ):
+                 ) -> float:
         raise NotImplementedError()
 
 
@@ -191,7 +191,7 @@ class _ThresholdMetric(autoPyTorchMetric):
 
 
 class _ForecastingMetric(ForecastingMetricMixin, autoPyTorchMetric):
-    def __call__(
+    def __call__(  # type: ignore[override]
             self,
             y_true: np.ndarray,
             y_pred: np.ndarray,
@@ -199,7 +199,7 @@ class _ForecastingMetric(ForecastingMetricMixin, autoPyTorchMetric):
             n_prediction_steps: int,
             horizon_weight: Optional[List[float]] = None,
             sample_weight: Optional[List[float]] = None,
-            **kwarg: Dict,
+            **kwarg: Any,
     ) -> float:
         """Evaluate time series forecasting losses given input data
         The description is nearly the same as the one defined under
@@ -251,12 +251,12 @@ class _ForecastingMetric(ForecastingMetricMixin, autoPyTorchMetric):
         y_true = y_true.reshape((n_prediction_steps, -1))
         y_pred = y_pred.reshape((n_prediction_steps, -1))
 
-        losses_all = self._metric_func(y_true=y_true,
-                                       y_pred=y_pred,
-                                       sp=sp,
-                                       horizon_weight=horizon_weight,
-                                       multioutput='raw_values',
-                                       **self._kwargs)
+        losses_all: np.ndarray = self._metric_func(y_true=y_true, # type: ignore[assignment]
+                                                   y_pred=y_pred,
+                                                   sp=sp,
+                                                   horizon_weight=horizon_weight,
+                                                   multioutput='raw_values',
+                                                   **self._kwargs)
 
         losses_all = losses_all.reshape([-1, n_outputs])
 

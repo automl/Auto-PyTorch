@@ -95,7 +95,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         # model, so we comply with https://pytorch.org/docs/stable/notes/randomness.html
         torch.manual_seed(self.random_state.get_state()[1][0])
 
-    def score(self, X: np.ndarray, y: np.ndarray, batch_size: Optional[int] = None) -> np.ndarray:
+    def score(self, X: np.ndarray, y: np.ndarray, batch_size: Optional[int] = None, **score_kwargs: Any) -> float:
         """Scores the fitted estimator on (X, y)
 
         Args:
@@ -107,10 +107,10 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             np.ndarray: coefficient of determination R^2 of the prediction
         """
         from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics, calculate_score
-        metrics = get_metrics(self.dataset_properties, ['r2'])
+        metrics = get_metrics(self.dataset_properties, ['mean_MAPE_forecasting'])
         y_pred = self.predict(X, batch_size=batch_size)
         r2 = calculate_score(y, y_pred, task_type=STRING_TO_TASK_TYPES[self.dataset_properties['task_type']],
-                             metrics=metrics)['r2']
+                             metrics=metrics, **score_kwargs)['mean_MAPE_forecasting']
         return r2
 
     def _get_hyperparameter_search_space(self,
@@ -382,14 +382,14 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         Returns:
             Dict: contains the pipeline representation in a short format
         """
-        preprocessing = []
-        estimator = []
+        preprocessing: List[str] = []
+        estimator: List[str] = []
         skip_steps = ['data_loader', 'trainer', 'lr_scheduler', 'optimizer', 'network_init',
                       'preprocessing', 'time_series_transformer']
         for step_name, step_component in self.steps:
             if step_name in skip_steps:
                 continue
-            properties = {}
+            properties: Dict[str, Any] = {}
             if isinstance(step_component, autoPyTorchChoice) and step_component.choice is not None:
                 properties = step_component.choice.get_properties()
             elif isinstance(step_component, autoPyTorchComponent):

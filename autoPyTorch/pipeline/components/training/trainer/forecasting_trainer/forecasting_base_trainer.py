@@ -24,7 +24,7 @@ from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTr
 
 
 class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
-    def prepare(
+    def prepare(  # type: ignore[override]
             self,
             metrics: List[Any],
             model: ForecastingNet,
@@ -38,7 +38,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             labels: Union[np.ndarray, torch.Tensor, pd.DataFrame],
             step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.batch,
             window_size: int = 20,
-            dataset_properties: Optional[Dict] = None,
+            dataset_properties: Dict = {},
             target_scaler: BaseTargetScaler = TargetNoScaler(),
             backcast_loss_ratio: Optional[float] = None,
     ) -> None:
@@ -163,8 +163,8 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                                                                          future_targets_values.to(self.device))
             backcast, forecast = self.model(past_targets=past_target, past_observed_targets=past_observed_targets)
 
-            loss_func_backcast = self.criterion_preparation(**criterion_kwargs_past)
-            loss_func_forecast = self.criterion_preparation(**criterion_kwargs_future)
+            loss_func_backcast = self.criterion_preparation(**criterion_kwargs_past)  # type: ignore[arg-type]
+            loss_func_forecast = self.criterion_preparation(**criterion_kwargs_future)  # type: ignore[arg-type]
 
             loss_backcast = loss_func_backcast(self.criterion, backcast) * past_observed_targets.to(self.device)
             loss_forecast = loss_func_forecast(self.criterion, forecast) * future_observed_targets.to(self.device)
@@ -197,7 +197,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                                  future_targets=future_targets_values,
                                  past_observed_targets=past_observed_targets)
 
-            loss_func = self.criterion_preparation(**criterion_kwargs)
+            loss_func = self.criterion_preparation(**criterion_kwargs)  # type: ignore[arg-type]
 
             loss = torch.mean(loss_func(self.criterion, outputs) * future_observed_targets.to(self.device))
 
@@ -275,8 +275,8 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                 future_targets_values = future_targets_values.to(self.device)
 
                 if isinstance(outputs, list) and self.model.output_type != 'quantile':
-                    loss = [self.criterion(output, future_targets_values) for output in outputs]
-                    loss = torch.mean(torch.Tensor(loss) * future_observed_targets)
+                    losses = [self.criterion(output, future_targets_values) for output in outputs]
+                    loss = torch.mean(torch.Tensor(losses) * future_observed_targets)
                 else:
                     loss = torch.mean(self.criterion(outputs, future_targets_values) * future_observed_targets)
                 outputs = self.model.pred_from_net_output(outputs)
