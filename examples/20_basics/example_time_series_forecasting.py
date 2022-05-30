@@ -57,7 +57,7 @@ api.search(
     X_test=X_test,
     optimize_metric='mean_MASE_forecasting',
     n_prediction_steps=forecasting_horizon,
-    memory_limit=None,
+    memory_limit=16 * 1024,  # Currently, forecasting models need much more memories than it actually requires
     freq=freq,
     start_times=start_times,
     func_eval_time_limit_secs=50,
