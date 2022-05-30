@@ -148,6 +148,7 @@ class MyTraditionalTabularRegressionPipeline(BaseEstimator):
             An optional dictionary that is passed to the pipeline's steps. It complies
             a similar function as the kwargs
     """
+
     def __init__(self, config: str,
                  dataset_properties: Dict[str, Any],
                  random_state: Optional[np.random.RandomState] = None,
@@ -191,7 +192,7 @@ class MyTraditionalTabularRegressionPipeline(BaseEstimator):
 
     @staticmethod
     def get_default_pipeline_options() -> Dict[str, Any]:
-        return autoPyTorch.pipeline.traditional_tabular_regression.\
+        return autoPyTorch.pipeline.traditional_tabular_regression. \
             TraditionalTabularRegressionPipeline.get_default_pipeline_options()
 
 
@@ -327,7 +328,7 @@ class DummyTimeSeriesForecastingPipeline(DummyClassificationPipeline):
         y_train = subsampler(X['y_train'], X['train_indices'])
         return DummyClassifier.fit(self, np.ones((y_train.shape[0], 1)), y_train, sample_weight)
 
-    def _genreate_dummy_forecasting(self, X):
+    def _genreate_dummy_forecasting(self, X: List[Union[TimeSeriesSequence, np.ndarray]]) -> List:
         if isinstance(X[0], TimeSeriesSequence):
             X_tail = [x.get_target_values(-1) for x in X]
         else:
@@ -335,12 +336,12 @@ class DummyTimeSeriesForecastingPipeline(DummyClassificationPipeline):
         return X_tail
 
     def predict_proba(self, X: Union[np.ndarray, pd.DataFrame],
-                      batch_size: int = 1000) -> np.array:
+                      batch_size: int = 1000) -> np.ndarray:
         X_tail = self._genreate_dummy_forecasting(X)
         return np.tile(X_tail, (1, self.n_prediction_steps)).astype(np.float32).squeeze()
 
     def predict(self, X: Union[np.ndarray, pd.DataFrame],
-                batch_size: int = 1000) -> np.array:
+                batch_size: int = 1000) -> np.ndarray:
         X_tail = np.asarray(self._genreate_dummy_forecasting(X))
         if X_tail.ndim == 1:
             X_tail = np.expand_dims(X_tail, -1)
@@ -454,6 +455,7 @@ class AbstractEvaluator(object):
         search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
             An object used to fine tune the hyperparameter search space of the pipeline
     """
+
     def __init__(self, backend: Backend,
                  queue: Queue,
                  metric: autoPyTorchMetric,
@@ -577,7 +579,7 @@ class AbstractEvaluator(object):
         self.logger.debug("Search space updates :{}".format(self.search_space_updates))
 
     def _init_datamanager_info(
-        self,
+            self,
     ) -> None:
         """
         Initialises instance attributes that come from the datamanager.
@@ -624,10 +626,10 @@ class AbstractEvaluator(object):
         del datamanager
 
     def _init_fit_dictionary(
-        self,
-        logger_port: int,
-        pipeline_config: Dict[str, Any],
-        metrics_dict: Optional[Dict[str, List[str]]] = None,
+            self,
+            logger_port: int,
+            pipeline_config: Dict[str, Any],
+            metrics_dict: Optional[Dict[str, List[str]]] = None,
     ) -> None:
         """
         Initialises the fit dictionary
@@ -727,7 +729,7 @@ class AbstractEvaluator(object):
             raise ValueError("Invalid configuration entered")
         return pipeline
 
-    def _loss(self, y_true: np.ndarray, y_hat: np.ndarray, **metric_kwargs: Dict) -> Dict[str, float]:
+    def _loss(self, y_true: np.ndarray, y_hat: np.ndarray, **metric_kwargs: Any) -> Dict[str, float]:
         """SMAC follows a minimization goal, so the make_scorer
         sign is used as a guide to obtain the value to reduce.
         The calculate_loss internally translate a score function to
@@ -758,7 +760,7 @@ class AbstractEvaluator(object):
     def finish_up(self, loss: Dict[str, float], train_loss: Dict[str, float],
                   opt_pred: np.ndarray, valid_pred: Optional[np.ndarray],
                   test_pred: Optional[np.ndarray], additional_run_info: Optional[Dict],
-                  file_output: bool, status: StatusType, **metric_kwargs: Dict
+                  file_output: bool, status: StatusType, **metric_kwargs: Any
                   ) -> Optional[Tuple[float, float, int, Dict]]:
         """This function does everything necessary after the fitting is done:
 
@@ -788,7 +790,7 @@ class AbstractEvaluator(object):
                 Whether or not this pipeline should output information to disk
             status (StatusType)
                 The status of the run, following SMAC StatusType syntax.
-            metric_kwargs (Dict)
+            metric_kwargs (Any)
                 Additional arguments for computing metrics
 
         Returns:
@@ -842,10 +844,10 @@ class AbstractEvaluator(object):
         return None
 
     def calculate_auxiliary_losses(
-        self,
-        Y_valid_pred: np.ndarray,
-        Y_test_pred: np.ndarray,
-        **metric_kwargs: Dict
+            self,
+            Y_valid_pred: np.ndarray,
+            Y_test_pred: np.ndarray,
+            **metric_kwargs: Any
     ) -> Tuple[Optional[Dict[str, float]], Optional[Dict[str, float]]]:
         """
         A helper function to calculate the performance estimate of the
@@ -858,7 +860,7 @@ class AbstractEvaluator(object):
             Y_test_pred (np.ndarray):
                 predictions on a test set provided by the user,
                 matching self.y_test
-            metric_kwargs (Dict)
+            metric_kwargs (Any)
                 additional argument for evaluating the loss metric
 
         Returns:
@@ -882,10 +884,10 @@ class AbstractEvaluator(object):
         return validation_loss_dict, test_loss_dict
 
     def file_output(
-        self,
-        Y_optimization_pred: np.ndarray,
-        Y_valid_pred: np.ndarray,
-        Y_test_pred: np.ndarray
+            self,
+            Y_optimization_pred: np.ndarray,
+            Y_valid_pred: np.ndarray,
+            Y_test_pred: np.ndarray
     ) -> Tuple[Optional[float], Dict]:
         """
         This method decides what file outputs are written to disk.
@@ -1020,6 +1022,7 @@ class AbstractEvaluator(object):
             (np.ndarray):
                 The predictions of pipeline for the given features X
         """
+
         @no_type_check
         def send_warnings_to_log(message, category, filename, lineno,
                                  file=None, line=None):
@@ -1054,6 +1057,7 @@ class AbstractEvaluator(object):
             (np.ndarray):
                 The predictions of pipeline for the given features X
         """
+
         @no_type_check
         def send_warnings_to_log(message, category, filename, lineno,
                                  file=None, line=None):

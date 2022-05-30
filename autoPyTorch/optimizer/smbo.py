@@ -61,6 +61,8 @@ def get_smac_object(
         ta (Callable): the function to be intensifier by smac
         ta_kwargs (Dict[str, Any]): Arguments to the above ta
         n_jobs (int): Amount of cores to use for this task
+        initial_budget (int): the minimal budget to be allocated to the target algorithm
+        max_budget (int): the max budget to be allocated to the target algorithm
         dask_client (dask.distributed.Client): User provided scheduler
         initial_configurations (List[Configuration]): List of initial
             configurations which smac will run before starting the search process

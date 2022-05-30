@@ -63,7 +63,7 @@ class TimeSeriesMLP(EncoderNetwork):
         return x
 
 
-class MLPEncoder(BaseForecastingEncoder, MLPBackbone):  # type:ignore[misc]
+class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
     _fixed_seq_length = True
     window_size = 1
 
@@ -131,7 +131,7 @@ class MLPEncoder(BaseForecastingEncoder, MLPBackbone):  # type:ignore[misc]
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(  # type: ignore
+    def get_hyperparameter_search_space(
             dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
             num_groups: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_groups",
                                                                               value_range=(1, 5),

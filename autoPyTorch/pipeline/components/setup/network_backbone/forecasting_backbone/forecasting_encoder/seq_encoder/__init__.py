@@ -56,7 +56,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
     deepAR_decoder_prefix = 'block_1'
     tf_prefix = "temporal_fusion"
 
-    def get_components(self) -> Dict[str, Type[autoPyTorchComponent]]:  # type: ignore[override]
+    def get_components(self) -> Dict[str, Type[autoPyTorchComponent]]:
         """Returns the available backbone components
 
         Args:
@@ -71,7 +71,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         components.update(_addons.components)
         return components
 
-    def get_hyperparameter_search_space(  # type: ignore[override]
+    def get_hyperparameter_search_space(
             self,
             dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
             num_blocks: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_blocks",
@@ -228,12 +228,12 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         # Compile a list of legal preprocessors for this problem
         available_encoders: Dict[str, BaseForecastingEncoder] = self.get_available_components(
             dataset_properties=dataset_properties,
-            include=include, exclude=exclude)  # type:ignore[assignment]
+            include=include, exclude=exclude)
 
         available_decoders: Dict[str, BaseForecastingDecoder] = self.get_available_components(
             dataset_properties=dataset_properties,
             include=None, exclude=exclude,
-            components=self.get_decoder_components())  # type:ignore[assignment]
+            components=self.get_decoder_components())
 
         if len(available_encoders) == 0:
             raise ValueError("No Encoder found")
@@ -394,8 +394,8 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                         encoders_with_multi_decoder.append(encoder)
                     else:
                         encoder_with_single_decoder.append(encoder)
-                encoders_with_multi_decoder = set(encoders_with_multi_decoder)  # type:ignore[assignment]
-                encoder_with_single_decoder = set(encoder_with_single_decoder)  # type:ignore[assignment]
+                encoders_with_multi_decoder = set(encoders_with_multi_decoder)
+                encoder_with_single_decoder = set(encoder_with_single_decoder)
 
                 cs.add_configuration_space(
                     block_prefix + decoder_name,
@@ -511,7 +511,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             )
 
         for encoder_name, encoder in available_encoders.items():
-            encoder_is_casual = encoder.encoder_properties()  # type: ignore
+            encoder_is_casual = encoder.encoder_properties()
             if not encoder_is_casual:
                 # we do not allow non-casual encoder to appear in the lower layer of the network. e.g, if we have an
                 # encoder with 3 blocks, then non_casual encoder is only allowed to appear in the third layer
@@ -682,7 +682,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             if 'auto_regressive' not in decoder_params:
                 decoder_params['auto_regressive'] = decoder_auto_regressive
             encoder = self.get_components()[choice](**new_params)
-            decoder = decoder_components[decoder_type](**decoder_params)  # type:ignore
+            decoder = decoder_components[decoder_type](**decoder_params)
             pipeline_steps.extend([(f'encoder_{i}', encoder), (f'decoder_{i}', decoder)])
             self.encoder_choice.append(encoder)
             self.decoder_choice.append(decoder)

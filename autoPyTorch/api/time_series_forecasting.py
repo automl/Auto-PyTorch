@@ -164,7 +164,7 @@ class TimeSeriesForecastingTask(BaseTask):
             series_idx: Optional[Union[List[Union[str, int]], str, int]] = None,
             n_prediction_steps: int = 1,
             known_future_features: Tuple[Union[int, str]] = (),
-            **forecasting_dataset_kwargs,
+            **forecasting_dataset_kwargs: Any,
     ) -> Tuple[TimeSeriesForecastingDataset, TimeSeriesForecastingInputValidator]:
         """
         Returns an object of `TabularDataset` and an object of
@@ -238,38 +238,37 @@ class TimeSeriesForecastingTask(BaseTask):
 
         return dataset, input_validator
 
-    def search(
-            self,
-            optimize_metric: str,
-            X_train: Optional[Union[List, pd.DataFrame]] = None,
-            y_train: Optional[Union[List, pd.DataFrame]] = None,
-            X_test: Optional[Union[List, pd.DataFrame]] = None,
-            y_test: Optional[Union[List, pd.DataFrame]] = None,
-            n_prediction_steps: int = 1,
-            freq: Optional[Union[str, int, List[int]]] = None,
-            start_times: Optional[List[pd.DatetimeIndex]] = None,
-            series_idx: Optional[Union[List[Union[str, int]], str, int]] = None,
-            dataset_name: Optional[str] = None,
-            budget_type: str = 'epochs',
-            min_budget: Union[int, str] = 5,
-            max_budget: Union[int, str] = 50,
-            total_walltime_limit: int = 100,
-            func_eval_time_limit_secs: Optional[int] = None,
-            enable_traditional_pipeline: bool = False,
-            memory_limit: Optional[int] = 4096,
-            smac_scenario_args: Optional[Dict[str, Any]] = None,
-            get_smac_object_callback: Optional[Callable] = None,
-            all_supported_metrics: bool = True,
-            precision: int = 32,
-            disable_file_output: List = [],
-            load_models: bool = True,
-            portfolio_selection: Optional[str] = None,
-            suggested_init_models: Optional[List[str]] = None,
-            custom_init_setting_path: Optional[str] = None,
-            min_num_test_instances: Optional[int] = None,
-            dataset_compression: Union[Mapping[str, Any], bool] = False,
-            **forecasting_dataset_kwargs
-    ) -> 'BaseTask':
+    def search(self,
+               optimize_metric: str,
+               X_train: Optional[Union[List, pd.DataFrame]] = None,
+               y_train: Optional[Union[List, pd.DataFrame]] = None,
+               X_test: Optional[Union[List, pd.DataFrame]] = None,
+               y_test: Optional[Union[List, pd.DataFrame]] = None,
+               n_prediction_steps: int = 1,
+               freq: Optional[Union[str, int, List[int]]] = None,
+               start_times: Optional[List[pd.DatetimeIndex]] = None,
+               series_idx: Optional[Union[List[Union[str, int]], str, int]] = None,
+               dataset_name: Optional[str] = None,
+               budget_type: str = 'epochs',
+               min_budget: Union[int, str] = 5,
+               max_budget: Union[int, str] = 50,
+               total_walltime_limit: int = 100,
+               func_eval_time_limit_secs: Optional[int] = None,
+               enable_traditional_pipeline: bool = False,
+               memory_limit: Optional[int] = 4096,
+               smac_scenario_args: Optional[Dict[str, Any]] = None,
+               get_smac_object_callback: Optional[Callable] = None,
+               all_supported_metrics: bool = True,
+               precision: int = 32,
+               disable_file_output: List = [],
+               load_models: bool = True,
+               portfolio_selection: Optional[str] = None,
+               suggested_init_models: Optional[List[str]] = None,
+               custom_init_setting_path: Optional[str] = None,
+               min_num_test_instances: Optional[int] = None,
+               dataset_compression: Union[Mapping[str, Any], bool] = False,
+               **forecasting_dataset_kwargs: Any
+               ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
 

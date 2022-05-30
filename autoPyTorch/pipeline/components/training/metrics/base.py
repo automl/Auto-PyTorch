@@ -191,7 +191,7 @@ class _ThresholdMetric(autoPyTorchMetric):
 
 
 class _ForecastingMetric(ForecastingMetricMixin, autoPyTorchMetric):
-    def __call__(  # type: ignore[override]
+    def __call__(
             self,
             y_true: np.ndarray,
             y_pred: np.ndarray,
@@ -251,7 +251,7 @@ class _ForecastingMetric(ForecastingMetricMixin, autoPyTorchMetric):
         y_true = y_true.reshape((n_prediction_steps, -1))
         y_pred = y_pred.reshape((n_prediction_steps, -1))
 
-        losses_all: np.ndarray = self._metric_func(y_true=y_true, # type: ignore[assignment]
+        losses_all: np.ndarray = self._metric_func(y_true=y_true,
                                                    y_pred=y_pred,
                                                    sp=sp,
                                                    horizon_weight=horizon_weight,

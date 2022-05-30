@@ -163,8 +163,8 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                                                                          future_targets_values.to(self.device))
             backcast, forecast = self.model(past_targets=past_target, past_observed_targets=past_observed_targets)
 
-            loss_func_backcast = self.criterion_preparation(**criterion_kwargs_past)  # type: ignore[arg-type]
-            loss_func_forecast = self.criterion_preparation(**criterion_kwargs_future)  # type: ignore[arg-type]
+            loss_func_backcast = self.criterion_preparation(**criterion_kwargs_past)
+            loss_func_forecast = self.criterion_preparation(**criterion_kwargs_future)
 
             loss_backcast = loss_func_backcast(self.criterion, backcast) * past_observed_targets.to(self.device)
             loss_forecast = loss_func_forecast(self.criterion, forecast) * future_observed_targets.to(self.device)
@@ -197,7 +197,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
                                  future_targets=future_targets_values,
                                  past_observed_targets=past_observed_targets)
 
-            loss_func = self.criterion_preparation(**criterion_kwargs)  # type: ignore[arg-type]
+            loss_func = self.criterion_preparation(**criterion_kwargs)
 
             loss = torch.mean(loss_func(self.criterion, outputs) * future_observed_targets.to(self.device))
 

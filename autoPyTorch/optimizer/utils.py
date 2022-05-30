@@ -36,7 +36,7 @@ def read_forecasting_init_configurations(config_space: ConfigurationSpace,
                                          suggested_init_models: Optional[List[str]] = None,
                                          custom_init_setting_path: Optional[str] = None,
                                          dataset_properties: Dict = {}
-                                         ):
+                                         ) -> List[Configuration]:
     forecasting_init_path = os.path.join(os.path.dirname(__file__), '../configs/forecasting_init_cfgs.json')
     initial_configurations_dict: List[Dict] = list()
     initial_configurations = []
@@ -46,7 +46,7 @@ def read_forecasting_init_configurations(config_space: ConfigurationSpace,
 
     if suggested_init_models or suggested_init_models is None:
         with open(forecasting_init_path, 'r') as f:
-            forecasting_init_dict: [Dict[str, Any]] = json.load(f)
+            forecasting_init_dict: Dict[str, Any] = json.load(f)
         cfg_trainer: Dict = forecasting_init_dict['trainer']
         models_name_to_cfgs: Dict = forecasting_init_dict['models']
 

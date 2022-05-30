@@ -424,10 +424,10 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                     x_seq._cached_time_features = None
 
                 if self.dataset_small_preprocess and not self._is_uni_variant:
-                    x_seq.X = x_all.get_group(i).transform(np.array).values  # type: ignore[has-type]
+                    x_seq.X = x_all.get_group(i).transform(np.array).values
                     update_dict: Dict[str, Any] = {"known_future_features_index": self.known_future_features_index}
-                    if len(self.known_future_features_index) > 0:  # type: ignore[arg-type]
-                        x_seq.X_test = x_all_test.get_group(i).transform(np.array).values  # type: ignore[has-type]
+                    if len(self.known_future_features_index) > 0:
+                        x_seq.X_test = x_all_test.get_group(i).transform(np.array).values
 
                 else:
                     update_dict = {}

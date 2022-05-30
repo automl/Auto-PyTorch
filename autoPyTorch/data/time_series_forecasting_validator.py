@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-from typing import Optional, Tuple, List, Union, Dict
+from typing import Optional, Tuple, List, Union, Dict, Iterable
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator
@@ -25,24 +25,24 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                  dataset_compression: Optional[DatasetCompressionSpec] = None,
                  ) -> None:
         super(TimeSeriesForecastingInputValidator, self).__init__(is_classification, logger_port, dataset_compression)
-        self.feature_validator = TimeSeriesFeatureValidator(logger=self.logger)
-        self.target_validator = TimeSeriesTargetValidator(is_classification=self.is_classification,
-                                                          logger=self.logger)
+        self.feature_validator: TimeSeriesFeatureValidator = TimeSeriesFeatureValidator(logger=self.logger)
+        self.target_validator: TimeSeriesTargetValidator = TimeSeriesTargetValidator(
+            is_classification=self.is_classification, logger=self.logger
+        )
         self._is_uni_variant = False
-        self.start_times = None
+        self.start_times: Optional[List[pd.DatetimeIndex]] = None
         self.feature_shapes: Dict[str, int] = {}
         self.feature_names: List[str] = []
-        self.series_idx = None
+        self.series_idx: Optional[Union[List[Union[str, int]], str, int]] = None
 
-    def fit(
-            self,
+    def fit(self,
             X_train: Optional[Union[List, pd.DataFrame]],
             y_train: Union[List, pd.DataFrame],
             series_idx: Optional[Union[List[Union[str, int]], str, int]] = None,
             X_test: Optional[Union[List, pd.DataFrame]] = None,
             y_test: Optional[Union[List, pd.DataFrame]] = None,
             start_times: Optional[List[pd.DatetimeIndex]] = None,
-    ) -> BaseEstimator:
+            ) -> BaseEstimator:
         """
         fit the validator with the training data, (optionally) start times and other information
         Args:
@@ -57,12 +57,14 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                 sampled
 
         """
+        if series_idx is not None and not isinstance(series_idx, Iterable):
+            series_idx: Optional[List[Union[str, int]]] = [series_idx]
+
         self.series_idx = series_idx
 
         if X_train is None:
             self._is_uni_variant = True
 
-        if self._is_uni_variant:
             self.feature_validator.num_features = 0
             self.feature_validator.numerical_columns = []
             self.feature_validator.categorical_columns = []
@@ -101,6 +103,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                                          " {} for features and {} for targets".format(len(X_test), len(y_test), ))
             elif isinstance(y_train, (pd.DataFrame, pd.Series)):
                 sequence_lengths = None
+                assert isinstance(X_train, pd.DataFrame)
                 if series_idx is not None:
                     n_seqs = len(X_train.groupby(series_idx))
                 else:
@@ -129,15 +132,18 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
 
         return self
 
-    def transform(
-            self,
-            X: Optional[Union[List, pd.DataFrame]],
-            y: Optional[Union[List, pd.DataFrame]] = None,
-            validate_for_future_features: bool = False
-    ) -> Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame], np.ndarray]:
+    def transform(self,
+                  X: Optional[Union[List, pd.DataFrame]],
+                  y: Optional[Union[List, pd.DataFrame]] = None,
+                  validate_for_future_features: bool = False
+                  ) -> Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame], np.ndarray]:
         """
         transform the data with the fitted validator
         Args:
+            X: Optional[Union[List, pd.DataFrame]]
+                time features
+            y: Optional[Union[List, pd.DataFrame]]
+                forecasting targets
             validate_for_future_features: bool
                 if the validator is applied to transform future features (for test sets), in this case we only validate
                 X
@@ -152,9 +158,9 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                 sequence_lengths = [0] * num_sequences
                 for seq_idx in range(num_sequences):
                     sequence_lengths[seq_idx] = len(X[seq_idx])
-                sequence_lengths = np.asarray(sequence_lengths)
-                x_transformed, _ = self._transform_X(X, sequence_lengths)
-                return x_transformed, None, sequence_lengths
+                npa_sequence_lengths = np.asarray(sequence_lengths)
+                x_transformed, _ = self._transform_X(X, npa_sequence_lengths)
+                return x_transformed, None, npa_sequence_lengths
             elif isinstance(X, pd.DataFrame):
                 if self.series_idx is not None:
                     X = X.sort_values(self.series_idx)
@@ -179,17 +185,17 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
 
                 for seq_idx in range(num_sequences):
                     sequence_lengths[seq_idx] = len(y[seq_idx])
-                sequence_lengths = np.asarray(sequence_lengths)
+                npa_sequence_lengths = np.asarray(sequence_lengths)
 
                 y_stacked = self.join_series(y)
 
-                x_transformed, series_number = self._transform_X(X, sequence_lengths)
+                x_transformed, series_number = self._transform_X(X, npa_sequence_lengths)
                 y_transformed: pd.DataFrame = self.target_validator.transform(y_stacked, index=series_number)
 
                 if self._is_uni_variant:
-                    return None, y_transformed, sequence_lengths
+                    return None, y_transformed, npa_sequence_lengths
 
-                return x_transformed, y_transformed, sequence_lengths
+                return x_transformed, y_transformed, npa_sequence_lengths
             elif isinstance(y, (pd.DataFrame, pd.Series)):
                 if self.series_idx is not None:
                     if isinstance(y, pd.Series):
@@ -273,7 +279,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
         series_number = np.arange(len(sequence_lengths)).repeat(sequence_lengths)
         if not isinstance(X, List):
             raise ValueError(f'Input must be a list, but it is {type(X)}')
-        if isinstance(X[0], pd.DataFrame):
+        if isinstance(X[0], (pd.DataFrame, pd.Series)):
             joint_input = pd.concat(X)
         elif isinstance(X[0], (List, np.ndarray)):
             joint_input = np.concatenate(X)

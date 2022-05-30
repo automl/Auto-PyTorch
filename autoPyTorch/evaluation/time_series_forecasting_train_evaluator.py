@@ -121,7 +121,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
 
             train_loss = None
 
-            loss = self._loss(self.Y_optimization, y_opt_pred, **forecasting_kwargs_val)
+            loss = self._loss(self.Y_optimization, y_opt_pred, **forecasting_kwargs_val)  # type: ignore[arg-type]
 
             additional_run_info = pipeline.get_additional_run_info() if hasattr(
                 pipeline, 'get_additional_run_info') else {}
@@ -132,7 +132,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
 
             self.finish_up(
                 loss=loss,
-                train_loss=train_loss,
+                train_loss=train_loss,  # type: ignore[arg-type]
                 opt_pred=y_opt_pred * mase_coefficient_val,
                 valid_pred=y_valid_pred,
                 test_pred=y_test_pred,
@@ -199,7 +199,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
 
                 # Compute validation loss of this fold and store it.
                 optimization_loss = self._loss(
-                    self.Y_targets[i],
+                    self.Y_targets[i],  # type: ignore[arg-type]
                     opt_pred,
                     **forecasting_kwargs_val
                 )

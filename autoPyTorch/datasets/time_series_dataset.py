@@ -496,8 +496,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.numerical_columns = self.validator.feature_validator.numerical_columns
         self.categorical_columns = self.validator.feature_validator.categorical_columns
 
-        self.num_features = self.validator.feature_validator.num_features  # type: int
-        self.num_targets = self.validator.target_validator.out_dimensionality  # type: int
+        self.num_features: int = self.validator.feature_validator.num_features
+        self.num_targets: int = self.validator.target_validator.out_dimensionality
 
         self.categories = self.validator.feature_validator.categories
 
