@@ -1,6 +1,7 @@
-from typing import Any, Union, Tuple
+from typing import Any, Tuple, Union
 
 import numpy as np
+
 import pandas as pd
 
 from sklearn.base import BaseEstimator

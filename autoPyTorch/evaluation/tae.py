@@ -23,6 +23,7 @@ from smac.tae import StatusType, TAEAbortException
 from smac.tae.execute_func import AbstractTAFunc
 
 from autoPyTorch.automl_common.common.utils.backend import Backend
+from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
@@ -40,7 +41,6 @@ from autoPyTorch.utils.common import dict_repr, replace_string_bool_to_bool
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.logging_ import PicklableClientLogger, get_named_client_logger
 from autoPyTorch.utils.parallel import preload_modules
-from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE
 
 
 def fit_predict_try_except_decorator(

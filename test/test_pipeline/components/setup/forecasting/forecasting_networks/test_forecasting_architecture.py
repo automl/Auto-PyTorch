@@ -1,32 +1,27 @@
 import copy
 import unittest
+from test.test_pipeline.components.setup.forecasting.forecasting_networks.test_base_components import \
+    generate_fit_dict_and_dataset_property
 
 import pytest
+
 import torch
 
-from test.test_pipeline.components.setup.forecasting.forecasting_networks.test_base_components import (
-    generate_fit_dict_and_dataset_property
-)
-
 from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.TargetStandardScaler import TargetStandardScaler
-from autoPyTorch.pipeline.components.setup.network_embedding.NoEmbedding import _NoEmbedding
-
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone import ForecastingNetworkChoice
-from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.forecasting_head import (
-    ForecastingHead
-)
-from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import (
-    DisForecastingStrategy,
-    ALL_DISTRIBUTIONS,
-)
-from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdate
-
-from autoPyTorch.pipeline.components.setup.network.forecasting_network import ForecastingNetworkComponent
 from autoPyTorch.pipeline.components.setup.network.forecasting_architecture import (
+    AbstractForecastingNet,
     get_lagged_subsequences,
-    get_lagged_subsequences_inference,
-    AbstractForecastingNet
+    get_lagged_subsequences_inference
 )
+from autoPyTorch.pipeline.components.setup.network.forecasting_network import ForecastingNetworkComponent
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone import ForecastingNetworkChoice
+from autoPyTorch.pipeline.components.setup.network_embedding.NoEmbedding import _NoEmbedding
+from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import (
+    ALL_DISTRIBUTIONS,
+    DisForecastingStrategy
+)
+from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.forecasting_head import ForecastingHead
+from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdate
 
 
 class ReducedEmbedding(torch.nn.Module):

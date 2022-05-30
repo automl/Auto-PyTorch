@@ -3,15 +3,11 @@ from collections import OrderedDict
 from typing import Dict
 
 from autoPyTorch.pipeline.components.base_component import (
-    ThirdPartyComponents,
-    autoPyTorchComponent,
-    find_components,
-)
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding import EncoderChoice
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.encoding.time_series_base_encoder import (
+    ThirdPartyComponents, autoPyTorchComponent, find_components)
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding import \
+    EncoderChoice
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.encoding.time_series_base_encoder import \
     TimeSeriesBaseEncoder
-)
-
 
 encoding_directory = os.path.split(__file__)[0]
 _encoders = find_components(__package__,

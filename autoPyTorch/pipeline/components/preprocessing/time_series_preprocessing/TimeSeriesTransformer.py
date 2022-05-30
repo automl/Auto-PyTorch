@@ -1,20 +1,18 @@
-from typing import Any, Dict, List, Optional, Union, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
+
 import pandas as pd
 
 from sklearn.base import BaseEstimator
-from sklearn.pipeline import make_pipeline
 from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import make_pipeline
 
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.base_time_series_preprocessing import (
     autoPyTorchTimeSeriesPreprocessingComponent,
-    autoPyTorchTimeSeriesTargetPreprocessingComponent,
-)
+    autoPyTorchTimeSeriesTargetPreprocessingComponent)
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.utils import (
-    get_time_series_preprocessers,
-    get_time_series_target_preprocessers,
-)
+    get_time_series_preprocessers, get_time_series_target_preprocessers)
 from autoPyTorch.utils.common import FitRequirement
 
 

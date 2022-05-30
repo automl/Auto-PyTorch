@@ -1,6 +1,7 @@
 from typing import List, Optional, Union, cast
 
 import numpy as np
+import numpy.ma as ma
 
 import pandas as pd
 from pandas.api.types import is_numeric_dtype
@@ -15,7 +16,6 @@ from sklearn.utils.multiclass import type_of_target
 
 from autoPyTorch.data.base_target_validator import BaseTargetValidator, SupportedTargetTypes
 from autoPyTorch.utils.common import ispandas
-import numpy.ma as ma
 
 ArrayType = Union[np.ndarray, spmatrix]
 
@@ -95,10 +95,9 @@ class TabularTargetValidator(BaseTargetValidator):
             # We should not reach this if statement as we check for type of targets before
             raise ValueError("Multi-dimensional classification is not yet supported. "
                              "Encoding multidimensional data converts multiple columns "
-                             "to a 1 dimensional encoding. Data involved = {}/{}".format(
-                np.shape(y_train),
-                self.type_of_target
-            ))
+                             "to a 1 dimensional encoding. Data involved = {}/{}".format(np.shape(y_train),
+                                                                                         self.type_of_target)
+                             )
 
         # Mypy redefinition
         assert self.encoder is not None

@@ -1,20 +1,23 @@
-from typing import Any, Dict, Iterable, Tuple, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+
+from ConfigSpace import ConfigurationSpace
 
 import numpy as np
+
 import torch
 from torch import nn
-from ConfigSpace import ConfigurationSpace
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import (
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import \
     DecoderBlockInfo
-)
 from autoPyTorch.pipeline.components.setup.network_head.base_network_head import NetworkHeadComponent
-from autoPyTorch.utils.common import FitRequirement
-from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import \
-    ALL_DISTRIBUTIONS, DisForecastingStrategy
 from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.NBEATS_head import build_NBEATS_network
+from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import (
+    ALL_DISTRIBUTIONS,
+    DisForecastingStrategy
+)
+from autoPyTorch.utils.common import FitRequirement
 
 
 class QuantileHead(nn.Module):

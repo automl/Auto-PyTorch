@@ -1,16 +1,18 @@
 import unittest
 
 import numpy as np
-import pandas as pd
 from numpy.testing import assert_array_equal
+
+import pandas as pd
 
 import pytest
 
 from sklearn.base import BaseEstimator, clone
 from sklearn.compose import make_column_transformer
+
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.imputation.TimeSeriesImputer import (
     TimeSeriesFeatureImputer,
-    TimeSeriesTargetImputer,
+    TimeSeriesTargetImputer
 )
 
 

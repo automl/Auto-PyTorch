@@ -15,7 +15,6 @@ import pandas as pd
 
 import pytest
 
-
 import sklearn
 import sklearn.datasets
 from sklearn.base import BaseEstimator, clone

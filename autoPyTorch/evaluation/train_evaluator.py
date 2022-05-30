@@ -10,19 +10,17 @@ from sklearn.base import BaseEstimator
 from smac.tae import StatusType
 
 from autoPyTorch.automl_common.common.utils.backend import Backend
-from autoPyTorch.constants import (
-    CLASSIFICATION_TASKS,
-    MULTICLASSMULTIOUTPUT,
-)
-from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes
+from autoPyTorch.constants import CLASSIFICATION_TASKS, MULTICLASSMULTIOUTPUT
+from autoPyTorch.datasets.resampling_strategy import (CrossValTypes,
+                                                      HoldoutValTypes)
 from autoPyTorch.evaluation.abstract_evaluator import (
-    AbstractEvaluator,
-    fit_and_suppress_warnings
-)
+    AbstractEvaluator, fit_and_suppress_warnings)
 from autoPyTorch.evaluation.utils import DisableFileOutputParameters
-from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
+from autoPyTorch.pipeline.components.training.metrics.base import \
+    autoPyTorchMetric
 from autoPyTorch.utils.common import dict_repr, subsampler
-from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
+from autoPyTorch.utils.hyperparameter_search_space_update import \
+    HyperparameterSearchSpaceUpdates
 
 __all__ = ['TrainEvaluator', 'eval_train_function']
 

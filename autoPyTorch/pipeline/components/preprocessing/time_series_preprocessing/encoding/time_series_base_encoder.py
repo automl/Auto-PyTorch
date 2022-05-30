@@ -1,9 +1,9 @@
 from typing import Any, Dict, List, Tuple, Union
 
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.base_encoder import BaseEncoder
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.base_time_series_preprocessing import (
-    autoPyTorchTimeSeriesPreprocessingComponent,
-)
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.base_encoder import \
+    BaseEncoder
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.base_time_series_preprocessing import \
+    autoPyTorchTimeSeriesPreprocessingComponent
 from autoPyTorch.utils.common import FitRequirement
 
 

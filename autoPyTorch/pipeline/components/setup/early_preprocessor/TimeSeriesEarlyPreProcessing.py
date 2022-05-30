@@ -1,15 +1,16 @@
-from typing import Any, Dict, Optional, Union, Tuple, List
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
+
 import pandas as pd
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-from autoPyTorch.pipeline.components.preprocessing.base_preprocessing import autoPyTorchTargetPreprocessingComponent
-from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing import EarlyPreprocessing
+from autoPyTorch.pipeline.components.preprocessing.base_preprocessing import \
+    autoPyTorchTargetPreprocessingComponent
+from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing import \
+    EarlyPreprocessing
 from autoPyTorch.pipeline.components.setup.early_preprocessor.utils import (
-    get_preprocess_transforms,
-    time_series_preprocess
-)
+    get_preprocess_transforms, time_series_preprocess)
 from autoPyTorch.utils.common import FitRequirement
 
 

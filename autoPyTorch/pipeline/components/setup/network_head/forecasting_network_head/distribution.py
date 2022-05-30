@@ -16,23 +16,16 @@
 # However, we don't simply follow their implementation mainly due to the different network backbone.
 # Additionally, scale information is not presented here to avoid
 
-
-from typing import Dict, Tuple, NamedTuple, Any, Type
-
 from abc import abstractmethod
+from typing import Any, Dict, NamedTuple, Tuple, Type
 
 import numpy as np
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.distributions import (
-    Beta,
-    Distribution,
-    Gamma,
-    Normal,
-    Poisson,
-    StudentT,
-)
+from torch.distributions import (Beta, Distribution, Gamma, Normal, Poisson,
+                                 StudentT)
 
 
 class ProjectionLayer(nn.Module):
@@ -44,13 +37,15 @@ class ProjectionLayer(nn.Module):
 
     # https://github.com/awslabs/gluon-ts/blob/master/src/gluonts/torch/modules/distribution_output.py
 
-    def __init__(self,
-                 num_in_features: int,
-                 output_shape: Tuple[int, ...],
-                 n_prediction_heads: int,
-                 auto_regressive: bool,
-                 decoder_has_local_layer: bool,
-                 **kwargs: Any, ):
+    def __init__(
+        self,
+        num_in_features: int,
+        output_shape: Tuple[int, ...],
+        n_prediction_heads: int,
+        auto_regressive: bool,
+        decoder_has_local_layer: bool,
+        **kwargs: Any,
+    ):
         super().__init__(**kwargs)
 
         # we consider all the prediction steps holistically. thus, the output of the poj layer is
@@ -68,12 +63,18 @@ class ProjectionLayer(nn.Module):
                 proj_layer (nn.Module): projection layer that maps the decoder output to parameterize distributions
             """
             if decoder_has_local_layer:
-                return nn.Sequential(nn.Linear(num_in_features, np.prod(output_shape).item() * arg_dim),
-                                     nn.Unflatten(-1, (*output_shape, arg_dim)))
+                return nn.Sequential(
+                    nn.Linear(num_in_features, np.prod(output_shape).item() * arg_dim),
+                    nn.Unflatten(-1, (*output_shape, arg_dim)),
+                )
             else:
                 return nn.Sequential(
-                    nn.Linear(num_in_features, n_prediction_heads * np.prod(output_shape).item() * arg_dim),
-                    nn.Unflatten(-1, (n_prediction_heads, *output_shape, arg_dim)))
+                    nn.Linear(
+                        num_in_features,
+                        n_prediction_heads * np.prod(output_shape).item() * arg_dim,
+                    ),
+                    nn.Unflatten(-1, (n_prediction_heads, *output_shape, arg_dim)),
+                )
 
         self.proj = nn.ModuleList(
             [build_single_proj_layer(dim) for dim in self.arg_dims.values()]
@@ -128,10 +129,8 @@ class StudentTOutput(ProjectionLayer):
         return {"df": 1, "loc": 1, "scale": 1}
 
     def domain_map(  # type: ignore[override]
-            self, df: torch.Tensor, loc: torch.Tensor, scale: torch.Tensor
-    ) -> Tuple[torch.Tensor,
-               torch.Tensor,
-               torch.Tensor]:
+        self, df: torch.Tensor, loc: torch.Tensor, scale: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         scale = F.softplus(scale) + 1e-10
         df = 2.0 + F.softplus(df)
         return df.squeeze(-1), loc.squeeze(-1), scale.squeeze(-1)
@@ -149,7 +148,7 @@ class BetaOutput(ProjectionLayer):
         return {"concentration1": 1, "concentration0": 1}
 
     def domain_map(  # type: ignore[override]
-            self, concentration1: torch.Tensor, concentration0: torch.Tensor
+        self, concentration1: torch.Tensor, concentration0: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         # TODO we need to adapt epsilon value given the datatype of this module
         epsilon = 1e-10
@@ -171,7 +170,7 @@ class GammaOutput(ProjectionLayer):
         return {"concentration": 1, "rate": 1}
 
     def domain_map(  # type: ignore[override]
-            self, concentration: torch.Tensor, rate: torch.Tensor
+        self, concentration: torch.Tensor, rate: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         # TODO we need to adapt epsilon value given the datatype of this module
         epsilon = 1e-10
@@ -191,19 +190,20 @@ class PoissonOutput(ProjectionLayer):
 
     def domain_map(self, rate: torch.Tensor) -> Tuple[torch.Tensor]:  # type: ignore[override]
         rate_pos = F.softplus(rate).clone()
-        return rate_pos.squeeze(-1),
+        return (rate_pos.squeeze(-1),)
 
     @property
     def dist_cls(self) -> Type[Distribution]:
         return Poisson
 
 
-ALL_DISTRIBUTIONS = {'studentT': StudentTOutput,
-                     'normal': NormalOutput,
-                     # 'beta': BetaOutput,
-                     # 'gamma': GammaOutput,
-                     # 'poisson': PoissonOutput
-                     }  # type: Dict[str, Type[ProjectionLayer]]
+ALL_DISTRIBUTIONS = {
+    "studentT": StudentTOutput,
+    "normal": NormalOutput,
+    # 'beta': BetaOutput,
+    # 'gamma': GammaOutput,
+    # 'poisson': PoissonOutput
+}  # type: Dict[str, Type[ProjectionLayer]]
 
 
 class DisForecastingStrategy(NamedTuple):
@@ -211,6 +211,7 @@ class DisForecastingStrategy(NamedTuple):
     forecast_strategy: str = "sample"
     num_samples: int = 100
     aggregation: str = "mean"
+
 
 # TODO find components that are compatible with beta, gamma and poisson distribution!
 

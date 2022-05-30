@@ -1,15 +1,19 @@
-from typing import Optional, Dict, Union, Any
 from functools import partial
-import numpy as np
+from typing import Any, Dict, Optional, Union
 
 from ConfigSpace import ConfigurationSpace
 from ConfigSpace.hyperparameters import UniformFloatHyperparameter
+
+import numpy as np
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.forecasting_training_loss.base_forecasting_loss import \
     ForecastingLossComponents
 from autoPyTorch.pipeline.components.training.losses import QuantileLoss
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
+from autoPyTorch.utils.common import (
+    HyperparameterSearchSpace,
+    add_hyperparameter
+)
 
 
 class NetworkQuantileLoss(ForecastingLossComponents):

@@ -1,21 +1,23 @@
 import copy
 import unittest
 
-from autoPyTorch.constants import (
-    TASK_TYPES_TO_STRING,
-    TIMESERIES_FORECASTING,
-)
-from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import (
-    ALL_DISTRIBUTIONS,
-    DisForecastingStrategy
-)
-from autoPyTorch.pipeline.components.training.losses import LogProbLoss, QuantileLoss
-from autoPyTorch.pipeline.components.training.losses import L1Loss, MSELoss, MAPELoss, MASELoss
-
+from autoPyTorch.constants import TASK_TYPES_TO_STRING, TIMESERIES_FORECASTING
 from autoPyTorch.pipeline.components.setup.forecasting_training_loss import ForecastingLossChoices
 from autoPyTorch.pipeline.components.setup.forecasting_training_loss.DistributionLoss import DistributionLoss
 from autoPyTorch.pipeline.components.setup.forecasting_training_loss.QuantileLoss import NetworkQuantileLoss
 from autoPyTorch.pipeline.components.setup.forecasting_training_loss.RegressionLoss import RegressionLoss
+from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import (
+    ALL_DISTRIBUTIONS,
+    DisForecastingStrategy
+)
+from autoPyTorch.pipeline.components.training.losses import (
+    L1Loss,
+    LogProbLoss,
+    MAPELoss,
+    MASELoss,
+    MSELoss,
+    QuantileLoss
+)
 
 
 class TestForecastingTrainingLoss(unittest.TestCase):

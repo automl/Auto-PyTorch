@@ -7,17 +7,17 @@ from torch import nn
 from torch.nn.modules.loss import _Loss as Loss
 
 from autoPyTorch.pipeline.components.training.losses import (
-    get_loss,
-    losses,
     LogProbLoss,
     MAPELoss,
     MASELoss,
-    QuantileLoss
+    QuantileLoss,
+    get_loss,
+    losses
 )
 from autoPyTorch.utils.implementations import (
     LossWeightStrategyWeighted,
     LossWeightStrategyWeightedBinary,
-    get_loss_weight_strategy,
+    get_loss_weight_strategy
 )
 
 

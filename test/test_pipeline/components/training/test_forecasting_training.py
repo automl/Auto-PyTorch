@@ -1,7 +1,7 @@
 import unittest
 
-from autoPyTorch.pipeline.components.training.trainer.forecasting_trainer import ForecastingTrainerChoice
 from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE
+from autoPyTorch.pipeline.components.training.trainer.forecasting_trainer import ForecastingTrainerChoice
 
 
 class TestGetBudgetTracker(unittest.TestCase):

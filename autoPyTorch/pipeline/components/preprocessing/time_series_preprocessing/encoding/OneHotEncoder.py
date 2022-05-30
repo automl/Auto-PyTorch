@@ -3,10 +3,10 @@ from typing import Any, Dict, Optional, Union
 import numpy as np
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.OneHotEncoder import OneHotEncoder
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.encoding.time_series_base_encoder import (
-    TimeSeriesBaseEncoder,
-)
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.OneHotEncoder import \
+    OneHotEncoder
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.encoding.time_series_base_encoder import \
+    TimeSeriesBaseEncoder
 
 
 class TimeSeriesOneHotEncoder(TimeSeriesBaseEncoder):

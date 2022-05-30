@@ -1,27 +1,25 @@
 import collections
 import os
-
-from typing import Dict, List, Optional
-
-from autoPyTorch.pipeline.components.training.trainer.forecasting_trainer.forecasting_base_trainer import (
-    ForecastingBaseTrainerComponent,
-)
+from typing import Dict, List
 
 from autoPyTorch.constants import STRING_TO_TASK_TYPES
-
+from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE
 from autoPyTorch.pipeline.components.base_component import (
     ThirdPartyComponents,
     autoPyTorchComponent,
-    find_components,
+    find_components
 )
-from autoPyTorch.pipeline.components.training.trainer.base_trainer import BudgetTracker
-
-from autoPyTorch.utils.common import FitRequirement
-from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics
 from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import BaseTargetScaler
-
-from autoPyTorch.utils.common import get_device_from_fit_dictionary
-from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE
+from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics
+from autoPyTorch.pipeline.components.training.trainer import TrainerChoice
+from autoPyTorch.pipeline.components.training.trainer.base_trainer import BudgetTracker
+from autoPyTorch.pipeline.components.training.trainer.forecasting_trainer.forecasting_base_trainer import (
+    ForecastingBaseTrainerComponent
+)
+from autoPyTorch.utils.common import (
+    FitRequirement,
+    get_device_from_fit_dictionary
+)
 
 trainer_directory = os.path.split(__file__)[0]
 _trainers = find_components(__package__,
@@ -32,9 +30,6 @@ _addons = ThirdPartyComponents(ForecastingBaseTrainerComponent)
 
 def add_trainer(trainer: ForecastingBaseTrainerComponent) -> None:
     _addons.add_component(trainer)
-
-
-from autoPyTorch.pipeline.components.training.trainer import TrainerChoice
 
 
 class ForecastingTrainerChoice(TrainerChoice):

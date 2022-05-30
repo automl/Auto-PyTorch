@@ -1,29 +1,30 @@
-from typing import List
 import copy
 import unittest
-from unittest import mock
-import numpy as np
 import unittest.mock
+from typing import List
+from unittest import mock
+
+import numpy as np
 
 import pandas as pd
 
-from autoPyTorch.datasets.resampling_strategy import HoldoutValTypes, HoldOutFuncs
-from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset, TimeSeriesSequence
 import torch
+
 import torchvision
-from autoPyTorch.pipeline.components.training.data_loader.time_series_util import (
-    TestSequenceDataset,
-    pad_sequence_with_minimal_length,
-    PadSequenceCollector,
-    TimeSeriesSampler,
-    SequentialSubSetSampler
-)
 
-from autoPyTorch.utils.common import HyperparameterSearchSpace
-
+from autoPyTorch.datasets.resampling_strategy import HoldOutFuncs, HoldoutValTypes
+from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset, TimeSeriesSequence
 from autoPyTorch.pipeline.components.training.data_loader.time_series_forecasting_data_loader import (
     TimeSeriesForecastingDataLoader
 )
+from autoPyTorch.pipeline.components.training.data_loader.time_series_util import (
+    PadSequenceCollector,
+    SequentialSubSetSampler,
+    TestSequenceDataset,
+    TimeSeriesSampler,
+    pad_sequence_with_minimal_length
+)
+from autoPyTorch.utils.common import HyperparameterSearchSpace
 
 
 class TestTimeSeriesForecastingDataLoader(unittest.TestCase):

@@ -3,6 +3,7 @@ import numpy as np
 import pytest
 
 import sklearn.metrics
+
 import sktime.performance_metrics.forecasting as forecasting_metrics
 
 from autoPyTorch.constants import (
@@ -12,26 +13,24 @@ from autoPyTorch.constants import (
     STRING_TO_TASK_TYPES,
     TABULAR_CLASSIFICATION,
     TABULAR_REGRESSION,
-    TIMESERIES_FORECASTING,
-    TASK_TYPES_TO_STRING
+    TASK_TYPES_TO_STRING,
+    TIMESERIES_FORECASTING
 )
-from autoPyTorch.metrics import (accuracy,
-                                 balanced_accuracy,
-                                 mean_squared_error,
-                                 compute_mase_coefficient)
+from autoPyTorch.metrics import (
+    accuracy,
+    balanced_accuracy,
+    compute_mase_coefficient,
+    mean_squared_error
+)
 from autoPyTorch.pipeline.components.training.metrics.base import (
+    ForecastingMetricMixin,
+    _ForecastingMetric,
     _PredictMetric,
     _ThresholdMetric,
-    _ForecastingMetric,
     autoPyTorchMetric,
-    ForecastingMetricMixin,
-    make_metric,
+    make_metric
 )
-from autoPyTorch.pipeline.components.training.metrics.utils import (
-    calculate_loss,
-    calculate_score,
-    get_metrics,
-)
+from autoPyTorch.pipeline.components.training.metrics.utils import calculate_loss, calculate_score, get_metrics
 
 
 @pytest.mark.parametrize('output_type', ['multiclass',

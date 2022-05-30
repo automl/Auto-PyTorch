@@ -3,9 +3,7 @@ from typing import Dict, Optional, Union
 from sklearn.base import BaseEstimator
 
 from autoPyTorch.pipeline.components.preprocessing.base_preprocessing import (
-    autoPyTorchPreprocessingComponent,
-    autoPyTorchTargetPreprocessingComponent
-)
+    autoPyTorchPreprocessingComponent, autoPyTorchTargetPreprocessingComponent)
 
 
 class autoPyTorchTimeSeriesPreprocessingComponent(autoPyTorchPreprocessingComponent):

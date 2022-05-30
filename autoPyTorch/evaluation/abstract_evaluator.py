@@ -19,39 +19,32 @@ from smac.tae import StatusType
 import autoPyTorch.pipeline.image_classification
 import autoPyTorch.pipeline.tabular_classification
 import autoPyTorch.pipeline.tabular_regression
-import autoPyTorch.pipeline.traditional_tabular_classification
 import autoPyTorch.pipeline.time_series_forecasting
+import autoPyTorch.pipeline.traditional_tabular_classification
 import autoPyTorch.pipeline.traditional_tabular_regression
 from autoPyTorch.automl_common.common.utils.backend import Backend
-from autoPyTorch.constants import (
-    CLASSIFICATION_TASKS,
-    IMAGE_TASKS,
-    MULTICLASS,
-    REGRESSION_TASKS,
-    STRING_TO_OUTPUT_TYPES,
-    STRING_TO_TASK_TYPES,
-    TABULAR_TASKS,
-    FORECASTING_TASKS,
-)
-from autoPyTorch.datasets.base_dataset import BaseDataset, BaseDatasetPropertiesType
-from autoPyTorch.datasets.time_series_dataset import TimeSeriesSequence
-
-from autoPyTorch.evaluation.utils import (
-    DisableFileOutputParameters,
-    VotingRegressorWrapper,
-    convert_multioutput_multiclass_to_multilabel,
-)
-from autoPyTorch.pipeline.base_pipeline import BasePipeline
-from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
-from autoPyTorch.pipeline.components.training.metrics.utils import (
-    calculate_loss,
-    get_metrics,
-)
-from autoPyTorch.utils.common import dict_repr, subsampler
-from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
-from autoPyTorch.utils.logging_ import PicklableClientLogger, get_named_client_logger
-from autoPyTorch.utils.pipeline import get_dataset_requirements
+from autoPyTorch.constants import (CLASSIFICATION_TASKS, FORECASTING_TASKS,
+                                   IMAGE_TASKS, MULTICLASS, REGRESSION_TASKS,
+                                   STRING_TO_OUTPUT_TYPES,
+                                   STRING_TO_TASK_TYPES, TABULAR_TASKS)
 from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE
+from autoPyTorch.datasets.base_dataset import (BaseDataset,
+                                               BaseDatasetPropertiesType)
+from autoPyTorch.datasets.time_series_dataset import TimeSeriesSequence
+from autoPyTorch.evaluation.utils import (
+    DisableFileOutputParameters, VotingRegressorWrapper,
+    convert_multioutput_multiclass_to_multilabel)
+from autoPyTorch.pipeline.base_pipeline import BasePipeline
+from autoPyTorch.pipeline.components.training.metrics.base import \
+    autoPyTorchMetric
+from autoPyTorch.pipeline.components.training.metrics.utils import (
+    calculate_loss, get_metrics)
+from autoPyTorch.utils.common import dict_repr, subsampler
+from autoPyTorch.utils.hyperparameter_search_space_update import \
+    HyperparameterSearchSpaceUpdates
+from autoPyTorch.utils.logging_ import (PicklableClientLogger,
+                                        get_named_client_logger)
+from autoPyTorch.utils.pipeline import get_dataset_requirements
 
 __all__ = [
     'AbstractEvaluator',

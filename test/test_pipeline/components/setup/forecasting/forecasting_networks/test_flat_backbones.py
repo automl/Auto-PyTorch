@@ -1,31 +1,32 @@
 import copy
 import unittest
-
-from test.test_pipeline.components.setup.forecasting.forecasting_networks.test_base_components import (
+from test.test_pipeline.components.setup.forecasting.forecasting_networks.test_base_components import \
     generate_fit_dict_and_dataset_property
-)
+
 from ConfigSpace import Configuration
-import torch
 
 from sklearn.pipeline import Pipeline
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.flat_encoder \
-    import FlatForecastingEncoderChoice
+
+import torch
+
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.cells import (
+    StackedDecoder,
+    StackedEncoder
+)
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import NetworkStructure
-from autoPyTorch.pipeline.components.setup.network_embedding.NoEmbedding import _NoEmbedding
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.flat_encoder. \
-    MLPEncoder import MLPEncoder
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.flat_encoder. \
-    NBEATSEncoder import NBEATSEncoder
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.MLPDecoder import (
     ForecastingMLPDecoder
 )
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.NBEATSDecoder \
-    import NBEATSDecoder
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.\
+    NBEATSDecoder import NBEATSDecoder
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.\
+    flat_encoder import FlatForecastingEncoderChoice
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.flat_encoder.\
+    MLPEncoder import MLPEncoder
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.flat_encoder.\
+    NBEATSEncoder import NBEATSEncoder
+from autoPyTorch.pipeline.components.setup.network_embedding.NoEmbedding import _NoEmbedding
 from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.forecasting_head import ForecastingHead
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.cells import (
-    StackedEncoder,
-    StackedDecoder
-)
 
 
 class TestFlatEncoder(unittest.TestCase):

@@ -1,13 +1,15 @@
 # This part of implementation follows pytorch-forecasting:
 # https://github.com/jdb78/pytorch-forecasting/blob/master/pytorch_forecasting/models/nbeats/sub_modules.py
 
-import torch
-from typing import Tuple, List
+from typing import List, Tuple
+
 import numpy as np
+
+import torch
 from torch import nn
 
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.\
-    forecasting_decoder.NBEATSDecoder import NBEATSBLock
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.\
+    NBEATSDecoder import NBEATSBLock
 
 
 class TransposeLinear(nn.Module):

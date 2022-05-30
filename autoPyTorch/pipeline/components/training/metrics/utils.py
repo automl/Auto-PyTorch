@@ -5,17 +5,17 @@ import numpy as np
 
 from autoPyTorch.constants import (
     CLASSIFICATION_TASKS,
-    REGRESSION_TASKS,
     FORECASTING_TASKS,
+    REGRESSION_TASKS,
     STRING_TO_TASK_TYPES,
     TASK_TYPES,
 )
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.pipeline.components.training.metrics.metrics import (
     CLASSIFICATION_METRICS,
-    REGRESSION_METRICS,
     FORECASTING_METRICS,
-    MASE_LOSSES
+    MASE_LOSSES,
+    REGRESSION_METRICS,
 )
 
 

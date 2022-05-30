@@ -1,15 +1,16 @@
 from abc import abstractmethod
-from typing import Any, Dict, Iterable, Tuple, List, Optional
 from collections import OrderedDict
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from torch import nn
 
-from autoPyTorch.utils.common import FitRequirement
-from autoPyTorch.pipeline.components.base_component import BaseEstimator, autoPyTorchComponent
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import NetworkStructure
+from autoPyTorch.pipeline.components.base_component import (
+    BaseEstimator, autoPyTorchComponent)
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import \
+    NetworkStructure
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import (
-    DecoderBlockInfo, DecoderProperties
-)
+    DecoderBlockInfo, DecoderProperties)
+from autoPyTorch.utils.common import FitRequirement
 
 
 class BaseForecastingDecoder(autoPyTorchComponent):

@@ -1,31 +1,27 @@
-from typing import Dict, Optional, Union, Tuple, List, Any, TypeVar
-
+import warnings
 from abc import abstractmethod
+from typing import Any, Dict, List, Optional, Tuple, TypeVar, Union
 
 import torch
 from torch import nn
-import warnings
+from torch.distributions import AffineTransform, TransformedDistribution
 
-from torch.distributions import (
-    AffineTransform,
-    TransformedDistribution,
-)
-
-from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import BaseTargetScaler
-from autoPyTorch.pipeline.components.setup.network_embedding.NoEmbedding import _NoEmbedding
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import NetworkStructure
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import (
-    EncoderBlockInfo,
-)
+from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import \
+    BaseTargetScaler
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.cells import (
-    VariableSelector,
-    StackedEncoder,
     StackedDecoder,
-    TemporalFusionLayer
+    StackedEncoder,
+    TemporalFusionLayer,
+    VariableSelector
 )
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import (
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import \
+    NetworkStructure
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import \
     DecoderBlockInfo
-)
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import \
+    EncoderBlockInfo
+from autoPyTorch.pipeline.components.setup.network_embedding.NoEmbedding import \
+    _NoEmbedding
 
 ALL_NET_OUTPUT = TypeVar('ALL_NET_OUTPUT', torch.Tensor, List[torch.Tensor], torch.distributions.Distribution)
 
@@ -1150,7 +1146,7 @@ class ForecastingDeepARNet(ForecastingSeq2SeqNet):
 class NBEATSNet(ForecastingNet):
     future_target_required = False
 
-    def forward(self, # type: ignore[override]
+    def forward(self,  # type: ignore[override]
                 past_targets: torch.Tensor,
                 future_targets: Optional[torch.Tensor] = None,
                 past_features: Optional[torch.Tensor] = None,

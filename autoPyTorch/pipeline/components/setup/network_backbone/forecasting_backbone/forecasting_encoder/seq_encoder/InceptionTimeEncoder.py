@@ -1,9 +1,7 @@
-from typing import Any, Dict, Optional, Tuple, List
+from typing import Any, Dict, List, Optional, Tuple
 
 from ConfigSpace.configuration_space import ConfigurationSpace
-from ConfigSpace.hyperparameters import (
-    UniformIntegerHyperparameter
-)
+from ConfigSpace.hyperparameters import UniformIntegerHyperparameter
 
 import torch
 from torch import nn
@@ -11,7 +9,8 @@ from torch import nn
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.\
     base_forecasting_encoder import BaseForecastingEncoder
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
+from autoPyTorch.utils.common import (HyperparameterSearchSpace,
+                                      add_hyperparameter)
 
 
 # Code inspired by https://github.com/hfawaz/InceptionTime

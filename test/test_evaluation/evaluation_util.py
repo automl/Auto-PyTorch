@@ -16,7 +16,6 @@ from autoPyTorch.data.time_series_forecasting_validator import TimeSeriesForecas
 from autoPyTorch.datasets.resampling_strategy import HoldoutValTypes
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset
-
 from autoPyTorch.pipeline.components.training.metrics.metrics import (
     accuracy,
     balanced_accuracy,

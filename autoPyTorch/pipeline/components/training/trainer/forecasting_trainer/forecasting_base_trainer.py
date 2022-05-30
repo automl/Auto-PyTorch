@@ -10,17 +10,22 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from autoPyTorch.constants import REGRESSION_TASKS, FORECASTING_TASKS
+from autoPyTorch.constants import FORECASTING_TASKS, REGRESSION_TASKS
 from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import BaseTargetScaler
 from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.TargetNoScaler import TargetNoScaler
 from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
-from autoPyTorch.pipeline.components.setup.network.forecasting_network import ForecastingNet, ForecastingDeepARNet, \
-    NBEATSNet, ForecastingSeq2SeqNet
+from autoPyTorch.pipeline.components.setup.network.forecasting_network import (
+    ForecastingDeepARNet,
+    ForecastingNet,
+    ForecastingSeq2SeqNet,
+    NBEATSNet
+)
 from autoPyTorch.pipeline.components.training.losses import MASELoss
-
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
-
-from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent, BudgetTracker
+from autoPyTorch.pipeline.components.training.trainer.base_trainer import (
+    BaseTrainerComponent,
+    BudgetTracker
+)
 
 
 class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):

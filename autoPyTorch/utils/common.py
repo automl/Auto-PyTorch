@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Sequence, Type, Union, Callable
+from typing import Any, Callable, Dict, Iterable, List, NamedTuple, Optional, Sequence, Type, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (

@@ -1,22 +1,20 @@
-from typing import Any, Dict, Optional, Tuple, List, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import Constant
 
+import numpy as np
+
 import torch
 from torch import nn
 
-import numpy as np
-
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder. \
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.\
     base_forecasting_decoder import BaseForecastingDecoder, DecoderProperties
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import (
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import \
     DecoderNetwork
-)
-
 from autoPyTorch.utils.common import FitRequirement
 
 
@@ -60,7 +58,7 @@ class ForecastingRNNDecoder(BaseForecastingDecoder):
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
         # RNN is naturally auto-regressive. However, we will not consider it as a decoder for deep AR model
-        self.rnn_kwargs:Optional[Dict] = None
+        self.rnn_kwargs: Optional[Dict] = None
         self.lagged_value = [1, 2, 3, 4, 5, 6, 7]
 
     @property

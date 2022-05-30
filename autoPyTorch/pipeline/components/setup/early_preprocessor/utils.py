@@ -1,7 +1,8 @@
 import copy
-from typing import Any, Dict, List, Type, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 import numpy as np
+
 import pandas as pd
 
 from sklearn.utils import check_array

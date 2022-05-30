@@ -16,7 +16,7 @@ Forecasting:
             MASELoss: supports continuous output types
             L1Loss: supports continuous output types
 """
-from typing import Any, Dict, Optional, Type, List, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 import torch
 from torch.nn.modules.loss import (
@@ -27,8 +27,8 @@ from torch.nn.modules.loss import (
 )
 from torch.nn.modules.loss import _Loss as Loss
 
-from autoPyTorch.constants import BINARY, CLASSIFICATION_TASKS, CONTINUOUS, MULTICLASS, REGRESSION_TASKS, \
-    FORECASTING_TASKS, STRING_TO_OUTPUT_TYPES, STRING_TO_TASK_TYPES, TASK_TYPES_TO_STRING
+from autoPyTorch.constants import BINARY, CLASSIFICATION_TASKS, CONTINUOUS, FORECASTING_TASKS, MULTICLASS, \
+    REGRESSION_TASKS, STRING_TO_OUTPUT_TYPES, STRING_TO_TASK_TYPES, TASK_TYPES_TO_STRING
 
 
 class AbstractForecastingLoss(Loss):

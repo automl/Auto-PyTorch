@@ -1,10 +1,9 @@
 from typing import Dict, Optional, Union
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-
+from autoPyTorch.pipeline.components.training.trainer.MixUpTrainer import MixUpTrainer
 from autoPyTorch.pipeline.components.training.trainer.forecasting_trainer.forecasting_base_trainer import \
     ForecastingBaseTrainerComponent
-from autoPyTorch.pipeline.components.training.trainer.MixUpTrainer import MixUpTrainer
 
 
 class ForecastingMixUpTrainer(ForecastingBaseTrainerComponent, MixUpTrainer):

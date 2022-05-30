@@ -1,21 +1,17 @@
 import os
-from typing import Dict, List, Optional, Any
 from collections import OrderedDict
+from typing import Any, Dict, List, Optional
 
-from ConfigSpace.configuration_space import ConfigurationSpace
 import ConfigSpace.hyperparameters as CSH
+from ConfigSpace.configuration_space import ConfigurationSpace
 
+from autoPyTorch.constants import (CLASSIFICATION_TASKS, FORECASTING_TASKS,
+                                   REGRESSION_TASKS, STRING_TO_TASK_TYPES)
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import (
-    ThirdPartyComponents,
-    autoPyTorchComponent,
-    find_components,
-)
-
-from autoPyTorch.constants import REGRESSION_TASKS, CLASSIFICATION_TASKS, FORECASTING_TASKS, STRING_TO_TASK_TYPES
-
-from autoPyTorch.pipeline.components.setup.forecasting_training_loss.base_forecasting_loss import\
+    ThirdPartyComponents, autoPyTorchComponent, find_components)
+from autoPyTorch.pipeline.components.setup.forecasting_training_loss.base_forecasting_loss import \
     ForecastingLossComponents
 
 directory = os.path.split(__file__)[0]

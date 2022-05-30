@@ -1,7 +1,6 @@
-from typing import Dict, Any, Optional, Callable
+from typing import Any, Callable, Dict, Optional
 
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
-
 from autoPyTorch.utils.common import FitRequirement
 
 

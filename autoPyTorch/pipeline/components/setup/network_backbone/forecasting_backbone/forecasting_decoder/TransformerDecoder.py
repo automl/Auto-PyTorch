@@ -1,33 +1,32 @@
-from typing import Any, Dict, Optional, Tuple, List, Union
-
-import torch
-from torch import nn
-import numpy as np
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
-    UniformIntegerHyperparameter,
-    UniformFloatHyperparameter
+    UniformFloatHyperparameter,
+    UniformIntegerHyperparameter
 )
+
+import numpy as np
+
+import torch
+from torch import nn
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
-from autoPyTorch.utils.common import add_hyperparameter
-
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import (
+    PositionalEncoding, build_transformer_layers)
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.\
     base_forecasting_decoder import BaseForecastingDecoder, DecoderProperties
-
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import (
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import \
     DecoderNetwork
+from autoPyTorch.utils.common import (
+    FitRequirement,
+    HyperparameterSearchSpace,
+    add_hyperparameter,
+    get_hyperparameter
 )
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import (
-    PositionalEncoding,
-    build_transformer_layers
-)
-
-from autoPyTorch.utils.common import HyperparameterSearchSpace, get_hyperparameter, FitRequirement
 
 
 class _TransformerDecoder(DecoderNetwork):

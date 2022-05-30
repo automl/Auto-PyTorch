@@ -1,19 +1,23 @@
-from typing import List, Callable, Tuple
+import unittest
+from typing import Callable, List, Tuple
+
+from gluonts.time_feature import Constant as ConstantTransform
+from gluonts.time_feature import DayOfMonth
 
 import numpy as np
-import torch
+
 import pandas as pd
+
 import pytest
-import unittest
-from gluonts.time_feature import Constant as ConstantTransform, DayOfMonth
+
+import torch
+
+
+from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes
 from autoPyTorch.datasets.time_series_dataset import (
     TimeSeriesForecastingDataset,
     TimeSeriesSequence,
     extract_feature_index
-)
-from autoPyTorch.datasets.resampling_strategy import (
-    CrossValTypes,
-    HoldoutValTypes
 )
 from autoPyTorch.utils.pipeline import get_dataset_requirements
 

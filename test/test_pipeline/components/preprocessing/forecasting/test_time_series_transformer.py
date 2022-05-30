@@ -1,6 +1,8 @@
-from test.test_pipeline.components.preprocessing.forecasting.base import ForecastingPipeline
+from test.test_pipeline.components.preprocessing.forecasting.base import \
+    ForecastingPipeline
 
 import numpy as np
+
 import pytest
 
 from sklearn.compose import ColumnTransformer

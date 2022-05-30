@@ -1,6 +1,7 @@
 from typing import Any, Dict, Optional, Union
 
-from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import BaseTargetScaler
+from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import \
+    BaseTargetScaler
 
 
 class TargetStandardScaler(BaseTargetScaler):

@@ -20,6 +20,7 @@ from smac.tae.serial_runner import SerialRunner
 from smac.utils.io.traj_logging import TrajEntry
 
 from autoPyTorch.automl_common.common.utils.backend import Backend
+from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     DEFAULT_RESAMPLING_PARAMETERS,
@@ -29,14 +30,11 @@ from autoPyTorch.datasets.resampling_strategy import (
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
 from autoPyTorch.evaluation.time_series_forecasting_train_evaluator import TimeSeriesForecastingTrainEvaluator
-from autoPyTorch.optimizer.utils import read_return_initial_configurations, read_forecasting_init_configurations
-
+from autoPyTorch.optimizer.utils import read_forecasting_init_configurations, read_return_initial_configurations
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.logging_ import get_named_client_logger
 from autoPyTorch.utils.stopwatch import StopWatch
-
-from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE
 
 
 def get_smac_object(

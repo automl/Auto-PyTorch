@@ -1,28 +1,25 @@
 import copy
 import unittest
-import torch
 from itertools import product
+from test.test_pipeline.components.setup.forecasting.forecasting_networks.test_base_components import \
+    generate_fit_dict_and_dataset_property
+
 from sklearn.pipeline import Pipeline
 
-from test.test_pipeline.components.setup.forecasting.forecasting_networks.test_base_components import (
-    generate_fit_dict_and_dataset_property
-)
-
-from autoPyTorch.utils.common import HyperparameterSearchSpace
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.seq_encoder \
-    import SeqForecastingEncoderChoice
-from autoPyTorch.pipeline.components.setup.network_embedding.NoEmbedding import _NoEmbedding
-
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import NetworkStructure
-from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.forecasting_head import ForecastingHead
-
-from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdate
+import torch
 
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.cells import (
-    StackedEncoder,
     StackedDecoder,
-    TemporalFusionLayer,
+    StackedEncoder,
+    TemporalFusionLayer
 )
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import NetworkStructure
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.\
+    seq_encoder import SeqForecastingEncoderChoice
+from autoPyTorch.pipeline.components.setup.network_embedding.NoEmbedding import _NoEmbedding
+from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.forecasting_head import ForecastingHead
+from autoPyTorch.utils.common import HyperparameterSearchSpace
+from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdate
 
 
 class TestSeqEncoder(unittest.TestCase):

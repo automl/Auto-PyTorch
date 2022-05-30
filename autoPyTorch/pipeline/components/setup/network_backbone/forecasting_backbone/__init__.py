@@ -1,21 +1,21 @@
 from collections import OrderedDict
-import numpy as np
-from typing import Dict, Optional, List, Any
+from typing import Any, Dict, List, Optional
 
 import ConfigSpace.hyperparameters as CSH
-from ConfigSpace.configuration_space import ConfigurationSpace, Configuration
+from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
+
+import numpy as np
+
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-
-from autoPyTorch.pipeline.components.base_component import (
-    autoPyTorchComponent,
-)
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.flat_encoder \
-    import FlatForecastingEncoderChoice
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.seq_encoder import\
-    SeqForecastingEncoderChoice
-from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdate
+from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.\
+    flat_encoder import FlatForecastingEncoderChoice
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.\
+    seq_encoder import SeqForecastingEncoderChoice
+from autoPyTorch.utils.hyperparameter_search_space_update import \
+    HyperparameterSearchSpaceUpdate
 
 
 class ForecastingNetworkChoice(autoPyTorchChoice):

@@ -1,44 +1,48 @@
+import inspect
 import os
 from collections import OrderedDict
-from typing import Dict, Optional, List, Any, Union, Type
-from sklearn.pipeline import Pipeline
-import inspect
+from typing import Any, Dict, List, Optional, Type, Union
 
 import ConfigSpace as CS
-from ConfigSpace.hyperparameters import (
-    Hyperparameter,
-    Constant,
-    CategoricalHyperparameter,
-    UniformFloatHyperparameter,
-    OrdinalHyperparameter,
-)
-from ConfigSpace.configuration_space import ConfigurationSpace, Configuration
 from ConfigSpace.conditions import (
-    EqualsCondition, OrConjunction, GreaterThanCondition
+    EqualsCondition,
+    GreaterThanCondition,
+    OrConjunction
 )
-from ConfigSpace.forbidden import ForbiddenInClause, ForbiddenEqualsClause, ForbiddenAndConjunction
+from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
+from ConfigSpace.forbidden import (
+    ForbiddenAndConjunction,
+    ForbiddenEqualsClause,
+    ForbiddenInClause
+)
+from ConfigSpace.hyperparameters import (
+    CategoricalHyperparameter,
+    Constant,
+    Hyperparameter,
+    OrdinalHyperparameter,
+    UniformFloatHyperparameter
+)
+
+from sklearn.pipeline import Pipeline
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-
-from autoPyTorch.pipeline.components.base_component import (
-    ThirdPartyComponents,
-    autoPyTorchComponent,
-    find_components,
-)
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
-from autoPyTorch.utils.common import HyperparameterSearchSpace, get_hyperparameter
-
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder import \
-    AbstractForecastingEncoderChoice
-
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder. \
-    base_forecasting_encoder import BaseForecastingEncoder
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder. \
-    base_forecasting_decoder import BaseForecastingDecoder
+from autoPyTorch.pipeline.components.base_component import (
+    ThirdPartyComponents, autoPyTorchComponent, find_components)
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import \
     ForecastingNetworkStructure
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.other_components. \
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.\
+    base_forecasting_decoder import BaseForecastingDecoder
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder import \
+    AbstractForecastingEncoderChoice
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.\
+    base_forecasting_encoder import BaseForecastingEncoder
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.other_components.\
     TemporalFusion import TemporalFusion
+from autoPyTorch.utils.common import (
+    HyperparameterSearchSpace,
+    get_hyperparameter
+)
 
 directory = os.path.split(__file__)[0]
 _encoders = find_components(__package__,

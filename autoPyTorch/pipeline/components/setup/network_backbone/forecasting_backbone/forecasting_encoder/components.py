@@ -1,8 +1,8 @@
 from enum import Enum
+from typing import NamedTuple, Tuple
 
 import torch
 from torch import nn
-from typing import Tuple, NamedTuple
 
 
 class EncoderProperties(NamedTuple):

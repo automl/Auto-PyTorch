@@ -1,8 +1,6 @@
 import unittest
 
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.encoding import (
-    TimeSeriesEncoderChoice
-)
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.encoding import TimeSeriesEncoderChoice
 
 
 class TestEncoderChoice(unittest.TestCase):

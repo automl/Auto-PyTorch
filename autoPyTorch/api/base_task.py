@@ -34,11 +34,12 @@ from smac.tae import StatusType
 from autoPyTorch import metrics
 from autoPyTorch.automl_common.common.utils.backend import Backend, create
 from autoPyTorch.constants import (
-    REGRESSION_TASKS,
     FORECASTING_TASKS,
+    REGRESSION_TASKS,
     STRING_TO_OUTPUT_TYPES,
     STRING_TO_TASK_TYPES,
 )
+from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE
 from autoPyTorch.data.base_validator import BaseInputValidator
 from autoPyTorch.data.utils import DatasetCompressionSpec
 from autoPyTorch.datasets.base_dataset import BaseDataset, BaseDatasetPropertiesType
@@ -73,7 +74,6 @@ from autoPyTorch.utils.results_manager import MetricResults, ResultsManager, Sea
 from autoPyTorch.utils.results_visualizer import ColorLabelSettings, PlotSettingParams, ResultsVisualizer
 from autoPyTorch.utils.single_thread_client import SingleThreadedClient
 from autoPyTorch.utils.stopwatch import StopWatch
-from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE
 
 
 def _pipeline_predict(pipeline: BasePipeline,

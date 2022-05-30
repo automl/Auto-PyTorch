@@ -1,6 +1,4 @@
-from typing import Any, Dict, Optional, Iterable, Tuple, List
-
-from ConfigSpace.configuration_space import ConfigurationSpace
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 
@@ -8,21 +6,20 @@ import torch
 from torch import nn
 
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
-from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import BaseTargetScaler
-
-
-from autoPyTorch.utils.common import FitRequirement, get_device_from_fit_dictionary
 from autoPyTorch.pipeline.components.setup.network.base_network import NetworkComponent
-from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
 from autoPyTorch.pipeline.components.setup.network.forecasting_architecture import (
+    ForecastingDeepARNet,
     ForecastingNet,
     ForecastingSeq2SeqNet,
-    ForecastingDeepARNet,
-    NBEATSNet,
+    NBEATSNet
 )
-from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import (
+from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import \
     DisForecastingStrategy
+from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
+from autoPyTorch.utils.common import (
+    FitRequirement,
+    get_device_from_fit_dictionary
 )
 
 

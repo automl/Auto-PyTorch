@@ -3,9 +3,7 @@ import unittest.mock
 
 import torchvision
 
-from autoPyTorch.pipeline.components.training.data_loader.feature_data_loader import (
-    FeatureDataLoader
-)
+from autoPyTorch.pipeline.components.training.data_loader.feature_data_loader import FeatureDataLoader
 
 
 class TestFeatureDataLoader(unittest.TestCase):

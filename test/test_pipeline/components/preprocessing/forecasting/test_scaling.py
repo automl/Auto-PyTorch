@@ -1,6 +1,7 @@
 import unittest
 
 import numpy as np
+
 import pandas as pd
 
 from sklearn.base import BaseEstimator
@@ -107,7 +108,6 @@ class TestScaling(unittest.TestCase):
 
         transformed_test = np.concatenate([scaler.transform(raw_data) for raw_data in self.raw_data])
         self.assertTrue(np.allclose(transformed_test[:, [0, -1]], transformed_test[:, [0, -1]]))
-
 
     def test_max_abs_scaler(self):
         scaler = TimeSeriesScaler(mode='max_abs',

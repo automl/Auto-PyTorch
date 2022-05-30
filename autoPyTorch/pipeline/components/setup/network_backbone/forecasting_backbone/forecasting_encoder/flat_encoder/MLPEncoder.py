@@ -1,21 +1,24 @@
-from typing import Any, Dict, List, Optional, Union, Tuple
-
-import torch
-from torch import nn
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter
 
+import torch
+from torch import nn
+
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
+from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.pipeline.components.setup.network_backbone.MLPBackbone import MLPBackbone
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.\
     base_forecasting_encoder import BaseForecastingEncoder, EncoderProperties
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import (
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import \
     EncoderNetwork
-)
-from autoPyTorch.pipeline.components.base_component import BaseEstimator
-from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_backbone.utils import _activations
-from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, add_hyperparameter
+from autoPyTorch.utils.common import (
+    FitRequirement,
+    HyperparameterSearchSpace,
+    add_hyperparameter
+)
 
 
 class TimeSeriesMLP(EncoderNetwork):

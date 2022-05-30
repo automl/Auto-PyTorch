@@ -3,14 +3,13 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.TimeSeriesTransformer import (
-    TimeSeriesFeatureTransformer, TimeSeriesTargetTransformer
+    TimeSeriesFeatureTransformer,
+    TimeSeriesTargetTransformer
 )
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.encoding import (
-    TimeSeriesEncoderChoice
-)
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.encoding import TimeSeriesEncoderChoice
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.imputation.TimeSeriesImputer import (
     TimeSeriesFeatureImputer,
-    TimeSeriesTargetImputer,
+    TimeSeriesTargetImputer
 )
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.base_scaler import BaseScaler
 from autoPyTorch.pipeline.time_series_forecasting import TimeSeriesForecastingPipeline

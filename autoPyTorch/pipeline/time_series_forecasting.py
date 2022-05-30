@@ -3,9 +3,14 @@ import warnings
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
-from ConfigSpace.forbidden import ForbiddenAndConjunction, ForbiddenEqualsClause, ForbiddenInClause
+from ConfigSpace.forbidden import (
+    ForbiddenAndConjunction,
+    ForbiddenEqualsClause,
+    ForbiddenInClause
+)
 
 import numpy as np
+
 import pandas as pd
 
 from sklearn.base import RegressorMixin
@@ -20,31 +25,27 @@ from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.TimeSeriesTransformer import (
     TimeSeriesFeatureTransformer
 )
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.encoding import (
-    TimeSeriesEncoderChoice
-)
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.encoding import TimeSeriesEncoderChoice
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.imputation.TimeSeriesImputer import (
     TimeSeriesFeatureImputer,
-    TimeSeriesTargetImputer,
+    TimeSeriesTargetImputer
 )
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.base_scaler import BaseScaler
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.base_scaler import (
+    BaseScaler
+)
 from autoPyTorch.pipeline.components.setup.early_preprocessor.TimeSeriesEarlyPreProcessing import (
     TimeSeriesEarlyPreprocessing,
     TimeSeriesTargetEarlyPreprocessing
 )
+from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import TargetScalerChoice
+from autoPyTorch.pipeline.components.setup.forecasting_training_loss import ForecastingLossChoices
 from autoPyTorch.pipeline.components.setup.lr_scheduler import SchedulerChoice
 from autoPyTorch.pipeline.components.setup.network.forecasting_network import ForecastingNetworkComponent
-from autoPyTorch.pipeline.components.setup.network_embedding import NetworkEmbeddingChoice
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone import ForecastingNetworkChoice
+from autoPyTorch.pipeline.components.setup.network_embedding import NetworkEmbeddingChoice
 from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.forecasting_head import ForecastingHead
-from autoPyTorch.pipeline.components.setup.network_initializer import (
-    NetworkInitializerChoice
-)
-from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import (
-    TargetScalerChoice
-)
+from autoPyTorch.pipeline.components.setup.network_initializer import NetworkInitializerChoice
 from autoPyTorch.pipeline.components.setup.optimizer import OptimizerChoice
-from autoPyTorch.pipeline.components.setup.forecasting_training_loss import ForecastingLossChoices
 from autoPyTorch.pipeline.components.training.data_loader.time_series_forecasting_data_loader import (
     TimeSeriesForecastingDataLoader
 )
@@ -106,7 +107,8 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         Returns:
             np.ndarray: coefficient of determination R^2 of the prediction
         """
-        from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics, calculate_score
+        from autoPyTorch.pipeline.components.training.metrics.utils import (
+            calculate_score, get_metrics)
         metrics = get_metrics(self.dataset_properties, ['mean_MAPE_forecasting'])
         y_pred = self.predict(X, batch_size=batch_size)
         r2 = calculate_score(y, y_pred, task_type=STRING_TO_TASK_TYPES[self.dataset_properties['task_type']],

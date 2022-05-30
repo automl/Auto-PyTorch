@@ -2,15 +2,15 @@ import os
 
 from smac.runhistory.runhistory import DataOrigin, RunHistory, RunKey, RunValue, StatusType
 
-from autoPyTorch.constants import REGRESSION_TASKS, FORECASTING_TASKS
+from autoPyTorch.constants import FORECASTING_TASKS, REGRESSION_TASKS
 from autoPyTorch.evaluation.abstract_evaluator import (
     DummyClassificationPipeline,
     DummyRegressionPipeline,
     DummyTimeSeriesForecastingPipeline,
     fit_and_suppress_warnings
 )
-from autoPyTorch.evaluation.train_evaluator import TrainEvaluator
 from autoPyTorch.evaluation.time_series_forecasting_train_evaluator import TimeSeriesForecastingTrainEvaluator
+from autoPyTorch.evaluation.train_evaluator import TrainEvaluator
 from autoPyTorch.pipeline.traditional_tabular_classification import TraditionalTabularClassificationPipeline
 
 

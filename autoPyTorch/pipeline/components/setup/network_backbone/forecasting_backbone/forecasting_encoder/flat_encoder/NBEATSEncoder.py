@@ -1,17 +1,17 @@
-from typing import Any, Dict, List, Optional, Union, Tuple
-
-from torch import nn
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace import ConfigurationSpace
 
+from torch import nn
+
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
+from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.\
     base_forecasting_encoder import BaseForecastingEncoder, EncoderProperties
-from autoPyTorch.pipeline.components.setup.network_backbone.utils import get_output_shape
-from autoPyTorch.pipeline.components.base_component import BaseEstimator
-from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.flat_encoder.\
     MLPEncoder import TimeSeriesMLP
+from autoPyTorch.pipeline.components.setup.network_backbone.utils import get_output_shape
+from autoPyTorch.utils.common import FitRequirement
 
 
 class NBEATSEncoder(BaseForecastingEncoder):

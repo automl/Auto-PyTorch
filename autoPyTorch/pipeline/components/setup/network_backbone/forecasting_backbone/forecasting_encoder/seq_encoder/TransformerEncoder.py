@@ -1,25 +1,26 @@
-from typing import Any, Dict, Optional, Tuple, List
+from typing import Any, Dict, List, Optional, Tuple
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
-from ConfigSpace.hyperparameters import (
-    CategoricalHyperparameter,
-    UniformFloatHyperparameter,
-    UniformIntegerHyperparameter
-)
+from ConfigSpace.hyperparameters import (CategoricalHyperparameter,
+                                         UniformFloatHyperparameter,
+                                         UniformIntegerHyperparameter)
 
 import torch
 from torch import nn
 
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import (
+    PositionalEncoding, build_transformer_layers)
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.\
     base_forecasting_encoder import BaseForecastingEncoder, EncoderProperties
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import (
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import \
     EncoderNetwork
+from autoPyTorch.utils.common import (
+    HyperparameterSearchSpace,
+    add_hyperparameter,
+    get_hyperparameter
 )
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import \
-    PositionalEncoding, build_transformer_layers
 
 
 class _TransformerEncoder(EncoderNetwork):

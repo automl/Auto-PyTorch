@@ -1,22 +1,22 @@
-from typing import Any, Dict, Optional, List, Tuple, Union, Set
+from typing import Any, Dict, List, Optional, Tuple, Union
+
+from pytorch_forecasting.models.temporal_fusion_transformer.sub_modules import (
+    GateAddNorm,
+    GatedResidualNetwork,
+    InterpretableMultiHeadAttention,
+    VariableSelectionNetwork
+)
 
 import torch
 from torch import nn
 
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import (
-    EncoderBlockInfo, EncoderOutputForm
-)
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import (
-    DecoderBlockInfo
-)
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import (
-    NetworkStructure,
-    AddLayer
-)
 
-from pytorch_forecasting.models.temporal_fusion_transformer.sub_modules import (
-    GateAddNorm, GatedResidualNetwork, VariableSelectionNetwork, InterpretableMultiHeadAttention
-)
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import (
+    AddLayer, NetworkStructure)
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import \
+    DecoderBlockInfo
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import (
+    EncoderBlockInfo, EncoderOutputForm)
 
 
 class TemporalFusionLayer(nn.Module):

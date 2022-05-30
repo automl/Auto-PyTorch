@@ -4,10 +4,10 @@ from typing import Any, Dict, List, Optional
 from ConfigSpace.configuration_space import ConfigurationSpace
 
 from autoPyTorch.constants import (
-    IMAGE_TASKS,
-    REGRESSION_TASKS,
     CLASSIFICATION_TASKS,
     FORECASTING_TASKS,
+    IMAGE_TASKS,
+    REGRESSION_TASKS,
     STRING_TO_TASK_TYPES,
     TABULAR_TASKS,
 )

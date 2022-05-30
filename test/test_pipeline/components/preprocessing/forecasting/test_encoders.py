@@ -1,18 +1,17 @@
 import unittest
 
-import pandas as pd
 import numpy as np
 from numpy.testing import assert_array_equal
+
+import pandas as pd
 
 from sklearn.base import BaseEstimator
 from sklearn.compose import make_column_transformer
 
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.encoding.NoEncoder import (
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.encoding.NoEncoder import \
     TimeSeriesNoEncoder
-)
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.encoding.OneHotEncoder import (
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.encoding.OneHotEncoder import \
     TimeSeriesOneHotEncoder
-)
 
 
 class TestEncoders(unittest.TestCase):

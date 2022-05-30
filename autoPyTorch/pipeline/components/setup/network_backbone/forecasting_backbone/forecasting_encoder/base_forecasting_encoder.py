@@ -1,19 +1,21 @@
-import numpy as np
+from abc import abstractmethod
 from collections import OrderedDict
+from typing import Any, Dict, Iterable, List, Optional, Tuple
+
+import numpy as np
+
+from torch import nn
 
 import torchvision
-from autoPyTorch.utils.common import FitRequirement
-from torch import nn
-from abc import abstractmethod
-from typing import Any, Dict, Iterable, Optional, Tuple, List
 
-from autoPyTorch.pipeline.components.base_component import BaseEstimator
-from autoPyTorch.pipeline.components.setup.network_backbone.utils import get_output_shape
-from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import (
-    EncoderProperties, EncoderBlockInfo
-)
+from autoPyTorch.pipeline.components.base_component import BaseEstimator, autoPyTorchComponent
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import NetworkStructure
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import (
+    EncoderBlockInfo,
+    EncoderProperties
+)
+from autoPyTorch.pipeline.components.setup.network_backbone.utils import get_output_shape
+from autoPyTorch.utils.common import FitRequirement
 
 
 class BaseForecastingEncoder(autoPyTorchComponent):

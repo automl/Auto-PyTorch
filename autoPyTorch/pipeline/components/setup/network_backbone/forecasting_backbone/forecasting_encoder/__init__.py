@@ -1,32 +1,31 @@
 import os
 import warnings
-from collections import OrderedDict
-from typing import Dict, Optional, List, Any, Type, Callable
 from abc import abstractmethod
-from sklearn.pipeline import Pipeline
+from collections import OrderedDict
+from typing import Any, Callable, Dict, List, Optional, Type
 
 import ConfigSpace.hyperparameters as CSH
-from ConfigSpace.configuration_space import ConfigurationSpace, Configuration
 from ConfigSpace.conditions import EqualsCondition, OrConjunction
+from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
+
+from sklearn.pipeline import Pipeline
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-
+from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import (
     ThirdPartyComponents,
     autoPyTorchComponent,
-    find_components,
+    find_components
 )
-from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.setup.network_backbone import NetworkBackboneChoice
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone. \
-    forecasting_encoder.base_forecasting_encoder import BaseForecastingEncoder
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import (
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import \
     ForecastingNetworkStructure
-)
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder import \
-    decoders, decoder_addons
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder import (
+    decoder_addons, decoders)
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.\
     base_forecasting_decoder import BaseForecastingDecoder
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.\
+    base_forecasting_encoder import BaseForecastingEncoder
 
 directory = os.path.split(__file__)[0]
 _encoders = find_components(__package__,

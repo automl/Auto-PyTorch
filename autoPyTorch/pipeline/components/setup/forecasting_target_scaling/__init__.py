@@ -1,18 +1,16 @@
 import os
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import ConfigSpace.hyperparameters as CSH
 from ConfigSpace.configuration_space import ConfigurationSpace
 
-from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
+from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import (
-    ThirdPartyComponents,
-    autoPyTorchComponent,
-    find_components,
-)
-from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.base_target_scaler import BaseTargetScaler
+    ThirdPartyComponents, autoPyTorchComponent, find_components)
+from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.base_target_scaler import \
+    BaseTargetScaler
 
 scaling_directory = os.path.split(__file__)[0]
 _scalers = find_components(__package__,
@@ -55,7 +53,7 @@ class TargetScalerChoice(autoPyTorchChoice):
         cs = ConfigurationSpace()
 
         if dataset_properties is None:
-            dataset_properties:  Dict[str, BaseDatasetPropertiesType] = self.dataset_properties  # type: ignore
+            dataset_properties: Dict[str, BaseDatasetPropertiesType] = self.dataset_properties  # type: ignore
 
         available_scalers = self.get_available_components(dataset_properties=dataset_properties,
                                                           include=include,

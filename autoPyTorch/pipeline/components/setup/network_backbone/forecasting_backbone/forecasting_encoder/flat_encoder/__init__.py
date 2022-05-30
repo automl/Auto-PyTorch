@@ -1,17 +1,15 @@
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder import (
-    AbstractForecastingEncoderChoice
-)
-
 import os
 from collections import OrderedDict
-from typing import Dict, Union, Optional, Type
+from typing import Dict, Optional, Type, Union
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import (
     ThirdPartyComponents,
     autoPyTorchComponent,
-    find_components,
+    find_components
 )
-from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder import \
+    AbstractForecastingEncoderChoice
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.\
     base_forecasting_encoder import BaseForecastingEncoder
 

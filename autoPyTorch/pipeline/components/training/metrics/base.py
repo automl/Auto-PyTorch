@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Any, Callable, List, Optional, Dict, Union
+from typing import Any, Callable, List, Optional, Union
 
 import numpy as np
 

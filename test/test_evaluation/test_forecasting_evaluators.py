@@ -8,6 +8,7 @@ import unittest.mock
 from ConfigSpace import Configuration
 
 import numpy as np
+
 from smac.tae import StatusType
 
 from autoPyTorch.automl_common.common.utils.backend import create
@@ -19,12 +20,9 @@ from autoPyTorch.pipeline.components.training.metrics.metrics import mean_MASE_f
 this_directory = os.path.dirname(__file__)
 sys.path.append(this_directory)
 from evaluation_util import (  # noqa (E402: module level import not at top of file)
-    BaseEvaluatorTest,
-    get_binary_classification_datamanager,
-    get_multiclass_classification_datamanager,
-    get_regression_datamanager,
-    get_forecasting_dataset
-)  # noqa (E402: module level import not at top of file)
+    BaseEvaluatorTest, get_binary_classification_datamanager,
+    get_forecasting_dataset, get_multiclass_classification_datamanager,
+    get_regression_datamanager)
 
 from test_evaluators import TestTrainEvaluator
 

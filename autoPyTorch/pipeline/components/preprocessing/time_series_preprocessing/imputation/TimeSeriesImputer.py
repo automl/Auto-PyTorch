@@ -1,19 +1,21 @@
 from typing import Any, Dict, List, Optional
 
-import numpy as np
-from sklearn.base import BaseEstimator
-from sktime.transformations.series.impute import Imputer
-
 from ConfigSpace import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter
-from autoPyTorch.utils.common import FitRequirement
 
+import numpy as np
+
+from sklearn.base import BaseEstimator
+
+from sktime.transformations.series.impute import Imputer
+
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.base_time_series_preprocessing import (
     autoPyTorchTimeSeriesPreprocessingComponent,
-    autoPyTorchTimeSeriesTargetPreprocessingComponent
-)
-from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
+    autoPyTorchTimeSeriesTargetPreprocessingComponent)
+from autoPyTorch.utils.common import (FitRequirement,
+                                      HyperparameterSearchSpace,
+                                      add_hyperparameter)
 
 
 class TimeSeriesFeatureImputer(autoPyTorchTimeSeriesPreprocessingComponent):

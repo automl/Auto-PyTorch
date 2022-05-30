@@ -1,12 +1,12 @@
-from typing import Optional, Sequence, List, Iterator, Sized, Union, Mapping
+import collections
+from typing import Iterator, List, Mapping, Optional, Sequence, Sized, Union
 
 import numpy as np
 
 import torch
-import collections
-from torch.utils.data.sampler import SubsetRandomSampler, SequentialSampler
 from torch._six import string_classes
-from torch.utils.data._utils.collate import np_str_obj_array_pattern, default_collate_err_msg_format, default_collate
+from torch.utils.data._utils.collate import default_collate, default_collate_err_msg_format, np_str_obj_array_pattern
+from torch.utils.data.sampler import SequentialSampler, SubsetRandomSampler
 
 from autoPyTorch.datasets.base_dataset import TransformSubset
 from autoPyTorch.datasets.time_series_dataset import TimeSeriesSequence

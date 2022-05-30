@@ -1,5 +1,7 @@
 from typing import Any, Dict, Optional, Union
 
+from ConfigSpace import ConfigurationSpace
+
 import numpy as np
 
 from sklearn.base import BaseEstimator
@@ -7,11 +9,10 @@ from sklearn.pipeline import Pipeline
 
 import torch
 
-from ConfigSpace import ConfigurationSpace
-
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
-from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.utils import TargetScaler
+from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.utils import \
+    TargetScaler
 
 
 class BaseTargetScaler(autoPyTorchComponent):

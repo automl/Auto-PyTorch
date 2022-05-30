@@ -1,22 +1,22 @@
-from typing import Dict, Optional, Tuple, Union, Any, List
+from typing import Any, Dict, List, Optional, Tuple, Union
+
+from ConfigSpace.conditions import EqualsCondition, GreaterThanCondition
+from ConfigSpace.configuration_space import ConfigurationSpace
+from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformIntegerHyperparameter
 
 import numpy as np
+
 import torch
 from torch import nn
 
-from ConfigSpace.configuration_space import ConfigurationSpace
-from ConfigSpace.hyperparameters import CategoricalHyperparameter, UniformIntegerHyperparameter
-from ConfigSpace.conditions import GreaterThanCondition, EqualsCondition
-
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-from autoPyTorch.pipeline.components.setup.network_head.utils import _activations
-from autoPyTorch.utils.common import HyperparameterSearchSpace, get_hyperparameter
-
-from autoPyTorch.pipeline.components.setup.network_backbone. \
-    forecasting_backbone.forecasting_decoder.base_forecasting_decoder import BaseForecastingDecoder
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import (
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.\
+    base_forecasting_decoder import BaseForecastingDecoder
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import \
     DecoderNetwork
-)
+from autoPyTorch.pipeline.components.setup.network_head.utils import \
+    _activations
+from autoPyTorch.utils.common import HyperparameterSearchSpace, get_hyperparameter
 
 
 class MLPDecoderModule(DecoderNetwork):
@@ -31,7 +31,7 @@ class MLPDecoderModule(DecoderNetwork):
         self.auto_regressive = auto_regressive
 
     def forward(self, x_future: Optional[torch.Tensor], encoder_output: torch.Tensor,
-                pos_idx: Optional[Tuple[int]] = None) ->torch.Tensor:
+                pos_idx: Optional[Tuple[int]] = None) -> torch.Tensor:
         if not self.auto_regressive:
             if len(encoder_output.shape) == 3:
                 encoder_output = encoder_output.squeeze(1)

@@ -1,17 +1,18 @@
-from typing import Any, Dict, Optional, List, Union
-
-import numpy as np
+from typing import Any, Dict, List, Optional, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter
 
+import numpy as np
+
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.base_time_series_preprocessing import (
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.base_time_series_preprocessing import \
     autoPyTorchTimeSeriesPreprocessingComponent
-)
-from autoPyTorch.utils.common import FitRequirement
-from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.utils import TimeSeriesScaler
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.utils import \
+    TimeSeriesScaler
+from autoPyTorch.utils.common import (FitRequirement,
+                                      HyperparameterSearchSpace,
+                                      add_hyperparameter)
 
 
 class BaseScaler(autoPyTorchTimeSeriesPreprocessingComponent):

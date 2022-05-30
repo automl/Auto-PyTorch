@@ -1,10 +1,11 @@
 from functools import partial
-
-import numpy as np
 from typing import List, Union
 
-import sktime.performance_metrics.forecasting as forecasting_metrics
+import numpy as np
+
 import sklearn.metrics
+
+import sktime.performance_metrics.forecasting as forecasting_metrics
 
 from smac.utils.constants import MAXINT
 

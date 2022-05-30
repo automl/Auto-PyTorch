@@ -1,14 +1,15 @@
-import torch
-
 import copy
 import unittest
+
+import torch
+
 from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import TargetScalerChoice
-from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.base_target_scaler import BaseTargetScaler
-from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.TargetNoScaler import TargetNoScaler
 from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.TargetMaxAbsScaler import TargetMaxAbsScaler
 from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.TargetMeanAbsScaler import TargetMeanAbsScaler
 from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.TargetMinMaxScaler import TargetMinMaxScaler
+from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.TargetNoScaler import TargetNoScaler
 from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.TargetStandardScaler import TargetStandardScaler
+from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.base_target_scaler import BaseTargetScaler
 
 
 class TestTargetScalar(unittest.TestCase):

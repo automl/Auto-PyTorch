@@ -1,7 +1,8 @@
 from typing import Any, Dict, Optional, Tuple
 
-import torch
 from sklearn.base import BaseEstimator
+
+import torch
 
 
 # Similar to / inspired by

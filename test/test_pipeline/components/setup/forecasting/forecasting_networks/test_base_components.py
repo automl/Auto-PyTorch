@@ -3,30 +3,33 @@ import itertools
 import unittest
 
 from ConfigSpace import Configuration
-import pandas as pd
-import numpy as np
-import torch
-from autoPyTorch.constants import (
-    TASK_TYPES_TO_STRING,
-    TIMESERIES_FORECASTING,
-)
 
+import numpy as np
+
+import pandas as pd
+
+import torch
+
+from autoPyTorch.constants import TASK_TYPES_TO_STRING, TIMESERIES_FORECASTING
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone import ForecastingNetworkChoice
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder. \
-    base_forecasting_encoder import BaseForecastingEncoder
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder. \
-    MLPDecoder import ForecastingMLPDecoder
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import NetworkStructure
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.MLPDecoder import (
+    ForecastingMLPDecoder
+)
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import (
     DecoderBlockInfo
 )
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.\
+    base_forecasting_encoder import BaseForecastingEncoder
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import (
-    EncoderBlockInfo, EncoderNetwork
+    EncoderBlockInfo,
+    EncoderNetwork
 )
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import NetworkStructure
-from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.forecasting_head import ForecastingHead
 from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.distribution import (
-    ALL_DISTRIBUTIONS, DisForecastingStrategy
+    ALL_DISTRIBUTIONS,
+    DisForecastingStrategy
 )
+from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.forecasting_head import ForecastingHead
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdate
 
 

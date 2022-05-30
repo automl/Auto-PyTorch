@@ -1,17 +1,19 @@
-from typing import Optional, Dict, Union
+from typing import Dict, Optional, Union
+
+from ConfigSpace import CategoricalHyperparameter, ConfigurationSpace
 
 import numpy as np
-from ConfigSpace import ConfigurationSpace, CategoricalHyperparameter
-
-from autoPyTorch.utils.common import (
-    HyperparameterSearchSpace,
-    add_hyperparameter
-)
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.forecasting_training_loss.base_forecasting_loss import \
     ForecastingLossComponents
-from autoPyTorch.pipeline.components.training.losses import L1Loss, MSELoss, MAPELoss, MASELoss
+from autoPyTorch.pipeline.components.training.losses import (
+    L1Loss,
+    MAPELoss,
+    MASELoss,
+    MSELoss
+)
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 class RegressionLoss(ForecastingLossComponents):
