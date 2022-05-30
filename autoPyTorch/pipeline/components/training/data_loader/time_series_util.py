@@ -223,10 +223,11 @@ class TimeSeriesSampler(SubsetRandomSampler):
             idx_samples_start = idx_samples_end
         num_samples_remain = self.num_instances - idx_samples_end
         if num_samples_remain > 0:
-            if num_samples_remain > self.num_expected_ins_decimal[-1]:
+            if num_samples_remain > self.num_expected_ins_decimal.shape[-1]:
                 replacement = True
             else:
                 replacement = False
+
             samples_idx = torch.multinomial(self.num_expected_ins_decimal, num_samples_remain, replacement)
             seq_interval = self.seq_intervals_decimal[samples_idx]
 
