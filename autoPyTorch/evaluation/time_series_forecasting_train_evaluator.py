@@ -112,7 +112,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                                                                                         test_indices=test_split,
                                                                                         add_pipeline_to_self=True)
 
-            mase_coefficient_val = self.generate_mase_coefficient_for_validation(test_split)
+            mase_coefficient_val = self.generate_mase_coefficient_for_validation(test_split)  # type: ignore[arg-type]
 
             forecasting_kwargs = {'sp': self.seasonality,
                                   'n_prediction_steps': self.n_prediction_steps,
@@ -165,7 +165,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
 
             mase_coefficient_val_all = []
             for train_split, test_split in self.splits:
-                mase_coefficient = self.generate_mase_coefficient_for_validation(test_split)
+                mase_coefficient = self.generate_mase_coefficient_for_validation(test_split)  # type: ignore[arg-type]
                 mase_coefficient_val_all.append(mase_coefficient)
 
             forecasting_kwargs = {'sp': self.seasonality,

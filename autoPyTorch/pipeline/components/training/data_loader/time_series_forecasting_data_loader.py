@@ -92,13 +92,13 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         self.num_batches_per_epoch = num_batches_per_epoch if num_batches_per_epoch is not None else np.inf
         self.padding_collector: Optional[Callable] = None
 
-        self.known_future_features_index: Union[Tuple[int], Tuple[()]] = tuple()
+        self.known_future_features_index: Union[Tuple[int], Tuple[()]] = ()
         self._is_uni_variant = False
 
         self.transform_time_features = transform_time_features
         self.freq = "1Y"
         self.time_feature_transform: List[TimeFeature] = []
-        self.dataset_columns: Union[Tuple[Union[int, str]], Tuple[()]] = tuple()
+        self.dataset_columns: Union[Tuple[Union[int, str]], Tuple[()]] = ()
         self.sampler_train: Optional[Union[Iterator, torch.utils.data.sampler.Sampler]] = None
 
         # Applied for get loader
@@ -204,7 +204,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         max_lagged_value += self.window_size + self.n_prediction_steps
 
         # we want the feature names from the raw dataset
-        self.dataset_columns = datamanager.feature_names
+        self.dataset_columns = datamanager.feature_names  # type: ignore[assignment]
 
         known_future_features_index = extract_feature_index(
             feature_shapes=X['dataset_properties']['feature_shapes'],
@@ -357,7 +357,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         # We transform to tensor under dataset
         return torchvision.transforms.Compose(candidate_transformations)
 
-    def get_loader(self, X: Union[np.ndarray, TimeSeriesSequence], y: Optional[np.ndarray] = None,
+    def get_loader(self, X: Union[TimeSeriesSequence, List[TimeSeriesSequence]], y: Optional[np.ndarray] = None,
                    batch_size: int = np.iinfo(np.int32).max,
                    ) -> torch.utils.data.DataLoader:
         """

@@ -10,7 +10,7 @@ class EncoderProperties(NamedTuple):
     bijective_seq_output: bool = True
     fixed_input_seq_length: bool = False
     lagged_input: bool = False
-    causality: bool = True  # this value indicates if the output of the model only depends on the past targets
+    is_casual: bool = True  # this value indicates if the output of the model only depends on the past targets
 
 
 class EncoderBlockInfo(NamedTuple):

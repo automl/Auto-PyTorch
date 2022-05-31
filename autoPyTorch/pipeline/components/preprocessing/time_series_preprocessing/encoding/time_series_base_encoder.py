@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Union
 
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.base_encoder import \
     BaseEncoder
@@ -16,7 +16,7 @@ class TimeSeriesBaseEncoder(autoPyTorchTimeSeriesPreprocessingComponent):
         self.add_fit_requirements([
             FitRequirement('categorical_columns', (List,), user_defined=True, dataset_property=True),
             FitRequirement('categories', (List,), user_defined=True, dataset_property=True),
-            FitRequirement('feature_names', (Tuple,), user_defined=True, dataset_property=True),
+            FitRequirement('feature_names', (tuple,), user_defined=True, dataset_property=True),
             FitRequirement('feature_shapes', (Dict, ), user_defined=True, dataset_property=True),
         ])
         self.feature_shapes: Union[Dict[str, int]] = {}

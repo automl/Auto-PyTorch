@@ -214,9 +214,10 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
         encoder2decoder: Dict[str, List[str]] = {}
         for encoder_name in hp_encoder.choices:
             updates = self._get_search_space_updates(prefix=encoder_name)
-            config_space = available_encoders[encoder_name].get_hyperparameter_search_space(  # type: ignore[call-args]
+            config_space = available_encoders[encoder_name].get_hyperparameter_search_space(
                 dataset_properties,
-                **updates)
+                **updates   # type: ignore[call-args]
+            )
             parent_hyperparameter = {'parent': hp_encoder, 'value': encoder_name}
             cs.add_configuration_space(
                 encoder_name,
@@ -242,9 +243,9 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
             if not decoder2encoder[decoder_name]:
                 continue
             updates = self._get_search_space_updates(prefix=decoder_name)
-            config_space = available_decoders[decoder_name].get_hyperparameter_search_space(  # type: ignore[call-args]
+            config_space = available_decoders[decoder_name].get_hyperparameter_search_space(
                 dataset_properties,
-                **updates
+                **updates   # type: ignore[call-args]
             )
             compatible_encoders = decoder2encoder[decoder_name]
             encoders_with_multi_decoder = []
@@ -379,6 +380,6 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
         assert self.pipeline is not None, "Cannot call fit without initializing the component"
         return self.pipeline.fit(X, y)
 
-    def transform(self, X: Dict) -> Dict:
+    def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         assert self.pipeline is not None, "Cannot call transform before the object is initialized"
-        return self.pipeline.transform(X)
+        return self.pipeline.transform(X)   # type: ignore[no-any-return]

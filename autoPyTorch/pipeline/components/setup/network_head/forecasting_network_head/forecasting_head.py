@@ -183,36 +183,36 @@ class ForecastingHead(NetworkHeadComponent):
         """
         if net_output_type == 'distribution':
             assert dist_cls is not None
-            proj_layer = ALL_DISTRIBUTIONS[dist_cls](num_in_features=head_n_in_features,
-                                                     output_shape=output_shape[1:],
-                                                     n_prediction_heads=n_prediction_heads,
-                                                     decoder_has_local_layer=decoder_has_local_layer
-                                                     )
-            return proj_layer
+            proj_layer_d = ALL_DISTRIBUTIONS[dist_cls](num_in_features=head_n_in_features,
+                                                       output_shape=output_shape[1:],
+                                                       n_prediction_heads=n_prediction_heads,
+                                                       decoder_has_local_layer=decoder_has_local_layer
+                                                       )
+            return proj_layer_d
         elif net_output_type == 'regression':
             if decoder_has_local_layer:
-                proj_layer = nn.Sequential(nn.Linear(head_n_in_features, np.product(output_shape[1:])))
+                proj_layer_r = nn.Sequential(nn.Linear(head_n_in_features, np.product(output_shape[1:])))
             else:
-                proj_layer = nn.Sequential(
+                proj_layer_r = nn.Sequential(
                     nn.Linear(head_n_in_features, n_prediction_heads * np.product(output_shape[1:])),
                     nn.Unflatten(-1, (n_prediction_heads, *output_shape[1:])),
                 )
-            return proj_layer
+            return proj_layer_r
         elif net_output_type == "quantile":
             if decoder_has_local_layer:
-                proj_layer = [  # type: ignore[assignment]
+                proj_layer_quantiles = [
                     nn.Sequential(nn.Linear(head_n_in_features, np.product(output_shape[1:])))
                     for _ in range(num_quantiles)
                 ]
             else:
-                proj_layer = [  # type: ignore[assignment]
+                proj_layer_quantiles = [
                     nn.Sequential(
                         nn.Linear(head_n_in_features, n_prediction_heads * np.product(output_shape[1:])),
                         nn.Unflatten(-1, (n_prediction_heads, *output_shape[1:])),
                     ) for _ in range(num_quantiles)
                 ]
-            proj_layer = QuantileHead(proj_layer)
-            return proj_layer
+            proj_layer_q = QuantileHead(proj_layer_quantiles)
+            return proj_layer_q
         else:
             raise NotImplementedError(f"Unsupported network type "
                                       f"{net_output_type} (should be one of the following: "

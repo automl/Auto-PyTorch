@@ -951,9 +951,9 @@ class ForecastingDeepARNet(ForecastingSeq2SeqNet):
                 encoder_input = encoder_input.to(self.device)
 
                 encoder_input = self.embedding(encoder_input)
-                static_context_initial_hidden = None
+                static_context_initial_hidden = None  # type: ignore[assignment]
 
-            encoder_additional = [static_context_initial_hidden]
+            encoder_additional: List[Optional[torch.Tensor]] = [static_context_initial_hidden]
             encoder_additional.extend([None] * (self.network_structure.num_blocks - 1))
 
             encoder2decoder, encoder_output = self.encoder(encoder_input=encoder_input,
@@ -1024,12 +1024,12 @@ class ForecastingDeepARNet(ForecastingSeq2SeqNet):
 
                 encoder_input = encoder_input.to(self.device)
                 encoder_input = self.embedding(encoder_input)
-                static_context_initial_hidden = None
+                static_context_initial_hidden = None  # type: ignore[assignment]
 
             all_samples = []
             batch_size: int = past_targets.shape[0]
 
-            encoder_additional = [static_context_initial_hidden]
+            encoder_additional: List[Optional[torch.Tensor]] = [static_context_initial_hidden]
             encoder_additional.extend([None] * (self.network_structure.num_blocks - 1))
 
             encoder2decoder, encoder_output = self.encoder(encoder_input=encoder_input,

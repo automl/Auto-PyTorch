@@ -106,7 +106,7 @@ class TimeSeriesSequence(Dataset):
                  val_transforms: Optional[torchvision.transforms.Compose] = None,
                  n_prediction_steps: int = 1,
                  sp: int = 1,
-                 known_future_features_index: Optional[List[int]] = None,
+                 known_future_features_index: Optional[Tuple[int]] = None,
                  compute_mase_coefficient_value: bool = True,
                  time_features: Optional[np.ndarray] = None,
                  is_test_set: bool = False,
@@ -470,7 +470,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.seasonality = int(seasonality)
 
         self.freq: str = freq
-        self.freq_value: Real = freq_value
+        self.freq_value: Union[float, int] = freq_value
 
         self.n_prediction_steps = n_prediction_steps
 
@@ -610,7 +610,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.shuffle = shuffle
         self.random_state = np.random.RandomState(seed=seed)
 
-        resampling_strategy, resampling_strategy_args = self.get_split_strategy(
+        resampling_strategy_opt, resampling_strategy_args_opt = self.get_split_strategy(
             sequence_lengths=sequence_lengths,
             n_prediction_steps=n_prediction_steps,
             freq_value=self.freq_value,
@@ -618,8 +618,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             resampling_strategy_args=resampling_strategy_args
         )
 
-        self.resampling_strategy = resampling_strategy
-        self.resampling_strategy_args = resampling_strategy_args
+        self.resampling_strategy = resampling_strategy_opt
+        self.resampling_strategy_args = resampling_strategy_args_opt
 
         if isinstance(self.resampling_strategy, CrossValTypes):
             self.cross_validators = CrossValFuncs.get_cross_validators(self.resampling_strategy)
@@ -898,7 +898,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
     def replace_data(self,
                      X_train: pd.DataFrame,
                      X_test: Optional[pd.DataFrame],
-                     known_future_features_index: Union[Tuple[int], Tuple[()]] = tuple()) -> 'BaseDataset':
+                     known_future_features_index: Union[Tuple[int], Tuple[()]] = ()) -> 'BaseDataset':
         super(TimeSeriesForecastingDataset, self).replace_data(X_train=X_train, X_test=X_test)
         if X_train is None:
             return self
@@ -988,7 +988,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 num_splits=cast(int, num_splits),
                 n_repeats=n_repeats
             ))
-        elif self.resampling_strategy is None:
+        elif isinstance(self.resampling_strategy, NoResamplingStrategyTypes):
             splits.append(self.create_refit_split())
         else:
             raise ValueError(f"Unsupported resampling strategy={self.resampling_strategy}")
@@ -1028,8 +1028,9 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
     def get_split_strategy(sequence_lengths: List[int],
                            n_prediction_steps: int,
                            freq_value: Union[float, int],
-                           resampling_strategy: Optional[Union[
-                               CrossValTypes, HoldoutValTypes]] = HoldoutValTypes.time_series_hold_out_validation,
+                           resampling_strategy: Union[
+                               CrossValTypes, HoldoutValTypes,
+                               NoResamplingStrategyTypes] = HoldoutValTypes.time_series_hold_out_validation,
                            resampling_strategy_args: Optional[Dict[str, Any]] = None, ) -> \
             Tuple[Optional[Union[CrossValTypes, HoldoutValTypes]], Optional[Dict[str, Any]]]:
         """

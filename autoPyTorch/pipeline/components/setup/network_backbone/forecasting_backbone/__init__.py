@@ -41,7 +41,7 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
              "seq_encoder": SeqForecastingEncoderChoice(dataset_properties=self.dataset_properties,
                                                         random_state=self.random_state)})
 
-    def get_components(self) -> Dict[str, autoPyTorchComponent]:
+    def get_components(self) -> Dict[str, AbstractForecastingEncoderChoice]:  # type: ignore[override]
         """Returns the available backbone components
 
         Args:
@@ -51,7 +51,7 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
             Dict[str, autoPyTorchComponent]: all basebackbone components available
                 as choices for learning rate scheduling
         """
-        return self.default_components  # type: ignore[return-value]
+        return self.default_components
 
     def get_available_components(  # type: ignore[override]
             self,
@@ -86,7 +86,7 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
         if components is None:
             available_comp = self.get_components()
         else:
-            available_comp = components
+            available_comp = components  # type: ignore[assignment]
 
         if include is not None:
             include_top = set()
@@ -219,10 +219,10 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
                     exclude_encoder = self.exclude_components[name]
 
             config_space = available_encoders[name].get_hyperparameter_search_space(
-                dataset_properties=dataset_properties,  # type: ignore
+                dataset_properties=dataset_properties,
                 include=include_encoder,
                 exclude=exclude_encoder,
-                **updates  # type: ignore[call-args]
+                **updates  # type: ignore[call-arg]
             )
             parent_hyperparameter = {'parent': hp_encoder, 'value': name}
             cs.add_configuration_space(
@@ -262,7 +262,7 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
         self.new_params = new_params
         sub_configuration_space = choice_component.get_hyperparameter_search_space(
             self.dataset_properties,
-            **updates  # type: ignore[call-args]
+            **updates  # type: ignore[call-arg]
         )
 
         sub_configuration = Configuration(sub_configuration_space,

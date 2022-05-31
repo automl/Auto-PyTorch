@@ -428,7 +428,7 @@ class TimeSeriesForecastingTask(BaseTask):
             **forecasting_dataset_kwargs,
         )
 
-        if self.dataset.base_window_size is not None and not self.customized_window_size:
+        if not self.customized_window_size:
             base_window_size = int(np.ceil(self.dataset.base_window_size))
             # we don't want base window size to large, which might cause a too long computation time, in which case
             # we will use n_prediction_step instead (which is normally smaller than base_window_size)
@@ -482,7 +482,7 @@ class TimeSeriesForecastingTask(BaseTask):
             disable_file_output=disable_file_output,
             load_models=load_models,
             portfolio_selection=portfolio_selection,
-            **forecasting_kwargs,
+            **forecasting_kwargs,  # type: ignore[arg-type]
         )
 
     def predict(
@@ -500,7 +500,7 @@ class TimeSeriesForecastingTask(BaseTask):
             target_variables: Optional[Union[Tuple[int], Tuple[str], np.ndarray]] = None,
         (used for multi-variable prediction), indicates which value needs to be predicted
         """
-        if not isinstance(X_test[0], TimeSeriesSequence):
+        if X_test is None or not isinstance(X_test[0], TimeSeriesSequence):
             assert past_targets is not None
             # Validate and construct TimeSeriesSequence
             X_test, _, _, _ = self.dataset.transform_data_into_time_series_sequence(

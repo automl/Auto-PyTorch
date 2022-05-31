@@ -101,8 +101,8 @@ class TransformerEncoder(BaseForecastingEncoder):
         return encoder
 
     def n_encoder_output_feature(self) -> int:
-        d_model_log: int = self.config['d_model_log']
-        return 2 ** d_model_log
+        d_model: int = 2 ** self.config['d_model_log']
+        return d_model
 
     @staticmethod
     def allowed_decoders() -> List[str]:

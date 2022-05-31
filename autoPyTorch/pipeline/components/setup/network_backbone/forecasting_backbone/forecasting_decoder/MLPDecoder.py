@@ -212,16 +212,16 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
         cond_units_local_layer = EqualsCondition(units_local_layer, has_local_layer, True)
 
         if can_be_auto_regressive:
-            auto_regressive: CategoricalHyperparameter = get_hyperparameter(  # type:ignore[no-redef]
+            auto_regressive_hp: CategoricalHyperparameter = get_hyperparameter(  # type:ignore[assignment]
                 auto_regressive, CategoricalHyperparameter
             )
-            cs.add_hyperparameters([auto_regressive])
+            cs.add_hyperparameters([auto_regressive_hp])
 
-            if False in auto_regressive.choices:
+            if False in auto_regressive_hp.choices:
                 cs.add_hyperparameters([has_local_layer, units_local_layer])
                 cs.add_conditions([cond_units_local_layer])
 
-                cond_use_local_layer = EqualsCondition(has_local_layer, auto_regressive, False)
+                cond_use_local_layer = EqualsCondition(has_local_layer, auto_regressive_hp, False)
                 cs.add_conditions([cond_use_local_layer])
                 return cs
             else:

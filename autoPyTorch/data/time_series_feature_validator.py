@@ -137,7 +137,7 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
         static_features: pd.Series = (
             X_train.groupby(X_train.index).nunique() <= 1
         ).all()
-        self.static_features = tuple(
+        self.static_features = tuple(   # type: ignore[assignment]
             idx for idx in static_features.index if static_features[idx]
         )
         return self

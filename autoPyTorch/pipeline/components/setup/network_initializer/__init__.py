@@ -175,4 +175,4 @@ class NetworkInitializerChoice(autoPyTorchChoice):
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         assert self.choice is not None, "Cannot call transform before the object is initialized"
-        return self.choice.transform(X)
+        return self.choice.transform(X)  # type: ignore[no-any-return]

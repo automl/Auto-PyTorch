@@ -44,7 +44,7 @@ def get_smac_object(
         ta: Callable,
         ta_kwargs: Dict[str, Any],
         n_jobs: int,
-        initial_budget: int,
+        initial_budget: Union[int, float],
         max_budget: Union[int, float],
         dask_client: Optional[dask.distributed.Client],
         initial_configurations: Optional[List[Configuration]] = None,
@@ -297,15 +297,7 @@ class AutoMLSMBO(object):
                 initial_configurations = read_return_initial_configurations(config_space=config_space,
                                                                             portfolio_selection=portfolio_selection)
 
-        self.initial_configurations = initial_configurations if len(initial_configurations) > 0 else None
-
-    def reset_data_manager(self) -> None:
-        if self.datamanager is not None:
-            del self.datamanager
-        self.datamanager = self.backend.load_datamanager()
-
-        if self.datamanager is not None and self.datamanager.task_type is not None:
-            self.task = self.datamanager.task_type
+        self.initial_configurations = initial_configurations if len(initial_configurations) > 0 else Non
 
     def run_smbo(self, func: Optional[Callable] = None
                  ) -> Tuple[RunHistory, List[TrajEntry], str]:

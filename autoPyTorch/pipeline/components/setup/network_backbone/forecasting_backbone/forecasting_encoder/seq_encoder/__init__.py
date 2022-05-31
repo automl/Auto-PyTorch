@@ -1,7 +1,7 @@
 import inspect
 import os
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type, Tuple, Union
 
 import ConfigSpace as CS
 from ConfigSpace.conditions import (
@@ -166,13 +166,14 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         if dataset_properties is None:
             dataset_properties = {}
 
-        static_features_shape = dataset_properties.get("static_features_shape", 0)
-        future_feature_shapes = dataset_properties.get("future_feature_shapes", (0,))
+        static_features_shape: int = dataset_properties.get("static_features_shape", 0)  # type: ignore[assignment]
+        future_feature_shapes: Tuple[int] = dataset_properties.get("future_feature_shapes", # type: ignore[assignment]
+                                                                   (0,))
 
         cs = ConfigurationSpace()
 
-        min_num_blocks: int = num_blocks.value_range[0]
-        max_num_blocks: int = num_blocks.value_range[1]
+        min_num_blocks: int = num_blocks.value_range[0]   # type: ignore[assignment]
+        max_num_blocks: int = num_blocks.value_range[1]   # type: ignore[assignment]
 
         variable_selection_hp: CategoricalHyperparameter = get_hyperparameter(  # type: ignore[assignment]
             variable_selection, CategoricalHyperparameter)
@@ -241,11 +242,11 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             cs.add_condition(EqualsCondition(share_single_variable_networks, variable_selection_hp, True))
 
         # Compile a list of legal preprocessors for this problem
-        available_encoders: Dict[str, BaseForecastingEncoder] = self.get_available_components(  # type: ignore[call-arg]
+        available_encoders: Dict[str, BaseForecastingEncoder] = self.get_available_components(  # type: ignore
             dataset_properties=dataset_properties,
             include=include, exclude=exclude)
 
-        available_decoders: Dict[str, BaseForecastingDecoder] = self.get_available_components(  # type: ignore[call-arg]
+        available_decoders: Dict[str, BaseForecastingDecoder] = self.get_available_components(  # type: ignore
             dataset_properties=dataset_properties,
             include=None, exclude=exclude,
             components=self.get_decoder_components())
@@ -339,8 +340,10 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             encoder2decoder = {}
             for encoder_name in hp_encoder.choices:
                 updates = self._get_search_space_updates(prefix=block_prefix + encoder_name)
-                config_space = available_encoders[encoder_name].get_hyperparameter_search_space(dataset_properties,
-                                                                                                **updates)
+                config_space = available_encoders[encoder_name].get_hyperparameter_search_space(
+                    dataset_properties,
+                    **updates  # type: ignore[call-args]
+                )
                 allowed_decoders = available_encoders[encoder_name].allowed_decoders()
                 if len(allowed_decoders) > 1:
                     if 'decoder_type' not in config_space:
@@ -363,7 +366,8 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                                                                                 )
                             config_space = available_encoders[encoder_name].get_hyperparameter_search_space(
                                 dataset_properties,
-                                **updates)
+                                **updates  # type: ignore[call-args]
+                            )
                             hp_decoder_choice = recurrent_decoders
                         else:
                             cs.add_forbidden_clause(ForbiddenEqualsClause(hp_encoder, encoder_name))
@@ -383,7 +387,8 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                                                                             default_value=valid_decoders[0])
                         config_space = available_encoders[encoder_name].get_hyperparameter_search_space(
                             dataset_properties,
-                            **updates)
+                            **updates  # type: ignore[call-args]
+                        )
                 parent_hyperparameter = {'parent': hp_encoder, 'value': encoder_name}
                 cs.add_configuration_space(
                     block_prefix + encoder_name,
@@ -397,11 +402,12 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                 updates = self._get_search_space_updates(prefix=block_prefix + decoder_name)
                 if i == 1 and decoder_name == self.deepAR_decoder_name:
                     # TODO this is only a temporary solution, a fix on ConfigSpace needs to be implemented
-                    updates['can_be_auto_regressive'] = True
+                    updates['can_be_auto_regressive'] = True  # type: ignore[assignment]
 
-                config_space = available_decoders[decoder_name].get_hyperparameter_search_space(dataset_properties,
-                                                                                                # type: ignore
-                                                                                                **updates)
+                config_space = available_decoders[decoder_name].get_hyperparameter_search_space(
+                    dataset_properties,
+                    **updates  # type: ignore
+                )
                 compatible_encoders = decoder2encoder[decoder_name]
                 encoders_with_multi_decoder_l = []
                 encoder_with_single_decoder_l = []
@@ -527,7 +533,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             )
 
         for encoder_name, encoder in available_encoders.items():
-            encoder_is_casual = encoder.encoder_properties()
+            encoder_is_casual = encoder.encoder_properties().is_casual
             if not encoder_is_casual:
                 # we do not allow non-casual encoder to appear in the lower layer of the network. e.g, if we have an
                 # encoder with 3 blocks, then non_casual encoder is only allowed to appear in the third layer
