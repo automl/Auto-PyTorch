@@ -2,7 +2,7 @@ import os
 import warnings
 from abc import abstractmethod
 from collections import OrderedDict
-from typing import Any, Callable, Dict, List, Optional, Type
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 import ConfigSpace.hyperparameters as CSH
 from ConfigSpace.conditions import EqualsCondition, OrConjunction
@@ -216,7 +216,7 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
             updates = self._get_search_space_updates(prefix=encoder_name)
             config_space = available_encoders[encoder_name].get_hyperparameter_search_space(
                 dataset_properties,
-                **updates   # type: ignore[call-args]
+                **updates   # type: ignore[call-arg]
             )
             parent_hyperparameter = {'parent': hp_encoder, 'value': encoder_name}
             cs.add_configuration_space(
@@ -245,7 +245,7 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
             updates = self._get_search_space_updates(prefix=decoder_name)
             config_space = available_decoders[decoder_name].get_hyperparameter_search_space(
                 dataset_properties,
-                **updates   # type: ignore[call-args]
+                **updates   # type: ignore[call-arg]
             )
             compatible_encoders = decoder2encoder[decoder_name]
             encoders_with_multi_decoder = []
@@ -383,3 +383,8 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         assert self.pipeline is not None, "Cannot call transform before the object is initialized"
         return self.pipeline.transform(X)   # type: ignore[no-any-return]
+
+    @staticmethod
+    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+                       ) -> Dict[str, Union[str, bool]]:
+        raise NotImplementedError

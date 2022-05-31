@@ -1,7 +1,7 @@
 import inspect
 import os
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional, Type, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import ConfigSpace as CS
 from ConfigSpace.conditions import (
@@ -167,7 +167,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
             dataset_properties = {}
 
         static_features_shape: int = dataset_properties.get("static_features_shape", 0)  # type: ignore[assignment]
-        future_feature_shapes: Tuple[int] = dataset_properties.get("future_feature_shapes", # type: ignore[assignment]
+        future_feature_shapes: Tuple[int] = dataset_properties.get("future_feature_shapes",  # type: ignore[assignment]
                                                                    (0,))
 
         cs = ConfigurationSpace()
@@ -342,7 +342,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                 updates = self._get_search_space_updates(prefix=block_prefix + encoder_name)
                 config_space = available_encoders[encoder_name].get_hyperparameter_search_space(
                     dataset_properties,
-                    **updates  # type: ignore[call-args]
+                    **updates  # type: ignore[call-arg]
                 )
                 allowed_decoders = available_encoders[encoder_name].allowed_decoders()
                 if len(allowed_decoders) > 1:
@@ -366,7 +366,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                                                                                 )
                             config_space = available_encoders[encoder_name].get_hyperparameter_search_space(
                                 dataset_properties,
-                                **updates  # type: ignore[call-args]
+                                **updates  # type: ignore[call-arg]
                             )
                             hp_decoder_choice = recurrent_decoders
                         else:
@@ -387,7 +387,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                                                                             default_value=valid_decoders[0])
                         config_space = available_encoders[encoder_name].get_hyperparameter_search_space(
                             dataset_properties,
-                            **updates  # type: ignore[call-args]
+                            **updates  # type: ignore[call-arg]
                         )
                 parent_hyperparameter = {'parent': hp_encoder, 'value': encoder_name}
                 cs.add_configuration_space(
@@ -406,7 +406,7 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
 
                 config_space = available_decoders[decoder_name].get_hyperparameter_search_space(
                     dataset_properties,
-                    **updates  # type: ignore
+                    **updates  # type: ignore[call-arg]
                 )
                 compatible_encoders = decoder2encoder[decoder_name]
                 encoders_with_multi_decoder_l = []

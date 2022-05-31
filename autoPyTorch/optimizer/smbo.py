@@ -297,7 +297,7 @@ class AutoMLSMBO(object):
                 initial_configurations = read_return_initial_configurations(config_space=config_space,
                                                                             portfolio_selection=portfolio_selection)
 
-        self.initial_configurations = initial_configurations if len(initial_configurations) > 0 else Non
+        self.initial_configurations = initial_configurations if len(initial_configurations) > 0 else None
 
     def run_smbo(self, func: Optional[Callable] = None
                  ) -> Tuple[RunHistory, List[TrajEntry], str]:

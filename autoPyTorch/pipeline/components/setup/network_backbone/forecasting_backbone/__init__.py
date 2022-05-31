@@ -222,7 +222,7 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
                 dataset_properties=dataset_properties,
                 include=include_encoder,
                 exclude=exclude_encoder,
-                **updates  # type: ignore[call-arg]
+                **updates  # type: ignore[call-arg, arg-type]
             )
             parent_hyperparameter = {'parent': hp_encoder, 'value': name}
             cs.add_configuration_space(
@@ -262,12 +262,12 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
         self.new_params = new_params
         sub_configuration_space = choice_component.get_hyperparameter_search_space(
             self.dataset_properties,
-            **updates  # type: ignore[call-arg]
+            **updates  # type: ignore[call-arg, arg-type]
         )
 
         sub_configuration = Configuration(sub_configuration_space,
                                           values=new_params)
-        self.choice = choice_component.set_hyperparameters(sub_configuration)
+        self.choice = choice_component.set_hyperparameters(sub_configuration)  # type: ignore[assignment]
 
         return self
 

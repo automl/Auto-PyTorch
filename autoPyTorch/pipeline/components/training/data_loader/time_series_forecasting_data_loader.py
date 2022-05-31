@@ -382,7 +382,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                         sequence_lengths_test[seq_idx] = len(x_seq.X_test)
                     series_number_test = np.arange(len(sequence_lengths_test)).repeat(sequence_lengths_test)
 
-                if not X[0].is_pre_processed:
+                if not X[0].is_pre_processed:  # type: ignore[union-attr]
 
                     x_all = pd.DataFrame(np.concatenate([x_seq.X for x_seq in X]), columns=self.dataset_columns)
 

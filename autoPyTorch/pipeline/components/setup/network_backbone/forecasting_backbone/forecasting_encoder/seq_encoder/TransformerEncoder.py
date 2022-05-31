@@ -114,7 +114,7 @@ class TransformerEncoder(BaseForecastingEncoder):
     @staticmethod
     def encoder_properties() -> EncoderProperties:
         return EncoderProperties(lagged_input=True,
-                                 causality=False)
+                                 is_casual=False)
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         if 'lagged_value' in X['dataset_properties']:

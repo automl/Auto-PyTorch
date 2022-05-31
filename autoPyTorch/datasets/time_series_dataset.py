@@ -3,7 +3,6 @@ import copy
 import os
 import uuid
 import warnings
-from numbers import Real
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from gluonts.time_feature import Constant as ConstantTransform
@@ -618,7 +617,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             resampling_strategy_args=resampling_strategy_args
         )
 
-        self.resampling_strategy = resampling_strategy_opt
+        self.resampling_strategy = resampling_strategy_opt   # type: ignore[assignment]
         self.resampling_strategy_args = resampling_strategy_args_opt
 
         if isinstance(self.resampling_strategy, CrossValTypes):
@@ -898,7 +897,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
     def replace_data(self,
                      X_train: pd.DataFrame,
                      X_test: Optional[pd.DataFrame],
-                     known_future_features_index: Union[Tuple[int], Tuple[()]] = ()) -> 'BaseDataset':
+                     known_future_features_index: Optional[Tuple[int]] = None) -> 'BaseDataset':
         super(TimeSeriesForecastingDataset, self).replace_data(X_train=X_train, X_test=X_test)
         if X_train is None:
             return self
@@ -1032,7 +1031,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                                CrossValTypes, HoldoutValTypes,
                                NoResamplingStrategyTypes] = HoldoutValTypes.time_series_hold_out_validation,
                            resampling_strategy_args: Optional[Dict[str, Any]] = None, ) -> \
-            Tuple[Optional[Union[CrossValTypes, HoldoutValTypes]], Optional[Dict[str, Any]]]:
+            Tuple[Optional[Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]], Optional[Dict[str, Any]]]:
         """
         Determines the most possible sampling strategy for the datasets: the lengths of each sequence might not be long
         enough to support cross-validation split, thus we need to carefully compute the number of folds
