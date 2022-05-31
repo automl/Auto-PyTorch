@@ -22,7 +22,6 @@ from torch.utils.data.dataset import ConcatDataset, Dataset
 
 import torchvision.transforms
 
-
 from autoPyTorch.constants import (CLASSIFICATION_OUTPUTS,
                                    STRING_TO_OUTPUT_TYPES,
                                    TASK_TYPES_TO_STRING,
@@ -37,7 +36,8 @@ from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     DEFAULT_RESAMPLING_PARAMETERS,
     HoldOutFuncs,
-    HoldoutValTypes
+    HoldoutValTypes,
+    NoResamplingStrategyTypes,
 )
 from autoPyTorch.pipeline.components.training.metrics.metrics import \
     compute_mase_coefficient
@@ -247,7 +247,7 @@ class TimeSeriesSequence(Dataset):
                         [past_features, self._cached_time_features[:index + 1]]  # type: ignore[index]
                     )
                 else:
-                    past_features = self._cached_time_features[:index + 1]   # type: ignore[index]
+                    past_features = self._cached_time_features[:index + 1]  # type: ignore[index]
                 if future_features is not None:
                     future_features = np.hstack([
                         future_features,
@@ -264,17 +264,17 @@ class TimeSeriesSequence(Dataset):
         targets = self.Y
         if self.is_test_set:
             if self.Y_test is not None:
-                future_targets = {
+                future_targets: Optional[Dict[str, torch.Tensor]] = {
                     'future_targets': torch.from_numpy(self.Y_test),
                     'future_observed_targets': torch.from_numpy(self.future_observed_target)
                 }
             else:
                 future_targets = None
         else:
-            future_targets = targets[index + 1: index + self.n_prediction_steps + 1]
-            future_targets = torch.from_numpy(future_targets)
+            future_targets_np = targets[index + 1: index + self.n_prediction_steps + 1]
+            future_targets_tt = torch.from_numpy(future_targets_np)
             future_targets = {
-                'future_targets': future_targets,
+                'future_targets': future_targets_tt,
                 'future_observed_targets': torch.from_numpy(
                     self.observed_target[index + 1: index + self.n_prediction_steps + 1]
                 )
@@ -298,7 +298,7 @@ class TimeSeriesSequence(Dataset):
                     0]}, future_targets
 
     def __len__(self) -> int:
-        return self.Y.shape[0] if self.is_test_set else self.Y.shape[0] - self.n_prediction_steps
+        return int(self.Y.shape[0]) if self.is_test_set else int(self.Y.shape[0]) - self.n_prediction_steps
 
     def get_target_values(self, index: int) -> np.ndarray:
         """
@@ -437,7 +437,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                  time_feature_transform: Optional[List[TimeFeature]] = None,
                  freq: Optional[Union[str, int, List[int]]] = None,
                  resampling_strategy: Optional[
-                     Union[CrossValTypes, HoldoutValTypes]] = HoldoutValTypes.time_series_hold_out_validation,
+                     Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]
+                 ] = HoldoutValTypes.time_series_hold_out_validation,
                  resampling_strategy_args: Optional[Dict[str, Any]] = None,
                  shuffle: Optional[bool] = True,
                  seed: Optional[int] = 42,
@@ -495,14 +496,15 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.numerical_columns = self.validator.feature_validator.numerical_columns
         self.categorical_columns = self.validator.feature_validator.categorical_columns
 
-        self.num_features: int = self.validator.feature_validator.num_features
-        self.num_targets: int = self.validator.target_validator.out_dimensionality
+        self.num_features: int = self.validator.feature_validator.num_features  # type: ignore[assignment]
+        self.num_targets: int = self.validator.target_validator.out_dimensionality  # type: ignore[assignment]
 
         self.categories = self.validator.feature_validator.categories
 
         self.feature_shapes = self.validator.feature_shapes
         self.feature_names = tuple(self.validator.feature_names)
 
+        assert self.validator.start_times is not None
         self.start_times = self.validator.start_times
 
         self.static_features = self.validator.feature_validator.static_features
@@ -643,7 +645,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
     @staticmethod
     def compute_freq_values(freq: Optional[Union[str, int, List[int]]],
-                            n_prediction_steps: int) -> Tuple[Real, str, Real]:
+                            n_prediction_steps: int) -> Tuple[Union[int, float], str, Union[int, float]]:
         """
         Compute frequency related values
         """
@@ -672,7 +674,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         if isinstance(seasonality, list):
             seasonality = min(seasonality)  # Use to calculate MASE
-        return seasonality, freq, freq_value
+        return seasonality, freq, freq_value  # type: ignore[return-value]
 
     @staticmethod
     def compute_time_features(start_times: List[pd.DatetimeIndex],
@@ -708,7 +710,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         return dataset_idx, sample_idx
 
     def __len__(self) -> int:
-        return ConcatDataset.__len__(self)
+        return ConcatDataset.__len__(self)  # type: ignore[no-any-return]
 
     def __getitem__(self, idx: int,  # type: ignore[override]
                     train: bool = True) -> Tuple[Dict[str, torch.Tensor], Optional[Dict[str, torch.Tensor]]]:
@@ -748,7 +750,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                                                      Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]] = None,
                                                  Y_test: Optional[
                                                      Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]] = None,
-                                                 is_test_set: bool = False,) -> Tuple[
+                                                 is_test_set: bool = False, ) -> Tuple[
         List[TimeSeriesSequence],
         Tuple[Optional[pd.DataFrame], pd.DataFrame],
         Optional[Tuple[Optional[pd.DataFrame], pd.DataFrame]],
@@ -896,7 +898,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
     def replace_data(self,
                      X_train: pd.DataFrame,
                      X_test: Optional[pd.DataFrame],
-                     known_future_features_index: List[int] = []) -> 'BaseDataset':
+                     known_future_features_index: Union[Tuple[int], Tuple[()]] = tuple()) -> 'BaseDataset':
         super(TimeSeriesForecastingDataset, self).replace_data(X_train=X_train, X_test=X_test)
         if X_train is None:
             return self
@@ -1025,24 +1027,26 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
     @staticmethod
     def get_split_strategy(sequence_lengths: List[int],
                            n_prediction_steps: int,
-                           freq_value: Real,
-                           resampling_strategy: Union[
-                               CrossValTypes, HoldoutValTypes] = HoldoutValTypes.time_series_hold_out_validation,
+                           freq_value: Union[float, int],
+                           resampling_strategy: Optional[Union[
+                               CrossValTypes, HoldoutValTypes]] = HoldoutValTypes.time_series_hold_out_validation,
                            resampling_strategy_args: Optional[Dict[str, Any]] = None, ) -> \
-            Tuple[Union[CrossValTypes, HoldoutValTypes], Optional[Dict[str, Any]]]:
+            Tuple[Optional[Union[CrossValTypes, HoldoutValTypes]], Optional[Dict[str, Any]]]:
         """
         Determines the most possible sampling strategy for the datasets: the lengths of each sequence might not be long
         enough to support cross-validation split, thus we need to carefully compute the number of folds
         Args:
             sequence_lengths (List[int]): lengths of each sequence
             n_prediction_steps (int): forecasting horizon
-            freq_value (Real): period of the dataset, determined by its sampling frequency
+            freq_value (Union[float, int]): period of the dataset, determined by its sampling frequency
             resampling_strategy(Optional[Union[CrossValTypes, HoldoutValTypes]]): resampling strategy to be checked
             resampling_strategy_args (Optional[Dict[str, Any]]): resampling strategy arguments to be checked
         Returns:
             resampling_strategy(Optional[Union[CrossValTypes, HoldoutValTypes]]): resampling strategy
             resampling_strategy_args (Optional[Dict[str, Any]]): resampling strategy arguments
         """
+        if resampling_strategy is None:
+            return None, None
         # check if dataset could be split with cross validation
         minimal_seq_length = np.min(sequence_lengths) - n_prediction_steps
         if isinstance(resampling_strategy, CrossValTypes):
@@ -1068,7 +1072,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                     resampling_strategy_args = None
             else:
                 seasonality_h_value = int(
-                    np.round((n_prediction_steps // int(freq_value) + 1) * freq_value))
+                    np.round((n_prediction_steps // int(freq_value) + 1) * freq_value)
+                )
 
                 while minimal_seq_length < (num_splits - 1) * seasonality_h_value:
                     if num_splits <= 2:

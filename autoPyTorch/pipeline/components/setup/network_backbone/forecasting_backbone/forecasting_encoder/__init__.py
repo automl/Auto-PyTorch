@@ -45,11 +45,11 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
                  **kwargs: Any,
                  ):
         super().__init__(**kwargs)
-        self.pipeline = None
+        self.pipeline: Optional[Pipeline] = None
         self.decoder_choice: Optional[List[BaseForecastingDecoder]] = None
 
     @abstractmethod
-    def get_components(self) -> Dict[str, Type[autoPyTorchComponent]]:
+    def get_components(self) -> Dict[str, Type[autoPyTorchComponent]]:  # type: ignore[override]
         """Returns the available backbone components
 
         Args:
@@ -72,7 +72,7 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
         # This function is deigned to add additional components rather than the components in __choice__
         return [self.get_decoder_components]
 
-    def get_available_components(
+    def get_available_components(  # type: ignore[override]
             self,
             dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
             include: List[str] = None,
@@ -214,7 +214,7 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
         encoder2decoder: Dict[str, List[str]] = {}
         for encoder_name in hp_encoder.choices:
             updates = self._get_search_space_updates(prefix=encoder_name)
-            config_space = available_encoders[encoder_name].get_hyperparameter_search_space(
+            config_space = available_encoders[encoder_name].get_hyperparameter_search_space(  # type: ignore[call-args]
                 dataset_properties,
                 **updates)
             parent_hyperparameter = {'parent': hp_encoder, 'value': encoder_name}
@@ -242,7 +242,7 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
             if not decoder2encoder[decoder_name]:
                 continue
             updates = self._get_search_space_updates(prefix=decoder_name)
-            config_space = available_decoders[decoder_name].get_hyperparameter_search_space(
+            config_space = available_decoders[decoder_name].get_hyperparameter_search_space(  # type: ignore[call-args]
                 dataset_properties,
                 **updates
             )
@@ -327,7 +327,7 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
 
         decoder_components = self.get_decoder_components()
 
-        decoder_type = None
+        decoder_type: Optional[str] = None
 
         decoder_params = {}
         decoder_params_names = []
@@ -344,6 +344,7 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
                     decoder_params_names.append(param)
                     param = param.replace(decoder_type + ':', '')
                     decoder_params[param] = value
+        assert decoder_type is not None, 'Decoder must be given to initialize a network backbone'
 
         for param_name in decoder_params_names:
             del new_params[param_name]
@@ -364,7 +365,7 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
     def _defaults_network(self) -> List[str]:
         return ['MLPEncoder', 'RNNEncoder', 'NBEATSEncoder']
 
-    def fit(self, X: Dict[str, Any], y: Any = None) -> autoPyTorchComponent:
+    def fit(self, X: Dict[str, Any], y: Any = None) -> Pipeline:  # type: ignore[override]
         """Handy method to check if a component is fitted
 
         Args:

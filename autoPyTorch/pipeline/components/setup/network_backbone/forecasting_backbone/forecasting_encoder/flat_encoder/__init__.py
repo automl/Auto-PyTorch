@@ -25,7 +25,7 @@ def add_encoder(encoder: BaseForecastingEncoder) -> None:
 
 
 class FlatForecastingEncoderChoice(AbstractForecastingEncoderChoice):
-    def get_components(self) -> Dict[str, Type[autoPyTorchComponent]]:
+    def get_components(self) -> Dict[str, Type[autoPyTorchComponent]]:  # type: ignore[override]
         """Returns the available backbone components
 
         Args:

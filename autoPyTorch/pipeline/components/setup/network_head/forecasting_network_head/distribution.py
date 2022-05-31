@@ -118,7 +118,7 @@ class NormalOutput(ProjectionLayer):
 
     @property
     def dist_cls(self) -> Type[Distribution]:
-        return Normal
+        return Normal  # type: ignore[no-any-return]
 
 
 class StudentTOutput(ProjectionLayer):
@@ -135,7 +135,7 @@ class StudentTOutput(ProjectionLayer):
 
     @property
     def dist_cls(self) -> Type[Distribution]:
-        return StudentT
+        return StudentT   # type: ignore[no-any-return]
 
 
 class BetaOutput(ProjectionLayer):
@@ -157,7 +157,7 @@ class BetaOutput(ProjectionLayer):
     @property
     def dist_cls(self) -> Type[Distribution]:
         # TODO consider constraints on Beta!!!
-        return Beta
+        return Beta   # type: ignore[no-any-return]
 
 
 class GammaOutput(ProjectionLayer):
@@ -178,7 +178,7 @@ class GammaOutput(ProjectionLayer):
 
     @property
     def dist_cls(self) -> Type[Distribution]:
-        return Gamma
+        return Gamma  # type: ignore[no-any-return]
 
 
 class PoissonOutput(ProjectionLayer):
@@ -192,7 +192,7 @@ class PoissonOutput(ProjectionLayer):
 
     @property
     def dist_cls(self) -> Type[Distribution]:
-        return Poisson
+        return Poisson  # type: ignore[no-any-return]
 
 
 ALL_DISTRIBUTIONS = {

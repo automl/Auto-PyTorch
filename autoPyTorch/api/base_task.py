@@ -933,7 +933,7 @@ class BaseTask(ABC):
             load_models: bool = True,
             portfolio_selection: Optional[str] = None,
             dask_client: Optional[dask.distributed.Client] = None,
-            **kwargs: Dict[str, Any]
+            **kwargs: Any
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -1063,7 +1063,7 @@ class BaseTask(ABC):
                 `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`_
             time_series_forecasting: bool
                 if time series forecasting task is implemented.
-            kwargs: Dict
+            kwargs: Any
                 additional arguments
 
         Returns:

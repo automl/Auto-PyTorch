@@ -21,6 +21,7 @@ from smac.utils.io.traj_logging import TrajEntry
 
 from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE
+from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     DEFAULT_RESAMPLING_PARAMETERS,
@@ -71,7 +72,7 @@ def get_smac_object(
     """
     if initial_budget == max_budget:
         intensifier = Intensifier
-        intensifier_kwargs = {'deterministic': True, }
+        intensifier_kwargs: Dict[str, Any] = {'deterministic': True, }
         rh2EPM = RunHistory2EPM4LogScaledCost
 
     else:
@@ -126,8 +127,8 @@ class AutoMLSMBO(object):
                  search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
                  portfolio_selection: Optional[str] = None,
                  pynisher_context: str = 'spawn',
-                 min_budget: int = 5,
-                 max_budget: int = 50,
+                 min_budget: Union[int, float] = 5,
+                 max_budget: Union[int, float] = 50,
                  time_series_forecasting: bool = False,
                  **kwargs: Dict[str, Any]
                  ):
@@ -207,8 +208,14 @@ class AutoMLSMBO(object):
             time_series_forecasting (bool):
                 If we want to apply this optimizer to optimize time series prediction tasks (which has a different
                 tae)
-            kwargs (Dict):
-                Additional Arguments for forecasting intialization tasks
+            kwargs (Any):
+                Additional Arguments for forecasting tasks. It includes:
+                    min_num_test_instances (int): minimal number of instances used to initialize a proxy validation set
+                    suggested_init_models (List[str]): A set of initial models suggested by the users.
+                        Their hyperparameters are still determined by the default configurations
+                    custom_init_setting_path (str): the path to the initial hyperparameter configurations set by the
+                        users
+
         """
         super(AutoMLSMBO, self).__init__()
         # data related
@@ -267,12 +274,14 @@ class AutoMLSMBO(object):
         initial_configurations = []
 
         if self.time_series_forecasting:
-            suggested_init_models: Optional[List[str]] = kwargs.get('suggested_init_models', None)
-            custom_init_setting_path: Optional[str] = kwargs.get('custom_init_setting_path', None)
+            suggested_init_models: Optional[List[str]] = kwargs.get('suggested_init_models',  # type:ignore[assignment]
+                                                                    None)
+            custom_init_setting_path: Optional[str] = kwargs.get('custom_init_setting_path',  # type:ignore[assignment]
+                                                                 None)
             # if suggested_init_models is an empty list, and  custom_init_setting_path is not provided, we
             # do not provide any initial configurations
             if suggested_init_models is None or suggested_init_models or custom_init_setting_path is not None:
-                datamanager = self.backend.load_datamanager()
+                datamanager: BaseDataset = self.backend.load_datamanager()
                 dataset_properties = datamanager.get_dataset_properties([])
                 initial_configurations = read_forecasting_init_configurations(
                     config_space=config_space,
@@ -281,7 +290,8 @@ class AutoMLSMBO(object):
                     dataset_properties=dataset_properties
                 )
             # proxy-validation sets
-            self.min_num_test_instances = kwargs.get('min_num_test_instances', None)
+            self.min_num_test_instances: Optional[int] = kwargs.get('min_num_test_instances',  # type:ignore[assignment]
+                                                                    None)
         else:
             if portfolio_selection is not None:
                 initial_configurations = read_return_initial_configurations(config_space=config_space,
@@ -391,7 +401,7 @@ class AutoMLSMBO(object):
         budget_type = self.pipeline_config['budget_type']
         if budget_type in FORECASTING_BUDGET_TYPE:
             if self.min_budget > 1. or self.max_budget > 1.:
-                self.min_budget = self.min_budget / self.max_budget
+                self.min_budget = float(self.min_budget) / float(self.max_budget)
                 self.max_budget = 1.0
 
         if self.time_series_forecasting:

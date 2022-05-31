@@ -45,7 +45,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
         self.feature_names: List[str] = []
         self.series_idx: Optional[Union[List[Union[str, int]], str, int]] = None
 
-    def fit(
+    def fit(  # type: ignore[override]
         self,
         X_train: Optional[Union[List, pd.DataFrame]],
         y_train: Union[List, pd.DataFrame],
@@ -69,7 +69,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
 
         """
         if series_idx is not None and not isinstance(series_idx, Iterable):
-            series_idx: Optional[List[Union[str, int]]] = [series_idx]
+            series_idx: Optional[List[Union[str, int]]] = [series_idx]  # type: ignore[no-redef]
 
         self.series_idx = series_idx
 
@@ -137,7 +137,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
             self.feature_validator.fit(
                 X_train,
                 X_test,
-                series_idx=series_idx,
+                series_idx=series_idx,  # type: ignore[arg-type]
                 sequence_lengths=sequence_lengths,
             )
             self.target_validator.fit(y_train, y_test)
@@ -163,7 +163,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
 
         return self
 
-    def transform(
+    def transform(  # type: ignore[override]
         self,
         X: Optional[Union[List, pd.DataFrame]],
         y: Optional[Union[List, pd.DataFrame]] = None,
@@ -228,7 +228,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                 x_transformed, series_number = self._transform_X(
                     X, npa_sequence_lengths
                 )
-                y_transformed: pd.DataFrame = self.target_validator.transform(
+                y_transformed = self.target_validator.transform(
                     y_stacked, index=series_number
                 )
 
@@ -255,7 +255,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                 x_transformed, series_number = self._transform_X(X, None)
 
                 if self._is_uni_variant:
-                    y_transformed: pd.DataFrame = self.target_validator.transform(
+                    y_transformed = self.target_validator.transform(
                         y, series_number
                     )
                     return (
@@ -264,7 +264,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                         y_transformed.index.value_counts(sort=False).values,
                     )
 
-                y_transformed: pd.DataFrame = self.target_validator.transform(
+                y_transformed = self.target_validator.transform(
                     y, x_transformed.index
                 )
                 return (

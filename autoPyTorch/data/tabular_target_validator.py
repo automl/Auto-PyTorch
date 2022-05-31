@@ -20,7 +20,7 @@ from autoPyTorch.utils.common import ispandas
 ArrayType = Union[np.ndarray, spmatrix]
 
 
-def _check_and_to_array(y: SupportedTargetTypes, allow_nan=False) -> ArrayType:
+def _check_and_to_array(y: SupportedTargetTypes, allow_nan: bool = False) -> ArrayType:
     """ sklearn check array will make sure we have the correct numerical features for the array """
     if allow_nan:
         return sklearn.utils.check_array(y, force_all_finite=False, accept_sparse='csr', ensure_2d=False)
@@ -28,7 +28,7 @@ def _check_and_to_array(y: SupportedTargetTypes, allow_nan=False) -> ArrayType:
         return sklearn.utils.check_array(y, force_all_finite=True, accept_sparse='csr', ensure_2d=False)
 
 
-def _modify_regression_target(y: ArrayType, allow_nan=False) -> ArrayType:
+def _modify_regression_target(y: ArrayType, allow_nan: bool = False) -> ArrayType:
     # Regression targets must have numbers after a decimal point.
     # Ref: https://github.com/scikit-learn/scikit-learn/issues/8952
     if allow_nan:
@@ -173,11 +173,11 @@ class TabularTargetValidator(BaseTargetValidator):
             y = np.ravel(y)
 
         if self.allow_missing_values:
-            func_fill_na = np.nan_to_num
+            y_filled = np.nan_to_num(y)
         else:
-            func_fill_na = lambda x: x
+            y_filled = y
 
-        if not self.is_classification and "continuous" not in type_of_target(func_fill_na(y)):
+        if not self.is_classification and "continuous" not in type_of_target(y_filled):
             y = _modify_regression_target(y, self.allow_missing_values)
 
         return y
@@ -229,9 +229,8 @@ class TabularTargetValidator(BaseTargetValidator):
                 and not issparse(y):  # type: ignore[misc]
             raise ValueError("AutoPyTorch only supports Numpy arrays, Pandas DataFrames,"
                              " pd.Series, sparse data and Python Lists as targets, yet, "
-                             "the provided input is of type {}".format(
-                type(y)
-            ))
+                             "the provided input is of type {}".format(type(y))
+                             )
 
         # Sparse data muss be numerical
         # Type ignore on attribute because sparse targets have a dtype
@@ -298,7 +297,6 @@ class TabularTargetValidator(BaseTargetValidator):
                                   )
         if self.type_of_target not in supported_output_types:
             raise ValueError("Provided targets are not supported by AutoPyTorch. "
-                             "Provided type is {} whereas supported types are {}.".format(
-                self.type_of_target,
-                supported_output_types
-            ))
+                             "Provided type is {} whereas supported types are {}.".format(self.type_of_target,
+                                                                                          supported_output_types)
+                             )

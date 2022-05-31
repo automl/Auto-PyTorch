@@ -83,7 +83,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
         seasonality = SEASONALITY_MAP.get(self.datamanager.freq, 1)
         if isinstance(seasonality, list):
             seasonality = min(seasonality)  # Use to calculate MASE
-        self.seasonality = int(seasonality)
+        self.seasonality = int(seasonality)  # type: ignore[call-overload]
 
         self.max_budget = max_budget
         self.min_num_test_instances = min_num_test_instances
@@ -264,7 +264,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             self.logger.debug("In train evaluator fit_predict_and_loss, loss:{}".format(opt_loss))
             self.finish_up(
                 loss=opt_loss,
-                train_loss=train_loss,
+                train_loss=train_loss,  # type: ignore[arg-type]
                 opt_pred=Y_optimization_preds.flatten(),
                 valid_pred=Y_valid_preds,
                 test_pred=Y_test_preds,
@@ -274,7 +274,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                 **forecasting_kwargs,
             )
 
-    def generate_mase_coefficient_for_validation(self, test_split: Sequence) -> np.ndarray:
+    def generate_mase_coefficient_for_validation(self, test_split: Sequence[int]) -> np.ndarray:
         """
         Compute the denominator for Mean Absolute Scaled Losses,
         For detail, please check sktime.performance_metrics.forecasting._functions.mean_absolute_scaled_error
@@ -289,9 +289,10 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             inverse of the mase_denominator
         """
         mase_coefficient = np.ones([len(test_split), self.num_targets])
-        if any(mase_loss in self.additional_metrics for mase_loss in MASE_LOSSES) or self.metric in MASE_LOSSES:
-            for seq_idx, test_idx in enumerate(test_split):
-                mase_coefficient[seq_idx] = self.datamanager.get_time_series_seq(test_idx).mase_coefficient
+        if self.additional_metrics is not None:
+            if any(mase_loss in self.additional_metrics for mase_loss in MASE_LOSSES) or self.metric in MASE_LOSSES:
+                for seq_idx, test_idx in enumerate(test_split):
+                    mase_coefficient[seq_idx] = self.datamanager.get_time_series_seq(test_idx).mase_coefficient
 
         mase_coefficient = np.repeat(mase_coefficient, self.n_prediction_steps, axis=0)
         return mase_coefficient
@@ -311,35 +312,34 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             inverse of the mase_denominator
         """
         mase_coefficient = np.ones([len(self.datamanager.datasets), self.num_targets])
-        if any(mase_loss in self.additional_metrics for mase_loss in MASE_LOSSES) or self.metric in MASE_LOSSES:
-            for seq_idx, test_idx in enumerate(self.datamanager.datasets):
-                mase_coefficient[seq_idx] = self.datamanager.datasets[seq_idx].mase_coefficient
+        if self.additional_metrics is not None:
+            if any(mase_loss in self.additional_metrics for mase_loss in MASE_LOSSES) or self.metric in MASE_LOSSES:
+                for seq_idx, test_idx in enumerate(self.datamanager.datasets):
+                    mase_coefficient[seq_idx] = self.datamanager.datasets[seq_idx].mase_coefficient
         mase_coefficient = np.repeat(mase_coefficient, self.n_prediction_steps, axis=0)
         return mase_coefficient
 
     def create_validation_sub_set(self, test_indices: np.ndarray) -> Tuple[np.ndarray, Optional[np.ndarray]]:
-        num_test_instances = len(test_indices)
+        if self.min_num_test_instances is not None:
+            num_test_instances = len(test_indices)
 
-        if num_test_instances < self.min_num_test_instances or self.budget >= self.max_budget:
-            # if the length of test indices is smaller than the
+            if num_test_instances < self.min_num_test_instances or self.budget >= self.max_budget:
+                # if the length of test indices is smaller than the
+                return test_indices, None
+            num_val_instance = min(num_test_instances,
+                                   max(self.min_num_test_instances,
+                                       int(num_test_instances * self.budget / self.max_budget)
+                                       ))
+            test_subset_indices = np.linspace(0, num_test_instances, num_val_instance, endpoint=False, dtype=np.int)
+            return test_indices[test_subset_indices], test_subset_indices
+        else:
             return test_indices, None
-        num_val_instance = min(num_test_instances,
-                               max(self.min_num_test_instances,
-                                   int(num_test_instances * self.budget / self.max_budget)
-                                   ))
-        test_subset_indices = np.linspace(0, num_test_instances, num_val_instance, endpoint=False, dtype=np.int)
-        return test_indices[test_subset_indices], test_subset_indices
 
     def _predict(self, pipeline: BaseEstimator,
-                 train_indices: Union[np.ndarray, List],
                  test_indices: Union[np.ndarray, List],
+                 train_indices: Union[np.ndarray, List],
                  ) -> Tuple[np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
-
-        if self.min_num_test_instances is not None:
-            test_indices_subset, test_split_subset_idx = self.create_validation_sub_set(test_indices)
-        else:
-            test_indices_subset = test_indices
-            test_split_subset_idx = None
+        test_indices_subset, test_split_subset_idx = self.create_validation_sub_set(test_indices)
 
         val_sets = []
 

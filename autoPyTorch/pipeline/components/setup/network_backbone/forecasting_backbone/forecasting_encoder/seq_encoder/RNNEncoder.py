@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -9,6 +9,7 @@ from ConfigSpace.hyperparameters import (CategoricalHyperparameter,
 import torch
 from torch import nn
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.\
     base_forecasting_encoder import BaseForecastingEncoder
@@ -95,7 +96,10 @@ class RNNEncoder(BaseForecastingEncoder):
         return encoder
 
     def n_encoder_output_feature(self) -> int:
-        return 2 * self.config['hidden_size'] if self.config['bidirectional'] else self.config['hidden_size']
+        if self.config['bidirectional']:
+            return 2 * self.config['hidden_size']  # type: int
+        else:
+            return self.config['hidden_size']  # type: int
 
     def n_hidden_states(self) -> int:
         if self.config['cell_type'] == 'lstm':
@@ -131,7 +135,8 @@ class RNNEncoder(BaseForecastingEncoder):
         return super().transform(X)
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def get_properties(
+            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'RNNEncoder',
             'name': 'RNNEncoder',

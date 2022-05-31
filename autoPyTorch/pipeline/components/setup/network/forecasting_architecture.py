@@ -1,6 +1,6 @@
 import warnings
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Tuple, TypeVar, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 from torch import nn
@@ -23,7 +23,7 @@ from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone
 from autoPyTorch.pipeline.components.setup.network_embedding.NoEmbedding import \
     _NoEmbedding
 
-ALL_NET_OUTPUT = TypeVar('ALL_NET_OUTPUT', torch.Tensor, List[torch.Tensor], torch.distributions.Distribution)
+ALL_NET_OUTPUT = Union[torch.Tensor, List[torch.Tensor], torch.distributions.Distribution]
 
 
 class TransformedDistribution_(TransformedDistribution):
@@ -423,7 +423,7 @@ class ForecastingNet(AbstractForecastingNet):
                                                                 dtype=past_targets.dtype,
                                                                 device=self.device)
             else:
-                feat_dict_past = None
+                feat_dict_past = None  # type: ignore[assignment]
             if length_future > 0:
                 if future_features is not None:
                     future_features = self.decoder_embedding(future_features.to(self.device))
@@ -434,8 +434,6 @@ class ForecastingNet(AbstractForecastingNet):
                                                                    length_future, 1),
                                                                   dtype=past_targets.dtype,
                                                                   device=self.device)
-                else:
-                    feat_dict_future = {}
                 if future_features is not None:
                     for feature_name in self.variable_selector.known_future_features:
                         tensor_idx = self.variable_selector.future_feature_name2tensor_idx[feature_name]
@@ -448,7 +446,7 @@ class ForecastingNet(AbstractForecastingNet):
                                 feat_dict_static[feature_name] = static_feature
 
             else:
-                feat_dict_future = None
+                feat_dict_future = None  # type: ignore[assignment]
 
             x_past, x_future, x_static, static_context_initial_hidden = self.variable_selector(
                 x_past=feat_dict_past,
@@ -651,7 +649,7 @@ class ForecastingSeq2SeqNet(ForecastingNet):
             encoder2decoder, encoder_output = self.encoder(encoder_input=x_past, additional_input=encoder_additional)
 
             if self.has_temporal_fusion:
-                decoder_output_all = None
+                decoder_output_all: Optional[torch.Tensor] = None
 
             if self.forecast_strategy != 'sample':
                 all_predictions = []

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -9,6 +9,7 @@ from ConfigSpace.hyperparameters import (CategoricalHyperparameter,
 import torch
 from torch import nn
 
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import (
     PositionalEncoding, build_transformer_layers)
@@ -100,7 +101,7 @@ class TransformerEncoder(BaseForecastingEncoder):
         return encoder
 
     def n_encoder_output_feature(self) -> int:
-        return 2 ** self.config['d_model_log']
+        return 2 ** self.config['d_model_log']  # type: int
 
     @staticmethod
     def allowed_decoders() -> List[str]:
@@ -125,7 +126,8 @@ class TransformerEncoder(BaseForecastingEncoder):
         return super().transform(X)
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def get_properties(
+            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Union[str, bool]]:
         return {
             'shortname': 'TransformerEncoder',
             'name': 'TransformerEncoder',

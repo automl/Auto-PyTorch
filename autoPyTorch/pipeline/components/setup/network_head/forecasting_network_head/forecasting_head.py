@@ -209,7 +209,8 @@ class ForecastingHead(NetworkHeadComponent):
                     nn.Sequential(
                         nn.Linear(head_n_in_features, n_prediction_heads * np.product(output_shape[1:])),
                         nn.Unflatten(-1, (n_prediction_heads, *output_shape[1:])),
-                    ) for _ in range(num_quantiles)]
+                    ) for _ in range(num_quantiles)
+                ]
             proj_layer = QuantileHead(proj_layer)
             return proj_layer
         else:

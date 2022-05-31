@@ -202,15 +202,15 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         self.search_space_updates = search_space_updates
 
     def _check_and_get_default_budget(self) -> float:
-        budget_type_choices = ('epochs', 'runtime')
+        budget_type_choices_tabular = ('epochs', 'runtime')
         budget_choices = {
             budget_type: float(self.pipeline_config.get(budget_type, np.inf))
-            for budget_type in budget_type_choices
+            for budget_type in budget_type_choices_tabular
         }
 
         budget_choices_forecasting = {budget_type: 1.0 for budget_type in FORECASTING_BUDGET_TYPE}
         budget_choices.update(budget_choices_forecasting)
-        budget_type_choices = budget_type_choices + FORECASTING_BUDGET_TYPE
+        budget_type_choices = budget_type_choices_tabular + FORECASTING_BUDGET_TYPE
 
         # budget is defined by epochs by default
         budget_type = str(self.pipeline_config.get('budget_type', 'epochs'))

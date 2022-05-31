@@ -10,6 +10,8 @@ import numpy as np
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder import \
+    AbstractForecastingEncoderChoice
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.\
     flat_encoder import FlatForecastingEncoderChoice
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.\
@@ -51,13 +53,13 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
         """
         return self.default_components  # type: ignore[return-value]
 
-    def get_available_components(
+    def get_available_components(  # type: ignore[override]
             self,
             dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
             include: List[str] = None,
             exclude: List[str] = None,
-            components: Optional[Dict[str, autoPyTorchComponent]] = None
-    ) -> Dict[str, autoPyTorchComponent]:
+            components: Optional[Dict[str, AbstractForecastingEncoderChoice]] = None
+    ) -> Dict[str, AbstractForecastingEncoderChoice]:
         """Filters out components based on user provided
         include/exclude directives, as well as the dataset properties
 
@@ -220,7 +222,8 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
                 dataset_properties=dataset_properties,  # type: ignore
                 include=include_encoder,
                 exclude=exclude_encoder,
-                **updates)
+                **updates  # type: ignore[call-args]
+            )
             parent_hyperparameter = {'parent': hp_encoder, 'value': name}
             cs.add_configuration_space(
                 name,
@@ -259,7 +262,7 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
         self.new_params = new_params
         sub_configuration_space = choice_component.get_hyperparameter_search_space(
             self.dataset_properties,
-            **updates
+            **updates  # type: ignore[call-args]
         )
 
         sub_configuration = Configuration(sub_configuration_space,
@@ -305,4 +308,4 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
 
     def transform(self, X: Dict) -> Dict:
         assert self.choice is not None, "Cannot call transform before the object is initialized"
-        return self.choice.transform(X)
+        return self.choice.transform(X)  # type: ignore[no-any-return]

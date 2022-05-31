@@ -10,7 +10,7 @@ import torch
 from torch import nn
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.\
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder. \
     base_forecasting_decoder import BaseForecastingDecoder
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import \
     DecoderNetwork
@@ -79,11 +79,9 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
                 local_layers.append(_activations[self.config["activation"]]())
             local_layers.append(nn.Unflatten(-1, (n_prediction_heads, self.config['units_local_layer'])))
             num_decoder_output_features = self.config['units_local_layer'] + future_variable_input[-1]
-        else:
-            local_layers = None
 
         return MLPDecoderModule(global_layers=nn.Sequential(*global_layers),
-                                local_layers=nn.Sequential(*local_layers) if local_layers is not None else None,
+                                local_layers=nn.Sequential(*local_layers) if has_local_layer else None,
                                 auto_regressive=self.auto_regressive), num_decoder_output_features
 
     @staticmethod
@@ -214,7 +212,9 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
         cond_units_local_layer = EqualsCondition(units_local_layer, has_local_layer, True)
 
         if can_be_auto_regressive:
-            auto_regressive = get_hyperparameter(auto_regressive, CategoricalHyperparameter)
+            auto_regressive: CategoricalHyperparameter = get_hyperparameter(  # type:ignore[no-redef]
+                auto_regressive, CategoricalHyperparameter
+            )
             cs.add_hyperparameters([auto_regressive])
 
             if False in auto_regressive.choices:

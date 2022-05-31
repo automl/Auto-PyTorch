@@ -33,7 +33,7 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
     ):
         super().__init__(logger)
         self.only_contain_series_idx = False
-        self.static_features: Union[Tuple[()], Tuple[int]] = ()
+        self.static_features: Union[Tuple[()], Tuple[Union[int, str]]] = ()
         self.series_idx: Optional[List[Union[str, int]]] = None
 
     def get_reordered_columns(self) -> List[str]:
@@ -163,7 +163,7 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
         X = super(TimeSeriesFeatureValidator, self).transform(X)
         if X.ndim == 1:
             X = np.expand_dims(X, -1)  # type:ignore[no-redef]
-        X: pd.DataFrame = pd.DataFrame(X, columns=self.get_reordered_columns())
+        X: pd.DataFrame = pd.DataFrame(X, columns=self.get_reordered_columns())  # type:ignore[no-redef]
         if index is None:
             if not X_has_idx:
                 index = np.array([0] * len(X))

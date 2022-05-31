@@ -111,7 +111,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             calculate_score, get_metrics)
         metrics = get_metrics(self.dataset_properties, ['mean_MAPE_forecasting'])
         y_pred = self.predict(X, batch_size=batch_size)
-        r2 = calculate_score(y, y_pred, task_type=STRING_TO_TASK_TYPES[self.dataset_properties['task_type']],
+        r2 = calculate_score(y, y_pred, task_type=STRING_TO_TASK_TYPES[str(self.dataset_properties['task_type'])],
                              metrics=metrics, **score_kwargs)['mean_MAPE_forecasting']
         return r2
 
@@ -139,11 +139,10 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         """
         cs = ConfigurationSpace()
 
-        if dataset_properties is None or not isinstance(dataset_properties, dict):
-            if not isinstance(dataset_properties, dict):
-                warnings.warn('The given dataset_properties argument contains an illegal value.'
-                              'Proceeding with the default value')
-            dataset_properties = dict()
+        if not isinstance(dataset_properties, dict):
+            warnings.warn('The given dataset_properties argument contains an illegal value.'
+                          'Proceeding with the default value')
+        dataset_properties = dict()
 
         if 'target_type' not in dataset_properties:
             dataset_properties['target_type'] = 'time_series_forecasting'
@@ -336,7 +335,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         """
         steps = []  # type: List[Tuple[str, autoPyTorchChoice]]
 
-        default_dataset_properties = {'target_type': 'time_series_prediction'}
+        default_dataset_properties: Dict[str, BaseDatasetPropertiesType] = {'target_type': 'time_series_prediction'}
         if dataset_properties is not None:
             default_dataset_properties.update(dataset_properties)
 

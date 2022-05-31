@@ -147,7 +147,7 @@ class InceptionTimeEncoder(BaseForecastingEncoder):
 
     def n_encoder_output_feature(self) -> int:
         # see _InceptionBlock.forward()
-        return self.config['num_filters'] * 4
+        return self.config['num_filters'] * 4  # type: int
 
     @staticmethod
     def allowed_decoders() -> List[str]:

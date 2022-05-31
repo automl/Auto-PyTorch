@@ -191,7 +191,7 @@ class _ThresholdMetric(autoPyTorchMetric):
 
 
 class _ForecastingMetric(ForecastingMetricMixin, autoPyTorchMetric):
-    def __call__(
+    def __call__(  # type: ignore[override]
             self,
             y_true: np.ndarray,
             y_pred: np.ndarray,
@@ -267,9 +267,9 @@ class _ForecastingMetric(ForecastingMetricMixin, autoPyTorchMetric):
             losses_all = np.mean(losses_all, -1)
 
         if agg == 'mean':
-            return self._sign * np.mean(losses_all)
+            return float(self._sign * np.mean(losses_all))
         elif agg == 'median':
-            return self._sign * np.median(losses_all)
+            return float(self._sign * np.median(losses_all))
         else:
             raise NotImplementedError(f'Unsupported aggregation type {agg}')
 

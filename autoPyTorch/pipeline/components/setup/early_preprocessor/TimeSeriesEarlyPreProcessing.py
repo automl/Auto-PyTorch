@@ -22,7 +22,7 @@ class TimeSeriesEarlyPreprocessing(EarlyPreprocessing):
             FitRequirement('is_small_preprocess', (bool,), user_defined=True, dataset_property=True),
             FitRequirement('X_train', (pd.DataFrame, ), user_defined=True,
                            dataset_property=False),
-            FitRequirement('feature_names', (Tuple,), user_defined=True, dataset_property=True),
+            FitRequirement('feature_names', (tuple,), user_defined=True, dataset_property=True),
             FitRequirement('numerical_columns', (List,), user_defined=True, dataset_property=True),
             FitRequirement('categorical_columns', (List,), user_defined=True, dataset_property=True),
         ])

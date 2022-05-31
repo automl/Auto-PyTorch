@@ -94,16 +94,16 @@ class ForecastingLossChoices(autoPyTorchChoice):
             if entry == ForecastingLossChoices or hasattr(entry, 'get_components'):
                 continue
 
-            task_type = str(dataset_properties['task_type'])
+            task_type_name = str(dataset_properties['task_type'])
             properties = entry.get_properties()
-            if 'tabular' in task_type and not bool(properties['handles_tabular']):
+            if 'tabular' in task_type_name and not bool(properties['handles_tabular']):
                 continue
-            elif 'image' in task_type and not bool(properties['handles_image']):
+            elif 'image' in task_type_name and not bool(properties['handles_image']):
                 continue
-            elif 'time_series' in task_type and not bool(properties['handles_time_series']):
+            elif 'time_series' in task_type_name and not bool(properties['handles_time_series']):
                 continue
 
-            task_type = STRING_TO_TASK_TYPES[task_type]
+            task_type = STRING_TO_TASK_TYPES[task_type_name]
 
             if task_type in CLASSIFICATION_TASKS and not bool(properties['handles_classification']):
                 continue
@@ -190,4 +190,4 @@ class ForecastingLossChoices(autoPyTorchChoice):
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         assert self.choice is not None, "Cannot call transform before the object is initialized"
-        return self.choice.transform(X)
+        return self.choice.transform(X)  # ignore[no-any-return]

@@ -1,5 +1,5 @@
 from multiprocessing.queues import Queue
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 from ConfigSpace.configuration_space import Configuration
 
@@ -425,8 +425,8 @@ def eval_train_function(
         all_supported_metrics: bool = True,
         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
         instance: str = None,
-        evaluator_class: Optional[AbstractEvaluator] = None,
-        **evaluator_kwargs,
+        evaluator_class: Type[TrainEvaluator] = TrainEvaluator,
+        **evaluator_kwargs: Any,
 ) -> None:
     """
     This closure allows the communication between the ExecuteTaFuncWithQueue and the
@@ -489,11 +489,11 @@ def eval_train_function(
             with a single instance, being the provided X_train, y_train of a single dataset.
             This instance is a compatibility argument for SMAC, that is capable of working
             with multiple datasets at the same time.
-        evaluator_class (Optional[AbstractEvaluator]):
+        evaluator_class (Type[AbstractEvaluator]):
             the class name of evaluator, when not specified, it is set as vanilla TrainEvaluator
+        evaluator_kwargs: Any
+            additionally evaluation kwargs
     """
-    if evaluator_class is None:
-        evaluator_class = TrainEvaluator
     evaluator = evaluator_class(
         backend=backend,
         queue=queue,
@@ -512,6 +512,6 @@ def eval_train_function(
         all_supported_metrics=all_supported_metrics,
         pipeline_config=pipeline_config,
         search_space_updates=search_space_updates,
-        **evaluator_kwargs
+        **evaluator_kwargs  # type: ignore
     )
     evaluator.fit_predict_and_loss()

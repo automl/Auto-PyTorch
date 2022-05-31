@@ -66,7 +66,7 @@ class TimeSeriesMLP(EncoderNetwork):
         return x
 
 
-class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
+class MLPEncoder(BaseForecastingEncoder, MLPBackbone):  # type: ignore[misc]
     _fixed_seq_length = True
     window_size = 1
 
@@ -100,7 +100,7 @@ class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
 
     def n_encoder_output_feature(self) -> int:
         # This function should never be called!!
-        return self.config["num_units_%d" % (self.config['num_groups'])]
+        return self.config["num_units_%d" % (self.config['num_groups'])]  # type: int
 
     def _add_layer(self, layers: List[nn.Module], in_features: int, out_features: int,
                    layer_id: int) -> None:
@@ -134,7 +134,7 @@ class MLPEncoder(BaseForecastingEncoder, MLPBackbone):
         }
 
     @staticmethod
-    def get_hyperparameter_search_space(
+    def get_hyperparameter_search_space(  # type: ignore[override]
             dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
             num_groups: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_groups",
                                                                               value_range=(1, 5),

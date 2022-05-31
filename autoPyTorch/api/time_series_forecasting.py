@@ -165,10 +165,10 @@ class TimeSeriesForecastingTask(BaseTask):
         dataset_name: Optional[str] = None,
         dataset_compression: Optional[DatasetCompressionSpec] = None,
         freq: Optional[Union[str, int, List[int]]] = None,
-        start_times: List[pd.DatetimeIndex] = [],
+        start_times: Optional[List[pd.DatetimeIndex]] = None,
         series_idx: Optional[Union[List[Union[str, int]], str, int]] = None,
         n_prediction_steps: int = 1,
-        known_future_features: Tuple[Union[int, str]] = (),
+        known_future_features: Union[Tuple[Union[int, str]], Tuple[()]] = (),
         **forecasting_dataset_kwargs: Any,
     ) -> Tuple[TimeSeriesForecastingDataset, TimeSeriesForecastingInputValidator]:
         """
@@ -271,8 +271,8 @@ class TimeSeriesForecastingTask(BaseTask):
         series_idx: Optional[Union[List[Union[str, int]], str, int]] = None,
         dataset_name: Optional[str] = None,
         budget_type: str = "epochs",
-        min_budget: Union[int, str] = 5,
-        max_budget: Union[int, str] = 50,
+        min_budget: Union[int, float] = 5,
+        max_budget: Union[int, float] = 50,
         total_walltime_limit: int = 100,
         func_eval_time_limit_secs: Optional[int] = None,
         enable_traditional_pipeline: bool = False,
@@ -338,7 +338,7 @@ class TimeSeriesForecastingTask(BaseTask):
                     min_budget will refer to seconds.
                 + 'resolution': The sample resolution of time series, for instance, if a time series sequence is
                 [0, 1, 2, 3, 4] with resolution 0.5, the sequence fed to the network is [0, 2, 4]
-            min_budget Union[int, str]:
+            min_budget Union[int, float]:
                 Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>`_ to
                 trade-off resources between running many pipelines at min_budget and
                 running the top performing pipelines on max_budget.
@@ -346,7 +346,7 @@ class TimeSeriesForecastingTask(BaseTask):
                 so that we can compare and quickly discard bad performing models.
                 For example, if the budget_type is epochs, and min_budget=5, then we will
                 run every pipeline to a minimum of 5 epochs before performance comparison.
-            max_budget Union[int, str]:
+            max_budget Union[int, float]:
                 Auto-PyTorch uses `Hyperband <https://arxiv.org/abs/1603.06560>`_ to
                 trade-off resources between running many pipelines at min_budget and
                 running the top performing pipelines on max_budget.
@@ -407,10 +407,10 @@ class TimeSeriesForecastingTask(BaseTask):
             self
 
         """
-
-        self._dataset_compression = get_dataset_compression_mapping(
-            memory_limit, dataset_compression
-        )
+        if memory_limit is not None:
+            self._dataset_compression = get_dataset_compression_mapping(
+                memory_limit, dataset_compression
+            )
 
         self.dataset, self.input_validator = self._get_dataset_input_validator(
             X_train=X_train,
@@ -428,7 +428,7 @@ class TimeSeriesForecastingTask(BaseTask):
             **forecasting_dataset_kwargs,
         )
 
-        if self.dataset.base_window_size is not None or not self.customized_window_size:
+        if self.dataset.base_window_size is not None and not self.customized_window_size:
             base_window_size = int(np.ceil(self.dataset.base_window_size))
             # we don't want base window size to large, which might cause a too long computation time, in which case
             # we will use n_prediction_step instead (which is normally smaller than base_window_size)
@@ -487,9 +487,7 @@ class TimeSeriesForecastingTask(BaseTask):
 
     def predict(
         self,
-        X_test: Optional[
-            List[Union[np.ndarray, pd.DataFrame, TimeSeriesSequence]]
-        ] = None,
+        X_test: List[Union[np.ndarray, pd.DataFrame, TimeSeriesSequence]] = None,
         batch_size: Optional[int] = None,
         n_jobs: int = 1,
         past_targets: Optional[List[np.ndarray]] = None,
@@ -503,8 +501,9 @@ class TimeSeriesForecastingTask(BaseTask):
         (used for multi-variable prediction), indicates which value needs to be predicted
         """
         if not isinstance(X_test[0], TimeSeriesSequence):
+            assert past_targets is not None
             # Validate and construct TimeSeriesSequence
-            X_test, _, _ = self.dataset.transform_data_into_time_series_sequence(
+            X_test, _, _, _ = self.dataset.transform_data_into_time_series_sequence(
                 X=X_test,
                 Y=past_targets,
                 X_test=future_targets,

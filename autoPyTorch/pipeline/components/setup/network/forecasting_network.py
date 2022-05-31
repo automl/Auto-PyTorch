@@ -49,7 +49,7 @@ class ForecastingNetworkComponent(NetworkComponent):
             FitRequirement("feature_names", (Iterable,), user_defined=False, dataset_property=True),
             FitRequirement("feature_shapes", (Iterable,), user_defined=False, dataset_property=True),
             FitRequirement('transform_time_features', (bool,), user_defined=False, dataset_property=False),
-            FitRequirement('static_features', (Tuple,), user_defined=True, dataset_property=True),
+            FitRequirement('static_features', (tuple,), user_defined=True, dataset_property=True),
             FitRequirement('time_feature_names', (Iterable,), user_defined=True, dataset_property=True),
         ]
 

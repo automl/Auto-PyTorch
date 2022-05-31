@@ -51,14 +51,15 @@ class NBEATSEncoder(BaseForecastingEncoder):
             input_shape=output_shape,
         )
 
-        self.input_shape = [self.window_size, output_shape[-1]]
+        input_shape = (self.window_size, output_shape[-1])
+        self.input_shape = input_shape
 
         has_hidden_states = self.encoder_properties().has_hidden_states
-        self.encoder_output_shape = get_output_shape(self.encoder, self.input_shape, has_hidden_states)
+        self.encoder_output_shape = get_output_shape(self.encoder, input_shape, has_hidden_states)
         return self
 
-    def n_encoder_output_feature(self) -> None:
-        # THIS function should never be called!!!
+    def n_encoder_output_feature(self) -> int:
+        # This function should never be called!!!
         raise NotImplementedError
 
     def build_encoder(self,

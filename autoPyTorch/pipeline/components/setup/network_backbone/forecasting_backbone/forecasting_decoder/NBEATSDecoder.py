@@ -62,8 +62,8 @@ class NBEATSBLock(DecoderNetwork):
 
         self.backbone = nn.Sequential(*self.build_backbone())
 
-        self.backcast_head = None
-        self.forecast_head = None
+        self.backcast_head: Optional[nn.Module] = None
+        self.forecast_head: Optional[nn.Module] = None
 
     def build_backbone(self) -> List[nn.Module]:
         layers: List[nn.Module] = list()

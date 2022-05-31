@@ -38,7 +38,7 @@ class BaseForecastingDecoder(autoPyTorchComponent):
     @property
     def _required_fit_requirements(self) -> List[FitRequirement]:
         return [
-            FitRequirement('known_future_features', (Tuple,), user_defined=False, dataset_property=True),
+            FitRequirement('known_future_features', (tuple,), user_defined=False, dataset_property=True),
             FitRequirement('feature_shapes', (Dict,), user_defined=False, dataset_property=True),
             FitRequirement('network_encoder', (OrderedDict,), user_defined=False, dataset_property=False),
             FitRequirement('n_prediction_steps', (int,), user_defined=False, dataset_property=True),

@@ -56,6 +56,7 @@ class ForecastingTrainerChoice(TrainerChoice):
         )
 
     def prepare_trainer(self, X: Dict) -> None:
+        assert self.choice is not None
         # Support additional user metrics
         metrics = get_metrics(dataset_properties=X['dataset_properties'])
         if 'additional_metrics' in X:

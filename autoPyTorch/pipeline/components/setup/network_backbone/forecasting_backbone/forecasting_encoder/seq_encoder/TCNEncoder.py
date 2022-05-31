@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -142,7 +142,7 @@ class TCNEncoder(BaseForecastingEncoder):
 
     def n_encoder_output_feature(self) -> int:
         num_blocks = self.config["num_blocks"]
-        return self.config[f"num_filters_{num_blocks}"]
+        return self.config[f"num_filters_{num_blocks}"]  # type: int
 
     @staticmethod
     def allowed_decoders() -> List[str]:
@@ -152,8 +152,8 @@ class TCNEncoder(BaseForecastingEncoder):
         return ['MLPDecoder']
 
     @staticmethod
-    def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
-                       ) -> Dict[str, Any]:
+    def get_properties(
+            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Union[str, bool]]:
         return {
             "shortname": "TCNBackbone",
             "name": "TCNBackbone",

@@ -421,8 +421,9 @@ class VariableSelector(nn.Module):
                 )
 
             static_context_variable_selection = self.static_context_variable_selection(static_embedding)[:, None]
-            static_context_initial_hidden = tuple(init_hidden(static_embedding) for init_hidden in
-                                                  self.static_context_initial_hidden)
+            static_context_initial_hidden: Optional[Tuple[torch.Tensor, ...]] = tuple(
+                init_hidden(static_embedding) for init_hidden in self.static_context_initial_hidden
+            )
             if cache_static_contex:
                 self.cached_static_contex = static_context_variable_selection
                 self.cached_static_embedding = static_embedding

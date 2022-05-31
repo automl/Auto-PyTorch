@@ -92,22 +92,22 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         self.num_batches_per_epoch = num_batches_per_epoch if num_batches_per_epoch is not None else np.inf
         self.padding_collector: Optional[Callable] = None
 
-        self.known_future_features_index = None
+        self.known_future_features_index: Union[Tuple[int], Tuple[()]] = tuple()
         self._is_uni_variant = False
 
         self.transform_time_features = transform_time_features
         self.freq = "1Y"
         self.time_feature_transform: List[TimeFeature] = []
-        self.dataset_columns: List[Union[int, str]] = []
+        self.dataset_columns: Union[Tuple[Union[int, str]], Tuple[()]] = tuple()
         self.sampler_train: Optional[Union[Iterator, torch.utils.data.sampler.Sampler]] = None
 
         # Applied for get loader
         self.feature_preprocessor: Optional[ColumnTransformer] = None
 
         self.add_fit_requirements(
-            [FitRequirement("known_future_features", (Tuple,), user_defined=True, dataset_property=True),
+            [FitRequirement("known_future_features", (tuple,), user_defined=True, dataset_property=True),
              FitRequirement("feature_shapes", (Dict,), user_defined=True, dataset_property=True),
-             FitRequirement("feature_names", (Tuple,), user_defined=True, dataset_property=True),
+             FitRequirement("feature_names", (tuple,), user_defined=True, dataset_property=True),
              FitRequirement("sequence_lengths_train", (List,), user_defined=True, dataset_property=True),
              FitRequirement("freq", (str,), user_defined=True, dataset_property=True),
              FitRequirement("n_prediction_steps", (int,), user_defined=True, dataset_property=True)])
@@ -376,7 +376,6 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                     sequence_lengths[seq_idx] = len(x_seq.X)
                 series_number = np.arange(len(sequence_lengths)).repeat(sequence_lengths)
 
-                assert self.known_future_features_index is not None
                 if len(self.known_future_features_index) > 0:
                     sequence_lengths_test = [0] * num_sequences
                     for seq_idx, x_seq in enumerate(X):
@@ -415,9 +414,9 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                         x_all_test = pd.DataFrame(np.concatenate([x_seq.X_test for x_seq in X]))
                         x_all_test.index = series_number_test
 
-                x_all = x_all.groupby(x_all.index)
+                x_all_grouped = x_all.groupby(x_all.index)
                 if len(self.known_future_features_index) > 0:
-                    x_all_test = x_all_test.groupby(x_all_test.index)
+                    x_all_test_grouped = x_all_test.groupby(x_all_test.index)
 
             for i, x_seq in enumerate(X):
                 if not isinstance(x_seq, TimeSeriesSequence):
@@ -429,10 +428,10 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                     x_seq._cached_time_features = None
 
                 if self.dataset_small_preprocess and not self._is_uni_variant:
-                    x_seq.X = x_all.get_group(i).transform(np.array).values
+                    x_seq.X = x_all_grouped.get_group(i).transform(np.array).values
                     update_dict: Dict[str, Any] = {"known_future_features_index": self.known_future_features_index}
                     if len(self.known_future_features_index) > 0:
-                        x_seq.X_test = x_all_test.get_group(i).transform(np.array).values
+                        x_seq.X_test = x_all_test_grouped.get_group(i).transform(np.array).values
 
                 else:
                     update_dict = {}
