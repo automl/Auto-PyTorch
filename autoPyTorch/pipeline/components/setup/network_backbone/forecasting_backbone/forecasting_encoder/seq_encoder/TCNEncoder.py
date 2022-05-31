@@ -142,7 +142,8 @@ class TCNEncoder(BaseForecastingEncoder):
 
     def n_encoder_output_feature(self) -> int:
         num_blocks = self.config["num_blocks"]
-        return self.config[f"num_filters_{num_blocks}"]  # type: int
+        num_filter_out: int = self.config[f"num_filters_{num_blocks}"]
+        return num_filter_out
 
     @staticmethod
     def allowed_decoders() -> List[str]:

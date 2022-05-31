@@ -100,7 +100,8 @@ class MLPEncoder(BaseForecastingEncoder, MLPBackbone):  # type: ignore[misc]
 
     def n_encoder_output_feature(self) -> int:
         # This function should never be called!!
-        return self.config["num_units_%d" % (self.config['num_groups'])]  # type: int
+        num_out_features: int = self.config["num_units_%d" % (self.config['num_groups'])]
+        return num_out_features
 
     def _add_layer(self, layers: List[nn.Module], in_features: int, out_features: int,
                    layer_id: int) -> None:
