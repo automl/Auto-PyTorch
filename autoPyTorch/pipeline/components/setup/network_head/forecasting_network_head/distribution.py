@@ -24,8 +24,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.distributions import (Beta, Distribution, Gamma, Normal, Poisson,
-                                 StudentT)
+from torch.distributions import Beta, Distribution, Gamma, Normal, Poisson, StudentT
 
 
 class ProjectionLayer(nn.Module):
@@ -42,7 +41,6 @@ class ProjectionLayer(nn.Module):
         num_in_features: int,
         output_shape: Tuple[int, ...],
         n_prediction_heads: int,
-        auto_regressive: bool,
         decoder_has_local_layer: bool,
         **kwargs: Any,
     ):

@@ -94,8 +94,6 @@ class ForecastingHead(NetworkHeadComponent):
                 raise ValueError("For Quantile losses, quantiles must be given in X!")
             num_quantiles = len(X['quantile_values'])
 
-        auto_regressive = X.get('auto_regressive', False)
-
         head_n_in_features: int = X["n_decoder_output_features"]
         n_prediction_heads = X["n_prediction_heads"]
 
@@ -104,7 +102,6 @@ class ForecastingHead(NetworkHeadComponent):
         head_components = self.build_head(
             head_n_in_features=head_n_in_features,
             output_shape=output_shape,
-            auto_regressive=auto_regressive,
             decoder_has_local_layer=decoder_has_local_layer,
             net_output_type=net_output_type,
             dist_cls=dist_cls,
@@ -163,7 +160,6 @@ class ForecastingHead(NetworkHeadComponent):
     def build_head(self,  # type: ignore[override]
                    head_n_in_features: int,
                    output_shape: Tuple[int, ...],
-                   auto_regressive: bool = False,
                    decoder_has_local_layer: bool = True,
                    net_output_type: str = "distribution",
                    dist_cls: Optional[str] = None,
@@ -176,7 +172,6 @@ class ForecastingHead(NetworkHeadComponent):
         Args:
             head_n_in_features (int): shape of the input to the head (usually the shape of the backbone output)
             output_shape (Tuple[int, ...]): shape of the output of the head
-            auto_regressive (bool): if the network is auto-regressive
             decoder_has_local_layer (bool): if the decoder has local layer
             net_output_type (str): network output type
             dist_cls (Optional[str]): output distribution, only works if required_net_out_put_type is 'distribution'
@@ -191,7 +186,6 @@ class ForecastingHead(NetworkHeadComponent):
             proj_layer = ALL_DISTRIBUTIONS[dist_cls](num_in_features=head_n_in_features,
                                                      output_shape=output_shape[1:],
                                                      n_prediction_heads=n_prediction_heads,
-                                                     auto_regressive=auto_regressive,
                                                      decoder_has_local_layer=decoder_has_local_layer
                                                      )
             return proj_layer
