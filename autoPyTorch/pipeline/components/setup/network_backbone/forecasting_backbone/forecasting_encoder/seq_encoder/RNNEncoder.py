@@ -96,10 +96,8 @@ class RNNEncoder(BaseForecastingEncoder):
         return encoder
 
     def n_encoder_output_feature(self) -> int:
-        if self.config['bidirectional']:
-            return 2 * self.config['hidden_size']  # type: int
-        else:
-            return self.config['hidden_size']  # type: int
+        hidden_size: int = self.config['hidden_size']
+        return 2 * hidden_size if self.config['bidirectional'] else hidden_size
 
     def n_hidden_states(self) -> int:
         if self.config['cell_type'] == 'lstm':

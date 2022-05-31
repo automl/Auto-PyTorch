@@ -596,8 +596,9 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
                             ForbiddenEqualsClause(hp_mlp_has_local_layer, False),
                             ForbiddenEqualsClause(skip_connection_hp, True),
                         ))
-                c1 = isinstance(use_temporal_fusion_hp, CategoricalHyperparameter) \
-                     and True in use_temporal_fusion_hp.choices
+                c1 = isinstance(
+                    use_temporal_fusion_hp, CategoricalHyperparameter
+                ) and True in use_temporal_fusion_hp.choices
                 c2 = isinstance(use_temporal_fusion_hp, Constant) and skip_connection_hp.value
                 if c1 or c2:
                     if True in use_temporal_fusion_hp.choices:
