@@ -416,7 +416,8 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
                         x_all_test.index = series_number_test
 
                 x_all = x_all.groupby(x_all.index)
-                x_all_test = x_all_test.groupby(x_all_test.index)
+                if len(self.known_future_features_index) > 0:
+                    x_all_test = x_all_test.groupby(x_all_test.index)
 
             for i, x_seq in enumerate(X):
                 if not isinstance(x_seq, TimeSeriesSequence):
