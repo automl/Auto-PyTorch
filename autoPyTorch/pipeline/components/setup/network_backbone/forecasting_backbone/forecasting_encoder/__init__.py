@@ -214,7 +214,7 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
         encoder2decoder: Dict[str, List[str]] = {}
         for encoder_name in hp_encoder.choices:
             updates = self._get_search_space_updates(prefix=encoder_name)
-            config_space = available_encoders[encoder_name].get_hyperparameter_search_space(
+            config_space = available_encoders[encoder_name].get_hyperparameter_search_space(  # type: ignore[call-arg]
                 dataset_properties,
                 **updates   # type: ignore[call-arg]
             )
@@ -243,7 +243,7 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
             if not decoder2encoder[decoder_name]:
                 continue
             updates = self._get_search_space_updates(prefix=decoder_name)
-            config_space = available_decoders[decoder_name].get_hyperparameter_search_space(
+            config_space = available_decoders[decoder_name].get_hyperparameter_search_space(  # type: ignore[call-arg]
                 dataset_properties,
                 **updates   # type: ignore[call-arg]
             )

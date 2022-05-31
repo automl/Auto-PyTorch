@@ -1045,8 +1045,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             resampling_strategy(Optional[Union[CrossValTypes, HoldoutValTypes]]): resampling strategy
             resampling_strategy_args (Optional[Dict[str, Any]]): resampling strategy arguments
         """
-        if resampling_strategy is None:
-            return None, None
         # check if dataset could be split with cross validation
         minimal_seq_length = np.min(sequence_lengths) - n_prediction_steps
         if isinstance(resampling_strategy, CrossValTypes):
