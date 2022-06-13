@@ -48,6 +48,11 @@ setuptools.setup(
     install_requires=requirements,
     include_package_data=True,
     extras_require={
+        "forecasting": [
+            "gluonts",
+            "sktime",
+            "pytorch-forecasting",
+        ],
         "test": [
             "matplotlib",
             "pytest",

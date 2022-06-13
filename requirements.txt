@@ -7,16 +7,13 @@ numpy
 scipy>=1.7
 lockfile
 imgaug>=0.4.0
-ConfigSpace>=0.4.14,<0.5
+ConfigSpace>=0.5.0
 pynisher>=0.6.3
 pyrfr>=0.7,<0.9
 smac>=1.2
-gluonts
 dask
 distributed>=2.2.0
 catboost
 lightgbm
 flaky
 tabulate
-sktime>=0.11.0
-
