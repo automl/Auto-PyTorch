@@ -142,7 +142,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         if not isinstance(dataset_properties, dict):
             warnings.warn('The given dataset_properties argument contains an illegal value.'
                           'Proceeding with the default value')
-        dataset_properties = dict()
+            dataset_properties = dict()
 
         if 'target_type' not in dataset_properties:
             dataset_properties['target_type'] = 'time_series_forecasting'
