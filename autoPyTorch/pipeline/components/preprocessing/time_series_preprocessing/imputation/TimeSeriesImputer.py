@@ -57,6 +57,7 @@ class TimeSeriesFeatureImputer(autoPyTorchTimeSeriesPreprocessingComponent):
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """
         Adds self into the 'X' dictionary and returns it.
+
         Args:
             X (Dict[str, Any]): 'X' dictionary
 
@@ -139,6 +140,7 @@ class TimeSeriesTargetImputer(autoPyTorchTimeSeriesTargetPreprocessingComponent)
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """
         Adds self into the 'X' dictionary and returns it.
+
         Args:
             X (Dict[str, Any]): 'X' dictionary
 
@@ -164,6 +166,7 @@ class TimeSeriesTargetImputer(autoPyTorchTimeSeriesTargetPreprocessingComponent)
         Time series imputor, for the sake of speed, we only allow local imputation here (i.e., the filled value only
         depends on its neighbours)
         # TODO: Transformer for mean and median: df.fillna(df.groupby(df.index).agg('mean'))...
+
         Args:
             dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]): dataset properties
             imputation_strategy: which strategy to use, its content is defined by

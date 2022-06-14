@@ -460,7 +460,7 @@ class EnsembleBuilder(object):
                 unittest.mock work through the pynisher with all spawn contexts. If you know a
                 better solution, please let us know by opening an issue.
             metric_kwargs: Dict
-            additional arguments for computing metrics, this is used for time series forecasting computation
+                additional arguments for computing metrics, this is used for time series forecasting computation
         """
 
         super(EnsembleBuilder, self).__init__()

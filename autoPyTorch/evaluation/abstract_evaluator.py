@@ -343,7 +343,7 @@ class DummyTimeSeriesForecastingPipeline(DummyClassificationPipeline):
         y_train = subsampler(X['y_train'], X['train_indices'])
         return DummyClassifier.fit(self, np.ones((y_train.shape[0], 1)), y_train, sample_weight)
 
-    def _genreate_dummy_forecasting(self, X: List[Union[TimeSeriesSequence, np.ndarray]]) -> List:
+    def _generate_dummy_forecasting(self, X: List[Union[TimeSeriesSequence, np.ndarray]]) -> List:
         if isinstance(X[0], TimeSeriesSequence):
             X_tail = [x.get_target_values(-1) for x in X]
         else:
@@ -352,12 +352,12 @@ class DummyTimeSeriesForecastingPipeline(DummyClassificationPipeline):
 
     def predict_proba(self, X: Union[np.ndarray, pd.DataFrame],
                       batch_size: int = 1000) -> np.ndarray:
-        X_tail = self._genreate_dummy_forecasting(X)
+        X_tail = self._generate_dummy_forecasting(X)
         return np.tile(X_tail, (1, self.n_prediction_steps)).astype(np.float32).squeeze()
 
     def predict(self, X: Union[np.ndarray, pd.DataFrame],
                 batch_size: int = 1000) -> np.ndarray:
-        X_tail = np.asarray(self._genreate_dummy_forecasting(X))
+        X_tail = np.asarray(self._generate_dummy_forecasting(X))
         if X_tail.ndim == 1:
             X_tail = np.expand_dims(X_tail, -1)
         return np.tile(X_tail, (1, self.n_prediction_steps)).astype(np.float32).squeeze()

@@ -51,28 +51,6 @@ class ForecastingNetworkComponent(NetworkComponent):
             FitRequirement('time_feature_names', (Iterable,), user_defined=True, dataset_property=True),
         ])
 
-    @property
-    def _required_fit_requirements(self) -> List[FitRequirement]:
-        return [
-            FitRequirement('dataset_properties', (Dict,), user_defined=False, dataset_property=True),
-            FitRequirement('window_size', (int,), user_defined=False, dataset_property=False),
-            FitRequirement('network_structure', (Dict,), user_defined=False, dataset_property=False),
-            FitRequirement("network_embedding", (torch.nn.Module,), user_defined=False, dataset_property=False),
-            FitRequirement("network_encoder", (Dict,), user_defined=False,
-                           dataset_property=False),
-            FitRequirement("network_decoder", (Dict,), user_defined=False,
-                           dataset_property=False),
-            FitRequirement("network_head", (Optional[torch.nn.Module],), user_defined=False, dataset_property=False),
-            FitRequirement("auto_regressive", (bool,), user_defined=False, dataset_property=False),
-            FitRequirement("target_scaler", (BaseTargetScaler,), user_defined=False, dataset_property=False),
-            FitRequirement("net_output_type", (str,), user_defined=False, dataset_property=False),
-            FitRequirement("feature_names", (Iterable,), user_defined=False, dataset_property=True),
-            FitRequirement("feature_shapes", (Iterable,), user_defined=False, dataset_property=True),
-            FitRequirement('transform_time_features', (bool,), user_defined=False, dataset_property=False),
-            FitRequirement('static_features', (tuple,), user_defined=True, dataset_property=True),
-            FitRequirement('time_feature_names', (Iterable,), user_defined=True, dataset_property=True),
-        ]
-
     def fit(self, X: Dict[str, Any], y: Any = None) -> autoPyTorchTrainingComponent:
         # Make sure that input dictionary X has the required
         # information to fit this stage

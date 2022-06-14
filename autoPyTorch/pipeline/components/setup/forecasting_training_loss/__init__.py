@@ -54,12 +54,12 @@ class ForecastingLossChoices(autoPyTorchChoice):
         include/exclude directives, as well as the dataset properties
 
         Args:
-         include (Optional[Dict[str, Any]]): what hyper-parameter configurations
-            to honor when creating the configuration space
-         exclude (Optional[Dict[str, Any]]): what hyper-parameter configurations
-             to remove from the configuration space
-         dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]): Caracteristics
-             of the dataset to guide the pipeline choices of components
+         include (Optional[Dict[str, Any]]):
+            what hyper-parameter configurations to honor when creating the configuration space
+         exclude (Optional[Dict[str, Any]]):
+            what hyper-parameter configurations to remove from the configuration space
+         dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]):
+            Characteristics of the dataset to guide the pipeline choices of components
 
         Returns:
             Dict[str, autoPyTorchComponent]: A filtered dict of learning
@@ -123,15 +123,18 @@ class ForecastingLossChoices(autoPyTorchChoice):
         """Returns the configuration space of the current chosen components
 
         Args:
-            dataset_properties (Optional[Dict[str, str]]): Describes the dataset to work on
-            default (Optional[str]): Default component to use
-            include: Optional[Dict[str, Any]]: what components to include. It is an exhaustive
-                list, and will exclusively use this components.
-            exclude: Optional[Dict[str, Any]]: which components to skip
+            dataset_properties (Optional[Dict[str, str]]):
+                Describes the dataset to work on
+            default (Optional[str]):
+                Default component to use
+            include: Optional[Dict[str, Any]]:
+                what components to include. It is an exhaustive list, and will exclusively use this components.
+            exclude: Optional[Dict[str, Any]]:
+                which components to skip
 
         Returns:
-            ConfigurationSpace: the configuration space of the hyper-parameters of the
-                 chosen component
+            ConfigurationSpace:
+                the configuration space of the hyper-parameters of the chosen component
         """
         cs = ConfigurationSpace()
 

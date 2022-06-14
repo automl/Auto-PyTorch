@@ -32,6 +32,9 @@ def _check_and_to_array(y: SupportedTargetTypes, allow_nan: bool = False) -> Arr
 def _modify_regression_target(y: ArrayType, allow_nan: bool = False) -> ArrayType:
     # Regression targets must have numbers after a decimal point.
     # Ref: https://github.com/scikit-learn/scikit-learn/issues/8952
+
+    # For forecasting tasks, missing targets are allowed. Our TimeSeriesTargetValidator is inherent from
+    # TabularTargetValidator, if this function is called by TimeSeriesTargetValidator, we will allow nan here
     if allow_nan:
         y = ma.masked_where(np.isnan(y), y, 1e12)
 

@@ -43,6 +43,7 @@ class BaseScaler(autoPyTorchTimeSeriesPreprocessingComponent):
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """
         Adds the fitted scalar into the 'X' dictionary and returns it.
+
         Args:
             X (Dict[str, Any]): 'X' dictionary
 

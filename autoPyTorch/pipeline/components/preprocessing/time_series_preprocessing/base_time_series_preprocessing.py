@@ -29,10 +29,6 @@ class autoPyTorchTimeSeriesTargetPreprocessingComponent(autoPyTorchTargetPreproc
      # TODO add support for categorical targets!
      # TODO define inverse transformation for each inversible numerical transformation (log, deseasonalization, etc. )
     """
-    """
-     Provides abstract interface for time series preprocessing algorithms in AutoPyTorch.
-    """
-
     def __init__(self) -> None:
         super().__init__()
         self.preprocessor: Union[Dict[str, Optional[BaseEstimator]], BaseEstimator] = dict(

@@ -29,11 +29,12 @@ class TimeSeriesFeatureTransformer(autoPyTorchTimeSeriesPreprocessingComponent):
         """
         Creates a column transformer for the chosen tabular
         preprocessors
+
         Args:
             X (Dict[str, Any]): fit dictionary
 
         Returns:
-            "TabularColumnTransformer": an instance of self
+            "TimeSeriesFeatureTransformer": an instance of self
         """
         self.check_requirements(X, y)
 
@@ -71,6 +72,7 @@ class TimeSeriesFeatureTransformer(autoPyTorchTimeSeriesPreprocessingComponent):
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """
         Adds the time series transformer to fit dictionary
+
         Args:
             X (Dict[str, Any]): fit dictionary
 
@@ -111,11 +113,12 @@ class TimeSeriesTargetTransformer(autoPyTorchTimeSeriesTargetPreprocessingCompon
         """
         Creates a column transformer for the chosen tabular
         preprocessors
+
         Args:
             X (Dict[str, Any]): fit dictionary
 
         Returns:
-            "TabularColumnTransformer": an instance of self
+            "TimeSeriesTargetTransformer": an instance of self
         """
         self.check_requirements(X, y)
 

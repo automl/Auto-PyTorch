@@ -274,21 +274,7 @@ class AutoMLSMBO(object):
         initial_configurations = []
 
         if STRING_TO_TASK_TYPES.get(self.task_type, -1) == TIMESERIES_FORECASTING:
-            suggested_init_models: Optional[List[str]] = kwargs.get('suggested_init_models',  # type:ignore[assignment]
-                                                                    None)
-            custom_init_setting_path: Optional[str] = kwargs.get('custom_init_setting_path',  # type:ignore[assignment]
-                                                                 None)
-            # if suggested_init_models is an empty list, and  custom_init_setting_path is not provided, we
-            # do not provide any initial configurations
-            if suggested_init_models is None or suggested_init_models or custom_init_setting_path is not None:
-                datamanager: BaseDataset = self.backend.load_datamanager()
-                dataset_properties = datamanager.get_dataset_properties([])
-                initial_configurations = read_forecasting_init_configurations(
-                    config_space=config_space,
-                    suggested_init_models=suggested_init_models,
-                    custom_init_setting_path=custom_init_setting_path,
-                    dataset_properties=dataset_properties
-                )
+            initial_configurations = self.get_init_configs_for_forecasting(config_space, kwargs)
             # proxy-validation sets
             self.min_num_test_instances: Optional[int] = kwargs.get('min_num_test_instances',  # type:ignore[assignment]
                                                                     None)
@@ -437,3 +423,23 @@ class AutoMLSMBO(object):
             raise NotImplementedError(type(smac.solver.tae_runner))
 
         return self.runhistory, self.trajectory, self._budget_type
+
+    def get_init_configs_for_forecasting(self, config_space: ConfigSpace, kwargs: Dict) -> List[Configuration]:
+        """get initial configurations for forecasting tasks"""
+        suggested_init_models: Optional[List[str]] = kwargs.get('suggested_init_models',  # type:ignore[assignment]
+                                                                None)
+        custom_init_setting_path: Optional[str] = kwargs.get('custom_init_setting_path',  # type:ignore[assignment]
+                                                             None)
+        # if suggested_init_models is an empty list, and  custom_init_setting_path is not provided, we
+        # do not provide any initial configurations
+        if suggested_init_models is None or suggested_init_models or custom_init_setting_path is not None:
+            datamanager: BaseDataset = self.backend.load_datamanager()
+            dataset_properties = datamanager.get_dataset_properties([])
+            initial_configurations = read_forecasting_init_configurations(
+                config_space=config_space,
+                suggested_init_models=suggested_init_models,
+                custom_init_setting_path=custom_init_setting_path,
+                dataset_properties=dataset_properties
+            )
+            return initial_configurations
+        return []

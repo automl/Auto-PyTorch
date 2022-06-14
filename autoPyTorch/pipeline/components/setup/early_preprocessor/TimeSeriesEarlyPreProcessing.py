@@ -35,6 +35,7 @@ class TimeSeriesEarlyPreprocessing(EarlyPreprocessing):
         While after transformation, the order of the dataset is:
         [numerical_columns, categorical_columns, unknown_columns]
         we need to change feature_names and feature_shapes accordingly
+
         Args:
             X(Dict): fit dictionary
 

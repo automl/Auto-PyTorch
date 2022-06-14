@@ -49,23 +49,23 @@ def get_lagged_subsequences(
     outside the sliding windows. This implementation is similar to gluonTS's implementation
      the only difference is that we pad the sequence that is not long enough
 
-    Parameters
-    ----------
-    sequence : Tensor
-        the sequence from which lagged subsequences should be extracted.
-        Shape: (N, T, C).
-    subsequences_length : int
-        length of the subsequences to be extracted.
-    lags_seq: Optional[List[int]]
-        lags of the sequence, indicating the sequence that needs to be extracted
-    lag_mask: Optional[torch.Tensor]
-        a mask tensor indicating
+    Args:
+        sequence (torch.Tensor):
+            the sequence from which lagged subsequences should be extracted, Shape: (N, T, C).
+        subsequences_length (int):
+            length of the subsequences to be extracted.
+        lags_seq (Optional[List[int]]):
+            lags of the sequence, indicating the sequence that needs to be extracted
+        mask (Optional[torch.Tensor]):
+            a mask tensor indicating, it is a cached mask tensor that allows the model to quickly extract the desired
+            lagged values
 
-    Returns
-    --------
-    lagged : Tensor
-        a tensor of shape (N, S, I * C), where S = subsequences_length and
-        I = len(indices), containing lagged subsequences.
+    Returns:
+        lagged (Tensor)
+            A tensor of shape (N, S, I * C), where S = subsequences_length and I = len(indices),
+             containing lagged subsequences.
+        mask (torch.Tensor):
+            cached mask
     """
     batch_size = sequence.shape[0]
     num_features = sequence.shape[2]
@@ -114,9 +114,20 @@ def get_lagged_subsequences_inference(
         lags_seq: List[int]) -> torch.Tensor:
     """
     this function works exactly the same as get_lagged_subsequences. However, this implementation is faster when no
-    cached value is available, thus it more suitable during inference times.
+    cached value is available, thus it is applied during inference times.
 
-    designed for doing inference for DeepAR, the core idea is to use
+    Args:
+        sequence (torch.Tensor):
+            the sequence from which lagged subsequences should be extracted, Shape: (N, T, C).
+        subsequences_length (int):
+            length of the subsequences to be extracted.
+        lags_seq (Optional[List[int]]):
+            lags of the sequence, indicating the sequence that needs to be extracted
+
+    Returns:
+        lagged (Tensor)
+            A tensor of shape (N, S, I * C), where S = subsequences_length and I = len(indices),
+             containing lagged subsequences.
     """
     sequence_length = sequence.shape[1]
     batch_size = sequence.shape[0]
@@ -174,21 +185,33 @@ class AbstractForecastingNet(nn.Module):
         This structure is active when the decoder is a MLP with auto_regressive set as false
 
         Args:
-            network_structure (NetworkStructure): network structure information
-            network_embedding (nn.Module): network embedding
-            network_encoder (Dict[str, EncoderBlockInfo]): Encoder network, could be selected to return a sequence or a
-            network_decoder (Dict[str, DecoderBlockInfo]): network decoder
-            temporal_fusion Optional[TemporalFusionLayer]: Temporal Fusion Layer
-            network_head (nn.Module): network head, maps the output of decoder to the final output
-            dataset_properties (Dict): dataset properties
-            auto_regressive (bool): if the overall model is auto-regressive model
-            output_type (str): the form that the network outputs. It could be regression, distribution and
-                quantile
-            forecast_strategy (str): only valid if output_type is distribution or quantile, how the network transforms
+            network_structure (NetworkStructure):
+                network structure information
+            network_embedding (nn.Module):
+                network embedding
+            network_encoder (Dict[str, EncoderBlockInfo]):
+                Encoder network, could be selected to return a sequence or a 2D Matrix
+            network_decoder (Dict[str, DecoderBlockInfo]):
+                network decoder
+            temporal_fusion Optional[TemporalFusionLayer]:
+                Temporal Fusion Layer
+            network_head (nn.Module):
+                network head, maps the output of decoder to the final output
+            dataset_properties (Dict):
+                dataset properties
+            auto_regressive (bool):
+                if the model is auto-regressive model
+            output_type (str):
+                the form that the network outputs. It could be regression, distribution or quantile
+            forecast_strategy (str):
+                only valid if output_type is distribution or quantile, how the network transforms
                 its output to predicted values, could be mean or sample
-            num_samples (int): only valid if output_type is not regression and forecast_strategy is sample. this
-            indicates the number of the points to sample when doing prediction
-            aggregation (str): how the samples are aggregated. We could take their mean or median values.
+            num_samples (int):
+                only valid if output_type is not regression and forecast_strategy is sample. This indicates the
+                number of the points to sample when doing prediction
+            aggregation (str):
+                only valid if output_type is not regression and forecast_strategy is sample. The way that the samples
+                are aggregated. We could take their mean or median values.
         """
         super().__init__()
         self.network_structure = network_structure

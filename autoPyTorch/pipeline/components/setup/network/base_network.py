@@ -46,10 +46,10 @@ class NetworkComponent(autoPyTorchTrainingComponent):
         Returns:
             A instance of self
         """
-
         # Make sure that input dictionary X has the required
         # information to fit this stage
         self.check_requirements(X, y)
+
         self.network = torch.nn.Sequential(X['network_embedding'], X['network_backbone'], X['network_head'])
 
         # Properly set the network training device

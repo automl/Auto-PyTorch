@@ -11,8 +11,10 @@ def get_time_series_preprocessers(X: Dict[str, Any]) -> Dict[str, List[BaseEstim
     Creates a dictionary with two keys,
     numerical- containing list of numerical preprocessors
     categorical- containing list of categorical preprocessors
+
     Args:
         X: fit dictionary
+
     Returns:
         (Dict[str, List[BaseEstimator]]): dictionary with list of numerical and categorical preprocessors
     """
@@ -37,8 +39,10 @@ def get_time_series_target_preprocessers(X: Dict[str, Any]) -> Dict[str, List[Ba
     Creates a dictionary with two keys,
     numerical- containing list of numerical preprocessors
     categorical- containing list of categorical preprocessors
+
     Args:
         X: fit dictionary
+
     Returns:
         (Dict[str, List[BaseEstimator]]): dictionary with list of numerical and categorical preprocessors
     """

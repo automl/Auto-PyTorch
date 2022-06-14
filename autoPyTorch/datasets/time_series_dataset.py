@@ -463,7 +463,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
     start_times (Optional[List[pd.DatetimeIndex]]):
         starting time of each series when they are sampled. If it is not given, we simply start with a fixed timestamp.
     series_idx (Optional[Union[List[Union[str, int]], str, int]]):
-        (only works if X is stored as pd.DataFrame). This value is applied to identify which series the data belongs to
+        (only works if X is stored as pd.DataFrame). This value is applied to identify  towhich series the data belongs
         if the data is presented as a "chunk" dataframe
     known_future_features (Optional[Union[Tuple[Union[str, int]], Tuple[()]]]):
         future features that are known in advance. For instance, holidays.

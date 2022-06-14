@@ -51,6 +51,7 @@ def time_series_preprocess(dataset: pd.DataFrame, transforms: torchvision.transf
     """
     preprocess time series data (both features and targets). Dataset should be pandas DataFrame whose index identifies
     which series the data belongs to.
+
     Args:
         dataset (pd.DataFrame): a dataset contains multiple series, its index identifies the series number
         transforms (torchvision.transforms.Compose): transformation applied to dataset

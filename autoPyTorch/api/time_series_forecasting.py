@@ -172,8 +172,8 @@ class TimeSeriesForecastingTask(BaseTask):
         **forecasting_dataset_kwargs: Any,
     ) -> Tuple[TimeSeriesForecastingDataset, TimeSeriesForecastingInputValidator]:
         """
-        Returns an object of `TabularDataset` and an object of
-        `TabularInputValidator` according to the current task.
+        Returns an object of `TimeSeriesForecastingDataset` and an object of
+        `TimeSeriesForecastingInputValidator` according to the current task.
 
         Args:
             X_train (Union[List, pd.DataFrame, np.ndarray]):
@@ -196,16 +196,26 @@ class TimeSeriesForecastingTask(BaseTask):
             dataset_compression (Optional[DatasetCompressionSpec]):
                 specifications for dataset compression. For more info check
                 documentation for `BaseTask.get_dataset`.
-            freq: Optional[Union[str, int, List[int]]]
+            freq (Optional[Union[str, int, List[int]]]):
                 frequency information, it determines the configuration space of the window size, if it is not given,
                 we will use the default configuration
+            start_times (Optional[List[pd.DatetimeIndex]]):
+                starting time of each series when they are sampled. If it is not given, we simply start with a fixed
+                timestamp.
+            series_idx (Optional[Union[List[Union[str, int]], str, int]]):
+                (only works if X is stored as pd.DataFrame). This value is applied to identify to which series the data
+                belongs if the data is presented as a "chunk" dataframe
+            n_prediction_steps (int):
+                The number of steps you want to forecast into the future (forecast horizon)
+            known_future_features (Optional[Union[Tuple[Union[str, int]], Tuple[()]]]):
+                future features that are known in advance. For instance, holidays.
             forecasting_kwargs (Any)
                 kwargs for forecasting dataset, for more details, please check
                 ```datasets/time_series_dataset.py```
         Returns:
-            TabularDataset:
+            TimeSeriesForecastingDataset:
                 the dataset object.
-            TabularInputValidator:
+            TimeSeriesForecastingInputValidator:
                 the input validator fitted on the data.
         """
 
@@ -296,6 +306,7 @@ class TimeSeriesForecastingTask(BaseTask):
         Fit both optimizes the machine learning models and builds an ensemble out of them.
         To disable ensembling, set ensemble_size==0.
         using the optimizer.
+
         Args:
             optimize_metric (str):
                 name of the metric that is used to evaluate a pipeline.
@@ -429,30 +440,7 @@ class TimeSeriesForecastingTask(BaseTask):
         )
 
         if not self.customized_window_size:
-            base_window_size = int(np.ceil(self.dataset.base_window_size))
-            # we don't want base window size to large, which might cause a too long computation time, in which case
-            # we will use n_prediction_step instead (which is normally smaller than base_window_size)
-            if base_window_size > MAX_WINDOW_SIZE_BASE:
-                # TODO considering padding to allow larger upper_window_size !!!
-                if n_prediction_steps > MAX_WINDOW_SIZE_BASE:
-                    base_window_size = 50
-                else:
-                    base_window_size = n_prediction_steps
-
-            if self.search_space_updates is None:
-                self.search_space_updates = HyperparameterSearchSpaceUpdates()
-
-            window_size_scales = [1, 3]
-
-            self.search_space_updates.append(
-                node_name="data_loader",
-                hyperparameter="window_size",
-                value_range=[
-                    int(window_size_scales[0] * base_window_size),
-                    int(window_size_scales[1] * base_window_size),
-                ],
-                default_value=int(np.ceil(1.25 * base_window_size)),
-            )
+            self.update_sliding_window_size(n_prediction_steps=n_prediction_steps)
 
         self._metrics_kwargs = {
             "sp": self.dataset.seasonality,
@@ -491,14 +479,32 @@ class TimeSeriesForecastingTask(BaseTask):
         batch_size: Optional[int] = None,
         n_jobs: int = 1,
         past_targets: Optional[List[np.ndarray]] = None,
-        future_targets: Optional[
-            List[Union[np.ndarray, pd.DataFrame, TimeSeriesSequence]]
-        ] = None,
+        future_targets: Optional[List[Union[np.ndarray, pd.DataFrame, TimeSeriesSequence]]] = None,
         start_times: List[pd.DatetimeIndex] = [],
     ) -> np.ndarray:
         """
-            target_variables: Optional[Union[Tuple[int], Tuple[str], np.ndarray]] = None,
-        (used for multi-variable prediction), indicates which value needs to be predicted
+        Predict the future varaibles
+
+        Args:
+            X_test (List[Union[np.ndarray, pd.DataFrame, TimeSeriesSequence]])
+                if it is a list of TimeSeriesSequence, then it is the series to be forecasted. Otherwise, it is the
+                known future features
+            batch_size: Optional[int]
+                batch size
+            n_jobs (int):
+                number of jobs
+            past_targets (Optional[List[np.ndarray]])
+                past observed targets, required when X_test is not a list of TimeSeriesSequence
+            future_targets (Optional[List[Union[np.ndarray, pd.DataFrame, TimeSeriesSequence]]]):
+                future targets (test sets)
+            start_times (List[pd.DatetimeIndex]):
+                starting time of each series when they are sampled. If it is not given, we simply start with a fixed
+                timestamp.
+
+        Return:
+            np.ndarray
+                predicted value, it needs to be with shape (B, H, N),
+                B is the number of series, H is forecasting horizon (n_prediction_steps), N is the number of targets
         """
         if X_test is None or not isinstance(X_test[0], TimeSeriesSequence):
             assert past_targets is not None
@@ -513,6 +519,7 @@ class TimeSeriesForecastingTask(BaseTask):
         flattened_res = super(TimeSeriesForecastingTask, self).predict(
             X_test, batch_size, n_jobs
         )
+        # forecasting result from each series is stored as an array
         if self.dataset.num_targets == 1:
             forecasting = flattened_res.reshape([-1, self.dataset.n_prediction_steps])
         else:
@@ -528,3 +535,38 @@ class TimeSeriesForecastingTask(BaseTask):
             )
             return forecasting * std + mean
         return forecasting
+
+    def update_sliding_window_size(self, n_prediction_steps: int):
+        """
+        the size of the sliding window is heavily dependent on the dataset,
+        so we only update them when we get the information from the
+
+        Args:
+            n_prediction_steps (int):
+                forecast horizon. Sometimes we could also make our base sliding window size based on the
+                forecast horizon
+        """
+        base_window_size = int(np.ceil(self.dataset.base_window_size))
+        # we don't want base window size to large, which might cause a too long computation time, in which case
+        # we will use n_prediction_step instead (which is normally smaller than base_window_size)
+        if base_window_size > MAX_WINDOW_SIZE_BASE:
+            # TODO considering padding to allow larger upper_window_size !!!
+            if n_prediction_steps > MAX_WINDOW_SIZE_BASE:
+                base_window_size = 50
+            else:
+                base_window_size = n_prediction_steps
+
+        if self.search_space_updates is None:
+            self.search_space_updates = HyperparameterSearchSpaceUpdates()
+
+        window_size_scales = [1, 3]
+
+        self.search_space_updates.append(
+            node_name="data_loader",
+            hyperparameter="window_size",
+            value_range=[
+                int(window_size_scales[0] * base_window_size),
+                int(window_size_scales[1] * base_window_size),
+            ],
+            default_value=int(np.ceil(1.25 * base_window_size)),
+        )
