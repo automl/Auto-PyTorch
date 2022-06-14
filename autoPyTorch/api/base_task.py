@@ -111,7 +111,7 @@ def _pipeline_predict(pipeline: BasePipeline,
     return prediction
 
 
-def get_search_updates(categorical_indicator: List[bool]):
+def get_search_updates(categorical_indicator: List[bool]) -> HyperparameterSearchSpaceUpdates:
     """
     These updates mimic the autopytorch tabular paper.
     Returns:
@@ -120,8 +120,8 @@ def get_search_updates(categorical_indicator: List[bool]):
         The search space updates like setting different hps to different values or ranges.
     """
 
-    has_cat_features = any(categorical_indicator)
-    has_numerical_features = not all(categorical_indicator)
+    # has_cat_features = any(categorical_indicator)
+    # has_numerical_features = not all(categorical_indicator)
 
     search_space_updates = HyperparameterSearchSpaceUpdates()
 
@@ -267,7 +267,8 @@ class BaseTask(ABC):
 
         self.input_validator: Optional[BaseInputValidator] = None
 
-        self.search_space_updates = search_space_updates  # if search_space_updates is not None else get_search_updates(categorical_indicator)
+        # if search_space_updates is not None else get_search_updates(categorical_indicator)
+        self.search_space_updates = search_space_updates
         if search_space_updates is not None:
             if not isinstance(self.search_space_updates,
                               HyperparameterSearchSpaceUpdates):

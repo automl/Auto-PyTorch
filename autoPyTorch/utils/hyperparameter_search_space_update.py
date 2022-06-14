@@ -122,29 +122,6 @@ class HyperparameterSearchSpaceUpdates:
                                                             value_range=value_range,
                                                             default_value=default_value,
                                                             log=log))
-    def remove_update(self, update: HyperparameterSearchSpaceUpdate) -> None:
-        """
-        removes an update
-
-        Args:
-            node_name (str):
-            The name of the node in the pipeline
-        hyperparameter (str):
-            The name of the hyperparameter
-        value_range (Union[List, Tuple]):
-            In case of categorical hyperparameter, defines the new categorical choices.
-            In case of numerical hyperparameter, defines the new range
-            in the form of (LOWER, UPPER)
-        default_value (Union[int, float, str]):
-            New default value for the hyperparameter
-        log (bool) (default=False):
-            In case of numerical hyperparameters, whether to sample on a log scale
-
-        Returns:
-            None
-        """
-
-        self.updates = [keep_update for keep_update in self.updates if (keep_update.hyperparameter != update.hyperparameter and keep_update.node_name != update.node_name)]
 
     def save_as_file(self, path: str) -> None:
         """

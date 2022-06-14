@@ -33,7 +33,8 @@ from autoPyTorch.utils.hyperparameter_search_space_update import (
 
 @pytest.fixture
 def exclude():
-    return {'feature_preprocessor': ['SelectRatesClassification', 'SelectPercentileClassification'], 'network_embedding': ['LearnedEntityEmbedding']}
+    return {'feature_preprocessor': ['SelectRatesClassification', 'SelectPercentileClassification'],
+            'network_embedding': ['LearnedEntityEmbedding']}
 
 
 @pytest.mark.parametrize("fit_dictionary_tabular", ['classification_categorical_only',
@@ -117,8 +118,8 @@ class TestTabularClassification:
             pipeline.fit(fit_dictionary_tabular)
 
         # we expect the output to have the same batch size as the test input,
-        # and number of outputs per batch sample equal to the number of outputs
-        expected_output_shape = (X.shape[0], fit_dictionary_tabular["dataset_properties"]["output_shape"])
+        # and number of outputs per batch sample equal to 1
+        expected_output_shape = (X.shape[0], )
 
         prediction = pipeline.predict(X)
         assert isinstance(prediction, np.ndarray)
@@ -429,9 +430,9 @@ class TestTabularClassification:
                len(X['network_snapshots']) == config.get(f'trainer:{trainer}:se_lastk')
 
         mocker.patch("autoPyTorch.pipeline.components.setup.network.base_network.NetworkComponent._predict",
-                     return_value=torch.Tensor([1]))
+                     return_value=torch.Tensor([[1, 0]]))
         # Assert that predict gives no error when swa and se are on
-        assert isinstance(pipeline.predict(fit_dictionary_tabular['X_train']), np.ndarray)
+        assert isinstance(pipeline.predict(X['X_train']), np.ndarray)
         # As SE is True, _predict should be called 3 times
         assert pipeline.named_steps['network']._predict.call_count == 3
 
@@ -590,8 +591,8 @@ def test_train_pipeline_with_runtime(fit_dictionary_tabular_dummy):
     # There is no epoch limitation
     assert not budget_tracker.is_max_epoch_reached(epoch=np.inf)
 
-    # More than 200 epochs would have pass in 5 seconds for this dataset
-    assert len(run_summary.performance_tracker['start_time']) > 100
+    # More than 50 epochs would have pass in 5 seconds for this dataset
+    assert len(run_summary.performance_tracker['start_time']) > 50
 
 
 @pytest.mark.parametrize("fit_dictionary_tabular_dummy", ["classification"], indirect=True)

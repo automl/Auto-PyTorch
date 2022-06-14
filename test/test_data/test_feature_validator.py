@@ -139,9 +139,9 @@ def test_featurevalidator_fitontypeA_transformtypeB(input_data_featuretest):
     if isinstance(input_data_featuretest, pd.DataFrame):
         pytest.skip("Column order change in pandas is not supported")
     elif isinstance(input_data_featuretest, np.ndarray):
-        complementary_type = validator.numpy_array_to_pandas(input_data_featuretest)
+        complementary_type = validator.numpy_to_pandas(input_data_featuretest)
     elif isinstance(input_data_featuretest, list):
-        complementary_type, _ = validator.list_to_dataframe(input_data_featuretest)
+        complementary_type, _ = validator.list_to_pandas(input_data_featuretest)
     elif sparse.issparse(input_data_featuretest):
         complementary_type = sparse.csr_matrix(input_data_featuretest.todense())
     else:
@@ -290,14 +290,20 @@ def test_features_unsupported_calls_are_raised():
     expected
     """
     validator = TabularFeatureValidator()
-    with pytest.raises(ValueError, match=r"AutoPyTorch does not support time"):
+    with pytest.raises(TypeError, match=r"Valid types are .*"):
         validator.fit(
             pd.DataFrame({'datetime': [pd.Timestamp('20180310')]})
         )
+
+    validator = TabularFeatureValidator()
     with pytest.raises(ValueError, match=r"AutoPyTorch only supports.*yet, the provided input"):
         validator.fit({'input1': 1, 'input2': 2})
-    with pytest.raises(ValueError, match=r"has unsupported dtype string"):
+
+    validator = TabularFeatureValidator()
+    with pytest.raises(TypeError, match=r"Valid types are .*"):
         validator.fit(pd.DataFrame([{'A': 1, 'B': 2}], dtype='string'))
+
+    validator = TabularFeatureValidator()
     with pytest.raises(ValueError, match=r"The feature dimensionality of the train and test"):
         validator.fit(X_train=np.array([[1, 2, 3], [4, 5, 6]]),
                       X_test=np.array([[1, 2, 3, 4], [4, 5, 6, 7]]),
@@ -425,7 +431,7 @@ def test_unknown_encode_value():
     assert expected_row == x_t[0].tolist()
 
     # Notice how there is only one column 'c' to encode
-    assert validator.categories == [list(range(2)) for i in range(1)]
+    assert validator.num_categories_per_col == [2]
 
 
 # Actual checks for the features
@@ -480,13 +486,13 @@ def test_feature_validator_new_data_after_fit(
     if train_data_type == 'pandas':
         old_dtypes = copy.deepcopy(validator.dtypes)
         validator.dtypes = ['dummy' for dtype in X_train.dtypes]
-        with pytest.raises(ValueError, match=r"Changing the dtype of the features after fit"):
+        with pytest.raises(ValueError, match=r"The dtype of the features must not be changed after fit.*"):
             transformed_X = validator.transform(X_test)
         validator.dtypes = old_dtypes
         if test_data_type == 'pandas':
             columns = X_test.columns.tolist()
             X_test = X_test[reversed(columns)]
-            with pytest.raises(ValueError, match=r"Changing the column order of the features"):
+            with pytest.raises(ValueError, match=r"The column order of the features must not be changed after fit.*"):
                 transformed_X = validator.transform(X_test)
 
 

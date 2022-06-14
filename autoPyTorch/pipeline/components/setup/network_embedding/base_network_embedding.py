@@ -15,7 +15,7 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
         super().__init__(random_state=random_state)
         self.add_fit_requirements([
             FitRequirement('num_categories_per_col', (List,), user_defined=True, dataset_property=True),
-            FitRequirement('shape_after_preprocessing', (Tuple), user_defined=False, dataset_property=False)])
+            FitRequirement('shape_after_preprocessing', (Tuple[int],), user_defined=False, dataset_property=False)])
 
         self.embedding: Optional[nn.Module] = None
 
@@ -55,7 +55,7 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
         num_cols = X['shape_after_preprocessing']
         # only works for 2D(rows, features) tabular data
         num_features_excl_embed = num_cols[0] - len(X['embed_columns'])
-        
+
         num_categories_per_col = np.zeros(num_cols, dtype=np.int16)
 
         categories_per_embed_col = X['dataset_properties']['num_categories_per_col']

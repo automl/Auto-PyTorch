@@ -1,4 +1,3 @@
-import copy
 import warnings
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -21,9 +20,6 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.Tabular
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.column_splitting.ColumnSplitter import (
     ColumnSplitter
 )
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.coalescer import (
-    CoalescerChoice
-)
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding import (
     EncoderChoice
 )
@@ -32,8 +28,6 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature
 )
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputation.SimpleImputer import SimpleImputer
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling import ScalerChoice
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.variance_thresholding. \
-    VarianceThreshold import VarianceThreshold
 from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing import EarlyPreprocessing
 from autoPyTorch.pipeline.components.setup.lr_scheduler import SchedulerChoice
 from autoPyTorch.pipeline.components.setup.network.base_network import NetworkComponent

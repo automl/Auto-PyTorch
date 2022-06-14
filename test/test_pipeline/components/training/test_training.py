@@ -513,7 +513,7 @@ def test_early_stopping():
         'step_interval': StepIntervalUnit.batch
     }
     for item in ['backend', 'lr_scheduler', 'network', 'optimizer', 'train_data_loader', 'val_data_loader',
-                 'device', 'y_train', 'network_snapshots']:
+                 'device', 'y_train', 'network_snapshots', 'train_indices']:
         fit_dictionary[item] = unittest.mock.MagicMock()
 
     fit_dictionary['backend'].temporary_directory = tempfile.mkdtemp()

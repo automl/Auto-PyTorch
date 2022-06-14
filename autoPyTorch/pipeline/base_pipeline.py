@@ -1,4 +1,3 @@
-from copy import copy
 import warnings
 from abc import ABCMeta
 from collections import Counter
@@ -297,7 +296,7 @@ class BasePipeline(Pipeline):
         """
         raise NotImplementedError()
 
-    def _add_forbidden_conditions(self, cs):
+    def _add_forbidden_conditions(self, cs: ConfigurationSpace) -> ConfigurationSpace:
         """
         Add forbidden conditions to ensure valid configurations.
         Currently, Learned Entity Embedding is only valid when encoder is one hot encoder
@@ -320,7 +319,8 @@ class BasePipeline(Pipeline):
                 if cyclic_lr_name in available_schedulers:
                     # disable snapshot ensembles and stochastic weight averaging
                     snapshot_ensemble_hyperparameter = cs.get_hyperparameter(f'trainer:{trainer}:use_snapshot_ensemble')
-                    if hasattr(snapshot_ensemble_hyperparameter, 'choices') and True in snapshot_ensemble_hyperparameter.choices:
+                    if hasattr(snapshot_ensemble_hyperparameter, 'choices') and \
+                            True in snapshot_ensemble_hyperparameter.choices:
                         cs.add_forbidden_clause(ForbiddenAndConjunction(
                             ForbiddenEqualsClause(snapshot_ensemble_hyperparameter, True),
                             ForbiddenEqualsClause(cs.get_hyperparameter('lr_scheduler:__choice__'), cyclic_lr_name)
@@ -521,7 +521,6 @@ class BasePipeline(Pipeline):
                                      "to be in {}, but got {}".format(node_name,
                                                                       node_hyperparameters,
                                                                       update.hyperparameter))
-
 
     def _get_pipeline_steps(self, dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]]
                             ) -> List[Tuple[str, PipelineStepType]]:

@@ -152,12 +152,9 @@ class TestTabularRegression:
         # We expect the transformations to be in the pipeline at anytime for inference
         assert 'preprocess_transforms' in transformed_fit_dictionary_tabular.keys()
 
-    @pytest.mark.parametrize("is_small_preprocess", [True, False])
-    def test_default_configuration(self, fit_dictionary_tabular, is_small_preprocess):
+    def test_default_configuration(self, fit_dictionary_tabular):
         """Makes sure that when no config is set, we can trust the
         default configuration from the space"""
-
-        fit_dictionary_tabular['is_small_preprocess'] = is_small_preprocess
 
         pipeline = TabularRegressionPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'],
