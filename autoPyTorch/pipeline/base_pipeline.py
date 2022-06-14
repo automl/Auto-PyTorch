@@ -413,6 +413,8 @@ class BasePipeline(Pipeline):
                 if include is not None and update.node_name in include.keys():
                     if split_hyperparameter[0] not in include[update.node_name]:
                         hp_in_component = False
+                        # If the node contains subcomponent that is also an instance of autoPyTorchChoice,
+                        # We need to ensure that include is properly passed to it subcomponent
                         for include_component in include[update.node_name]:
                             if include_component.startswith(split_hyperparameter[0]):
                                 hp_in_component = True
@@ -454,6 +456,12 @@ class BasePipeline(Pipeline):
                 elif split_hyperparameter[0] not in components.keys():
                     hp_in_component = False
                     if hasattr(node, 'additional_components') and node.additional_components:
+                        # This is designed for forecasting network encoder:
+                        # forecasting network backbone is composed of two parts: encoder and decoder whereas the type
+                        # of the decoder is determined by the encoder. However, the type of decoder cannot be any part
+                        # of encoder's choice. To allow the user to update the hyperparameter search space for decoder
+                        # network, we consider decoder as "additional_components" and check if the update can be applied
+                        # to node.additional_components
                         for component_func in node.additional_components:
                             if split_hyperparameter[0] in component_func().keys():
                                 hp_in_component = True
