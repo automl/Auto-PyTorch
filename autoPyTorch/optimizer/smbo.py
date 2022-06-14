@@ -8,7 +8,6 @@ from ConfigSpace.configuration_space import Configuration
 
 import dask.distributed
 
-from smac.facade.smac_ac_facade import SMAC4AC
 from smac.facade.smac_hpo_facade import SMAC4HPO
 from smac.intensification.hyperband import Hyperband
 from smac.intensification.intensification import Intensifier
@@ -48,7 +47,7 @@ def get_smac_object(
         max_budget: Union[int, float],
         dask_client: Optional[dask.distributed.Client],
         initial_configurations: Optional[List[Configuration]] = None,
-) -> SMAC4AC:
+) -> SMAC4HPO:
     """
     This function returns an SMAC object that is gonna be used as
     optimizer of pipelines
@@ -67,7 +66,7 @@ def get_smac_object(
             configurations which smac will run before starting the search process
 
     Returns:
-        (SMAC4AC): sequential model algorithm configuration object
+        (SMAC4HPO): sequential model algorithm configuration object
 
     """
     if initial_budget == max_budget:
