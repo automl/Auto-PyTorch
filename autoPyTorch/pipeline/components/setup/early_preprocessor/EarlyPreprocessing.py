@@ -41,9 +41,9 @@ class EarlyPreprocessing(autoPyTorchSetupComponent):
 
         # We need to also save the preprocess transforms for inference
         X.update({
-            'preprocess_transforms': transforms,
-            'shape_after_preprocessing': X['X_train'].shape[1:]
-            })
+                 'preprocess_transforms': transforms,
+                 'shape_after_preprocessing': X['X_train'].shape[1:]
+                 })
         return X
 
     @staticmethod

@@ -1,6 +1,6 @@
 import warnings
 from math import ceil, floor
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence, Tuple
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.utils.common import HyperparameterSearchSpace, HyperparameterValueType
@@ -82,11 +82,12 @@ def percentage_value_range_to_integer_range(
         else:
             log = hyperparameter_search_space.log
 
-        value_range = (
-            floor(float(hyperparameter_search_space.value_range[0]) * n_features),
-            floor(float(hyperparameter_search_space.value_range[-1]) * n_features)) \
-            if len(hyperparameter_search_space.value_range) == 2 else \
-                (floor(float(hyperparameter_search_space.value_range[0]) * n_features),)
+        value_range: Tuple
+        if len(hyperparameter_search_space.value_range) == 2:
+            value_range = (floor(float(hyperparameter_search_space.value_range[0]) * n_features),
+                           floor(float(hyperparameter_search_space.value_range[-1]) * n_features))
+        else:
+            value_range = (floor(float(hyperparameter_search_space.value_range[0]) * n_features),)
 
         hyperparameter_search_space = HyperparameterSearchSpace(
             hyperparameter=hyperparameter_name,

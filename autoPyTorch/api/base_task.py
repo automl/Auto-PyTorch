@@ -270,13 +270,8 @@ class BaseTask(ABC):
         include_components: Optional[Dict[str, Any]] = None,
         exclude_components: Optional[Dict[str, Any]] = None,
         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
-    ) -> BasePipeline:
         """
         Build pipeline according to current task
-        and for the passed dataset properties
-
-        Args:
-            dataset_properties (Dict[str, Any]):
                 Characteristics of the dataset to guide the pipeline
                 choices of components
             include_components (Optional[Dict[str, Any]]):

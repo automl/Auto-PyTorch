@@ -11,7 +11,7 @@ import numpy as np
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.base_tabular_preprocessing import \
     autoPyTorchTabularPreprocessingComponent
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter, ispandas
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 class ColumnSplitter(autoPyTorchTabularPreprocessingComponent):
@@ -24,8 +24,9 @@ class ColumnSplitter(autoPyTorchTabularPreprocessingComponent):
         random_state: Optional[np.random.RandomState] = None
     ):
         self.min_categories_for_embedding = min_categories_for_embedding
+        self.random_state = random_state
 
-        self.special_feature_types = dict(encode_columns=[], embed_columns=[])
+        self.special_feature_types: Dict[str, List] = dict(encode_columns=[], embed_columns=[])
         self.num_categories_per_col: Optional[List] = None
         super().__init__()
 
@@ -35,15 +36,16 @@ class ColumnSplitter(autoPyTorchTabularPreprocessingComponent):
 
         if len(X['dataset_properties']['categorical_columns']) > 0:
             self.num_categories_per_col = []
-        for categories_per_column, column in zip(X['dataset_properties']['num_categories_per_col'], X['dataset_properties']['categorical_columns']):
-            if (
-                categories_per_column >= self.min_categories_for_embedding
-            ):
-                self.special_feature_types['embed_columns'].append(column)
-                # we only care about the categories for columns to be embedded
-                self.num_categories_per_col.append(categories_per_column)
-            else:
-                self.special_feature_types['encode_columns'].append(column)
+            for categories_per_column, column in zip(X['dataset_properties']['num_categories_per_col'],
+                                                     X['dataset_properties']['categorical_columns']):
+                if (
+                    categories_per_column >= self.min_categories_for_embedding
+                ):
+                    self.special_feature_types['embed_columns'].append(column)
+                    # we only care about the categories for columns to be embedded
+                    self.num_categories_per_col.append(categories_per_column)
+                else:
+                    self.special_feature_types['encode_columns'].append(column)
 
         return self
 
