@@ -208,19 +208,26 @@ class TimeSeriesSequence(Dataset):
     def __getitem__(self, index: int, train: bool = True) \
             -> Tuple[Dict[str, torch.Tensor], Optional[Dict[str, torch.Tensor]]]:
         """
-        get a subsequent of time series data, unlike vanilla tabular dataset, we obtain all the previous sequences
-        until the given index, this allows us to do further transformation.
-        (When fed to the neural network, the data is arranged as follows:
-        [past_targets, time_features, X_features])
+        get a subsequent of time series data, unlike vanilla tabular dataset, we obtain all the previous observations
+        until the given index
 
         Args:
             index (int):
-                what element to yield from all the train/test tensors
+                what element to yield from the series
             train (bool):
-                Whether to apply a train or test transformation, if any
+                Whether a train or test transformation is applied
 
         Returns:
-            features from past, targets from past and future
+            past_information (Dict[str, torch.Tensor]):
+                a dict contains all the required information required for future forecasting
+                past_targets (torch.Tensor), past_features(Optional[torch.Tensor]),
+                future_features(Optional[torch.Tensor]),
+                mase_coefficient (np.array, cached value to compute MASE scores),
+                past_observed_targets(torch.BoolTensor), if the past targets are observed.
+                decoder_lengths(int), length of decoder output
+            future_information (Optional[Dict[str, torch.Tensor]]):
+                a dict contains all the future information that are required to predict, including
+                future_targets: (torch.Tensor) and future_observed_targets (torch.BoolTensor)
         """
         if index < 0:
             index = self.__len__() + index
@@ -328,7 +335,7 @@ class TimeSeriesSequence(Dataset):
             index = self.__len__() + index
         return self.Y[index]
 
-    def cache_time_features(self, ) -> None:
+    def cache_time_features(self) -> None:
         """
         compute time features if it is not cached. For test sets, we also need to compute the time features for future
         """
@@ -747,6 +754,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         return series_time_features
 
     def _get_dataset_indices(self, idx: int, only_dataset_idx: bool = False) -> Union[int, Tuple[int, int]]:
+        """get which series the data point belongs to"""
         if idx < 0:
             if -idx > len(self):
                 raise ValueError("absolute value of index should not exceed dataset length")
@@ -769,14 +777,18 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         return self.datasets[dataset_idx].__getitem__(sample_idx, train)
 
     def get_validation_set(self, idx: int) -> TimeSeriesSequence:
+        """generate validation series given the index. It ends at the position of the index"""
         dataset_idx, sample_idx = self._get_dataset_indices(idx)  # type: ignore[misc]
         return self.datasets[dataset_idx].get_val_seq_set(sample_idx)
 
     def get_time_series_seq(self, idx: int) -> TimeSeriesSequence:
+        """get the series that the data point belongs to"""
         dataset_idx = self._get_dataset_indices(idx, True)
         return self.datasets[dataset_idx]  # type: ignore[index]
 
     def get_test_target(self, test_indices: np.ndarray) -> np.ndarray:
+        """get the target data only. This function simply returns a np.array instead of a dictionary"""
+
         test_indices = np.where(test_indices < 0, test_indices + len(self), test_indices)
         y_test = np.ones([len(test_indices), self.n_prediction_steps, self.num_targets])
         y_test_argsort = np.argsort(test_indices)
@@ -1004,12 +1016,12 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
     def get_splits_from_resampling_strategy(self) -> List[Tuple[List[int], Optional[List[int]]]]:
         """
-        Creates a set of splits based on a resampling strategy provided, apart from the
-        'get_splits_from_resampling_strategy' implemented in base_dataset, here we will get self.upper_sequence_length
-        with the given value
+        Creates a set of splits based on a resampling strategy provided, here each item in test_split represent
+        n_prediction_steps element in the dataset. (The start of timestep that we want to predict)
 
         Returns
-            (List[Tuple[List[int], List[int]]]): splits in the [train_indices, val_indices] format
+            ( List[Tuple[List[int], Optional[List[int]]]]):
+            splits in the [train_indices, val_indices] format
         """
         splits = []
         if isinstance(self.resampling_strategy, HoldoutValTypes):
@@ -1194,6 +1206,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         It is done once per dataset to have comparable results among pipelines
         Args:
             cross_val_type (CrossValTypes):
+                cross validation type
             num_splits (int):
                 number of splits to be created
             n_repeats (int):
@@ -1253,6 +1266,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         It is done once per dataset to have comparable results among pipelines
         Args:
             holdout_val_type (HoldoutValTypes):
+                holdout type
             val_share (float):
                 share of the validation data
             n_repeats (int):
@@ -1289,15 +1303,10 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         return train_indices, test_indices
 
-    def create_refit_split(
-            self,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    def create_refit_split(self) -> Tuple[np.ndarray, np.ndarray]:
         """
         This function creates the refit split for the given task. All the data in the dataset will be considered as
         training sets
-        Args:
-            holdout_val_type (HoldoutValTypes):
-            val_share (float): share of the validation data
 
         Returns:
             (Tuple[np.ndarray, np.ndarray]): Tuple containing (train_indices, val_indices)
@@ -1317,12 +1326,21 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         return train_indices, test_indices
 
     def create_refit_set(self) -> "TimeSeriesForecastingDataset":
+        """create a refit set that allows the network to be trained with the entire training-validation sets"""
         refit_set: TimeSeriesForecastingDataset = copy.deepcopy(self)
         refit_set.resampling_strategy = NoResamplingStrategyTypes.no_resampling
         refit_set.splits = refit_set.get_splits_from_resampling_strategy()
         return refit_set
 
     def generate_test_seqs(self) -> List[TimeSeriesSequence]:
+        """
+        A function that generate a set of test series from the information available at this dataset. By calling this
+        function, we could make use of the cached information such as time features to accelerate the computation time
+
+        Returns:
+            test_sets(List[TimeSeriesSequence])
+                generated test sets
+        """
         test_sets = copy.deepcopy(self.datasets)
         for test_seq in test_sets:
             test_seq.is_test_set = True
