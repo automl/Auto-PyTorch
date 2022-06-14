@@ -28,6 +28,7 @@ def get_preprocess_transforms(X: Dict[str, Any],
 
 def preprocess(dataset: np.ndarray, transforms: torchvision.transforms.Compose,
                indices: List[int] = None) -> np.ndarray:
+
     composite_transforms = torchvision.transforms.Compose(transforms)
     if indices is None:
         dataset = composite_transforms(dataset)

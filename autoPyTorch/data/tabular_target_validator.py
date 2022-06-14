@@ -17,6 +17,7 @@ from sklearn.utils.multiclass import type_of_target
 from autoPyTorch.data.base_target_validator import BaseTargetValidator, SupportedTargetTypes
 from autoPyTorch.utils.common import ispandas
 
+
 ArrayType = Union[np.ndarray, spmatrix]
 
 
@@ -54,9 +55,9 @@ def _modify_regression_target(y: ArrayType, allow_nan: bool = False) -> ArrayTyp
 
 class TabularTargetValidator(BaseTargetValidator):
     def _fit(
-            self,
-            y_train: SupportedTargetTypes,
-            y_test: Optional[SupportedTargetTypes] = None,
+        self,
+        y_train: SupportedTargetTypes,
+        y_test: Optional[SupportedTargetTypes] = None,
     ) -> BaseEstimator:
         """
         If dealing with classification, this utility encodes the targets.
@@ -93,10 +94,10 @@ class TabularTargetValidator(BaseTargetValidator):
                                                         unknown_value=-1)
         else:
             # We should not reach this if statement as we check for type of targets before
-            raise ValueError("Multi-dimensional classification is not yet supported. "
-                             "Encoding multidimensional data converts multiple columns "
-                             "to a 1 dimensional encoding. Data involved = {}/{}".format(np.shape(y_train),
-                                                                                         self.type_of_target)
+            raise ValueError(f"Multi-dimensional classification is not yet supported. "
+                             f"Encoding multidimensional data converts multiple columns "
+                             f"to a 1 dimensional encoding. Data involved = "
+                             f"{np.shape(y_train)}/{self.type_of_target}"
                              )
 
         # Mypy redefinition
@@ -120,8 +121,8 @@ class TabularTargetValidator(BaseTargetValidator):
             if is_numeric_dtype(y_train.dtype):
                 self.dtype = y_train.dtype
         elif (
-                hasattr(y_train, 'dtypes')
-                and is_numeric_dtype(cast(pd.DataFrame, y_train).dtypes[0])
+            hasattr(y_train, 'dtypes')
+            and is_numeric_dtype(cast(pd.DataFrame, y_train).dtypes[0])
         ):
             # This case is for pandas array with a single column
             y_train = cast(pd.DataFrame, y_train)
@@ -224,12 +225,13 @@ class TabularTargetValidator(BaseTargetValidator):
             y (SupportedTargetTypes):
                 A set of features whose dimensionality and data type is going to be checked
         """
+
         if not isinstance(y, (np.ndarray, pd.DataFrame,
                               List, pd.Series)) \
                 and not issparse(y):  # type: ignore[misc]
-            raise ValueError("AutoPyTorch only supports Numpy arrays, Pandas DataFrames,"
-                             " pd.Series, sparse data and Python Lists as targets, yet, "
-                             "the provided input is of type {}".format(type(y))
+            raise ValueError(f"AutoPyTorch only supports Numpy arrays, Pandas DataFrames,"
+                             f" pd.Series, sparse data and Python Lists as targets, yet, "
+                             f"the provided input is of type {type(y)}"
                              )
 
         # Sparse data muss be numerical
@@ -296,7 +298,7 @@ class TabularTargetValidator(BaseTargetValidator):
                                   # should filter out unsupported types.
                                   )
         if self.type_of_target not in supported_output_types:
-            raise ValueError("Provided targets are not supported by AutoPyTorch. "
-                             "Provided type is {} whereas supported types are {}.".format(self.type_of_target,
-                                                                                          supported_output_types)
+            raise ValueError(f"Provided targets are not supported by AutoPyTorch. "
+                             f"Provided type is {self.type_of_target} "
+                             f"whereas supported types are {supported_output_types}."
                              )

@@ -23,27 +23,36 @@ import autoPyTorch.pipeline.time_series_forecasting
 import autoPyTorch.pipeline.traditional_tabular_classification
 import autoPyTorch.pipeline.traditional_tabular_regression
 from autoPyTorch.automl_common.common.utils.backend import Backend
-from autoPyTorch.constants import (CLASSIFICATION_TASKS, FORECASTING_TASKS,
-                                   IMAGE_TASKS, MULTICLASS, REGRESSION_TASKS,
-                                   STRING_TO_OUTPUT_TYPES,
-                                   STRING_TO_TASK_TYPES, TABULAR_TASKS)
+from autoPyTorch.constants import (
+    CLASSIFICATION_TASKS,
+    FORECASTING_TASKS,
+    IMAGE_TASKS,
+    MULTICLASS,
+    REGRESSION_TASKS,
+    STRING_TO_OUTPUT_TYPES,
+    STRING_TO_TASK_TYPES,
+    TABULAR_TASKS
+)
 from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE
-from autoPyTorch.datasets.base_dataset import (BaseDataset,
-                                               BaseDatasetPropertiesType)
+from autoPyTorch.datasets.base_dataset import (
+    BaseDataset,
+    BaseDatasetPropertiesType
+)
 from autoPyTorch.datasets.time_series_dataset import TimeSeriesSequence
 from autoPyTorch.evaluation.utils import (
-    DisableFileOutputParameters, VotingRegressorWrapper,
-    convert_multioutput_multiclass_to_multilabel)
+    DisableFileOutputParameters,
+    VotingRegressorWrapper,
+    convert_multioutput_multiclass_to_multilabel
+)
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
-from autoPyTorch.pipeline.components.training.metrics.base import \
-    autoPyTorchMetric
+from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.pipeline.components.training.metrics.utils import (
-    calculate_loss, get_metrics)
+    calculate_loss,
+    get_metrics
+)
 from autoPyTorch.utils.common import dict_repr, subsampler
-from autoPyTorch.utils.hyperparameter_search_space_update import \
-    HyperparameterSearchSpaceUpdates
-from autoPyTorch.utils.logging_ import (PicklableClientLogger,
-                                        get_named_client_logger)
+from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
+from autoPyTorch.utils.logging_ import PicklableClientLogger, get_named_client_logger
 from autoPyTorch.utils.pipeline import get_dataset_requirements
 
 __all__ = [
@@ -141,7 +150,6 @@ class MyTraditionalTabularRegressionPipeline(BaseEstimator):
             An optional dictionary that is passed to the pipeline's steps. It complies
             a similar function as the kwargs
     """
-
     def __init__(self, config: str,
                  dataset_properties: Dict[str, Any],
                  random_state: Optional[np.random.RandomState] = None,
@@ -185,7 +193,7 @@ class MyTraditionalTabularRegressionPipeline(BaseEstimator):
 
     @staticmethod
     def get_default_pipeline_options() -> Dict[str, Any]:
-        return autoPyTorch.pipeline.traditional_tabular_regression. \
+        return autoPyTorch.pipeline.traditional_tabular_regression.\
             TraditionalTabularRegressionPipeline.get_default_pipeline_options()
 
 
@@ -448,7 +456,6 @@ class AbstractEvaluator(object):
         search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
             An object used to fine tune the hyperparameter search space of the pipeline
     """
-
     def __init__(self, backend: Backend,
                  queue: Queue,
                  metric: autoPyTorchMetric,
@@ -465,7 +472,7 @@ class AbstractEvaluator(object):
                  init_params: Optional[Dict[str, Any]] = None,
                  logger_port: Optional[int] = None,
                  all_supported_metrics: bool = True,
-                 search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
+                 search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
                  ) -> None:
 
         self.starttime = time.time()
@@ -494,7 +501,6 @@ class AbstractEvaluator(object):
         self.disable_file_output = disable_file_output
 
         self.pipeline_class: Optional[Union[BaseEstimator, BasePipeline]] = None
-
         if self.task_type in REGRESSION_TASKS:
             if isinstance(self.configuration, int):
                 self.pipeline_class = DummyRegressionPipeline
@@ -572,7 +578,7 @@ class AbstractEvaluator(object):
         self.logger.debug("Search space updates :{}".format(self.search_space_updates))
 
     def _init_datamanager_info(
-            self,
+        self,
     ) -> None:
         """
         Initialises instance attributes that come from the datamanager.
@@ -619,10 +625,10 @@ class AbstractEvaluator(object):
         del datamanager
 
     def _init_fit_dictionary(
-            self,
-            logger_port: int,
-            pipeline_config: Dict[str, Any],
-            metrics_dict: Optional[Dict[str, List[str]]] = None,
+        self,
+        logger_port: int,
+        pipeline_config: Dict[str, Any],
+        metrics_dict: Optional[Dict[str, List[str]]] = None,
     ) -> None:
         """
         Initialises the fit dictionary
@@ -680,7 +686,7 @@ class AbstractEvaluator(object):
             self.fit_dictionary.pop('runtime', None)
         else:
             raise ValueError(f"budget type must be `epochs` or `runtime` or {FORECASTING_BUDGET_TYPE} "
-                             f"(Only used in forecasting taskss), but got {self.budget_type}")
+                             f"(Only used by forecasting taskss), but got {self.budget_type}")
 
     def _get_pipeline(self) -> BaseEstimator:
         """
@@ -837,10 +843,10 @@ class AbstractEvaluator(object):
         return None
 
     def calculate_auxiliary_losses(
-            self,
-            Y_valid_pred: np.ndarray,
-            Y_test_pred: np.ndarray,
-            **metric_kwargs: Any
+        self,
+        Y_valid_pred: np.ndarray,
+        Y_test_pred: np.ndarray,
+        **metric_kwargs: Any
     ) -> Tuple[Optional[Dict[str, float]], Optional[Dict[str, float]]]:
         """
         A helper function to calculate the performance estimate of the
@@ -877,10 +883,10 @@ class AbstractEvaluator(object):
         return validation_loss_dict, test_loss_dict
 
     def file_output(
-            self,
-            Y_optimization_pred: np.ndarray,
-            Y_valid_pred: np.ndarray,
-            Y_test_pred: np.ndarray
+        self,
+        Y_optimization_pred: np.ndarray,
+        Y_valid_pred: np.ndarray,
+        Y_test_pred: np.ndarray
     ) -> Tuple[Optional[float], Dict]:
         """
         This method decides what file outputs are written to disk.
@@ -1015,7 +1021,6 @@ class AbstractEvaluator(object):
             (np.ndarray):
                 The predictions of pipeline for the given features X
         """
-
         @no_type_check
         def send_warnings_to_log(message, category, filename, lineno,
                                  file=None, line=None):
@@ -1050,7 +1055,6 @@ class AbstractEvaluator(object):
             (np.ndarray):
                 The predictions of pipeline for the given features X
         """
-
         @no_type_check
         def send_warnings_to_log(message, category, filename, lineno,
                                  file=None, line=None):

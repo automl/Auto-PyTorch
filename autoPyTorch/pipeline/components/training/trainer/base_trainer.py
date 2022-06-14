@@ -63,10 +63,10 @@ class BudgetTracker(object):
 
 class RunSummary(object):
     def __init__(
-            self,
-            total_parameter_count: float,
-            trainable_parameter_count: float,
-            optimize_metric: Optional[str] = None,
+        self,
+        total_parameter_count: float,
+        trainable_parameter_count: float,
+        optimize_metric: Optional[str] = None,
     ):
         """
         A useful object to track performance per epoch.
@@ -126,7 +126,6 @@ class RunSummary(object):
         # If we compute for optimization, prefer the performance
         # metric to the loss
         if self.optimize_metric is not None:
-
             metrics_type = f"{split_type}_metrics"
             if self.optimize_metric in CLASSIFICATION_METRICS:
                 scorer = CLASSIFICATION_METRICS[self.optimize_metric]
@@ -212,19 +211,19 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         self.weighted_loss: bool = False
 
     def prepare(
-            self,
-            metrics: List[Any],
-            model: torch.nn.Module,
-            criterion: Type[torch.nn.Module],
-            budget_tracker: BudgetTracker,
-            optimizer: Optimizer,
-            device: torch.device,
-            metrics_during_training: bool,
-            scheduler: _LRScheduler,
-            task_type: int,
-            labels: Union[np.ndarray, torch.Tensor, pd.DataFrame],
-            step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.batch,
-            **kwargs: Dict
+        self,
+        metrics: List[Any],
+        model: torch.nn.Module,
+        criterion: Type[torch.nn.Module],
+        budget_tracker: BudgetTracker,
+        optimizer: Optimizer,
+        device: torch.device,
+        metrics_during_training: bool,
+        scheduler: _LRScheduler,
+        task_type: int,
+        labels: Union[np.ndarray, torch.Tensor, pd.DataFrame],
+        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.batch,
+        **kwargs: Dict
     ) -> None:
 
         # Save the device to be used
@@ -277,9 +276,9 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         return False
 
     def _scheduler_step(
-            self,
-            step_interval: StepIntervalUnit,
-            loss: Optional[float] = None
+        self,
+        step_interval: StepIntervalUnit,
+        loss: Optional[float] = None
     ) -> None:
 
         if self.step_interval != step_interval:
@@ -371,7 +370,6 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         """
         # prepare
         data = data.float().to(self.device)
-
         targets = self.cast_targets(targets)
 
         data, criterion_kwargs = self.data_preparation(data, targets)

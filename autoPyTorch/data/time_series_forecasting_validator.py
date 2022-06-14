@@ -57,15 +57,19 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
         """
         fit the validator with the training data, (optionally) start times and other information
         Args:
-            X_train (Optional[Union[List, pd.DataFrame]]): training features, could be None for "pure" forecasting tasks
-            y_train (Union[List, pd.DataFrame]), training targets
-            series_idx (Optional[Union[List[Union[str, int]], str, int]]): which columns of features are applied to
-                identify the series
-            X_test (Optional[Union[List, pd.DataFrame]]): test features. For forecasting tasks, test features indicates
-                known future features after the forecasting timestep\
-            y_test (Optional[Union[List, pd.DataFrame]]): target in the future
-            start_times (Optional[List[pd.DatetimeIndex]]): start times on which the first element of each series is
-                sampled
+            X_train (Optional[Union[List, pd.DataFrame]]):
+                training features, could be None for uni-variant forecasting tasks
+            y_train (Union[List, pd.DataFrame]),
+                training targets
+            series_idx (Optional[Union[List[Union[str, int]], str, int]])
+                which columns of features are applied to identify the series
+            X_test (Optional[Union[List, pd.DataFrame]]):
+                test features. For forecasting tasks, test features indicates known future features
+                after the forecasting timestep
+            y_test (Optional[Union[List, pd.DataFrame]]):
+                target in the future
+            start_times (Optional[List[pd.DatetimeIndex]]):
+                start times on which the first element of each series is sampled
 
         """
         if series_idx is not None and not isinstance(series_idx, Iterable):
@@ -329,7 +333,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
         X: List[Union[pd.DataFrame, np.ndarray]], return_seq_lengths: bool = False
     ) -> Union[pd.DataFrame, Tuple[pd.DataFrame, List[int]]]:
         """
-        join the series into one single value
+        join the series into one single item
         """
         num_sequences = len(X)
         sequence_lengths = [0] * num_sequences

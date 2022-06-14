@@ -7,8 +7,8 @@ from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
 
 def read_return_initial_configurations(
-        config_space: ConfigurationSpace,
-        portfolio_selection: str
+    config_space: ConfigurationSpace,
+    portfolio_selection: str
 ) -> List[Configuration]:
     # read and validate initial configurations
     portfolio_path = portfolio_selection if portfolio_selection != "greedy" else \

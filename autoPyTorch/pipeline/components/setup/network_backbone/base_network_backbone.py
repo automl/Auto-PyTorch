@@ -42,6 +42,7 @@ class NetworkBackboneComponent(autoPyTorchComponent):
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         """
         Builds the backbone component and assigns it to self.backbone
+
         Args:
             X (X: Dict[str, Any]): Dependencies needed by current component to perform fit
             y (Any): not used. To comply with sklearn API

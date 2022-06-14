@@ -23,7 +23,7 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
 
         self.embedding, num_output_features = self.build_embedding(
             num_input_features=num_input_features,
-            num_numerical_features=num_numerical_columns,
+            num_numerical_features=num_numerical_columns
         )
         if "feature_shapes" in X['dataset_properties']:
             if num_output_features is not None:
@@ -55,6 +55,7 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
             num_numerical_columns = 0
         else:
             X_train = copy.deepcopy(X['backend'].load_datamanager().train_tensors[0][:2])
+
             if 'tabular_transformer' in X:
                 numerical_column_transformer = X['tabular_transformer'].preprocessor. \
                     named_transformers_['numerical_pipeline']

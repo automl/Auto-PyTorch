@@ -38,15 +38,15 @@ from autoPyTorch.utils.stopwatch import StopWatch
 
 
 def get_smac_object(
-        scenario_dict: Dict[str, Any],
-        seed: int,
-        ta: Callable,
-        ta_kwargs: Dict[str, Any],
-        n_jobs: int,
-        initial_budget: Union[int, float],
-        max_budget: Union[int, float],
-        dask_client: Optional[dask.distributed.Client],
-        initial_configurations: Optional[List[Configuration]] = None,
+    scenario_dict: Dict[str, Any],
+    seed: int,
+    ta: Callable,
+    ta_kwargs: Dict[str, Any],
+    n_jobs: int,
+    initial_budget: Union[int, float],
+    max_budget: Union[int, float],
+    dask_client: Optional[dask.distributed.Client],
+    initial_configurations: Optional[List[Configuration]] = None,
 ) -> SMAC4HPO:
     """
     This function returns an SMAC object that is gonna be used as
@@ -341,7 +341,6 @@ class AutoMLSMBO(object):
             pynisher_context=self.pynisher_context,
             evaluator_class=TimeSeriesForecastingTrainEvaluator if self.time_series_forecasting else None,
         )
-
         ta = ExecuteTaFuncWithQueue
         self.logger.info("Finish creating Target Algorithm (TA) function")
 

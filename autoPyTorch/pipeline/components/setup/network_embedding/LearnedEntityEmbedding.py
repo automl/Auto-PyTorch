@@ -48,7 +48,6 @@ class _LearnedEntityEmbedding(nn.Module):
         self.num_output_dimensions = [num_out if embed else num_in for num_out, embed, num_in in
                                       zip(self.num_output_dimensions, self.embed_features,
                                           self.num_input_features)]
-
         self.num_out_feats = self.num_numerical + sum(self.num_output_dimensions)
 
         self.ee_layers = self._create_ee_layers()
@@ -159,16 +158,16 @@ class LearnedEntityEmbedding(NetworkEmbeddingComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
-            min_unique_values_for_embedding: HyperparameterSearchSpace = HyperparameterSearchSpace(
-                hyperparameter="min_unique_values_for_embedding",
-                value_range=(3, 7),
-                default_value=5,
-                log=True),
-            dimension_reduction: HyperparameterSearchSpace = HyperparameterSearchSpace(
-                hyperparameter="dimension_reduction",
-                value_range=(0, 1),
-                default_value=0.5),
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+        min_unique_values_for_embedding: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="min_unique_values_for_embedding",
+            value_range=(3, 7),
+            default_value=5,
+            log=True),
+        dimension_reduction: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="dimension_reduction",
+            value_range=(0, 1),
+            default_value=0.5),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         add_hyperparameter(cs, min_unique_values_for_embedding, UniformIntegerHyperparameter)

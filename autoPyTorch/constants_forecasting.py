@@ -1,4 +1,4 @@
-# The cosntant values for time series forecasting comes from
+# The constant values for time series forecasting comes from
 # https://github.com/rakshitha123/TSForecasting/blob/master/experiments/deep_learning_experiments.py
 # seasonality map, maps a frequency value to a number
 

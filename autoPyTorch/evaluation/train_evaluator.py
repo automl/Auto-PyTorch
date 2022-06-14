@@ -10,17 +10,19 @@ from sklearn.base import BaseEstimator
 from smac.tae import StatusType
 
 from autoPyTorch.automl_common.common.utils.backend import Backend
-from autoPyTorch.constants import CLASSIFICATION_TASKS, MULTICLASSMULTIOUTPUT
-from autoPyTorch.datasets.resampling_strategy import (CrossValTypes,
-                                                      HoldoutValTypes)
+from autoPyTorch.constants import (
+    CLASSIFICATION_TASKS,
+    MULTICLASSMULTIOUTPUT
+)
+from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes
 from autoPyTorch.evaluation.abstract_evaluator import (
-    AbstractEvaluator, fit_and_suppress_warnings)
+    AbstractEvaluator,
+    fit_and_suppress_warnings
+)
 from autoPyTorch.evaluation.utils import DisableFileOutputParameters
-from autoPyTorch.pipeline.components.training.metrics.base import \
-    autoPyTorchMetric
+from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.utils.common import dict_repr, subsampler
-from autoPyTorch.utils.hyperparameter_search_space_update import \
-    HyperparameterSearchSpaceUpdates
+from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
 __all__ = ['TrainEvaluator', 'eval_train_function']
 
@@ -407,26 +409,26 @@ class TrainEvaluator(AbstractEvaluator):
 
 # create closure for evaluating an algorithm
 def eval_train_function(
-        backend: Backend,
-        queue: Queue,
-        metric: autoPyTorchMetric,
-        budget: float,
-        config: Optional[Configuration],
-        seed: int,
-        output_y_hat_optimization: bool,
-        num_run: int,
-        include: Optional[Dict[str, Any]],
-        exclude: Optional[Dict[str, Any]],
-        disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
-        pipeline_config: Optional[Dict[str, Any]] = None,
-        budget_type: str = None,
-        init_params: Optional[Dict[str, Any]] = None,
-        logger_port: Optional[int] = None,
-        all_supported_metrics: bool = True,
-        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
-        instance: str = None,
-        evaluator_class: Type[TrainEvaluator] = TrainEvaluator,
-        **evaluator_kwargs: Any,
+    backend: Backend,
+    queue: Queue,
+    metric: autoPyTorchMetric,
+    budget: float,
+    config: Optional[Configuration],
+    seed: int,
+    output_y_hat_optimization: bool,
+    num_run: int,
+    include: Optional[Dict[str, Any]],
+    exclude: Optional[Dict[str, Any]],
+    disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
+    pipeline_config: Optional[Dict[str, Any]] = None,
+    budget_type: str = None,
+    init_params: Optional[Dict[str, Any]] = None,
+    logger_port: Optional[int] = None,
+    all_supported_metrics: bool = True,
+    search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
+    instance: str = None,
+    evaluator_class: Type[TrainEvaluator] = TrainEvaluator,
+    **evaluator_kwargs: Any,
 ) -> None:
     """
     This closure allows the communication between the ExecuteTaFuncWithQueue and the
