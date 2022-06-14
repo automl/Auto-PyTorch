@@ -9,6 +9,7 @@ import pytest
 
 from sklearn.base import BaseEstimator, clone
 from sklearn.compose import make_column_transformer
+from sktime.transformations.series.impute import Imputer as SKTImpute
 
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.imputation.TimeSeriesImputer import (
     TimeSeriesFeatureImputer,
@@ -93,9 +94,10 @@ class TestTimeSeriesFeatureImputer(unittest.TestCase):
         column_transformer = column_transformer.fit(X['X_train'])
         transformed = column_transformer.transform(data.iloc[self.test_indices])
 
-        self.assertTrue(np.allclose(transformed, np.array([[7.5, 2., 3.],
-                                                           [7., 2., 9.],
-                                                           [4, 2., 10.]])))
+        skt_imputer = SKTImpute(method='drift', random_state=imputer_component.random_state)
+        skt_imputer.fit(X['X_train'])
+
+        self.assertTrue(np.allclose(transformed, skt_imputer.transform(data.iloc[self.test_indices]).values))
 
     def test_linear_imputation(self):
         imputer_component = TimeSeriesFeatureImputer(imputation_strategy='linear')
@@ -111,9 +113,10 @@ class TestTimeSeriesFeatureImputer(unittest.TestCase):
         column_transformer = column_transformer.fit(X['X_train'])
         transformed = column_transformer.transform(self.data[self.test_indices])
 
-        self.assertTrue(np.allclose(transformed, np.array([[7., 2., 3.],
-                                                           [7., 2., 9.],
-                                                           [4., 2., 9.]])))
+        skt_imputer = SKTImpute(method='linear', random_state=imputer_component.random_state)
+        skt_imputer.fit(X['X_train'])
+
+        assert_array_equal(transformed, skt_imputer.transform(self.data[self.test_indices]))
 
     def test_nearest_imputation(self):
         data = np.array([[1.0, np.nan, 7],
@@ -149,9 +152,10 @@ class TestTimeSeriesFeatureImputer(unittest.TestCase):
         column_transformer = column_transformer.fit(X['X_train'])
         transformed = column_transformer.transform(data[test_indices])
 
-        assert_array_equal(transformed, np.array([[12., 5., 6.],
-                                                  [12., 5, 8.],
-                                                  [9., 7., 8]]))
+        skt_imputer = SKTImpute(method='nearest', random_state=imputer_component.random_state)
+        skt_imputer.fit(X['X_train'])
+
+        assert_array_equal(transformed, skt_imputer.transform(data[test_indices]))
 
     def test_constant_imputation(self):
         imputer_component = TimeSeriesFeatureImputer(imputation_strategy='constant_zero')
@@ -183,6 +187,7 @@ class TestTimeSeriesFeatureImputer(unittest.TestCase):
                                                      remainder='passthrough')
         column_transformer = column_transformer.fit(X['X_train'])
         transformed = column_transformer.transform(self.data[self.test_indices])
+
         assert_array_equal(transformed, np.array([[7., 2, 3],
                                                   [7, 2., 9],
                                                   [4, 2., 9.]]))
