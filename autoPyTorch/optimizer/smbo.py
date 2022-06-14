@@ -13,7 +13,7 @@ from smac.facade.smac_hpo_facade import SMAC4HPO
 from smac.intensification.hyperband import Hyperband
 from smac.intensification.intensification import Intensifier
 from smac.runhistory.runhistory import RunHistory
-from smac.runhistory.runhistory2epm import RunHistory2EPM4LogCost, RunHistory2EPM4LogScaledCost
+from smac.runhistory.runhistory2epm import RunHistory2EPM4LogScaledCost
 from smac.scenario.scenario import Scenario
 from smac.tae.dask_runner import DaskParallelRunner
 from smac.tae.serial_runner import SerialRunner
@@ -73,13 +73,12 @@ def get_smac_object(
     if initial_budget == max_budget:
         intensifier = Intensifier
         intensifier_kwargs: Dict[str, Any] = {'deterministic': True, }
-        rh2EPM = RunHistory2EPM4LogScaledCost
 
     else:
         intensifier = Hyperband
         intensifier_kwargs = {'initial_budget': initial_budget, 'max_budget': max_budget,
                               'eta': 3, 'min_chall': 1, 'instance_order': 'shuffle_once'}
-        rh2EPM = RunHistory2EPM4LogCost
+    rh2EPM = RunHistory2EPM4LogScaledCost
 
     return SMAC4HPO(
         scenario=Scenario(scenario_dict),
