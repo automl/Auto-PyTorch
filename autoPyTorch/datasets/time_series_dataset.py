@@ -1256,7 +1256,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
     def create_refit_set(self) -> "TimeSeriesForecastingDataset":
         refit_set: TimeSeriesForecastingDataset = copy.deepcopy(self)
-        refit_set.resampling_strategy = None  # type: ignore[assignment]
+        refit_set.resampling_strategy = NoResamplingStrategyTypes.no_resampling
         refit_set.splits = refit_set.get_splits_from_resampling_strategy()
         return refit_set
 
