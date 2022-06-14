@@ -9,19 +9,22 @@ from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.constants import MAX_WINDOW_SIZE_BASE, TASK_TYPES_TO_STRING, TIMESERIES_FORECASTING
 from autoPyTorch.data.time_series_forecasting_validator import \
     TimeSeriesForecastingInputValidator
-from autoPyTorch.data.utils import (DatasetCompressionSpec,
-                                    get_dataset_compression_mapping)
-from autoPyTorch.datasets.base_dataset import (BaseDataset,
-                                               BaseDatasetPropertiesType)
-from autoPyTorch.datasets.resampling_strategy import (CrossValTypes,
-                                                      HoldoutValTypes,
-                                                      ResamplingStrategies)
-from autoPyTorch.datasets.time_series_dataset import (
-    TimeSeriesForecastingDataset, TimeSeriesSequence)
-from autoPyTorch.pipeline.time_series_forecasting import \
-    TimeSeriesForecastingPipeline
-from autoPyTorch.utils.hyperparameter_search_space_update import \
-    HyperparameterSearchSpaceUpdates
+from autoPyTorch.data.utils import (
+    DatasetCompressionSpec,
+    get_dataset_compression_mapping
+)
+from autoPyTorch.datasets.base_dataset import (
+    BaseDataset,
+    BaseDatasetPropertiesType
+)
+from autoPyTorch.datasets.resampling_strategy import (
+    CrossValTypes,
+    HoldoutValTypes,
+    ResamplingStrategies
+)
+from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset, TimeSeriesSequence
+from autoPyTorch.pipeline.time_series_forecasting import TimeSeriesForecastingPipeline
+from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
 
 class TimeSeriesForecastingTask(BaseTask):
@@ -69,9 +72,7 @@ class TimeSeriesForecastingTask(BaseTask):
         delete_output_folder_after_terminate: bool = True,
         include_components: Optional[Dict] = None,
         exclude_components: Optional[Dict] = None,
-        resampling_strategy: Union[
-            CrossValTypes, HoldoutValTypes
-        ] = HoldoutValTypes.time_series_hold_out_validation,
+        resampling_strategy: ResamplingStrategies = HoldoutValTypes.time_series_hold_out_validation,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         backend: Optional[Backend] = None,
         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
@@ -95,9 +96,6 @@ class TimeSeriesForecastingTask(BaseTask):
             search_space_updates=search_space_updates,
             task_type=TASK_TYPES_TO_STRING[TIMESERIES_FORECASTING],
         )
-        # here fraction of subset could be number of images, tabular data or resolution of time-series datasets.
-        # TODO if budget type resolution is applied to all datasets, we will put it to configs
-        self.pipeline_options.update({"min_resolution": 0.1, "full_resolution": 1.0})
 
         self.customized_window_size = False
         if self.search_space_updates is not None:
