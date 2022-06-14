@@ -25,7 +25,9 @@ from autoPyTorch.utils.common import (FitRequirement,
 
 class TemporalFusion(autoPyTorchComponent):
     """
-    Base class for network backbones. Holds the backbone module and the config which was used to create it.
+    Temporal Fusion layer. For details we refer to
+    Lim et al. Temporal Fusion Transformers for Interpretable Multi-horizon Time Series Forecasting
+    https://arxiv.org/abs/1912.09363
     """
     _required_properties = ["name", "shortname", "handles_tabular", "handles_image", "handles_time_series"]
 

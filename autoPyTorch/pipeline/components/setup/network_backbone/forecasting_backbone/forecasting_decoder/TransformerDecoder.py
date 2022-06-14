@@ -118,8 +118,7 @@ class ForecastingTransformerDecoder(BaseForecastingDecoder):
     @staticmethod
     def decoder_properties() -> DecoderProperties:
         return DecoderProperties(recurrent=True,
-                                 lagged_input=True,
-                                 mask_on_future_target=True)
+                                 lagged_input=True)
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         self.transformer_encoder_kwargs = X['transformer_encoder_kwargs']

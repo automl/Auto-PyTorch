@@ -28,27 +28,31 @@ class TimeSeriesForecastingTask(BaseTask):
     """
     Time Series Forecasting API to the pipelines.
     Args:
-        seed (int): seed to be used for reproducibility.
-        n_jobs (int), (default=1): number of consecutive processes to spawn.
-        logging_config (Optional[Dict]): specifies configuration
-            for logging, if None, it is loaded from the logging.yaml
-        ensemble_size (int), (default=50): Number of models added to the ensemble built by
-            Ensemble selection from libraries of models.
+        seed (int):
+            seed to be used for reproducibility.
+        n_jobs (int), (default=1):
+            number of consecutive processes to spawn.
+        logging_config (Optional[Dict]):
+            specifies configuration for logging, if None, it is loaded from the logging.yaml
+        ensemble_size (int), (default=50):
+            Number of models added to the ensemble built by Ensemble selection from libraries of models.
             Models are drawn with replacement.
-        ensemble_nbest (int), (default=50): only consider the ensemble_nbest
-            models to build the ensemble
-        max_models_on_disc (int), (default=50): maximum number of models saved to disc.
-            Also, controls the size of the ensemble as any additional models will be deleted.
-            Must be greater than or equal to 1.
-        temporary_directory (str): folder to store configuration output and log file
-        output_directory (str): folder to store predictions for optional test set
-        delete_tmp_folder_after_terminate (bool): determines whether to delete the temporary directory,
-            when finished
-        include_components (Optional[Dict]): If None, all possible components are used.
-            Otherwise specifies set of components to use.
-        exclude_components (Optional[Dict]): If None, all possible components are used.
-            Otherwise specifies set of components not to use. Incompatible with include
-            components
+        ensemble_nbest (int), (default=50):
+            only consider the ensemble_nbest models to build the ensemble
+        max_models_on_disc (int), (default=50):
+            maximum number of models saved to disc. Also, controls the size of the ensemble as any additional models
+             will be deleted. Must be greater than or equal to 1.
+        temporary_directory (str):
+            folder to store configuration output and log file
+        output_directory (str):
+            folder to store predictions for optional test set
+        delete_tmp_folder_after_terminate (bool):
+            determines whether to delete the temporary directory, when finished
+        include_components (Optional[Dict]):
+            If None, all possible components are used. Otherwise specifies set of components to use.
+        exclude_components (Optional[Dict]):
+            If None, all possible components are used. Otherwise specifies set of components not to use.
+            Incompatible with include components
     """
 
     def __init__(

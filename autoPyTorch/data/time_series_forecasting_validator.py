@@ -182,7 +182,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
                 forecasting targets
             validate_for_future_features: bool
                 if the validator is applied to transform future features (for test sets), in this case we only validate
-                X
+                features
         """
         if not self._is_fitted:
             raise NotFittedError(
@@ -332,9 +332,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
     def join_series(
         X: List[Union[pd.DataFrame, np.ndarray]], return_seq_lengths: bool = False
     ) -> Union[pd.DataFrame, Tuple[pd.DataFrame, List[int]]]:
-        """
-        join the series into one single item
-        """
+        """join the series into one single item"""
         num_sequences = len(X)
         sequence_lengths = [0] * num_sequences
         for seq_idx in range(num_sequences):

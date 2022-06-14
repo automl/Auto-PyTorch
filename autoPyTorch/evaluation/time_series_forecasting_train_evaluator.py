@@ -277,11 +277,11 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
 
         Parameters:
         ----------
-        test_split: Sequence
+        test_split (Sequence):
             test splits, consistent of int
         Return:
         ----------
-        mase_coefficient: np.ndarray(self.num_sequence * self.n_prediction_steps)
+        mase_coefficient (np.ndarray(self.num_sequence * self.n_prediction_steps)):
             inverse of the mase_denominator
         """
         mase_coefficient = np.ones([len(test_split), self.num_targets])

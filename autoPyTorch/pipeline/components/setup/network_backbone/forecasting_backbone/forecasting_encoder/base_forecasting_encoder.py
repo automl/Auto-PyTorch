@@ -143,7 +143,8 @@ class BaseForecastingEncoder(autoPyTorchComponent):
         Builds the backbone module and returns it
 
         Args:
-            input_shape (Tuple[int, ...]): input feature shape
+            input_shape (Tuple[int, ...]):
+                input feature shape
 
         Returns:
             nn.Module: backbone module
@@ -155,14 +156,6 @@ class BaseForecastingEncoder(autoPyTorchComponent):
         """
         Encoder properties, this determines how the data flows over the forecasting networks
 
-        has_hidden_states, it determines if the network contains hidden states and thus return or accept the hidden
-        states
-        bijective_seq_output, determines if the network returns a sequence with the same sequence length as the input
-        sequence when output_seq is set True
-        fix_input_shape if the input shape is fixed, this is useful for building network head
-        lagged_input, if lagged input values are applied, this technique is implemented in DeepAR and Transformer
-        implemented in gluonTS:
-        https://github.com/awslabs/gluon-ts/blob/master/src/gluonts/torch/model/deepar/module.py
         """
         encoder_properties = EncoderProperties()
         return encoder_properties

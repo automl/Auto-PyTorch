@@ -55,10 +55,12 @@ class ProjectionLayer(nn.Module):
             and n_prediction_steps.
             we note that output_shape's first dimensions is always n_prediction_steps
             Args:
-                arg_dim (int): dimension of the target distribution
+                arg_dim (int):
+                    dimension of the target distribution
 
             Returns:
-                proj_layer (nn.Module): projection layer that maps the decoder output to parameterize distributions
+                proj_layer (nn.Module):
+                    projection layer that maps the decoder output to parameterize distributions
             """
             if decoder_has_local_layer:
                 return nn.Sequential(
@@ -82,12 +84,12 @@ class ProjectionLayer(nn.Module):
         """
         get a target distribution
         Args:
-            x: input tensor ([batch_size, in_features]): input tensor, acquired by the base header, have the shape
-            [batch_size, in_features]
+            x: input tensor ([batch_size, in_features]):
+                input tensor, acquired by the base header, have the shape [batch_size, in_features]
 
         Returns:
-            dist: torch.distributions ([batch_size, n_prediction_steps, output_shape]): an output torch distribution
-             with shape (batch_size, n_prediction_steps, output_shape)
+            dist: torch.distributions ([batch_size, n_prediction_steps, output_shape]):
+                an output torch distribution with shape (batch_size, n_prediction_steps, output_shape)
         """
         params_unbounded = [proj(x) for proj in self.proj]
         return self.dist_cls(*self.domain_map(*params_unbounded))

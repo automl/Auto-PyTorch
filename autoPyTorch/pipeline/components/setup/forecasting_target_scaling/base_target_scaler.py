@@ -26,10 +26,12 @@ class BaseTargetScaler(autoPyTorchComponent):
         Creates a column transformer for the chosen tabular
         preprocessors
         Args:
-            X (Dict[str, Any]): fit dictionary
+            X (Dict[str, Any]):
+                fit dictionary
 
         Returns:
-            "TabularColumnTransformer": an instance of self
+            "BaseEstimator":
+                an instance of self
         """
         self.check_requirements(X, y)
         self.scaler = TargetScaler(mode=self.scaler_mode)
@@ -43,10 +45,12 @@ class BaseTargetScaler(autoPyTorchComponent):
         """
         Adds the time series transformer to fit dictionary
         Args:
-            X (Dict[str, Any]): fit dictionary
+            X (Dict[str, Any]):
+                fit dictionary
 
         Returns:
-            X (Dict[str, Any]): updated fit dictionary
+            X (Dict[str, Any]):
+                updated fit dictionary
         """
         X.update({'target_scaler': self})
         return X

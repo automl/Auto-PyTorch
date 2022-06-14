@@ -19,6 +19,7 @@ import torch
 
 from autoPyTorch.constants import STRING_TO_TASK_TYPES
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
+from autoPyTorch.datasets.time_series_dataset import TimeSeriesSequence
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
@@ -69,9 +70,10 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
 
 
     Args:
-        config (Configuration)
+        config (Configuration):
             The configuration to evaluate.
-        random_state (Optional[RandomState): random_state is the random number generator
+        random_state (Optional[RandomState):
+            random_state is the random number generator
 
     Attributes:
     Examples
@@ -96,21 +98,24 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         # model, so we comply with https://pytorch.org/docs/stable/notes/randomness.html
         torch.manual_seed(self.random_state.get_state()[1][0])
 
-    def score(self, X: np.ndarray, y: np.ndarray, batch_size: Optional[int] = None, **score_kwargs: Any) -> float:
+    def score(self, X: List[Union[np.ndarray, pd.DataFrame, TimeSeriesSequence]],
+              y: np.ndarray, batch_size: Optional[int] = None, **score_kwargs: Any) -> float:
         """Scores the fitted estimator on (X, y)
 
         Args:
-            X (np.ndarray): input to the pipeline, from which to guess targets
-            batch_size (Optional[int]): batch_size controls whether the pipeline
-                will be called on small chunks of the data. Useful when calling the
-                predict method on the whole array X results in a MemoryError.
+            X (List[Union[np.ndarray, pd.DataFrame, TimeSeriesSequence]]):
+                input to the pipeline, from which to guess targets
+            batch_size (Optional[int]):
+                batch_size controls whether the pipeline will be called on small chunks of the data.
+                 Useful when calling the predict method on the whole array X results in a MemoryError.
         Returns:
-            np.ndarray: coefficient of determination R^2 of the prediction
+            np.ndarray:
+                coefficient of determination R^2 of the prediction
         """
         from autoPyTorch.pipeline.components.training.metrics.utils import (
             calculate_score, get_metrics)
         metrics = get_metrics(self.dataset_properties, ['mean_MAPE_forecasting'])
-        y_pred = self.predict(X, batch_size=batch_size)
+        y_pred = self.predict(X, batch_size=batch_size)  # type: ignore[arg-types]
         r2 = calculate_score(y, y_pred, task_type=STRING_TO_TASK_TYPES[str(self.dataset_properties['task_type'])],
                              metrics=metrics, **score_kwargs)['mean_MAPE_forecasting']
         return r2
@@ -127,15 +132,16 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         explore.
 
         Args:
-            include (Optional[Dict[str, Any]]): what hyper-parameter configurations
-                to honor when creating the configuration space
-            exclude (Optional[Dict[str, Any]]): what hyper-parameter configurations
-                to remove from the configuration space
-            dataset_properties (Optional[Dict[str, Union[str, int]]]): Characteristics
-                of the dataset to guide the pipeline choices of components
+            include (Optional[Dict[str, Any]]):
+                what hyper-parameter configurations to honor when creating the configuration space
+            exclude (Optional[Dict[str, Any]]):
+                what hyper-parameter configurations to remove from the configuration space
+            dataset_properties (Optional[Dict[str, Union[str, int]]]):
+                Characteristics of the dataset to guide the pipeline choices of components
 
         Returns:
-            cs (Configuration): The configuration space describing the TimeSeriesRegressionPipeline.
+            cs (Configuration):
+                The configuration space describing the TimeSeriesRegressionPipeline.
         """
         cs = ConfigurationSpace()
 
@@ -330,8 +336,8 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         before "network_backbone" such that
 
         Returns:
-            List[Tuple[str, autoPyTorchChoice]]: list of steps sequentially exercised
-                by the pipeline.
+            List[Tuple[str, autoPyTorchChoice]]:
+                list of steps sequentially exercised by the pipeline.
         """
         steps = []  # type: List[Tuple[str, autoPyTorchChoice]]
 
@@ -415,19 +421,19 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         return "time_series_forecasting"
 
     def predict(self,
-                X: Union[Dict[str, np.ndarray], pd.DataFrame],
+                X: List[Union[np.ndarray, pd.DataFrame, TimeSeriesSequence]],  # type: ignore[override]
                 batch_size: Optional[int] = None) -> np.ndarray:
         """Predict the output using the selected model.
 
         Args:
-            X (np.ndarray): input data to the array
-            batch_size (Optional[int]): batch_size controls whether the pipeline will be
-                called on small chunks of the data. Useful when calling the
-                predict method on the whole array X results in a MemoryError.
-            transform_X (bool): if we want to transform
-
+            X (List[Union[np.ndarray, pd.DataFrame, TimeSeriesSequence]]):
+                input data to predict
+            batch_size (Optional[int]):
+                batch_size controls whether the pipeline will be called on small chunks of the data.
+                Useful when calling the predict method on the whole array X results in a MemoryError.
         Returns:
-            np.ndarray: the predicted values given input X
+            np.ndarray:
+                the predicted values given input X
         """
 
         # Pre-process X

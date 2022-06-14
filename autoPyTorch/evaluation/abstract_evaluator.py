@@ -315,6 +315,20 @@ class DummyRegressionPipeline(DummyRegressor):
 
 
 class DummyTimeSeriesForecastingPipeline(DummyClassificationPipeline):
+    """
+    A wrapper class that holds a pipeline for dummy forecasting. For each series, it simply repeats the last element
+    in the training series
+
+
+    Attributes:
+        random_state (Optional[Union[int, np.random.RandomState]]):
+            Object that contains a seed and allows for reproducible results
+        init_params  (Optional[Dict]):
+            An optional dictionary that is passed to the pipeline's steps. It complies
+            a similar function as the kwargs
+        n_prediction_steps (int):
+            forecasting horizon
+    """
     def __init__(self, config: Configuration,
                  random_state: Optional[Union[int, np.random.RandomState]] = None,
                  init_params: Optional[Dict] = None,

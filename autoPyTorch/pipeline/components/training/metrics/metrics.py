@@ -62,11 +62,14 @@ def compute_mase_coefficient(past_target: Union[List, np.ndarray], sp: int) -> n
     compute mase coefficient, then mase value is computed as mase_coefficient * mse_error,
     this function aims at reducing the memroy requirement
     Args:
-        past_target:  Optional[List, np.ndarray] past target observations
-        sp: seasonality parameter to compute sp
+        past_target (Optional[List, np.ndarray]):
+            past target observations
+        sp (int):
+            seasonality parameter to compute sp
 
     Returns:
-        mase_coefficient: inverse of mase_denominator
+        mase_coefficient (np.ndarray):
+            inverse of mase_denominator
     """
     past_target = np.nan_to_num(past_target)
     max_past_target_abs = np.max(np.abs(past_target))

@@ -83,12 +83,16 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         Train the model for a single epoch.
 
         Args:
-            train_loader (torch.utils.data.DataLoader): generator of features/label
-            epoch (int): The current epoch used solely for tracking purposes
+            train_loader (torch.utils.data.DataLoader):
+                generator of features/label
+            epoch (int):
+                The current epoch used solely for tracking purposes
 
         Returns:
-            float: training loss
-            Dict[str, float]: scores for each desired metric
+            float:
+                training loss
+            Dict[str, float]:
+                scores for each desired metric
         """
         loss_sum = 0.0
         N = 0
@@ -131,12 +135,16 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         Allows to train 1 step of gradient descent, given a batch of train/labels
 
         Args:
-            data (torch.Tensor): input features to the network
-            targets (torch.Tensor): ground truth to calculate loss
+            data ( Dict[str, torch.Tensor]):
+                input features to the network
+            future_targets (Dict[str, torch.Tensor]):
+                ground truth to calculate loss
 
         Returns:
-            torch.Tensor: The predictions of the network
-            float: the loss incurred in the prediction
+            torch.Tensor:
+                The predictions of the network
+            float:
+                the loss incurred in the prediction
         """
         past_observed_targets = data['past_observed_targets']
 
@@ -219,12 +227,16 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
         Evaluate the model in both metrics and criterion
 
         Args:
-            test_loader (torch.utils.data.DataLoader): generator of features/label
-            epoch (int): the current epoch for tracking purposes
+            test_loader (torch.utils.data.DataLoader):
+                generator of features/label
+            epoch (int):
+                the current epoch for tracking purposes
 
         Returns:
-            float: test loss
-            Dict[str, float]: scores for each desired metric
+            float:
+                test loss
+            Dict[str, float]:
+                scores for each desired metric
         """
         if not isinstance(self.model, (ForecastingDeepARNet, ForecastingSeq2SeqNet)):
             # To save time, we simply make one-step prediction for DeepAR and Seq2Seq

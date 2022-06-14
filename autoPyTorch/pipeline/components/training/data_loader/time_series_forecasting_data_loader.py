@@ -63,16 +63,25 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         """
         initialize a dataloader
         Args:
-            batch_size: batch size
-            backcast (bool): if backcast is applied, where window_size is determined on the forecasting horizon
-            backcast_period (int): backcast period, window_size is computed by horizon * backcast_period
-            window_size(int): windows size, activate when backcast is false
-            num_batches_per_epoch (int): number of batches per epoch
-            n_prediction_steps (int): forecasting horizon
-            sample_strategy (str): sample strategy, if all the sequences are expected to be sampled with the same size
+            batch_size (int):
+                batch size
+            backcast (bool):
+                if backcast is applied, where window_size is determined on the forecasting horizon
+            backcast_period (int):
+                backcast period, window_size is computed by horizon * backcast_period
+            window_size(int):
+                windows size, activate when backcast is false
+            num_batches_per_epoch (int):
+                number of batches per epoch
+            n_prediction_steps (int):
+                forecasting horizon
+            sample_strategy (str):
+                sample strategy, if all the sequences are expected to be sampled with the same size
                 or all the time steps are expected to be sampled with the same size
-            transform_time_features (bool): if time features are transformed
-            random_state (Optional[np.random.RandomState]): random states
+            transform_time_features (bool):
+                if time features are transformed
+            random_state (Optional[np.random.RandomState]):
+                random states
 
         """
         super().__init__(batch_size=batch_size, random_state=random_state)
@@ -141,11 +150,16 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         """
         Compute the number of expected sample instances within each sequence.
         Args:
-            num_instances_dataset (int): number of all possible instances inside a dataset
-            seq_train_length (np.ndarray): length of each sequence
-            min_start (int): minimal number of start
-            fraction_seq (float): fraction of the sequence that will be sampled during training.
-            fraction_samples_per_seq (float): fraction of number of samples inside each series
+            num_instances_dataset (int):
+                number of all possible instances inside a dataset
+            seq_train_length (np.ndarray):
+                length of each sequence
+            min_start (int):
+                minimal number of start
+            fraction_seq (float):
+                fraction of the sequence that will be sampled during training.
+            fraction_samples_per_seq (float):
+                fraction of number of samples inside each series
 
         Returns:
             num_instances_per_seqs (np.ndarray): expected number of instances to be sampled inside each sequence
@@ -180,8 +194,10 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         Fits a component by using an input dictionary with pre-requisites
 
         Args:
-            X (X: Dict[str, Any]): Dependencies needed by current component to perform fit
-            y (Any): not used. To comply with sklearn API
+            X (X: Dict[str, Any]):
+                Dependencies needed by current component to perform fit
+            y (Any):
+                not used. To comply with sklearn API
 
         Returns:
             A instance of self
@@ -334,8 +350,10 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         Method to build a transformation that can pre-process input data
 
         Args:
-            X (X: Dict[str, Any]): Dependencies needed by current component to perform fit
-            mode (str): train/val/test
+            X (X: Dict[str, Any]):
+                Dependencies needed by current component to perform fit
+            mode (str):
+                train/val/test
 
         Returns:
             A composition of transformations

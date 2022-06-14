@@ -98,11 +98,16 @@ class TemporalFusionLayer(nn.Module):
                 static_embedding: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         Args:
-            encoder_output: the output of the last layer of encoder network
-            decoder_output: the output of the last layer of decoder network
-            past_observed_targets: observed values in the past
-            decoder_length: length of decoder network
-            static_embedding: output of static variable selection network (if available)
+            encoder_output (torch.Tensor):
+                the output of the last layer of encoder network
+            decoder_output (torch.Tensor):
+                the output of the last layer of decoder network
+            past_observed_targets (torch.BoolTensor):
+                observed values in the past
+            decoder_length (int):
+                length of decoder network
+            static_embedding Optional[torch.Tensor]:
+                embeddings of static features  (if available)
         """
 
         if self.decoder_proj_layer is not None:
@@ -208,14 +213,22 @@ class VariableSelector(nn.Module):
         The order of the input variables is as follows:
         [features (from the dataset), time_features (from time feature transformers), targets]
         Args:
-            network_structure (NetworkStructure): contains the information of the overall architecture information
-            dataset_properties (Dict): dataset properties
-            network_encoder(Dict[str, EncoderBlockInfo]): Network encoders
-            auto_regressive bool: if it belongs to an auto-regressive model
-            feature_names Tuple[str]: feature names, used to construct the selection network
-            known_future_features Tuple[str]: known future features
-            feature_shapes Dict[str, int]: shapes of each features
-            time_feature_names Tuple[str]: time feature names, used to complement feature_shapes
+            network_structure (NetworkStructure):
+                contains the information of the overall architecture information
+            dataset_properties (Dict):
+                dataset properties
+            network_encoder(Dict[str, EncoderBlockInfo]):
+                Network encoders
+            auto_regressive (bool):
+                if it belongs to an auto-regressive model
+            feature_names (Tuple[str]):
+                feature names, used to construct the selection network
+            known_future_features (Tuple[str]):
+                known future features
+            feature_shapes (Dict[str, int]):
+                shapes of each features
+            time_feature_names (Tuple[str]):
+                time feature names, used to complement feature_shapes
         """
         super().__init__()
         first_encoder_output_shape = network_encoder['block_1'].encoder_output_shape[-1]
@@ -450,6 +463,12 @@ class VariableSelector(nn.Module):
 
 
 class StackedEncoder(nn.Module):
+    """
+    Encoder network that is stacked by several encoders. Skip-connections can be applied to each stack. Each stack
+    needs to generate a sequence of encoded features passed to the next stack and the
+    corresponding decoder (encoder2decoder) that is located at the same layer.Additionally, if temporal fusion
+    transformer is applied, the last encoder also needs to output the full encoded feature sequence
+    """
     def __init__(self,
                  network_structure: NetworkStructure,
                  has_temporal_fusion: bool,
@@ -507,14 +526,25 @@ class StackedEncoder(nn.Module):
                 incremental_update: bool = False) -> Tuple[List[torch.Tensor], Optional[torch.Tensor]]:
         """
         A forward pass through the encoder
+
         Args:
-             encoder_input (torch.Tensor): encoder input
-             additional_input (List[Optional[torch.Tensor]]) additional input to the encoder, e.g., inital hidden states
-             output_seq (bool) if a sequence output is generated
-             cache_intermediate_state (bool): if store the intermediate values
-             incremental_update (bool): if an incremental update is applied, this is normally applied for
-                auto-regressive model, however, ony deepAR requires encoder to do incremental update,
-                whose decoder only need to receive the last output of the encoder
+            encoder_input (torch.Tensor):
+                encoder input
+            additional_input (List[Optional[torch.Tensor]])
+                additional input to the encoder, e.g., initial hidden states
+            output_seq (bool)
+                if the encoder want to generate a sequence of multiple time steps or a single time step
+            cache_intermediate_state (bool):
+                if the intermediate values are cached
+            incremental_update (bool):
+                if an incremental update is applied, this is normally applied for
+                auto-regressive model, however, ony deepAR requires incremental update in encoder
+
+        Returns:
+            encoder2decoder ([List[torch.Tensor]]):
+                encoder output that will be passed to decoders
+            encoder_output (torch.Tensor):
+                full sequential encoded features from the last encoder layer. Applied to temporal transformer
         """
         encoder2decoder = []
         x = encoder_input
@@ -583,6 +613,11 @@ class StackedEncoder(nn.Module):
 
 
 class StackedDecoder(nn.Module):
+    """
+    Decoder network that is stacked by several decoders. Skip-connections can be applied to each stack. It decodes the
+    encoded features (encoder2decoder) from each corresponding stacks and known_future_features to generate the decoded
+    output features that will be further fed to the network decoder.
+    """
     def __init__(self,
                  network_structure: NetworkStructure,
                  encoder: nn.ModuleDict,
@@ -633,6 +668,26 @@ class StackedDecoder(nn.Module):
                 cache_intermediate_state: bool = False,
                 incremental_update: bool = False
                 ) -> torch.Tensor:
+        """
+        A forward pass through the decoder
+
+        Args:
+            x_future (Optional[torch.Tensor]):
+                known future features
+            encoder_output (List[torch.Tensor])
+                encoded features, stored as List, whereas each element in the list indicates encoded features from an
+                encoder stack
+            pos_idx (int)
+                position index of the current x_future. This is applied to transformer decoder
+            cache_intermediate_state (bool):
+                if the intermediate values are cached
+            incremental_update (bool):
+                if an incremental update is applied, this is normally applied for auto-regressive model
+
+        Returns:
+            decoder_output (torch.Tensor):
+                decoder output that will be passed to the network head
+        """
         x = x_future
         for i, block_id in enumerate(range(self.first_block, self.num_blocks + 1)):
             decoder_i = self.decoder[f'block_{block_id}']

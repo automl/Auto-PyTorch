@@ -64,8 +64,10 @@ class ForecastingHead(NetworkHeadComponent):
         Builds the head component and assigns it to self.head
 
         Args:
-            X (X: Dict[str, Any]): Dependencies needed by current component to perform fit
-            y (Any): not used. To comply with sklearn API
+            X (X: Dict[str, Any]):
+                Dependencies needed by current component to perform fit
+            y (Any):
+                not used. To comply with sklearn API
         Returns:
             Self
         """
@@ -116,9 +118,11 @@ class ForecastingHead(NetworkHeadComponent):
         Adds the network head into the fit dictionary 'X' and returns it.
 
         Args:
-            X (Dict[str, Any]): 'X' dictionary
+            X (Dict[str, Any]):
+                'X' dictionary
         Returns:
-            (Dict[str, Any]): the updated 'X' dictionary
+            (Dict[str, Any]):
+                the updated 'X' dictionary
         """
         if self.head is not None:
             X.update({'network_head': self.head})
@@ -170,16 +174,24 @@ class ForecastingHead(NetworkHeadComponent):
         Builds the head module and returns it
 
         Args:
-            head_n_in_features (int): shape of the input to the head (usually the shape of the backbone output)
-            output_shape (Tuple[int, ...]): shape of the output of the head
-            decoder_has_local_layer (bool): if the decoder has local layer
-            net_output_type (str): network output type
-            dist_cls (Optional[str]): output distribution, only works if required_net_out_put_type is 'distribution'
-            n_prediction_heads (Dict): additional paramter for initializing architectures. How many heads to predict
-            num_quantiles (int): number of quantile losses
+            head_n_in_features (int):
+                shape of the input to the head (usually the shape of the backbone output)
+            output_shape (Tuple[int, ...]):
+                shape of the output of the head
+            decoder_has_local_layer (bool):
+                if the decoder has local layer
+            net_output_type (str):
+                network output type
+            dist_cls (Optional[str]):
+                output distribution, only works if required_net_out_put_type is 'distribution'
+            n_prediction_heads (Dict):
+                additional paramter for initializing architectures. How many heads to predict
+            num_quantiles (int):
+                number of quantile losses
 
         Returns:
-            nn.Module: head module
+            nn.Module:
+                head module
         """
         if net_output_type == 'distribution':
             assert dist_cls is not None

@@ -60,8 +60,10 @@ class BaseForecastingDecoder(autoPyTorchComponent):
         Builds the head component and assigns it to self.decoder
 
         Args:
-            X (X: Dict[str, Any]): Dependencies needed by current component to perform fit
-            y (Any): not used. To comply with sklearn API
+            X (X: Dict[str, Any]):
+                Dependencies needed by current component to perform fit
+            y (Any):
+                not used. To comply with sklearn API
         Returns:
             Self
         """
@@ -125,9 +127,11 @@ class BaseForecastingDecoder(autoPyTorchComponent):
         Adds the network head into the fit dictionary 'X' and returns it.
 
         Args:
-            X (Dict[str, Any]): 'X' dictionary
+            X (Dict[str, Any]):
+                'X' dictionary
         Returns:
-            (Dict[str, Any]): the updated 'X' dictionary
+            (Dict[str, Any]):
+                the updated 'X' dictionary
         """
         # 'auto_regressive' needs to be the same across all the decoders,
         # 'n_prediction_heads' and 'n_decoder_output_features' are only applied to the head such that they could be
@@ -162,12 +166,17 @@ class BaseForecastingDecoder(autoPyTorchComponent):
         Builds the head module and returns it
 
         Args:
-            encoder_output_shape (Tuple[int, ...]): shape of the input to the decoder, this value is the encoder output
-            future_variable_input (Tuple[int, ...]): shape of the known future input values
-            n_prediction_heads (int): how many prediction heads the network has, used for final forecasting heads
-            dataset_properties (Dict): dataset properties
+            encoder_output_shape (Tuple[int, ...]):
+                shape of the input to the decoder, this value is the encoder output
+            future_variable_input (Tuple[int, ...]):
+                shape of the known future input values
+            n_prediction_heads (int):
+                how many prediction heads the network has, used for final forecasting heads
+            dataset_properties (Dict):
+                dataset properties
         Returns:
-            nn.Module: head module
+            nn.Module:
+                head module
         """
         decoder, n_decoder_features = self._build_decoder(encoder_output_shape, future_variable_input,
                                                           n_prediction_heads, dataset_properties)
@@ -183,26 +192,33 @@ class BaseForecastingDecoder(autoPyTorchComponent):
         Builds the head module and returns it
 
         Args:
-            encoder_output_shape (Tuple[int, ...]): shape of the input to the decoder, this value is the encoder output
-            future_variable_input (Tuple[int, ...]): shape of the known future input values
-            n_prediction_heads (int): how many prediction heads the network has, used for final forecasting heads
-            dataset_properties (Dict): dataset properties
+            encoder_output_shape (Tuple[int, ...]):
+                shape of the input to the decoder, this value is the encoder output
+            future_variable_input (Tuple[int, ...]):
+                shape of the known future input values
+            n_prediction_heads (int):
+                how many prediction heads the network has, used for final forecasting heads
+            dataset_properties (Dict):
+                dataset properties
 
         Returns:
-            decoder (nn.Module): decoder module
-            n_decoder_features (int): output of decoder features, used for initialize network head.
+            decoder (nn.Module):
+                decoder module
+            n_decoder_features (int):
+                output of decoder features, used for initialize network head.
         """
         raise NotImplementedError()
 
     @classmethod
     def get_name(cls) -> str:
         """
-        Get the name of the head
+        Get the name of the decoder
 
         Args:
             None
 
         Returns:
-            str: Name of the head
+            str:
+                Name of the decoder
         """
         return str(cls.get_properties()["shortname"])

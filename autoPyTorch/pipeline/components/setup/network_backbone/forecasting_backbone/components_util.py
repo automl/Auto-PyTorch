@@ -92,9 +92,9 @@ def build_transformer_layers(d_model: int, config: Dict[str, Any], layer_type: s
         raise ValueError('layer_type must be encoder or decoder!')
 
 
-# https://github.com/pytorch/examples/blob/master/word_language_model/model.py
 class PositionalEncoding(nn.Module):
-    r"""
+    r"""https://github.com/pytorch/examples/blob/master/word_language_model/model.py
+
         NOTE: different from the raw implementation, this model is designed for the batch_first inputs!
         Inject some information about the relative or absolute position of the tokens
         in the sequence. The positional encodings have the same dimension as
@@ -105,9 +105,12 @@ class PositionalEncoding(nn.Module):
         \text{PosEncoder}(pos, 2i+1) = cos(pos/10000^(2i/d_model))
         \text{where pos is the word position and i is the embed idx)
     Args:
-        d_model: the embed dim (required).
-        dropout: the dropout value (default=0.1).
-        max_len: the max. length of the incoming sequence (default=5000).
+        d_model (int):
+            the embed dim (required).
+        dropout(float):
+            the dropout value (default=0.1).
+        max_len(int):
+            the max. length of the incoming sequence (default=5000).
     Examples:
         >>> pos_encoder = PositionalEncoding(d_model)
     """
@@ -127,12 +130,11 @@ class PositionalEncoding(nn.Module):
     def forward(self, x: torch.Tensor, pos_idx: Optional[Tuple[int]] = None) -> torch.Tensor:
         r"""Inputs of forward function
         Args:
-            x: the sequence fed to the positional encoder model (required).
-            pos_idx (Tuple[int]), position idx indicating the start (first) and end (last) time index of x in a sequence
-        Shape:
-            x: [batch size, sequence length embed dim]
-            pos_idx: positional index, indicating the index of the current
-            output: [batch size, sequence length, embed dim]
+            x (torch.Tensor(B, L, N)):
+                the sequence fed to the positional encoder model (required).
+            pos_idx (Tuple[int]):
+                position idx indicating the start (first) and end (last) time index of x in a sequence
+
         Examples:
             >>> output = pos_encoder(x)
         """

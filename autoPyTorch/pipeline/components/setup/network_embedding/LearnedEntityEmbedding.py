@@ -56,12 +56,14 @@ class _LearnedEntityEmbedding(nn.Module):
         """
         extract a partial models that only works on a subset of the data that ought to be passed to the embedding
         network, this function is implemented for time series forecasting tasks where the known future features is only
-        a subset of the known past features
+        a subset of the past features
         Args:
-            subset_features: a set of index identifying which features will pass through the partial model
+            subset_features (List[int]):
+                a set of index identifying which features will pass through the partial model
 
         Returns:
-            partial_model (_LearnedEntityEmbedding) a new partial model
+            partial_model (_LearnedEntityEmbedding)
+                a new partial model
         """
         num_input_features = self.num_input_features[subset_features]
         num_numerical_features = sum([sf < self.num_numerical for sf in subset_features])
@@ -114,6 +116,10 @@ class _LearnedEntityEmbedding(nn.Module):
 
 
 class PartialLearnedEntityEmbedding(_LearnedEntityEmbedding):
+    """
+    Construct a partial Embedding network that is derived from a learned embedding network and only applied to a subset
+    of the input features. This is applied to forecasting tasks where not all the features might be known beforehand
+    """
     def __init__(self,
                  num_input_features: np.ndarray,
                  num_numerical_features: int,
