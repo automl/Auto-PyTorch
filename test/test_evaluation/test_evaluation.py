@@ -18,7 +18,6 @@ from smac.tae import StatusType
 from smac.utils.constants import MAXINT
 
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
-from autoPyTorch.evaluation.time_series_forecasting_train_evaluator import TimeSeriesForecastingTrainEvaluator
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy, log_loss
 
 this_directory = os.path.dirname(__file__)
@@ -55,7 +54,6 @@ class BackendMockForecasting(object):
 
     def load_datamanager(self):
         return get_forecasting_dataset()
-
 
 
 class EvaluationTest(unittest.TestCase):

@@ -40,6 +40,7 @@ class ForecastingTrainerChoice(TrainerChoice):
                  random_state: Optional[np.random.RandomState] = None
                  ):
         super().__init__(dataset_properties=dataset_properties, random_state=random_state)
+        assert self._fit_requirements is not None
         self._fit_requirements.extend([FitRequirement("target_scaler", (BaseTargetScaler,),
                                                       user_defined=False, dataset_property=False),
                                        FitRequirement("window_size", (int,), user_defined=False,

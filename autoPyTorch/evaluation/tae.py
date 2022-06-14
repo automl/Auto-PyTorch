@@ -34,8 +34,8 @@ from autoPyTorch.datasets.resampling_strategy import (
     NoResamplingStrategyTypes
 )
 from autoPyTorch.evaluation.test_evaluator import eval_test_function
-from autoPyTorch.evaluation.train_evaluator import eval_train_function
 from autoPyTorch.evaluation.time_series_forecasting_train_evaluator import TimeSeriesForecastingTrainEvaluator
+from autoPyTorch.evaluation.train_evaluator import eval_train_function
 from autoPyTorch.evaluation.utils import (
     DisableFileOutputParameters,
     empty_queue,
@@ -110,30 +110,30 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
     """
 
     def __init__(
-        self,
-        backend: Backend,
-        seed: int,
-        metric: autoPyTorchMetric,
-        cost_for_crash: float,
-        abort_on_first_run_crash: bool,
-        pynisher_context: str,
-        multi_objectives: List[str],
-        pipeline_config: Optional[Dict[str, Any]] = None,
-        initial_num_run: int = 1,
-        stats: Optional[Stats] = None,
-        run_obj: str = 'quality',
-        par_factor: int = 1,
-        output_y_hat_optimization: bool = True,
-        include: Optional[Dict[str, Any]] = None,
-        exclude: Optional[Dict[str, Any]] = None,
-        memory_limit: Optional[int] = None,
-        disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
-        init_params: Dict[str, Any] = None,
-        budget_type: str = None,
-        ta: Optional[Callable] = None,
-        logger_port: int = None,
-        all_supported_metrics: bool = True,
-        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
+            self,
+            backend: Backend,
+            seed: int,
+            metric: autoPyTorchMetric,
+            cost_for_crash: float,
+            abort_on_first_run_crash: bool,
+            pynisher_context: str,
+            multi_objectives: List[str],
+            pipeline_config: Optional[Dict[str, Any]] = None,
+            initial_num_run: int = 1,
+            stats: Optional[Stats] = None,
+            run_obj: str = 'quality',
+            par_factor: int = 1,
+            output_y_hat_optimization: bool = True,
+            include: Optional[Dict[str, Any]] = None,
+            exclude: Optional[Dict[str, Any]] = None,
+            memory_limit: Optional[int] = None,
+            disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
+            init_params: Dict[str, Any] = None,
+            budget_type: str = None,
+            ta: Optional[Callable] = None,
+            logger_port: int = None,
+            all_supported_metrics: bool = True,
+            search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
     ):
 
         self.backend = backend
@@ -152,12 +152,12 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         self.resampling_strategy_args = dm.resampling_strategy_args
 
         if STRING_TO_TASK_TYPES.get(dm.task_type, -1) == TIMESERIES_FORECASTING:
-            eval_function = functools.partial(eval_train_function,
-                                              evaluator_class=TimeSeriesForecastingTrainEvaluator)
+            eval_function: Callable = functools.partial(eval_train_function,
+                                                        evaluator_class=TimeSeriesForecastingTrainEvaluator)
             if isinstance(self.resampling_strategy, (HoldoutValTypes, CrossValTypes)):
                 self.output_y_hat_optimization = output_y_hat_optimization
             elif isinstance(self.resampling_strategy, NoResamplingStrategyTypes):
-                self.output_y_hat_optimization = None
+                self.output_y_hat_optimization = False
         else:
             if isinstance(self.resampling_strategy, (HoldoutValTypes, CrossValTypes)):
                 eval_function = eval_train_function
@@ -238,8 +238,8 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             return budget_choices[budget_type]
 
     def run_wrapper(
-        self,
-        run_info: RunInfo,
+            self,
+            run_info: RunInfo,
     ) -> Tuple[RunInfo, RunValue]:
         """
         wrapper function for ExecuteTARun.run_wrapper() to cap the target algorithm
@@ -297,13 +297,13 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         return run_info, run_value
 
     def run(
-        self,
-        config: Configuration,
-        instance: Optional[str] = None,
-        cutoff: Optional[float] = None,
-        seed: int = 12345,
-        budget: float = 0.0,
-        instance_specific: Optional[str] = None,
+            self,
+            config: Configuration,
+            instance: Optional[str] = None,
+            cutoff: Optional[float] = None,
+            seed: int = 12345,
+            budget: float = 0.0,
+            instance_specific: Optional[str] = None,
     ) -> Tuple[StatusType, float, float, Dict[str, Any]]:
 
         context = multiprocessing.get_context(self.pynisher_context)

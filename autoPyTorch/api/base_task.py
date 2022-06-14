@@ -1122,8 +1122,8 @@ class BaseTask(ABC):
 
         # Incorporate budget to pipeline config
         if budget_type not in ('epochs', 'runtime') and (
-                budget_type in FORECASTING_BUDGET_TYPE and
-                STRING_TO_TASK_TYPES[self.task_type] != TIMESERIES_FORECASTING
+                budget_type in FORECASTING_BUDGET_TYPE
+                and STRING_TO_TASK_TYPES[self.task_type] != TIMESERIES_FORECASTING
         ):
             raise ValueError("Budget type must be one ('epochs', 'runtime')"
                              f" yet {budget_type} was provided")

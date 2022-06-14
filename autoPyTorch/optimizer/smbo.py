@@ -20,8 +20,8 @@ from smac.utils.io.traj_logging import TrajEntry
 
 from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.constants import (
-    STRING_TO_TASK_TYPES,
     FORECASTING_BUDGET_TYPE,
+    STRING_TO_TASK_TYPES,
     TIMESERIES_FORECASTING
 )
 from autoPyTorch.datasets.base_dataset import BaseDataset
