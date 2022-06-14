@@ -66,20 +66,19 @@ class TrainerChoice(autoPyTorchChoice):
                          random_state=random_state)
         self.run_summary: Optional[RunSummary] = None
         self.writer: Optional[SummaryWriter] = None
+        self.early_stopping_split_type: Optional[str] = None
+        self._fit_requirements: Optional[List[FitRequirement]] = [
+            FitRequirement("lr_scheduler", (_LRScheduler,), user_defined=False, dataset_property=False),
+            FitRequirement("num_run", (int,), user_defined=False, dataset_property=False),
+            FitRequirement(
+                "optimizer", (Optimizer,), user_defined=False, dataset_property=False),
+            FitRequirement("train_data_loader",
+                           (torch.utils.data.DataLoader,),
+                           user_defined=False, dataset_property=False),
+            FitRequirement("val_data_loader",
+                           (torch.utils.data.DataLoader,),
+                           user_defined=False, dataset_property=False)]
         self.checkpoint_dir: Optional[str] = None
-
-    @property
-    def _fit_requirements(self) -> List[FitRequirement]:
-        return [FitRequirement("lr_scheduler", (_LRScheduler,), user_defined=False, dataset_property=False),
-                FitRequirement("num_run", (int,), user_defined=False, dataset_property=False),
-                FitRequirement(
-                    "optimizer", (Optimizer,), user_defined=False, dataset_property=False),
-                FitRequirement("train_data_loader",
-                               (torch.utils.data.DataLoader,),
-                               user_defined=False, dataset_property=False),
-                FitRequirement("val_data_loader",
-                               (torch.utils.data.DataLoader,),
-                               user_defined=False, dataset_property=False)]
 
     def get_fit_requirements(self) -> Optional[List[FitRequirement]]:
         return self._fit_requirements

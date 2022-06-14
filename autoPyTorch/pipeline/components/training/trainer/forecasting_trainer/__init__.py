@@ -1,9 +1,12 @@
 import collections
 import os
-from typing import Dict, List
+from typing import Dict, Optional
+
+import numpy as np
 
 from autoPyTorch.constants import STRING_TO_TASK_TYPES
 from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import (
     ThirdPartyComponents,
     autoPyTorchComponent,
@@ -33,14 +36,15 @@ def add_trainer(trainer: ForecastingBaseTrainerComponent) -> None:
 
 
 class ForecastingTrainerChoice(TrainerChoice):
-    @property
-    def _fit_requirements(self) -> List[FitRequirement]:
-        fit_requirements = super()._fit_requirements
-        fit_requirements.extend([FitRequirement("target_scaler", (BaseTargetScaler,),
-                                                user_defined=False, dataset_property=False),
-                                 FitRequirement("window_size", (int,), user_defined=False, dataset_property=False)]
-                                )
-        return fit_requirements
+    def __init__(self,
+                 dataset_properties: Dict[str, BaseDatasetPropertiesType],
+                 random_state: Optional[np.random.RandomState] = None
+                 ):
+        super().__init__(dataset_properties=dataset_properties, random_state=random_state)
+        self._fit_requirements.extend([FitRequirement("target_scaler", (BaseTargetScaler,),
+                                                      user_defined=False, dataset_property=False),
+                                       FitRequirement("window_size", (int,), user_defined=False,
+                                                      dataset_property=False)])
 
     def get_budget_tracker(self, X: Dict) -> BudgetTracker:
         if 'epochs' in X:
