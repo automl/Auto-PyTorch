@@ -4,8 +4,7 @@ from typing import Dict, Optional
 
 import numpy as np
 
-from autoPyTorch.constants import STRING_TO_TASK_TYPES
-from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE
+from autoPyTorch.constants import FORECASTING_BUDGET_TYPE, STRING_TO_TASK_TYPES
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import (
     ThirdPartyComponents,

@@ -12,17 +12,13 @@ from sklearn.base import BaseEstimator
 from smac.tae import StatusType
 
 from autoPyTorch.automl_common.common.utils.backend import Backend
-from autoPyTorch.constants_forecasting import SEASONALITY_MAP
-from autoPyTorch.evaluation.abstract_evaluator import \
-    DummyTimeSeriesForecastingPipeline
+from autoPyTorch.constants import SEASONALITY_MAP
+from autoPyTorch.evaluation.abstract_evaluator import DummyTimeSeriesForecastingPipeline
 from autoPyTorch.evaluation.train_evaluator import TrainEvaluator
 from autoPyTorch.evaluation.utils import DisableFileOutputParameters
-from autoPyTorch.pipeline.components.training.metrics.base import \
-    autoPyTorchMetric
-from autoPyTorch.pipeline.components.training.metrics.metrics import \
-    MASE_LOSSES
-from autoPyTorch.utils.hyperparameter_search_space_update import \
-    HyperparameterSearchSpaceUpdates
+from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
+from autoPyTorch.pipeline.components.training.metrics.metrics import MASE_LOSSES
+from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
 
 class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):

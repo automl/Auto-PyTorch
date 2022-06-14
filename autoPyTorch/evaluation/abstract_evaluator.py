@@ -25,6 +25,7 @@ import autoPyTorch.pipeline.traditional_tabular_regression
 from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.constants import (
     CLASSIFICATION_TASKS,
+    FORECASTING_BUDGET_TYPE,
     FORECASTING_TASKS,
     IMAGE_TASKS,
     MULTICLASS,
@@ -33,7 +34,6 @@ from autoPyTorch.constants import (
     STRING_TO_TASK_TYPES,
     TABULAR_TASKS
 )
-from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE
 from autoPyTorch.datasets.base_dataset import (
     BaseDataset,
     BaseDatasetPropertiesType

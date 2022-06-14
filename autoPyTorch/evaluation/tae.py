@@ -23,7 +23,7 @@ from smac.tae import StatusType, TAEAbortException
 from smac.tae.execute_func import AbstractTAFunc
 
 from autoPyTorch.automl_common.common.utils.backend import Backend
-from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE
+from autoPyTorch.constants import FORECASTING_BUDGET_TYPE
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,

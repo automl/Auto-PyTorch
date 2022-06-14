@@ -6,8 +6,7 @@ import pandas as pd
 
 from autoPyTorch.api.base_task import BaseTask
 from autoPyTorch.automl_common.common.utils.backend import Backend
-from autoPyTorch.constants import TASK_TYPES_TO_STRING, TIMESERIES_FORECASTING
-from autoPyTorch.constants_forecasting import MAX_WINDOW_SIZE_BASE
+from autoPyTorch.constants import MAX_WINDOW_SIZE_BASE, TASK_TYPES_TO_STRING, TIMESERIES_FORECASTING
 from autoPyTorch.data.time_series_forecasting_validator import \
     TimeSeriesForecastingInputValidator
 from autoPyTorch.data.utils import (DatasetCompressionSpec,

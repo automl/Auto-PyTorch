@@ -1,6 +1,6 @@
 import unittest
 
-from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE
+from autoPyTorch.constants import FORECASTING_BUDGET_TYPE
 from autoPyTorch.pipeline.components.training.trainer.forecasting_trainer import ForecastingTrainerChoice
 
 

@@ -21,14 +21,15 @@ from torch.utils.data.dataset import ConcatDataset, Dataset
 
 import torchvision.transforms
 
-from autoPyTorch.constants import (CLASSIFICATION_OUTPUTS,
-                                   STRING_TO_OUTPUT_TYPES,
-                                   TASK_TYPES_TO_STRING,
-                                   TIMESERIES_FORECASTING)
-from autoPyTorch.constants_forecasting import (MAX_WINDOW_SIZE_BASE,
-                                               SEASONALITY_MAP)
-from autoPyTorch.data.time_series_forecasting_validator import \
-    TimeSeriesForecastingInputValidator
+from autoPyTorch.constants import (
+    CLASSIFICATION_OUTPUTS,
+    MAX_WINDOW_SIZE_BASE,
+    SEASONALITY_MAP,
+    STRING_TO_OUTPUT_TYPES,
+    TASK_TYPES_TO_STRING,
+    TIMESERIES_FORECASTING
+)
+from autoPyTorch.data.time_series_forecasting_validator import TimeSeriesForecastingInputValidator
 from autoPyTorch.datasets.base_dataset import BaseDataset, type_of_target
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValFuncs,
@@ -38,8 +39,7 @@ from autoPyTorch.datasets.resampling_strategy import (
     HoldoutValTypes,
     NoResamplingStrategyTypes,
 )
-from autoPyTorch.pipeline.components.training.metrics.metrics import \
-    compute_mase_coefficient
+from autoPyTorch.pipeline.components.training.metrics.metrics import compute_mase_coefficient
 from autoPyTorch.utils.common import FitRequirement
 
 TIME_SERIES_FORECASTING_INPUT = Tuple[np.ndarray, np.ndarray]  # currently only numpy arrays are supported

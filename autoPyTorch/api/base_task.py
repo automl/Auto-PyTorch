@@ -34,12 +34,12 @@ from smac.tae import StatusType
 from autoPyTorch import metrics
 from autoPyTorch.automl_common.common.utils.backend import Backend, create
 from autoPyTorch.constants import (
+    FORECASTING_BUDGET_TYPE,
     FORECASTING_TASKS,
     REGRESSION_TASKS,
     STRING_TO_OUTPUT_TYPES,
     STRING_TO_TASK_TYPES,
 )
-from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE
 from autoPyTorch.data.base_validator import BaseInputValidator
 from autoPyTorch.data.utils import DatasetCompressionSpec
 from autoPyTorch.datasets.base_dataset import BaseDataset, BaseDatasetPropertiesType

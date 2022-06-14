@@ -19,7 +19,7 @@ from smac.tae.serial_runner import SerialRunner
 from smac.utils.io.traj_logging import TrajEntry
 
 from autoPyTorch.automl_common.common.utils.backend import Backend
-from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE
+from autoPyTorch.constants import FORECASTING_BUDGET_TYPE
 from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
