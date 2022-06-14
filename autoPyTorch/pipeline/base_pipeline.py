@@ -324,7 +324,8 @@ class BasePipeline(Pipeline):
                 if cyclic_lr_name in available_schedulers:
                     # disable snapshot ensembles and stochastic weight averaging
                     snapshot_ensemble_hyperparameter = cs.get_hyperparameter(f'trainer:{trainer}:use_snapshot_ensemble')
-                    if hasattr(snapshot_ensemble_hyperparameter, 'choices') and True in snapshot_ensemble_hyperparameter.choices:
+                    if hasattr(snapshot_ensemble_hyperparameter, 'choices') and \
+                            True in snapshot_ensemble_hyperparameter.choices:
                         cs.add_forbidden_clause(ForbiddenAndConjunction(
                             ForbiddenEqualsClause(snapshot_ensemble_hyperparameter, True),
                             ForbiddenEqualsClause(cs.get_hyperparameter('lr_scheduler:__choice__'), cyclic_lr_name)

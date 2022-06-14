@@ -168,8 +168,9 @@ class LearnedEntityEmbedding(NetworkEmbeddingComponent):
                 # instead passing it as a parameter to the feature validator, which
                 # allows us to pass embed_columns to the dataset properties.
                 # TODO: test the trade off
-                # Another solution is to combine `OneHotEncoding`, `Embedding` and `NoEncoding` in one custom transformer.
-                # this will also allow users to use this transformer outside the pipeline
+                # Another solution is to combine `OneHotEncoding`, `Embedding` and `NoEncoding`
+                # in one custom transformer. this will also allow users to use this transformer
+                # outside the pipeline
                 ee_dimensions_search_space = HyperparameterSearchSpace(hyperparameter="dimension_reduction_" + str(i),
                                                                        value_range=dimension_reduction.value_range,
                                                                        default_value=dimension_reduction.default_value,

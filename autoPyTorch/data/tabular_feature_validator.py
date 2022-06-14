@@ -281,7 +281,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
             X = self.numpy_to_pandas(X)
 
         if ispandas(X) and not issparse(X):
-
             if self.all_nan_columns is None:
                 raise ValueError('_fit must be called before calling transform')
 
