@@ -442,7 +442,7 @@ class TrainerChoice(autoPyTorchChoice):
 
             # change model
             update_model_state_dict_from_swa(X['network'], self.choice.swa_model.state_dict())
-            if self.choice.use_snapshot_ensemble:
+            if self.choice.use_snapshot_ensemble and len(self.choice.model_snapshots) > 0:
                 # we update only the last network which pertains to the stochastic weight averaging model
                 swa_utils.update_bn(X['train_data_loader'], self.choice.model_snapshots[-1].double())
 
