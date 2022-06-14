@@ -23,7 +23,7 @@ from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy, l
 
 this_directory = os.path.dirname(__file__)
 sys.path.append(this_directory)
-from evaluation_util import get_multiclass_classification_datamanager  # noqa E402
+from evaluation_util import get_forecasting_dataset, get_multiclass_classification_datamanager  # noqa E402
 
 
 def safe_eval_success_mock(*args, **kwargs):
@@ -43,6 +43,19 @@ class BackendMock(object):
 
     def load_datamanager(self):
         return get_multiclass_classification_datamanager()
+
+
+class BackendMockForecasting(object):
+    def __init__(self):
+        self.temporary_directory = './.tmp_evaluation'
+        try:
+            os.mkdir(self.temporary_directory)
+        except:  # noqa 3722
+            pass
+
+    def load_datamanager(self):
+        return get_forecasting_dataset()
+
 
 
 class EvaluationTest(unittest.TestCase):
@@ -433,11 +446,11 @@ class EvaluationTest(unittest.TestCase):
             run_info_out, _ = ta.run_wrapper(run_info)
             self.assertEqual(run_info_out.budget, budget)
 
-    def test_eval_with_addition_eval_func_kwargs(self):
+    def test_eval_forecsating(self):
         config = unittest.mock.Mock(spec=int)
         config.config_id = 198
 
-        ta = ExecuteTaFuncWithQueue(backend=BackendMock(), seed=1,
+        ta = ExecuteTaFuncWithQueue(backend=BackendMockForecasting(), seed=1,
                                     stats=self.stats,
                                     memory_limit=3072,
                                     multi_objectives=["cost"],
@@ -447,7 +460,6 @@ class EvaluationTest(unittest.TestCase):
                                     logger_port=self.logger_port,
                                     pynisher_context='fork',
                                     budget_type='runtime',
-                                    evaluator_class=TimeSeriesForecastingTrainEvaluator
                                     )
 
         ta.pynisher_logger = unittest.mock.Mock()

@@ -104,7 +104,6 @@ class TimeSeriesForecastingTask(BaseTask):
                     and update.hyperparameter == "window_size"
                 ):
                     self.customized_window_size = True
-        self.time_series_forecasting = True
 
     def _get_required_dataset_properties(self, dataset: BaseDataset) -> Dict[str, Any]:
         if not isinstance(dataset, TimeSeriesForecastingDataset):

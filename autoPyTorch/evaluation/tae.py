@@ -23,7 +23,11 @@ from smac.tae import StatusType, TAEAbortException
 from smac.tae.execute_func import AbstractTAFunc
 
 from autoPyTorch.automl_common.common.utils.backend import Backend
-from autoPyTorch.constants import FORECASTING_BUDGET_TYPE
+from autoPyTorch.constants import (
+    FORECASTING_BUDGET_TYPE,
+    STRING_TO_TASK_TYPES,
+    TIMESERIES_FORECASTING,
+)
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
@@ -31,6 +35,7 @@ from autoPyTorch.datasets.resampling_strategy import (
 )
 from autoPyTorch.evaluation.test_evaluator import eval_test_function
 from autoPyTorch.evaluation.train_evaluator import eval_train_function
+from autoPyTorch.evaluation.time_series_forecasting_train_evaluator import TimeSeriesForecastingTrainEvaluator
 from autoPyTorch.evaluation.utils import (
     DisableFileOutputParameters,
     empty_queue,
@@ -129,7 +134,6 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         logger_port: int = None,
         all_supported_metrics: bool = True,
         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
-        **eval_func_kwargs: Any
     ):
 
         self.backend = backend
@@ -147,12 +151,21 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         self.resampling_strategy = dm.resampling_strategy
         self.resampling_strategy_args = dm.resampling_strategy_args
 
-        if isinstance(self.resampling_strategy, (HoldoutValTypes, CrossValTypes)):
-            eval_function = functools.partial(eval_train_function, **eval_func_kwargs)
-            self.output_y_hat_optimization = output_y_hat_optimization
-        elif isinstance(self.resampling_strategy, NoResamplingStrategyTypes):
-            eval_function = functools.partial(eval_test_function, **eval_func_kwargs)
-            self.output_y_hat_optimization = False
+        if STRING_TO_TASK_TYPES.get(dm.task_type, -1) == TIMESERIES_FORECASTING:
+            eval_function = functools.partial(eval_train_function,
+                                              evaluator_class=TimeSeriesForecastingTrainEvaluator)
+            if isinstance(self.resampling_strategy, (HoldoutValTypes, CrossValTypes)):
+                self.output_y_hat_optimization = output_y_hat_optimization
+            elif isinstance(self.resampling_strategy, NoResamplingStrategyTypes):
+                self.output_y_hat_optimization = None
+        else:
+            if isinstance(self.resampling_strategy, (HoldoutValTypes, CrossValTypes)):
+                eval_function = eval_train_function
+                self.output_y_hat_optimization = output_y_hat_optimization
+            elif isinstance(self.resampling_strategy, NoResamplingStrategyTypes):
+                eval_function = eval_test_function
+                self.output_y_hat_optimization = False
+
         self.worst_possible_result = cost_for_crash
 
         eval_function = functools.partial(

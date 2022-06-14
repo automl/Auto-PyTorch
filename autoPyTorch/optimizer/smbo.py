@@ -19,7 +19,11 @@ from smac.tae.serial_runner import SerialRunner
 from smac.utils.io.traj_logging import TrajEntry
 
 from autoPyTorch.automl_common.common.utils.backend import Backend
-from autoPyTorch.constants import FORECASTING_BUDGET_TYPE
+from autoPyTorch.constants import (
+    STRING_TO_TASK_TYPES,
+    FORECASTING_BUDGET_TYPE,
+    TIMESERIES_FORECASTING
+)
 from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
@@ -29,7 +33,6 @@ from autoPyTorch.datasets.resampling_strategy import (
 )
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
-from autoPyTorch.evaluation.time_series_forecasting_train_evaluator import TimeSeriesForecastingTrainEvaluator
 from autoPyTorch.optimizer.utils import read_forecasting_init_configurations, read_return_initial_configurations
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
@@ -127,7 +130,7 @@ class AutoMLSMBO(object):
                  pynisher_context: str = 'spawn',
                  min_budget: Union[int, float] = 5,
                  max_budget: Union[int, float] = 50,
-                 time_series_forecasting: bool = False,
+                 task_type: str = "",
                  **kwargs: Dict[str, Any]
                  ):
         """
@@ -203,9 +206,8 @@ class AutoMLSMBO(object):
                 max_budget states the maximum resource allocation a pipeline is going to
                 be ran. For example, if the budget_type is epochs, and max_budget=50,
                 then the pipeline training will be terminated after 50 epochs.
-            time_series_forecasting (bool):
-                If we want to apply this optimizer to optimize time series prediction tasks (which has a different
-                tae)
+            task_type (str):
+                task type. Forecasting tasks require special process
             kwargs (Any):
                 Additional Arguments for forecasting tasks. It includes:
                     min_num_test_instances (int): minimal number of instances used to initialize a proxy validation set
@@ -258,7 +260,7 @@ class AutoMLSMBO(object):
 
         self.search_space_updates = search_space_updates
 
-        self.time_series_forecasting = time_series_forecasting
+        self.task_type = task_type
 
         if logger_port is None:
             self.logger_port = logging.handlers.DEFAULT_TCP_LOGGING_PORT
@@ -271,7 +273,7 @@ class AutoMLSMBO(object):
 
         initial_configurations = []
 
-        if self.time_series_forecasting:
+        if STRING_TO_TASK_TYPES.get(self.task_type, -1) == TIMESERIES_FORECASTING:
             suggested_init_models: Optional[List[str]] = kwargs.get('suggested_init_models',  # type:ignore[assignment]
                                                                     None)
             custom_init_setting_path: Optional[str] = kwargs.get('custom_init_setting_path',  # type:ignore[assignment]
@@ -339,7 +341,6 @@ class AutoMLSMBO(object):
             pipeline_config=self.pipeline_config,
             search_space_updates=self.search_space_updates,
             pynisher_context=self.pynisher_context,
-            evaluator_class=TimeSeriesForecastingTrainEvaluator if self.time_series_forecasting else None,
         )
         ta = ExecuteTaFuncWithQueue
         self.logger.info("Finish creating Target Algorithm (TA) function")
@@ -389,13 +390,11 @@ class AutoMLSMBO(object):
 
         budget_type = self.pipeline_config['budget_type']
         if budget_type in FORECASTING_BUDGET_TYPE:
+            if STRING_TO_TASK_TYPES.get(self.task_type, -1) != TIMESERIES_FORECASTING:
+                raise ValueError('Forecasting Budget type is only available for forecasting task!')
             if self.min_budget > 1. or self.max_budget > 1.:
                 self.min_budget = float(self.min_budget) / float(self.max_budget)
                 self.max_budget = 1.0
-
-        if self.time_series_forecasting:
-            ta_kwargs["evaluator_class"] = TimeSeriesForecastingTrainEvaluator
-            ta_kwargs['max_budget'] = self.max_budget
             ta_kwargs['min_num_test_instances'] = self.min_num_test_instances
 
         if self.get_smac_object_callback is not None:

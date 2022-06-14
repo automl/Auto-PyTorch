@@ -39,6 +39,7 @@ from autoPyTorch.constants import (
     REGRESSION_TASKS,
     STRING_TO_OUTPUT_TYPES,
     STRING_TO_TASK_TYPES,
+    TIMESERIES_FORECASTING,
 )
 from autoPyTorch.data.base_validator import BaseInputValidator
 from autoPyTorch.data.utils import DatasetCompressionSpec
@@ -53,7 +54,6 @@ from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.ensemble.singlebest_ensemble import SingleBest
 from autoPyTorch.evaluation.abstract_evaluator import fit_and_suppress_warnings
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
-from autoPyTorch.evaluation.time_series_forecasting_train_evaluator import TimeSeriesForecastingTrainEvaluator
 from autoPyTorch.evaluation.utils import DisableFileOutputParameters
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
@@ -81,7 +81,7 @@ def _pipeline_predict(pipeline: BasePipeline,
                       batch_size: int,
                       logger: PicklableClientLogger,
                       task: int,
-                      forecasting_task: bool = False) -> np.ndarray:
+                      task_type: str = "") -> np.ndarray:
     @typing.no_type_check
     def send_warnings_to_log(
             message, category, filename, lineno, file=None, line=None):
@@ -105,7 +105,7 @@ def _pipeline_predict(pipeline: BasePipeline,
                     prediction,
                     np.sum(prediction, axis=1)
                 ))
-    if not forecasting_task:
+    if STRING_TO_TASK_TYPES.get(task_type, -1) != TIMESERIES_FORECASTING:
         if len(prediction.shape) < 1 or len(X_.shape) < 1 or \
                 X_.shape[0] < 1 or prediction.shape[0] != X_.shape[0]:
             logger.warning(
@@ -258,8 +258,6 @@ class BaseTask(ABC):
                               HyperparameterSearchSpaceUpdates):
                 raise ValueError("Expected search space updates to be of instance"
                                  " HyperparameterSearchSpaceUpdates got {}".format(type(self.search_space_updates)))
-
-        self.time_series_forecasting = task_type == 'time_series_forecasting'
 
     @abstractmethod
     def build_pipeline(
@@ -746,7 +744,6 @@ class BaseTask(ABC):
             memory_limit=memory_limit,
             disable_file_output=self._disable_file_output,
             all_supported_metrics=self._all_supported_metrics,
-            evaluator_class=TimeSeriesForecastingTrainEvaluator if self.time_series_forecasting else None,
         )
 
         status, _, _, additional_info = ta.run(num_run, cutoff=self._time_for_task)
@@ -832,7 +829,6 @@ class BaseTask(ABC):
                     memory_limit=memory_limit,
                     disable_file_output=self._disable_file_output,
                     all_supported_metrics=self._all_supported_metrics,
-                    evaluator_class=TimeSeriesForecastingTrainEvaluator if self.time_series_forecasting else None,
                 )
                 dask_futures.append([
                     classifier,
@@ -1125,8 +1121,10 @@ class BaseTask(ABC):
         self.search_space = self.get_search_space(dataset)
 
         # Incorporate budget to pipeline config
-        if budget_type not in ('epochs', 'runtime') and (budget_type in FORECASTING_BUDGET_TYPE
-                                                         and not self.time_series_forecasting):
+        if budget_type not in ('epochs', 'runtime') and (
+                budget_type in FORECASTING_BUDGET_TYPE and
+                STRING_TO_TASK_TYPES[self.task_type] != TIMESERIES_FORECASTING
+        ):
             raise ValueError("Budget type must be one ('epochs', 'runtime')"
                              f" yet {budget_type} was provided")
         self.pipeline_options['budget_type'] = budget_type
@@ -1275,7 +1273,7 @@ class BaseTask(ABC):
                 search_space_updates=self.search_space_updates,
                 portfolio_selection=portfolio_selection,
                 pynisher_context=self._multiprocessing_context,
-                time_series_forecasting=self.time_series_forecasting,
+                task_type=self.task_type,
                 **kwargs,
             )
             try:
@@ -1356,7 +1354,7 @@ class BaseTask(ABC):
                                   'split_id': split_id,
                                   'num_run': self._backend.get_next_num_run(),
                                   })
-        if self.time_series_forecasting:
+        if STRING_TO_TASK_TYPES[self.task_type] == TIMESERIES_FORECASTING:
             warnings.warn("Currently Time Series Forecasting tasks do not allow computing metrics "
                           "during training. It will be automatically set as False")
             self.pipeline_options["metrics_during_training"] = False
@@ -1655,8 +1653,6 @@ class BaseTask(ABC):
             search_space_updates=search_space_updates,
             pipeline_config=pipeline_options,
             pynisher_context=self._multiprocessing_context,
-            evaluator_class=TimeSeriesForecastingTrainEvaluator if self.time_series_forecasting else None,
-
         )
 
         run_info, run_value = tae.run_wrapper(
@@ -1749,7 +1745,7 @@ class BaseTask(ABC):
         all_predictions = joblib.Parallel(n_jobs=n_jobs)(
             joblib.delayed(_pipeline_predict)(
                 models[identifier], X_test, batch_size, self._logger, STRING_TO_TASK_TYPES[self.task_type],
-                self.time_series_forecasting
+                self.task_type
             )
             for identifier in self.ensemble_.get_selected_model_identifiers()
         )
