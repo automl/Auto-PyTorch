@@ -16,7 +16,7 @@
         "optimizer:AdamOptimizer:beta2": 0.999,
         "network_init:__choice__": "XavierInit",
         "network_init:XavierInit:bias_strategy": "Normal",
-        "target_scaler:__choice__": "TargetMeanAbsScaler",
+        "target_scaler:scaling_mode": "mean_abs",
         "trainer:__choice__": "ForecastingStandardTrainer",
         "network_embedding:__choice__": "NoEmbedding"
     },
@@ -182,7 +182,7 @@
             "network_backbone:seq_encoder:block_1:TransformerDecoder:layer_norm_eps_output": 1e-05
         },
         "NBEATS-I": {
-            "target_scaler:__choice__": "TargetNoScaler",
+            "target_scaler:scaling_mode": "none",
             "data_loader:backcast": true,
             "data_loader:backcast_period": 2,
             "loss:__choice__": "RegressionLoss",
@@ -230,7 +230,7 @@
         },
         "TemoporalFusionTransformer": {
             "loss:__choice__": "QuantileLoss",
-            "target_scaler:__choice__": "TargetStandardScaler",
+            "target_scaler:scaling_mode": "standard",
             "data_loader:transform_time_features": true,
             "loss:QuantileLoss:lower_quantile": 0.1,
             "loss:QuantileLoss:upper_quantile": 0.9,
