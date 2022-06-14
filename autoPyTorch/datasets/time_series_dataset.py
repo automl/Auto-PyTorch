@@ -42,10 +42,6 @@ from autoPyTorch.datasets.resampling_strategy import (
 from autoPyTorch.pipeline.components.training.metrics.metrics import compute_mase_coefficient
 from autoPyTorch.utils.common import FitRequirement
 
-TIME_SERIES_FORECASTING_INPUT = Tuple[np.ndarray, np.ndarray]  # currently only numpy arrays are supported
-TIME_SERIES_REGRESSION_INPUT = Tuple[np.ndarray, np.ndarray]
-TIME_SERIES_CLASSIFICATION_INPUT = Tuple[np.ndarray, np.ndarray]
-
 
 def extract_feature_index(feature_shapes: Dict[str, int],
                           feature_names: Tuple[str],
@@ -53,12 +49,16 @@ def extract_feature_index(feature_shapes: Dict[str, int],
     """
     extract the index of a set of queried_features from the extracted feature_shapes
     Args:
-        feature_shapes (dict): feature_shapes recoding the shape of each features
-        feature_names (List[str]): names of the features
-        queried_features (Tuple[str]): names of the features that we expect their index
+        feature_shapes (dict):
+            feature_shapes recoding the shape of each features
+        feature_names (List[str]):
+            names of the features
+        queried_features (Tuple[str]):
+            names of the features that we expect their index
 
     Returns:
         feature_index (Tuple[int]):
+            indices of the corresponding features
     """
     df_range = pd.DataFrame(feature_shapes, columns=feature_names, index=[0])
     df_range_end = df_range.cumsum(axis=1)
@@ -90,6 +90,39 @@ def compute_time_features(start_time: pd.DatetimeIndex,
 
 
 class TimeSeriesSequence(Dataset):
+    """
+    A dataset representing a time series sequence. It returns all the previous observations once it is asked for an item
+    Args:
+        X (Optional[np.ndarray]):
+            past features
+        Y (np.ndarray):
+            past targets
+        start_time (Optional[pd.DatetimeIndex]):
+            times of the first timestep of the series
+        freq (str):
+            frequency that the data is sampled
+        time_feature_transform (List[TimeFeature]):
+            available time features applied to the series
+        X_test (Optional[np.ndarray]):
+            known future features
+        Y_test (Optional[np.ndarray]):
+            future targets
+        train_transforms (Optional[torchvision.transforms.Compose]):
+            training transforms, used to transform training features
+        val_transforms (Optional[torchvision.transforms.Compose]):
+            validation transforms, used to transform training features
+        n_prediction_steps (int):
+            how many steps need to be predicted in advance
+        known_future_features_index (int):
+            indices of the known future index
+        compute_mase_coefficient_value (bool):
+            if the mase coefficient for this series is pre-computed
+        time_features (Optional[np.ndarray]):
+            pre-computed time features
+        is_test_set (bool):
+            if this dataset is test sets. Test sequence will simply make X_test and Y_test as future features and
+            future targets
+    """
     _is_test_set = False
     is_pre_processed = False
 
@@ -110,27 +143,6 @@ class TimeSeriesSequence(Dataset):
                  time_features: Optional[np.ndarray] = None,
                  is_test_set: bool = False,
                  ) -> None:
-        """
-        A dataset representing a time series sequence.
-        Args:
-            X (Optional[np.ndarray]): past features
-            Y (np.ndarray): past targets
-            start_time (Optional[pd.DatetimeIndex]): times of the first timestep of the series
-            freq (str): frequency that the data is sampled
-            time_feature_transform (List[TimeFeature]) available time features applied to the series
-            X_test (Optional[np.ndarray]): known future features
-            Y_test (Optional[np.ndarray]): future targets
-            train_transforms (Optional[torchvision.transforms.Compose]): training transforms, used to transform
-                training features
-            val_transforms (Optional[torchvision.transforms.Compose]): validation transforms, used to transform
-                training features
-            n_prediction_steps (int): how many steps need to be predicted in advance
-            known_future_features_index (int), indices of the known future index
-            compute_mase_coefficient_value (bool): if the mase coefficient for this series is pre-computed
-            time_features (Optional[np.ndarray]): pre-computed time features
-            is_test_set (bool): if this dataset is test sets. Test sequence will simply make X_test and Y_test as future
-                features and future targets
-        """
         self.n_prediction_steps = n_prediction_steps
 
         if X is not None and X.ndim == 1:
@@ -202,8 +214,10 @@ class TimeSeriesSequence(Dataset):
         [past_targets, time_features, X_features])
 
         Args:
-            index (int): what element to yield from all the train/test tensors
-            train (bool): Whether to apply a train or test transformation, if any
+            index (int):
+                what element to yield from all the train/test tensors
+            train (bool):
+                Whether to apply a train or test transformation, if any
 
         Returns:
             features from past, targets from past and future
@@ -303,10 +317,12 @@ class TimeSeriesSequence(Dataset):
         """
         Get the visible targets in the datasets without generating a tensor. This can be used to create a dummy pipeline
         Args:
-            index: target index
+            index (int):
+                target index
 
         Returns:
-            y: the last visible target value
+            y (np.ndarray):
+                the last visible target value
         """
         if index < 0:
             index = self.__len__() + index
@@ -343,9 +359,10 @@ class TimeSeriesSequence(Dataset):
         a dataloader can yield this dataset with the desired transformations
 
         Args:
-            transform (torchvision.transforms.Compose): The transformations proposed
-                by the current pipeline
-            train (bool): Whether to update the train or validation transform
+            transform (torchvision.transforms.Compose):
+                The transformations proposed by the current pipeline
+            train (bool):
+                    Whether to update the train or validation transform
 
         Returns:
             self: A copy of the update pipeline
@@ -422,6 +439,56 @@ class TimeSeriesSequence(Dataset):
 
 
 class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
+    """
+    Dataset class for time series forecasting used in AutoPyTorch. It consists of multiple TimeSeriesSequence.
+    Train and test tensors are stored as pd.DataFrame whereas their index indicates which series the data belongs to
+    Args:
+    X (Optional[Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]]):
+        time series features. can be None if we work with a uni-variant forecasting task
+    Y (Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]):
+        forecasting targets. Must be given
+    X_test (Optional[Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]]):
+        known future features. It is a collection of series that has the same amount of data as X. It
+        is designed to be at the tail of X. If no feature is known in the future, this value can be omitted.
+    Y_test (Optional[Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]] = None):
+        future targets. It is a collection of series that has the same data of series as Y. It is designed to be at
+        the tail of Y after the timestamps that need to be predicted.
+    start_times (Optional[List[pd.DatetimeIndex]]):
+        starting time of each series when they are sampled. If it is not given, we simply start with a fixed timestamp.
+    series_idx (Optional[Union[List[Union[str, int]], str, int]]):
+        (only works if X is stored as pd.DataFrame). This value is applied to identify which series the data belongs to
+        if the data is presented as a "chunk" dataframe
+    known_future_features (Optional[Union[Tuple[Union[str, int]], Tuple[()]]]):
+        future features that are known in advance. For instance, holidays.
+    time_feature_transform (Optional[List[TimeFeature]]):
+        A list of time feature transformation methods implemented in gluonts. For more information, please check
+        gluonts.time_feature
+    freq (Optional[Union[str, int, List[int]]]):
+        the frequency that the data is sampled. It needs to keep consistent within one dataset
+    resampling_strategy (Optional[Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]])
+        resampling strategy. We designed several special resampling resampling_strategy for forecasting tasks. Please
+        refer to autoPyTorch.datasets.resampling_strategy
+    resampling_strategy_args (Optional[Dict[str, Any]]):
+        arguments passed to resampling_strategy
+    seed (int):
+        random seeds
+    train_transforms (Optional[torchvision.transforms.Compose]):
+        Transformation applied to training data before it is fed to the dataloader
+    val_transforms (Optional[torchvision.transforms.Compose]):
+        Transformation applied to validation data before it is fed to the dataloader
+    validator (Optional[TimeSeriesForecastingInputValidator]):
+        Input Validator
+    lagged_value (Optional[List[int]])
+        We could consider past targets as additional features for the current timestep. This item indicates the number
+        timesteps in advanced that we want to apply the targets as our current features
+    n_prediction_steps (int):
+        The number of steps you want to forecast into the future (forecast horizon)
+    dataset_name (Optional[str]):
+        dataset name
+    normalize_y(bool):
+        if targets are normalized within each series
+    """
+
     datasets: List[TimeSeriesSequence]
     cumulative_sizes: List[int]
 
@@ -439,7 +506,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                      Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]
                  ] = HoldoutValTypes.time_series_hold_out_validation,
                  resampling_strategy_args: Optional[Dict[str, Any]] = None,
-                 shuffle: Optional[bool] = True,
                  seed: Optional[int] = 42,
                  train_transforms: Optional[torchvision.transforms.Compose] = None,
                  val_transforms: Optional[torchvision.transforms.Compose] = None,
@@ -449,19 +515,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                  dataset_name: Optional[str] = None,
                  normalize_y: bool = False,
                  ):
-        """
-        tasks, the target_variables indicates which values in X corresponds to Y.
-        :param freq: Optional[Union[str, int]] frequency of the series sequences, used to determine the (possible)
-        period
-        :param lagged_value: lagged values applied to RNN and Transformer that allows them to use previous data
-        :param n_prediction_steps: The number of steps you want to forecast into the future
-        if the input X and targets needs to be shifted to be aligned:
-        such that the data until X[t] is applied to predict the value y[t+n_prediction_steps]
-        :param normalize_y: bool
-        if y values needs to be normalized with mean 0 and variance 1
-        if the dataset is trained with log_prob losses, this needs to be specified in the very beginning such that the
-        header's configspace can be built beforehand.
-        """
         # Preprocess time series data information
         assert X is not Y, "Training and Test data needs to belong two different object!!!"
 
@@ -606,7 +659,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.numerical_features: List[int] = self.numerical_columns
         self.categorical_features: List[int] = self.categorical_columns
 
-        self.shuffle = shuffle
         self.random_state = np.random.RandomState(seed=seed)
 
         resampling_strategy_opt, resampling_strategy_args_opt = self.get_split_strategy(
@@ -845,8 +897,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 flattened test target array with size N_all (the sum of all the series sequences) and number of targets
             is_test_set (bool):
                 if the generated sequence used for test
-            dataset_with_future_features (bool):
-                if we want to create a dataset with future features (that contained in X)
             sequences_kwargs: Dict
                 additional arguments for test sets
         Returns:
@@ -926,9 +976,10 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         a dataloader can yield this dataset with the desired transformations
 
         Args:
-            transform (torchvision.transforms.Compose): The transformations proposed
-                by the current pipeline
-            train (bool): Whether to update the train or validation transform
+            transform (torchvision.transforms.Compose):
+                The transformations proposed by the current pipeline
+            train (bool):
+                Whether to update the train or validation transform
 
         Returns:
             self: A copy of the update pipeline
@@ -1036,14 +1087,21 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         Determines the most possible sampling strategy for the datasets: the lengths of each sequence might not be long
         enough to support cross-validation split, thus we need to carefully compute the number of folds
         Args:
-            sequence_lengths (List[int]): lengths of each sequence
-            n_prediction_steps (int): forecasting horizon
-            freq_value (Union[float, int]): period of the dataset, determined by its sampling frequency
-            resampling_strategy(Optional[Union[CrossValTypes, HoldoutValTypes]]): resampling strategy to be checked
-            resampling_strategy_args (Optional[Dict[str, Any]]): resampling strategy arguments to be checked
+            sequence_lengths (List[int]):
+                lengths of each sequence
+            n_prediction_steps (int):
+                forecasting horizon
+            freq_value (Union[float, int]):
+                period of the dataset, determined by its sampling frequency
+            resampling_strategy(Optional[Union[CrossValTypes, HoldoutValTypes]]):
+                resampling strategy to be checked
+            resampling_strategy_args (Optional[Dict[str, Any]]):
+                resampling strategy arguments to be checked
         Returns:
-            resampling_strategy(Optional[Union[CrossValTypes, HoldoutValTypes]]): resampling strategy
-            resampling_strategy_args (Optional[Dict[str, Any]]): resampling strategy arguments
+            resampling_strategy(Optional[Union[CrossValTypes, HoldoutValTypes]]):
+                resampling strategy
+            resampling_strategy_args (Optional[Dict[str, Any]]):
+                resampling strategy arguments
         """
         # check if dataset could be split with cross validation
         minimal_seq_length = np.min(sequence_lengths) - n_prediction_steps
@@ -1136,8 +1194,10 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         It is done once per dataset to have comparable results among pipelines
         Args:
             cross_val_type (CrossValTypes):
-            num_splits (int): number of splits to be created
-            n_repeats (int): how many n_prediction_steps to repeat in the validation set
+            num_splits (int):
+                number of splits to be created
+            n_repeats (int):
+                how many n_prediction_steps to repeat in the validation set
 
         Returns:
             (List[Tuple[Union[List[int], np.ndarray], Union[List[int], np.ndarray]]]):
@@ -1193,8 +1253,10 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         It is done once per dataset to have comparable results among pipelines
         Args:
             holdout_val_type (HoldoutValTypes):
-            val_share (float): share of the validation data
-            n_repeats (int): how many n_prediction_steps to repeat in the validation set
+            val_share (float):
+                share of the validation data
+            n_repeats (int):
+                how many n_prediction_steps to repeat in the validation set
 
         Returns:
             (Tuple[np.ndarray, np.ndarray]): Tuple containing (train_indices, val_indices)
