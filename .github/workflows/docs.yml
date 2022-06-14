@@ -33,7 +33,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install -e .[docs,examples]
+        pip install -e .[docs,examples,forecasting]
 
     - name: Make docs
       run: |

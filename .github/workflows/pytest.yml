@@ -89,7 +89,7 @@ jobs:
       run: |
         git submodule update --init --recursive
         python -m pip install --upgrade pip
-        pip install -e .[forecasting, test]
+        pip install -e .[forecasting,test]
 
     - name: Dist install
       if: matrix.kind == 'dist'
@@ -98,7 +98,7 @@ jobs:
 
         python setup.py sdist
         last_dist=$(ls -t dist/autoPyTorch-*.tar.gz | head -n 1)
-        pip install $last_dist[forecasting, test]
+        pip install $last_dist[forecasting,test]
 
     - name: Store repository status
       id: status-before
