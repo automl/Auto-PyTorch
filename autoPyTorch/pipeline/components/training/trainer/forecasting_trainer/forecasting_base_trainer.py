@@ -11,8 +11,7 @@ from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
 from autoPyTorch.constants import FORECASTING_TASKS, REGRESSION_TASKS
-from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import BaseTargetScaler
-from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.TargetNoScaler import TargetNoScaler
+from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.base_target_scaler import BaseTargetScaler
 from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
 from autoPyTorch.pipeline.components.setup.network.forecasting_network import (
     ForecastingDeepARNet,
@@ -44,7 +43,7 @@ class ForecastingBaseTrainerComponent(BaseTrainerComponent, ABC):
             step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.batch,
             window_size: int = 20,
             dataset_properties: Dict = {},
-            target_scaler: BaseTargetScaler = TargetNoScaler(),
+            target_scaler: BaseTargetScaler = BaseTargetScaler(),
             backcast_loss_ratio: Optional[float] = None,
     ) -> None:
         # metrics_during_training is not appliable when computing scaled values

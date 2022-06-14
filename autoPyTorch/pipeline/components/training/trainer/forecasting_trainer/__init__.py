@@ -11,7 +11,7 @@ from autoPyTorch.pipeline.components.base_component import (
     autoPyTorchComponent,
     find_components
 )
-from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import BaseTargetScaler
+from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.base_target_scaler import BaseTargetScaler
 from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics
 from autoPyTorch.pipeline.components.training.trainer import TrainerChoice
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BudgetTracker

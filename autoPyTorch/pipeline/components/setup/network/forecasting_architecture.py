@@ -6,8 +6,7 @@ import torch
 from torch import nn
 from torch.distributions import AffineTransform, TransformedDistribution
 
-from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import \
-    BaseTargetScaler
+from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.base_target_scaler import BaseTargetScaler
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.cells import (
     StackedDecoder,
     StackedEncoder,

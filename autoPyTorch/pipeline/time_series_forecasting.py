@@ -38,7 +38,7 @@ from autoPyTorch.pipeline.components.setup.early_preprocessor.TimeSeriesEarlyPre
     TimeSeriesEarlyPreprocessing,
     TimeSeriesTargetEarlyPreprocessing
 )
-from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import TargetScalerChoice
+from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.base_target_scaler import BaseTargetScaler
 from autoPyTorch.pipeline.components.setup.forecasting_training_loss import ForecastingLossChoices
 from autoPyTorch.pipeline.components.setup.lr_scheduler import SchedulerChoice
 from autoPyTorch.pipeline.components.setup.network.forecasting_network import ForecastingNetworkComponent
@@ -359,8 +359,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             ("target_imputer", TimeSeriesTargetImputer(random_state=self.random_state)),
             ("target_preprocessing", TimeSeriesTargetEarlyPreprocessing(random_state=self.random_state)),
             ('loss', ForecastingLossChoices(default_dataset_properties, random_state=self.random_state)),
-            ("target_scaler", TargetScalerChoice(default_dataset_properties,
-                                                 random_state=self.random_state)),
+            ("target_scaler", BaseTargetScaler(random_state=self.random_state)),
             ("data_loader", TimeSeriesForecastingDataLoader(random_state=self.random_state)),
             ("network_embedding", NetworkEmbeddingChoice(default_dataset_properties,
                                                          random_state=self.random_state)),

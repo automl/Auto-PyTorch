@@ -7,7 +7,7 @@ import pytest
 
 import torch
 
-from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.TargetStandardScaler import TargetStandardScaler
+from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.base_target_scaler import BaseTargetScaler
 from autoPyTorch.pipeline.components.setup.network.forecasting_architecture import (
     AbstractForecastingNet,
     get_lagged_subsequences,
@@ -116,7 +116,7 @@ class TestForecastingNetworks:
 
         fit_dictionary = copy.copy(self.fit_dictionary)
         fit_dictionary['dataset_properties'] = dataset_properties
-        fit_dictionary['target_scaler'] = TargetStandardScaler().fit(fit_dictionary)
+        fit_dictionary['target_scaler'] = BaseTargetScaler(scaling_mode='standard').fit(fit_dictionary)
 
         if net_output_type.startswith("distribution"):
             fit_dictionary['dist_forecasting_strategy'] = DisForecastingStrategy(

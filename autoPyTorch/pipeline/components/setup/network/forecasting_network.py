@@ -6,7 +6,7 @@ import torch
 from torch import nn
 
 from autoPyTorch.constants import CLASSIFICATION_TASKS, STRING_TO_TASK_TYPES
-from autoPyTorch.pipeline.components.setup.forecasting_target_scaling import BaseTargetScaler
+from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.base_target_scaler import BaseTargetScaler
 from autoPyTorch.pipeline.components.setup.network.base_network import NetworkComponent
 from autoPyTorch.pipeline.components.setup.network.forecasting_architecture import (
     ForecastingDeepARNet,

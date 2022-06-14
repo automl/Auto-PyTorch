@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional, Union
 
-from ConfigSpace import ConfigurationSpace
+from ConfigSpace import ConfigurationSpace, CategoricalHyperparameter
 
 import numpy as np
 
@@ -11,14 +11,17 @@ import torch
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
-from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.utils import \
-    TargetScaler
+from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.utils import TargetScaler
+from autoPyTorch.utils.common import add_hyperparameter, HyperparameterSearchSpace
 
 
 class BaseTargetScaler(autoPyTorchComponent):
-    def __init__(self, random_state: Optional[Union[np.random.RandomState, int]] = None):
+    def __init__(self,
+                 random_state: Optional[Union[np.random.RandomState, int]] = None,
+                 scaling_mode: str = 'none'):
         super().__init__()
         self.random_state = random_state
+        self.scaling_mode = scaling_mode
         self.preprocessor: Optional[Pipeline] = None
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
@@ -34,12 +37,8 @@ class BaseTargetScaler(autoPyTorchComponent):
                 an instance of self
         """
         self.check_requirements(X, y)
-        self.scaler = TargetScaler(mode=self.scaler_mode)
+        self.scaler = TargetScaler(mode=self.scaling_mode)
         return self
-
-    @property
-    def scaler_mode(self) -> str:
-        raise NotImplementedError
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -75,7 +74,13 @@ class BaseTargetScaler(autoPyTorchComponent):
 
     @staticmethod
     def get_hyperparameter_search_space(
-            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None
+            dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+            scaling_mode: HyperparameterSearchSpace = HyperparameterSearchSpace(
+                hyperparameter='scaling_mode',
+                value_range=("standard", "min_max", "max_abs", "mean_abs", "none"),
+                default_value="standard",
+            ),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
+        add_hyperparameter(cs, scaling_mode, CategoricalHyperparameter)
         return cs
