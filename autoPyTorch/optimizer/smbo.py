@@ -8,11 +8,11 @@ from ConfigSpace.configuration_space import Configuration
 
 import dask.distributed
 
-from smac.facade.smac_hpo_facade import SMAC4HPO
+from smac.facade.smac_ac_facade import SMAC4AC
 from smac.intensification.hyperband import Hyperband
 from smac.intensification.intensification import Intensifier
 from smac.runhistory.runhistory import RunHistory
-from smac.runhistory.runhistory2epm import RunHistory2EPM4LogScaledCost
+from smac.runhistory.runhistory2epm import RunHistory2EPM4LogCost
 from smac.scenario.scenario import Scenario
 from smac.tae.dask_runner import DaskParallelRunner
 from smac.tae.serial_runner import SerialRunner
@@ -50,7 +50,7 @@ def get_smac_object(
     max_budget: Union[int, float],
     dask_client: Optional[dask.distributed.Client],
     initial_configurations: Optional[List[Configuration]] = None,
-) -> SMAC4HPO:
+) -> SMAC4AC:
     """
     This function returns an SMAC object that is gonna be used as
     optimizer of pipelines
@@ -73,6 +73,7 @@ def get_smac_object(
 
     """
     if initial_budget == max_budget:
+        # This allows vanilla BO optimization
         intensifier = Intensifier
         intensifier_kwargs: Dict[str, Any] = {'deterministic': True, }
 
@@ -80,9 +81,9 @@ def get_smac_object(
         intensifier = Hyperband
         intensifier_kwargs = {'initial_budget': initial_budget, 'max_budget': max_budget,
                               'eta': 3, 'min_chall': 1, 'instance_order': 'shuffle_once'}
-    rh2EPM = RunHistory2EPM4LogScaledCost
+    rh2EPM = RunHistory2EPM4LogCost
 
-    return SMAC4HPO(
+    return SMAC4AC(
         scenario=Scenario(scenario_dict),
         rng=seed,
         runhistory2epm=rh2EPM,
