@@ -210,12 +210,13 @@ class AutoMLSMBO(object):
             task_type (str):
                 task type. Forecasting tasks require special process
             kwargs (Any):
-                Additional Arguments for forecasting tasks. It includes:
-                    min_num_test_instances (int): minimal number of instances used to initialize a proxy validation set
-                    suggested_init_models (List[str]): A set of initial models suggested by the users.
-                        Their hyperparameters are still determined by the default configurations
-                    custom_init_setting_path (str): the path to the initial hyperparameter configurations set by the
-                        users
+                additional arguments that are customed by some specific task.
+                For instance, forecasting tasks require:
+                    min_num_test_instances (int):  minimal number of instances used to initialize a proxy validation set
+                    suggested_init_models (List[str]):  A set of initial models suggested by the users. Their
+                        hyperparameters are determined by the default configurations
+                    custom_init_setting_path (str): The path to the initial hyperparameter configurations set by
+                    the users
 
         """
         super(AutoMLSMBO, self).__init__()

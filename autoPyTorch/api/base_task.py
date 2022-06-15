@@ -1055,11 +1055,14 @@ class BaseTask(ABC):
                 Additionally, the keyword 'greedy' is supported,
                 which would use the default portfolio from
                 `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`_
-            time_series_forecasting: bool
-                if time series forecasting task is implemented.
             kwargs: Any
-                additional arguments
-
+                additional arguments that are customed by some specific task.
+                For instance, forecasting tasks require:
+                    min_num_test_instances (int):  minimal number of instances used to initialize a proxy validation set
+                    suggested_init_models (List[str]):  A set of initial models suggested by the users. Their
+                        hyperparameters are determined by the default configurations
+                    custom_init_setting_path (str): The path to the initial hyperparameter configurations set by
+                    the users
         Returns:
             self
 
