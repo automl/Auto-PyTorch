@@ -460,6 +460,7 @@ def _subsample_by_indices(
 
 
 def get_raw_memory_usage(arr: DatasetCompressionInputType) -> float:
+    memory_in_bytes: float
     if isinstance(arr, np.ndarray):
         memory_in_bytes = arr.nbytes
     elif issparse(arr):
@@ -478,13 +479,13 @@ def get_approximate_mem_usage_in_mb(
     n_categories_per_cat_column: Optional[List[int]] = None
 ) -> float:
 
-    
+    err_msg = "Value number of categories per categorical is required when the data has categorical columns"
     if ispandas(arr):
         arr_dtypes = arr.dtypes.to_dict()
         multipliers = [dtype.itemsize for col, dtype in arr_dtypes.items() if col not in categorical_columns]
         if len(categorical_columns) > 0:
             if n_categories_per_cat_column is None:
-                raise ValueError("Value number of categories per categorical is required when the data has categorical columns")
+                raise ValueError(err_msg)
             for col, num_cat in zip(categorical_columns, n_categories_per_cat_column):
                 multipliers.append(num_cat * arr_dtypes[col].itemsize)
         size_one_row = sum(multipliers)
@@ -494,13 +495,13 @@ def get_approximate_mem_usage_in_mb(
         multiplier = np.zeros(1, dtype=arr.dtype).itemsize
         if len(categorical_columns) > 0:
             if n_categories_per_cat_column is None:
-                raise ValueError("Value number of categories per categorical is required when the data has categorical columns")
+                raise ValueError(err_msg)
             # multiply num categories with the size of the column to capture memory after one hot encoding
             width += sum(n_categories_per_cat_column)
         size_one_row = width * multiplier
     else:
         raise ValueError(f"Unrecognised data type of X, expected data type to "
-                         f"be in {DatasetCompressionInputType}, but got :{type(arr)}")    
+                         f"be in (np.ndarray, spmatrix, pd.DataFrame), but got :{type(arr)}")
 
     return float(arr.shape[0] * size_one_row / (2**20))
 

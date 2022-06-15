@@ -98,7 +98,6 @@ class TabularClassificationTask(BaseTask):
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         backend: Optional[Backend] = None,
         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
-        categorical_indicator: Optional[List[bool]] = None
     ):
         super().__init__(
             seed=seed,
@@ -119,7 +118,6 @@ class TabularClassificationTask(BaseTask):
             resampling_strategy_args=resampling_strategy_args,
             search_space_updates=search_space_updates,
             task_type=TASK_TYPES_TO_STRING[TABULAR_CLASSIFICATION],
-            categorical_indicator=categorical_indicator
         )
 
     def build_pipeline(
