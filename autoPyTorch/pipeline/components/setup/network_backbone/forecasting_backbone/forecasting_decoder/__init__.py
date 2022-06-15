@@ -13,5 +13,5 @@ decoders = find_components(__package__,
 decoder_addons = ThirdPartyComponents(BaseForecastingDecoder)
 
 
-def add_decoder(encoder: BaseForecastingDecoder) -> None:
-    decoder_addons.add_component(encoder)
+def add_decoder(decoder: BaseForecastingDecoder) -> None:
+    decoder_addons.add_component(decoder)
