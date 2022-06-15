@@ -18,7 +18,6 @@ from autoPyTorch.pipeline.components.setup.network_backbone.utils import get_out
 from autoPyTorch.utils.common import FitRequirement
 
 
-
 class NetworkBackboneComponent(autoPyTorchComponent):
     """
     Base class for network backbones. Holds the backbone module and the config which was used to create it.

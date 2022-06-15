@@ -1,7 +1,4 @@
 from typing import Any, Dict, Optional, Union
-import logging.handlers
-import time
-import psutil
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 
@@ -15,7 +12,6 @@ from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.base_setup import autoPyTorchSetupComponent
 from autoPyTorch.pipeline.components.setup.early_preprocessor.utils import get_preprocess_transforms, preprocess
 from autoPyTorch.utils.common import FitRequirement
-from autoPyTorch.utils.logging_ import get_named_client_logger
 
 
 class EarlyPreprocessing(autoPyTorchSetupComponent):

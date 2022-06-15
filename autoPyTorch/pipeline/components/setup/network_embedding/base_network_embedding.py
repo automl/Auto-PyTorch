@@ -1,6 +1,5 @@
 from typing import Any, Dict, List, Optional, Tuple
 
-
 import numpy as np
 
 from sklearn.base import BaseEstimator
@@ -27,7 +26,6 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
         self.embedding = self.build_embedding(
             num_categories_per_col=num_categories_per_col,
             num_features_excl_embed=num_features_excl_embed)
-
         return self
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
