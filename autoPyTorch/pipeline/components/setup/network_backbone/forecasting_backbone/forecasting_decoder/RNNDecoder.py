@@ -52,7 +52,7 @@ class RNN_Module(DecoderNetwork):
 
 class ForecastingRNNDecoder(BaseForecastingDecoder):
     """
-    Standard searchable RNN decoder for time series data, only works when the encoder is
+    Standard searchable RNN decoder for time series data, only works when the encoder is an RNN encoder
     """
 
     def __init__(self, **kwargs: Any):
@@ -60,12 +60,7 @@ class ForecastingRNNDecoder(BaseForecastingDecoder):
         # RNN is naturally auto-regressive. However, we will not consider it as a decoder for deep AR model
         self.rnn_kwargs: Optional[Dict] = None
         self.lagged_value = [1, 2, 3, 4, 5, 6, 7]
-
-    @property
-    def _required_fit_requirements(self) -> List[FitRequirement]:
-        fit_requirement = super(ForecastingRNNDecoder, self)._required_fit_requirements
-        fit_requirement.append(FitRequirement('rnn_kwargs', (Dict,), user_defined=False, dataset_property=False))
-        return fit_requirement
+        self.add_fit_requirements([FitRequirement('rnn_kwargs', (Dict,), user_defined=False, dataset_property=False)])
 
     def _build_decoder(self,
                        encoder_output_shape: Tuple[int, ...],

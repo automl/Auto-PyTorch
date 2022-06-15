@@ -17,7 +17,7 @@ from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import (
     PositionalEncoding, build_transformer_layers)
-from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.\
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder. \
     base_forecasting_decoder import BaseForecastingDecoder, DecoderProperties
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.components import \
     DecoderNetwork
@@ -79,11 +79,17 @@ class _TransformerDecoder(DecoderNetwork):
 
 
 class ForecastingTransformerDecoder(BaseForecastingDecoder):
+    """
+    Standard searchable Transformer decoder for time series data, only works when the encoder is a
+    Transformer Encoder
+    """
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
         # RNN is naturally auto-regressive. However, we will not consider it as a decoder for deep AR model
         self.transformer_encoder_kwargs: Optional[dict] = None
         self.lagged_value = [1, 2, 3, 4, 5, 6, 7]
+        self.add_fit_requirements([FitRequirement('transformer_encoder_kwargs', (Dict,), user_defined=False,
+                                                  dataset_property=False)])
 
     def _build_decoder(self,
                        encoder_output_shape: Tuple[int, ...],
@@ -107,13 +113,6 @@ class ForecastingTransformerDecoder(BaseForecastingDecoder):
                                       lagged_value=self.lagged_value)
 
         return decoder, d_model
-
-    @property
-    def _required_fit_requirements(self) -> List[FitRequirement]:
-        fit_requirement = super(ForecastingTransformerDecoder, self)._required_fit_requirements
-        fit_requirement.append(FitRequirement('transformer_encoder_kwargs', (Dict,), user_defined=False,
-                                              dataset_property=False))
-        return fit_requirement
 
     @staticmethod
     def decoder_properties() -> DecoderProperties:
