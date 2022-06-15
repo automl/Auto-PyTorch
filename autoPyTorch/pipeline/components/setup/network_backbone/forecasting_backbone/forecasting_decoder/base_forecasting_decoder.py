@@ -15,8 +15,8 @@ from autoPyTorch.utils.common import FitRequirement
 
 class BaseForecastingDecoder(autoPyTorchComponent):
     """
-    Base class for network heads used for forecasting.
-     Holds the head module and the config which was used to create it.
+    Base class for network decoder used for forecasting. Holds the decoder module and the config which was used to
+    create it.
     """
     _required_properties = ["name", "shortname", "handles_tabular", "handles_image", "handles_time_series"]
 
@@ -26,18 +26,7 @@ class BaseForecastingDecoder(autoPyTorchComponent):
                  **kwargs: Any):
         super().__init__()
         self.block_number = block_number
-        self.add_fit_requirements(self._required_fit_requirements)
-        self.auto_regressive = auto_regressive
-        self.config = kwargs
-        self.decoder: Optional[nn.Module] = None
-        self.n_decoder_output_features: Optional[int] = None
-        self.decoder_input_shape: Optional[Tuple[int, ...]] = None
-        self.n_prediction_heads = 1
-        self.is_last_decoder: Optional[bool] = False
-
-    @property
-    def _required_fit_requirements(self) -> List[FitRequirement]:
-        return [
+        self.add_fit_requirements([
             FitRequirement('known_future_features', (tuple,), user_defined=False, dataset_property=True),
             FitRequirement('feature_shapes', (Dict,), user_defined=False, dataset_property=True),
             FitRequirement('network_encoder', (OrderedDict,), user_defined=False, dataset_property=False),
@@ -45,7 +34,14 @@ class BaseForecastingDecoder(autoPyTorchComponent):
             FitRequirement('network_structure', (NetworkStructure,), user_defined=False, dataset_property=False),
             FitRequirement('transform_time_features', (bool,), user_defined=False, dataset_property=False),
             FitRequirement('time_feature_transform', (Iterable,), user_defined=False, dataset_property=True)
-        ]
+        ])
+        self.auto_regressive = auto_regressive
+        self.config = kwargs
+        self.decoder: Optional[nn.Module] = None
+        self.n_decoder_output_features: Optional[int] = None
+        self.decoder_input_shape: Optional[Tuple[int, ...]] = None
+        self.n_prediction_heads = 1
+        self.is_last_decoder: Optional[bool] = False
 
     @property
     def fitted_encoder(self) -> List[str]:

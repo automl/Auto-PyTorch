@@ -12,7 +12,9 @@ from torch import nn
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import BaseEstimator
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.components_util import (
-    PositionalEncoding, build_transformer_layers)
+    PositionalEncoding,
+    build_transformer_layers
+)
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.\
     base_forecasting_encoder import BaseForecastingEncoder, EncoderProperties
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.components import \
@@ -197,6 +199,36 @@ class TransformerEncoder(BaseForecastingEncoder):
         get hyperparameter search space for Transformer, Given that d_model must be a multiple of n_head_log, we
         consider their log value (with base 2) as the hyperparameters
 
+        Args:
+            num_layers (int):
+                number of transformer layers
+            n_head_log (int):
+                log value (base 2, this should work for all the following hyperparameters with logs) of number of head
+            d_model_log (int):
+                log values of input of dimensions passed to feed forward network
+            d_feed_forward_log (int):
+                log values of feed forward network width
+            norm_first (bool):
+                if ``True``, layer norm is done prior to attention and feedforward operations, respectivaly.
+                Otherwise, it's done after. Default: ``False`` (after).
+            layer_norm_eps (float):
+                eps for layer norm
+            use_positional_encoder (bool):
+                if positional encoder is applied
+            use_layer_norm_output (bool):
+                if layer norm output is applied
+            activation (str):
+                activation function type
+            use_dropout (bool):
+                if dropout is applied
+            dropout (float):
+                dropout rate
+            decoder_type (str):
+                type of decoder, could be MLPDecoder (DeepAR) or TransformerDecoder (seq2seq)
+
+        Returns:
+            ConfigurationSpace:
+                configuration space
         """
         cs = CS.ConfigurationSpace()
 

@@ -133,31 +133,41 @@ class SeqForecastingEncoderChoice(AbstractForecastingEncoderChoice):
         """Returns the configuration space of the current chosen components
 
         Args:
-            dataset_properties (Optional[Dict[str, str]]): Describes the dataset to work on
-            num_blocks (HyperparameterSearchSpace): number of encoder-decoder structure blocks
-            variable_selection (HyperparameterSearchSpace): if variable selection is applied, if True, then the first
-                block will be attached with a variable selection block while the following will be enriched with static
-                features.
-            variable_selection_use_dropout (HyperparameterSearchSpace): if variable selection network uses dropout
-            variable_selection_dropout_rate (HyperparameterSearchSpace): dropout rate of variable selection network
-            share_single_variable_networks (HyperparameterSearchSpace): if single variable networks are shared between
-                encoder and decoder
-            skip_connection: HyperparameterSearchSpace: if skip connection is applied
-            use_temporal_fusion (HyperparameterSearchSpace): if temporal fusion layer is applied
-            skip_connection_type (HyperparameterSearchSpace): skip connection type, it could be directly added or a grn
-                network (
-                Lim et al, Temporal Fusion Transformers for Interpretable Multi-horizon Time Series Forecasting:
+            dataset_properties (Optional[Dict[str, str]]):
+                Describes the dataset to work on
+            num_blocks (int):
+                number of encoder-decoder structure blocks
+            variable_selection (bool):
+                if variable selection is applied, if True, then the first block will be attached with a variable
+                 selection block while the following will be enriched with static features.
+            variable_selection_use_dropout (bool):
+                if variable selection network uses dropout
+            variable_selection_dropout_rate (float):
+                dropout rate of variable selection network
+            share_single_variable_networks (bool):
+                if single variable networks are shared between encoder and decoder
+            skip_connection (int):
+                if skip connection is applied
+            use_temporal_fusion (int):
+                if temporal fusion layer is applied
+            skip_connection_type (str):
+                skip connection type, it could be directly added or a GRN network
+                (Lim et al, Temporal Fusion Transformers for Interpretable Multi-horizon Time Series Forecasting:
                 https://arxiv.org/abs/1912.09363) TODO consider hidden size of grn as a new HP
-            grn_use_dropout (HyperparameterSearchSpace): if dropout layer is applied to GRN, since variable selection
-                network also contains GRN, this parameter also influence variable selection network
-            grn_dropout_rate (HyperparameterSearchSpace): dropout rate of GRN, same as above, this variable also
-                influence variable selection network
-            decoder_auto_regressive: HyperparameterSearchSpace: if decoder is auto_regressive, e.g., if the decoder
-                receives the output as its input, this only works for  auto_regressive decoder models
-            default (Optional[str]): Default backbone to use
-            include: Optional[Dict[str, Any]]: what components to include. It is an exhaustive
-                list, and will exclusively use this components.
-            exclude: Optional[Dict[str, Any]]: which components to skip
+            grn_use_dropout (bool):
+                if dropout layer is applied to GRN, since variable selection network also contains GRN,
+                this parameter also influence variable selection network
+            grn_dropout_rate (float):
+                dropout rate of GRN, same as above, this variable also influence variable selection network
+            decoder_auto_regressive (int):
+                if decoder is auto_regressive, e.g., if the decoder receives the output as its input,
+                 this only works for  auto_regressive decoder models
+            default (Optional[str]):
+                Default backbone to use
+            include: Optional[Dict[str, Any]]:
+                what components to include. It is an exhaustive list, and will exclusively use this components.
+            exclude: Optional[Dict[str, Any]]:
+                which components to skip
 
         Returns:
             ConfigurationSpace: the configuration space of the hyper-parameters of the

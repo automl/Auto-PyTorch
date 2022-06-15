@@ -20,7 +20,7 @@ from autoPyTorch.utils.common import FitRequirement
 
 class BaseForecastingEncoder(autoPyTorchComponent):
     """
-    Base class for network backbones. Holds the backbone module and the config which was used to create it.
+    Base class for network backbones. Holds the encoder module and the config which was used to create it.
     """
     _required_properties = ["name", "shortname", "handles_tabular", "handles_image", "handles_time_series"]
 

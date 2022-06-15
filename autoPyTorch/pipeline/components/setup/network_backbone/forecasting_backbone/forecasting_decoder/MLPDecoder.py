@@ -146,22 +146,30 @@ class ForecastingMLPDecoder(BaseForecastingDecoder):
         https://arxiv.org/abs/1704.04110
 
         Args:
-            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]): Dataset Properties
-            can_be_auto_regressive (bool): if this decoder is allowed to be auto-regressive
-            is_top_layer (bool) if this mlp decoder is at the top layer as seq decoders. Only top layer MLP allows
-                deactivating local layers. (Otherwise the decoder cannot output a sequence)
-            num_layers (HyperparameterSearchSpace): number of decoder layers (the last layer is not included, thus it
-                could start from 0)
-            units_layer (HyperparameterSearchSpace): number of units of each layer (except for the last layer)
-            activation (HyperparameterSearchSpace): activation function
-            auto_regressive (bool): if the model acts as a DeepAR model, the corresponding hyperparaemter is
-                controlled by seq_encoder
-            has_local_layer (HyperparameterSearchSpace): if local MLP layer is applied, if not, the output of the
-                network will be directly attached with different heads
-            units_local_layer (HyperparameterSearchSpace): number of units of local layer. The size of this layer is
-                smaller as it needs to be expanded to adapt to the number of predictions
+            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]):
+                Dataset Properties
+            can_be_auto_regressive (bool):
+                if this decoder is allowed to be auto-regressive
+            is_top_layer (bool):
+                if this mlp decoder is at the top layer as seq decoders. Only top layer MLP allows deactivating local
+                layers. (Otherwise, the decoder cannot output a sequence)
+            num_layers (HyperparameterSearchSpace):
+                number of decoder layers (the last layer is not included, thus it starts from 0)
+            units_layer (HyperparameterSearchSpace):
+                number of units of each layer (except for the last layer)
+            activation (HyperparameterSearchSpace):
+                activation function
+            auto_regressive (HyperparameterSearchSpace):
+                if the model acts as a DeepAR model, the corresponding hyperparaemter is controlled by seq_encoder
+            has_local_layer (HyperparameterSearchSpace):
+                if local MLP layer is applied, if not, the output of the network will be directly attached
+                 with different heads
+            units_local_layer (HyperparameterSearchSpace):
+                number of units of local layer. The size of this layer is smaller as it needs to be
+                expanded to adapt to the number of predictions
         Returns:
-            cs (ConfigurationSpace): ConfigurationSpace
+            cs (ConfigurationSpace):
+                ConfigurationSpace
         """
         if dataset_properties is not None:
             encoder_can_be_auto_regressive = dataset_properties.get('encoder_can_be_auto_regressive', False)

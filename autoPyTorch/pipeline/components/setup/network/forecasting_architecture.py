@@ -154,6 +154,41 @@ def get_lagged_subsequences_inference(
 
 
 class AbstractForecastingNet(nn.Module):
+    """
+    This is a basic forecasting network. It is only composed of a embedding net, an encoder and a head (including
+    MLP decoder and the final head).
+
+    This structure is active when the decoder is a MLP with auto_regressive set as false
+
+    Attributes:
+        network_structure (NetworkStructure):
+            network structure information
+        network_embedding (nn.Module):
+            network embedding
+        network_encoder (Dict[str, EncoderBlockInfo]):
+            Encoder network, could be selected to return a sequence or a 2D Matrix
+        network_decoder (Dict[str, DecoderBlockInfo]):
+            network decoder
+        temporal_fusion Optional[TemporalFusionLayer]:
+            Temporal Fusion Layer
+        network_head (nn.Module):
+            network head, maps the output of decoder to the final output
+        dataset_properties (Dict):
+            dataset properties
+        auto_regressive (bool):
+            if the model is auto-regressive model
+        output_type (str):
+            the form that the network outputs. It could be regression, distribution or quantile
+        forecast_strategy (str):
+            only valid if output_type is distribution or quantile, how the network transforms
+            its output to predicted values, could be mean or sample
+        num_samples (int):
+            only valid if output_type is not regression and forecast_strategy is sample. This indicates the
+            number of the points to sample when doing prediction
+        aggregation (str):
+            only valid if output_type is not regression and forecast_strategy is sample. The way that the samples
+            are aggregated. We could take their mean or median values.
+    """
     future_target_required = False
     dtype = torch.float
 
@@ -178,41 +213,6 @@ class AbstractForecastingNet(nn.Module):
                  num_samples: int = 50,
                  aggregation: str = 'mean'
                  ):
-        """
-        This is a basic forecasting network. It is only composed of a embedding net, an encoder and a head (including
-        MLP decoder and the final head).
-
-        This structure is active when the decoder is a MLP with auto_regressive set as false
-
-        Args:
-            network_structure (NetworkStructure):
-                network structure information
-            network_embedding (nn.Module):
-                network embedding
-            network_encoder (Dict[str, EncoderBlockInfo]):
-                Encoder network, could be selected to return a sequence or a 2D Matrix
-            network_decoder (Dict[str, DecoderBlockInfo]):
-                network decoder
-            temporal_fusion Optional[TemporalFusionLayer]:
-                Temporal Fusion Layer
-            network_head (nn.Module):
-                network head, maps the output of decoder to the final output
-            dataset_properties (Dict):
-                dataset properties
-            auto_regressive (bool):
-                if the model is auto-regressive model
-            output_type (str):
-                the form that the network outputs. It could be regression, distribution or quantile
-            forecast_strategy (str):
-                only valid if output_type is distribution or quantile, how the network transforms
-                its output to predicted values, could be mean or sample
-            num_samples (int):
-                only valid if output_type is not regression and forecast_strategy is sample. This indicates the
-                number of the points to sample when doing prediction
-            aggregation (str):
-                only valid if output_type is not regression and forecast_strategy is sample. The way that the samples
-                are aggregated. We could take their mean or median values.
-        """
         super().__init__()
         self.network_structure = network_structure
         self.embedding = network_embedding
@@ -305,6 +305,23 @@ class AbstractForecastingNet(nn.Module):
                        loc: Optional[torch.Tensor],
                        scale: Optional[torch.Tensor],
                        device: torch.device = torch.device('cpu')) -> ALL_NET_OUTPUT:
+        """
+        rescale the network output to its raw scale
+
+        Args:
+            outputs (ALL_NET_OUTPUT):
+                network head output
+            loc (Optional[torch.Tensor]):
+                scaling location value
+            scale (Optional[torch.Tensor]):
+                scaling scale value
+            device (torch.device):
+                which device the output is stored
+
+        Return:
+            ALL_NET_OUTPUT:
+                rescaleed network output
+        """
         if isinstance(outputs, List):
             return [self.rescale_output(output, loc, scale, device) for output in outputs]
         if loc is not None or scale is not None:
@@ -323,17 +340,34 @@ class AbstractForecastingNet(nn.Module):
         return outputs
 
     def scale_value(self,
-                    outputs: torch.Tensor,
+                    raw_value: torch.Tensor,
                     loc: Optional[torch.Tensor],
                     scale: Optional[torch.Tensor],
                     device: torch.device = torch.device('cpu')) -> torch.Tensor:
+        """
+        scale the outputs
+
+        Args:
+            raw_value (torch.Tensor):
+                network head output
+            loc (Optional[torch.Tensor]):
+                scaling location value
+            scale (Optional[torch.Tensor]):
+                scaling scale value
+            device (torch.device):
+                which device the output is stored
+
+        Return:
+            torch.Tensor:
+                scaled input value
+        """
         if loc is not None or scale is not None:
             if loc is None:
-                outputs = outputs / scale.to(device)  # type: ignore[union-attr]
+                outputs = raw_value / scale.to(device)  # type: ignore[union-attr]
             elif scale is None:
-                outputs = outputs - loc.to(device)
+                outputs = raw_value - loc.to(device)
             else:
-                outputs = (outputs - loc.to(device)) / scale.to(device)
+                outputs = (raw_value - loc.to(device)) / scale.to(device)
         return outputs
 
     @abstractmethod
@@ -349,6 +383,17 @@ class AbstractForecastingNet(nn.Module):
 
     @abstractmethod
     def pred_from_net_output(self, net_output: ALL_NET_OUTPUT) -> torch.Tensor:
+        """
+        This function is applied to transform the network head output to torch tensor to create the point prediction
+
+        Args:
+            net_output (ALL_NET_OUTPUT):
+                network head output
+
+        Return:
+            torch.Tensor:
+                point prediction
+        """
         raise NotImplementedError
 
     @abstractmethod
@@ -364,6 +409,23 @@ class AbstractForecastingNet(nn.Module):
                                    intermediate_values: List[Optional[Union[torch.Tensor, Tuple[torch.Tensor]]]],
                                    is_hidden_states: List[bool],
                                    repeats: int) -> List[Optional[Union[torch.Tensor, Tuple[torch.Tensor]]]]:
+        """
+        This function is often applied for auto-regressive model where we sample multiple points to form several
+        trajectories and we need to repeat the intermediate values to ensure that the batch sizes match
+
+        Args:
+             intermediate_values (List[Optional[Union[torch.Tensor, Tuple[torch.Tensor]]]])
+                a list of intermediate values to be repeated
+             is_hidden_states  (List[bool]):
+                if the intermediate_value is hidden states in RNN-form network, we need to consider the
+                hidden states differently
+            repeats (int):
+                number of repeats
+
+        Return:
+            List[Optional[Union[torch.Tensor, Tuple[torch.Tensor]]]]:
+                repeated values
+        """
         for i, (is_hx, inter_value) in enumerate(zip(is_hidden_states, intermediate_values)):
             if isinstance(inter_value, torch.Tensor):
                 repeated_value = inter_value.repeat_interleave(repeats=repeats, dim=1 if is_hx else 0)
@@ -375,6 +437,19 @@ class AbstractForecastingNet(nn.Module):
         return intermediate_values
 
     def pad_tensor(self, tensor_to_be_padded: torch.Tensor, target_length: int) -> torch.Tensor:
+        """
+        pad tensor to meet the required length
+
+        Args:
+             tensor_to_be_padded (torch.Tensor)
+                tensor to be padded
+             target_length  (int):
+                target length
+
+        Return:
+            torch.Tensor:
+                padded tensors
+        """
         tensor_shape = tensor_to_be_padded.shape
         padding_size = [tensor_shape[0], target_length - tensor_shape[1], tensor_shape[-1]]
         tensor_to_be_padded = torch.cat([tensor_to_be_padded.new_zeros(padding_size), tensor_to_be_padded], dim=1)
@@ -1174,6 +1249,9 @@ class NBEATSNet(ForecastingNet):
                 past_observed_targets: Optional[torch.BoolTensor] = None,
                 decoder_observed_values: Optional[torch.Tensor] = None, ) -> Union[torch.Tensor,
                                                                                    Tuple[torch.Tensor, torch.Tensor]]:
+
+        # Unlike other networks, NBEATS network is required to predict both past and future targets.
+        # Thereby, we return two tensors for backcast and forecast
         if past_observed_targets is None:
             past_observed_targets = torch.ones_like(past_targets, dtype=torch.bool)
 
@@ -1194,6 +1272,7 @@ class NBEATSNet(ForecastingNet):
         forecast = torch.zeros(forcast_shape).to(self.device).flatten(1)
         backcast, _ = self.encoder(past_targets, [None])
         backcast = backcast[0]
+        # nbeats network only has one decoder block (flat decoder)
         for block in self.decoder.decoder['block_1']:
             backcast_block, forecast_block = block([None], backcast)
 

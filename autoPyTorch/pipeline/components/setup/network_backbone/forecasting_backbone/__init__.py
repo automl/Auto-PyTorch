@@ -64,16 +64,18 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
         include/exclude directives, as well as the dataset properties
 
         Args:
-         include (Optional[Dict[str, Any]]): what hyper-parameter configurations
-            to honor when creating the configuration space
-         exclude (Optional[Dict[str, Any]]): what hyper-parameter configurations
-             to remove from the configuration space
-         dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]): Caracteristics
-             of the dataset to guide the pipeline choices of components
+            include (Optional[Dict[str, Any]]):
+                what hyper-parameter configurations to honor when creating the configuration space. It can also include
+                nested components, for instance, flat_encoder:MLPEncoder
+            exclude (Optional[Dict[str, Any]]):
+                what hyper-parameter configurations to remove from the configuration space. It can also include
+                nested components, for instance, flat_encoder:MLPEncoder
+            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]):
+                Characteristics of the dataset to guide the pipeline choices of components
 
         Returns:
-            Dict[str, autoPyTorchComponent]: A filtered dict of learning
-                rate backbones
+            Dict[str, autoPyTorchComponent]:
+                A filtered dict of learning rate backbones
 
         """
         if dataset_properties is None:
@@ -157,18 +159,19 @@ class ForecastingNetworkChoice(autoPyTorchChoice):
         """Returns the configuration space of the current chosen components
 
         Args:
-            dataset_properties (Optional[Dict[str, str]]): Describes the dataset to work on
-            default (Optional[str]): Default backbone to use
-            include: Optional[Dict[str, Any]]: what components to include. It is an exhaustive
-                list, and will exclusively use this components.
-            exclude: Optional[Dict[str, Any]]: which components to skip
-            network_type: type of the network, it determines how to handle the sequential data: flat networks
-            (FFNN and NBEATS) simply flat the input to a 2D input, whereas seq network receives sequential 3D inputs:
-            thus, seq networks could be stacked to form a larger network that is composed of different parts.
+            dataset_properties (Optional[Dict[str, str]]):
+                Describes the dataset to work on
+            default (Optional[str]):
+                Default backbone to use
+            include: Optional[Dict[str, Any]]:
+                what components to include. It is an exhaustive list, and will exclusively use this components.
+                It can also include nested components, for instance, flat_encoder:MLPEncoder
+            exclude: Optional[Dict[str, Any]]:
+                which components to skip. It can also include nested components, for instance, flat_encoder:MLPEncoder
 
         Returns:
-            ConfigurationSpace: the configuration space of the hyper-parameters of the
-                 chosen component
+            ConfigurationSpace:
+                the configuration space of the hyper-parameters of the chosen component
         """
         if dataset_properties is None:
             dataset_properties = {}

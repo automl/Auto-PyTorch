@@ -22,6 +22,86 @@ from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterS
 
 
 class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
+    """
+    This class is  similar to the TrainEvaluator. Except that given the specific
+
+    Attributes:
+        backend (Backend):
+            An object to interface with the disk storage. In particular, allows to
+            access the train and test datasets
+        queue (Queue):
+            Each worker available will instantiate an evaluator, and after completion,
+            it will return the evaluation result via a multiprocessing queue
+        metric (autoPyTorchMetric):
+            A scorer object that is able to evaluate how good a pipeline was fit. It
+            is a wrapper on top of the actual score method (a wrapper on top of scikit
+            lean accuracy for example) that formats the predictions accordingly.
+        budget: (float):
+            The amount of epochs/time a configuration is allowed to run.
+        budget_type  (str):
+            The budget type, which can be epochs or time
+        pipeline_config (Optional[Dict[str, Any]]):
+            Defines the content of the pipeline being evaluated. For example, it
+            contains pipeline specific settings like logging name, or whether or not
+            to use tensorboard.
+        configuration (Union[int, str, Configuration]):
+            Determines the pipeline to be constructed. A dummy estimator is created for
+            integer configurations, a traditional machine learning pipeline is created
+            for string based configuration, and NAS is performed when a configuration
+            object is passed.
+        seed (int):
+            A integer that allows for reproducibility of results
+        output_y_hat_optimization (bool):
+            Whether this worker should output the target predictions, so that they are
+            stored on disk. Fundamentally, the resampling strategy might shuffle the
+            Y_train targets, so we store the split in order to re-use them for ensemble
+            selection.
+        num_run (Optional[int]):
+            An identifier of the current configuration being fit. This number is unique per
+            configuration.
+        include (Optional[Dict[str, Any]]):
+            An optional dictionary to include components of the pipeline steps.
+        exclude (Optional[Dict[str, Any]]):
+            An optional dictionary to exclude components of the pipeline steps.
+        disable_file_output (Optional[List[Union[str, DisableFileOutputParameters]]]):
+            Used as a list to pass more fine-grained
+            information on what to save. Must be a member of `DisableFileOutputParameters`.
+            Allowed elements in the list are:
+
+            + `y_optimization`:
+                do not save the predictions for the optimization set,
+                which would later on be used to build an ensemble. Note that SMAC
+                optimizes a metric evaluated on the optimization set.
+            + `pipeline`:
+                do not save any individual pipeline files
+            + `pipelines`:
+                In case of cross validation, disables saving the joint model of the
+                pipelines fit on each fold.
+            + `y_test`:
+                do not save the predictions for the test set.
+            + `all`:
+                do not save any of the above.
+            For more information check `autoPyTorch.evaluation.utils.DisableFileOutputParameters`.
+        init_params (Optional[Dict[str, Any]]):
+            Optional argument that is passed to each pipeline step. It is the equivalent of
+            kwargs for the pipeline steps.
+        logger_port (Optional[int]):
+            Logging is performed using a socket-server scheme to be robust against many
+            parallel entities that want to write to the same file. This integer states the
+            socket port for the communication channel. If None is provided, a traditional
+            logger is used.
+        all_supported_metrics  (bool):
+            Whether all supported metric should be calculated for every configuration.
+        search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
+            An object used to fine tune the hyperparameter search space of the pipeline
+        max_budget (float):
+            maximal budget value available for the optimizer. This is applied to compute the size of the proxy
+            validation sets
+        min_num_test_instances (Optional[int]):
+            minimal number of instances to be validated. We do so to ensure that there are enough instances in
+            the validation set
+
+    """
     def __init__(self, backend: Backend, queue: Queue,
                  metric: autoPyTorchMetric,
                  budget: float,
@@ -41,16 +121,6 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
                  search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
                  max_budget: float = 1.0,
                  min_num_test_instances: Optional[int] = None) -> None:
-        """
-        Attributes:
-            max_budget (Optional[float]):
-                maximal budget the optimizer could allocate
-            min_num_test_instances: Optional[int]
-                minimal number of validation instances to be evaluated, if the size of the validation set is greater
-                than this value, then less instances from validation sets will be evaluated. The other predictions
-                 will be filled with dummy predictor
-
-        """
         super(TimeSeriesForecastingTrainEvaluator, self).__init__(
             backend=backend,
             queue=queue,

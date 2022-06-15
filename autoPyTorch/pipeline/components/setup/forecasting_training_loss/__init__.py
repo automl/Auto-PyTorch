@@ -54,12 +54,12 @@ class ForecastingLossChoices(autoPyTorchChoice):
         include/exclude directives, as well as the dataset properties
 
         Args:
-         include (Optional[Dict[str, Any]]):
-            what hyper-parameter configurations to honor when creating the configuration space
-         exclude (Optional[Dict[str, Any]]):
-            what hyper-parameter configurations to remove from the configuration space
-         dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]):
-            Characteristics of the dataset to guide the pipeline choices of components
+            include (Optional[Dict[str, Any]]):
+                what hyper-parameter configurations to honor when creating the configuration space
+            exclude (Optional[Dict[str, Any]]):
+                what hyper-parameter configurations to remove from the configuration space
+            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]):
+                Characteristics of the dataset to guide the pipeline choices of components
 
         Returns:
             Dict[str, autoPyTorchComponent]: A filtered dict of learning

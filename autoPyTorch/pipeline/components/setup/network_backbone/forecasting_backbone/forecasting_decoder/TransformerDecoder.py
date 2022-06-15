@@ -192,6 +192,30 @@ class ForecastingTransformerDecoder(BaseForecastingDecoder):
         get hyperparameter search space for Transformer, Given that d_model must be a multiple of n_head_log, we
         consider their log value (with base 2) as the hyperparameters
 
+        Args:
+            num_layers (int):
+                number of transformer layers
+            n_head_log (int):
+                log value (base 2, this should work for all the following hyperparameters with logs) of number of head
+            d_feed_forward_log (int):
+                log values of feed forward network width
+            norm_first (bool):
+                if ``True``, layer norm is done prior to attention and feedforward operations, respectivaly.
+                Otherwise, it's done after. Default: ``False`` (after).
+            layer_norm_eps (float):
+                eps for layer norm
+            use_layer_norm_output (bool):
+                if layer norm output is applied
+            activation (str):
+                activation function type
+            use_dropout (bool):
+                if dropout is applied
+            dropout (float):
+                dropout rate
+
+        Returns:
+            ConfigurationSpace:
+                configuration space
         """
         cs = CS.ConfigurationSpace()
 

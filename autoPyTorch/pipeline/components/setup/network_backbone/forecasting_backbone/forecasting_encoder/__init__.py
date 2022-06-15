@@ -155,11 +155,15 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
         """Returns the configuration space of the current chosen components
 
         Args:
-            dataset_properties (Optional[Dict[str, str]]): Describes the dataset to work on
-            default (Optional[str]): Default backbone to use
-            include: Optional[Dict[str, Any]]: what components to include. It is an exhaustive
-                list, and will exclusively use this components.
-            exclude: Optional[Dict[str, Any]]: which components to skip
+            dataset_properties (Optional[Dict[str, str]]):
+                Describes the dataset to work on
+            default (Optional[str]):
+                Default encoder to use
+            include: Optional[Dict[str, Any]]:
+                what components to include. It is an exhaustive list, and will exclusively use this components. It
+                allows nested encoder such as flat_encoder:MLPEncoder
+            exclude: Optional[Dict[str, Any]]:
+                which components to skip. It allows nested encoder as such flat_encoder:MLPEncoder
 
         Returns:
             ConfigurationSpace: the configuration space of the hyper-parameters of the
@@ -170,7 +174,7 @@ class AbstractForecastingEncoderChoice(autoPyTorchChoice):
         if dataset_properties is None:
             dataset_properties = {}
 
-        # Compile a list of legal preprocessors for this problem
+        # Compile a list of legal components for this problem
         available_encoders = self.get_available_components(
             dataset_properties=dataset_properties,
             include=include, exclude=exclude)

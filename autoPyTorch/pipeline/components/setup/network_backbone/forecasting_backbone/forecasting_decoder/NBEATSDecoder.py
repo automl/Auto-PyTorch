@@ -28,7 +28,47 @@ from autoPyTorch.utils.common import (
 )
 
 
-class NBEATSBLock(DecoderNetwork):
+class NBEATSBlock(DecoderNetwork):
+    """
+    An N-BEATS block. An N-BEATS network is stacked by multiple Blocks.
+    For detail, we refer to
+    Oreshkin et al., N-BEATS: Neural basis expansion analysis for interpretable time series forecasting
+    https://arxiv.org/abs/1905.10437
+
+    The hyperaprameter defination are quite simialr to
+    https://github.com/jdb78/pytorch-forecasting/tree/master/pytorch_forecasting/models/nbeats
+
+    However, we only construct the forecast/ backcast head under
+    autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head. As we only get to know the
+    output shape and forecasting horizon there
+
+    Attributes:
+        n_in_features (int):
+            number of input features
+        stack_idx (int):
+            index of the current stack
+        stack_type (str):
+            type of this stack. Could be one of 'generic', 'seasonality', 'trend'
+        num_blocks (int):
+            number of blocks exist in this stack
+        num_layers (int):
+            number of network layer inside each block
+        width (int):
+            network width (number of features)
+        normalization (str):
+            normalization type, could be BN or LN
+        activation (str):
+            activation function type
+        weight_sharing (bool):
+            if weights are shared for this block
+        expansion_coefficient_length (int):
+            expansion_coefficient_length
+        use_dropout (bool):
+            if dropout is applied
+        dropout_rate (Optional[float]).
+            dropout rate
+    """
+
     def __init__(self,
                  n_in_features: int,
                  stack_idx: int,
@@ -108,18 +148,18 @@ class NBEATSDecoder(BaseForecastingDecoder):
                        encoder_output_shape: Tuple[int, ...],
                        future_variable_input: Tuple[int, ...],
                        n_prediction_heads: int,
-                       dataset_properties: Dict) -> Tuple[List[List[NBEATSBLock]], int]:
+                       dataset_properties: Dict) -> Tuple[List[List[NBEATSBlock]], int]:
         in_features = encoder_output_shape[-1]
         n_beats_type = self.config['n_beats_type']
         if n_beats_type == 'G':
-            stacks: List[List[NBEATSBLock]] = [[] for _ in range(self.config['num_stacks_g'])]
+            stacks: List[List[NBEATSBlock]] = [[] for _ in range(self.config['num_stacks_g'])]
             for stack_idx in range(1, self.config['num_stacks_g'] + 1):
                 for block_idx in range(self.config['num_blocks_g']):
                     if self.config['weight_sharing_g'] and block_idx > 0:
                         # for weight sharing, we only create one instance
                         break
                     ecl = self.config['expansion_coefficient_length_g']
-                    stacks[stack_idx - 1].append(NBEATSBLock(in_features,
+                    stacks[stack_idx - 1].append(NBEATSBlock(in_features,
                                                              stack_idx=stack_idx,
                                                              stack_type='generic',
                                                              num_blocks=self.config['num_blocks_g'],
@@ -134,7 +174,7 @@ class NBEATSDecoder(BaseForecastingDecoder):
                                                              ))
 
         elif n_beats_type == 'I':
-            stacks: List[List[NBEATSBLock]] = [[] for _ in range(self.config['num_stacks_i'])]  # type:ignore
+            stacks: List[List[NBEATSBlock]] = [[] for _ in range(self.config['num_stacks_i'])]  # type:ignore
             for stack_idx in range(1, self.config['num_stacks_i'] + 1):
                 for block_idx in range(self.config['num_blocks_i_%d' % stack_idx]):
                     if self.config['weight_sharing_i_%d' % stack_idx] and block_idx > 0:
@@ -150,7 +190,7 @@ class NBEATSDecoder(BaseForecastingDecoder):
                     else:
                         raise ValueError(f"Unsupported stack_type {stack_type}")
 
-                    stacks[stack_idx - 1].append(NBEATSBLock(
+                    stacks[stack_idx - 1].append(NBEATSBlock(
                         in_features,
                         stack_idx=stack_idx,
                         stack_type=stack_type,
@@ -296,38 +336,61 @@ class NBEATSDecoder(BaseForecastingDecoder):
         The design of the configuration space follows pytorch-forecasting:
         https://github.com/jdb78/pytorch-forecasting/tree/master/pytorch_forecasting/models/nbeats
         Give that N-BEATS-I and N-BEATS-G's default hyperparameter configuration that totally different, we consider
-        them as two seperate configuration space: N-BEATS-G that only contains generic blocks and thus could be scaled
+        them as two separate configuration space: N-BEATS-G that only contains generic blocks and thus could be scaled
         up to 32 stacks, while each stacks share the same number of blocks/ width/ dropout rate. While N-BEATS-I is
         is restricted to be a network with a much smaller number of stacks. However, the block type of N-BEATS-G at each
         stack can be freely selected
-        freely selected
+
         Args:
-            dataset_properties:
-            n_beats_type: type of nbeats network, could be I (N-BEATS-I) or G (N-BEATS-G)
-            num_stacks_g: number of stacks
-            num_blocks_g: number of blocks per stack
-            num_layers_g: number of fc layers per block, this value is the same across all the blocks within one stack
-            width_g: fc layer width, this value is the same across all the blocks within one stack
-            num_stacks_i: number of stacks
-            num_blocks_i: number of blocks per stack
-            num_layers_i: number of fc layers per block, this value is the same across all the blocks within one stack
-            width_i: fc layer width, this value is the same across all the blocks within one stack
-            weight_sharing: if weights are shared inside one block
-            stack_type: stack type, used to define the final output
-            expansion_coefficient_length_generic: expansion_coefficient_length, activate if stack_type is 'generic'
-            expansion_coefficient_length_seasonality: expansion_coefficient_length, activate if stack_type is
+            dataset_properties (Optional[Dict[str, BaseDatasetPropertiesType]]):
+                dataset properties
+            n_beats_type (str):
+                type of nbeats network, could be I (N-BEATS-I) or G (N-BEATS-G)
+            num_stacks_g (int):
+                number of stacks for N-BEATS G
+            num_blocks_g (int):
+                number of blocks per stack for n-BEATS G
+            num_layers_g (int):
+                number of fc layers per block for N-BEATS G, this value is the same across all the blocks
+                within one stack
+            width_g (int):
+                fc layer width for N-BEATS G, this value is the same across all the blocks within one stack
+            num_stacks_i (int):
+                number of stacks for N-BEATS I
+            num_blocks_i (int):
+                number of blocks per stack  for N-BEATS I
+            num_layers_i (int):
+                number of fc layers per block for N-BEATS I, this value is the same across all the
+                blocks within one stack
+            width_i (int):
+                fc layer width for N-BEATS I, this value is the same across all the blocks within one stack
+            weight_sharing (bool):
+                if weights are shared inside one block
+            stack_type (str):
+                stack type, used to define the final output
+            expansion_coefficient_length_generic (int):
+                expansion_coefficient_length for N-BEATS G, activate if stack_type is 'generic'
+            expansion_coefficient_length_seasonality (int):
+                expansion_coefficient_length for N-BEATS I, activate if stack_type is
                 'seasonality' (n_dim = expansion_coefficient_length_interpretable * n_prediciton_steps)
-            expansion_coefficient_length_trend: expansion_coefficient_length, activate if stack_type is 'trend' (it
+            expansion_coefficient_length_trend (int):
+                expansion_coefficient_length for N-BEATS I, activate if stack_type is 'trend' (it
                 corresponds to the degree of the polynomial)
-            activation: activation function across fc layers
-            use_dropout: if dropout is applied
-            normalization: if normalization is applied
-            dropout: dropout value, if use_dropout is set as True
-            backcast_loss_ration: weight of backcast in comparison to forecast when calculating the loss.
-                A weight of 1.0 means that forecast and backcast loss is weighted the same (regardless of backcast and
-                forecast lengths). Defaults to 0.0, i.e. no weight.
+            activation (str):
+                activation function across fc layers
+            use_dropout (bool):
+                if dropout is applied
+            normalization (str):
+                normalization type, could be BN, LN or no normalization
+            dropout (float):
+                dropout value
+            backcast_loss_ration (float):
+                weight of backcast in comparison to forecast when calculating the loss. A weight of 1.0 indicates that
+                forecast and backcast loss is weighted the same (regardless of backcast and forecast lengths).
+                Defaults to 0.0, i.e. no weight.
         Returns:
-            Configuration Space
+            ConfigurationSpace:
+                Configuration Space
         """
 
         cs = ConfigurationSpace()

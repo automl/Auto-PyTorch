@@ -9,7 +9,7 @@ import torch
 from torch import nn
 
 from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_decoder.\
-    NBEATSDecoder import NBEATSBLock
+    NBEATSDecoder import NBEATSBlock
 
 
 class TransposeLinear(nn.Module):
@@ -95,7 +95,7 @@ def get_seasonality_heads(block_width: int, thetas_dim: int,
     return backcast_head, forecast_head
 
 
-def build_NBEATS_network(nbeats_decoder: List[List[NBEATSBLock]],
+def build_NBEATS_network(nbeats_decoder: List[List[NBEATSBlock]],
                          output_shape: Tuple[int]) -> nn.ModuleList:
     nbeats_blocks = []
     for stack_idx, stack in enumerate(nbeats_decoder):
