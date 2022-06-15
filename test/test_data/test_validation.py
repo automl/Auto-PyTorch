@@ -8,7 +8,8 @@ import sklearn.datasets
 import sklearn.model_selection
 
 from autoPyTorch.data.tabular_validator import TabularInputValidator
-from autoPyTorch.data.utils import megabytes
+from autoPyTorch.data.utils import get_approximate_mem_usage_in_mb, get_raw_memory_usage
+from autoPyTorch.utils.common import ispandas
 
 
 @pytest.mark.parametrize('openmlid', [2, 40975, 40984])
@@ -148,16 +149,28 @@ def test_featurevalidator_dataset_compression(input_data_featuretest):
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
         input_data_featuretest, input_data_targets, test_size=0.1, random_state=1)
     validator = TabularInputValidator(
-        dataset_compression={'memory_allocation': 0.8 * megabytes(X_train), 'methods': ['precision', 'subsample']}
+        dataset_compression={'memory_allocation': 0.8 * get_approximate_mem_usage_in_mb(X_train, [], None), 'methods': ['precision', 'subsample']}
     )
     validator.fit(X_train=X_train, y_train=y_train)
     transformed_X_train, _ = validator.transform(X_train.copy(), y_train.copy())
 
+    if ispandas(X_train):
+        # input validator converts transformed_X_train to numpy and the cat columns are chosen as column indices
+        columns = X_train.columns
+        categorical_columns = [columns[col] for col in validator.feature_validator.categorical_columns]
+    else:
+        categorical_columns = validator.feature_validator.categorical_columns
+
     assert validator._reduced_dtype is not None
-    assert megabytes(transformed_X_train) < megabytes(X_train)
+    assert get_approximate_mem_usage_in_mb(
+        transformed_X_train, validator.feature_validator.categorical_columns, validator.feature_validator.num_categories_per_col
+        ) < get_approximate_mem_usage_in_mb(X_train, categorical_columns, validator.feature_validator.num_categories_per_col)
 
     transformed_X_test, _ = validator.transform(X_test.copy(), y_test.copy())
-    assert megabytes(transformed_X_test) < megabytes(X_test)
+    assert get_approximate_mem_usage_in_mb(
+        transformed_X_test, validator.feature_validator.categorical_columns, validator.feature_validator.num_categories_per_col
+        ) < get_approximate_mem_usage_in_mb(X_test, categorical_columns, validator.feature_validator.num_categories_per_col)
+
     if hasattr(transformed_X_train, 'iloc'):
         assert all(transformed_X_train.dtypes == transformed_X_test.dtypes)
         assert all(transformed_X_train.dtypes == validator._precision)

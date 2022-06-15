@@ -1,8 +1,5 @@
-import copy
-from typing import Any, Dict, Optional, Tuple
-import logging.handlers
-import time
-import psutil
+from typing import Any, Dict, List, Optional, Tuple
+
 
 import numpy as np
 
@@ -11,8 +8,6 @@ from sklearn.base import BaseEstimator
 from torch import nn
 
 from autoPyTorch.pipeline.components.setup.base_setup import autoPyTorchSetupComponent
-from autoPyTorch.utils.logging_ import get_named_client_logger
-
 from autoPyTorch.utils.common import FitRequirement
 
 
@@ -26,20 +21,13 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
         self.embedding: Optional[nn.Module] = None
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
-        self.logger = get_named_client_logger(
-            name=f"{X['num_run']}_{self.__class__.__name__}_{time.time()}",
-            # Log to a user provided port else to the default logging port
-            port=X['logger_port'
-                   ] if 'logger_port' in X else logging.handlers.DEFAULT_TCP_LOGGING_PORT,
-        )
-        self.logger.debug(f"Before getting info for embedding Available virtual memory: {psutil.virtual_memory().available/1024/1024}, total virtual memroy: {psutil.virtual_memory().total/1024/1024}")
 
         num_features_excl_embed, num_categories_per_col = self._get_required_info_from_data(X)
-        self.logger.debug(f"Before building embedding Available virtual memory: {psutil.virtual_memory().available/1024/1024}, total virtual memroy: {psutil.virtual_memory().total/1024/1024}")
+
         self.embedding = self.build_embedding(
             num_categories_per_col=num_categories_per_col,
             num_features_excl_embed=num_features_excl_embed)
-        self.logger.debug(f"After building embedding Available virtual memory: {psutil.virtual_memory().available/1024/1024}, total virtual memroy: {psutil.virtual_memory().total/1024/1024}")
+
         return self
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:

@@ -29,12 +29,7 @@ class EarlyPreprocessing(autoPyTorchSetupComponent):
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> "EarlyPreprocessing":
         self.check_requirements(X, y)
-        self.logger = get_named_client_logger(
-            name=f"{X['num_run']}_{self.__class__.__name__}_{time.time()}",
-            # Log to a user provided port else to the default logging port
-            port=X['logger_port'
-                   ] if 'logger_port' in X else logging.handlers.DEFAULT_TCP_LOGGING_PORT,
-        )
+
         return self
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
@@ -46,9 +41,7 @@ class EarlyPreprocessing(autoPyTorchSetupComponent):
             # Incorporate the transform to the dataset
             X_train = X['backend'].load_datamanager().train_tensors[0]
 
-        self.logger.debug(f"Available virtual memory: {psutil.virtual_memory().available/1024/1024}, total virtual memroy: {psutil.virtual_memory().total/1024/1024}")
         X['X_train'] = preprocess(dataset=X_train, transforms=transforms)
-        self.logger.debug(f"After preprocessing Available virtual memory: {psutil.virtual_memory().available/1024/1024}, total virtual memroy: {psutil.virtual_memory().total/1024/1024}")
 
         # We need to also save the preprocess transforms for inference
         X.update({

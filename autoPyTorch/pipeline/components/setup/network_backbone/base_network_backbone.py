@@ -1,8 +1,5 @@
 from abc import abstractmethod
 from typing import Any, Dict, Iterable, Optional, Tuple
-import logging.handlers
-import time
-import psutil
 
 import numpy as np
 
@@ -19,7 +16,6 @@ from autoPyTorch.pipeline.components.base_component import (
 )
 from autoPyTorch.pipeline.components.setup.network_backbone.utils import get_output_shape
 from autoPyTorch.utils.common import FitRequirement
-from autoPyTorch.utils.logging_ import get_named_client_logger
 
 
 
@@ -53,17 +49,11 @@ class NetworkBackboneComponent(autoPyTorchComponent):
             Self
         """
         self.check_requirements(X, y)
-        self.logger = get_named_client_logger(
-            name=f"{X['num_run']}_{self.__class__.__name__}_{time.time()}",
-            # Log to a user provided port else to the default logging port
-            port=X['logger_port'
-                   ] if 'logger_port' in X else logging.handlers.DEFAULT_TCP_LOGGING_PORT,
-        )
+
         input_shape = X['shape_after_preprocessing']
 
         input_shape = get_output_shape(X['network_embedding'], input_shape=input_shape)
         self.input_shape = input_shape
-        self.logger.debug(f"Before building backbone Available virtual memory: {psutil.virtual_memory().available/1024/1024}, total virtual memroy: {psutil.virtual_memory().total/1024/1024}")
 
         self.backbone = self.build_backbone(
             input_shape=input_shape,
