@@ -15,6 +15,7 @@ import pandas as pd
 
 import pytest
 
+
 import sklearn
 import sklearn.datasets
 from sklearn.base import BaseEstimator, clone
@@ -405,29 +406,30 @@ def test_tabular_regression(openml_name, resampling_strategy, backend, resamplin
     assert 'Estimator' in representation
 
 
-@unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_train_function', new=dummy_eval_train_function)
-@pytest.mark.parametrize('forecasting_toy_dataset', ['multi_variant_wo_missing'], indirect=True)
+@pytest.mark.parametrize('forecasting_toy_dataset', ['uni_variant_wo_missing'], indirect=True)
 @pytest.mark.parametrize('resampling_strategy,resampling_strategy_args',
                          ((HoldoutValTypes.time_series_hold_out_validation, None),
-                          (CrossValTypes.time_series_cross_validation, {'num_splits': CV_NUM_SPLITS}),
                           ))
 def test_time_series_forecasting(forecasting_toy_dataset, resampling_strategy, backend, resampling_strategy_args):
     forecast_horizon = 3
     freq = '1Y'
     X, Y = forecasting_toy_dataset
 
-    X_train = []
-    X_test = []
-
-    for x in X:
-        if hasattr(x, 'iloc'):
-            X_train.append(x.iloc[:-forecast_horizon].copy())
-            X_test.append(x.iloc[-forecast_horizon:].copy())
-        else:
-            X_train.append(x[:-forecast_horizon].copy())
-            X_test.append(x[-forecast_horizon:].copy())
-    known_future_features = tuple(X[0].columns) if isinstance(X[0], pd.DataFrame) else \
-        np.arange(X[0].shape[-1]).tolist()
+    if X is not None:
+        X_train = []
+        X_test = []
+        for x in X:
+            if hasattr(x, 'iloc'):
+                X_train.append(x.iloc[:-forecast_horizon].copy())
+                X_test.append(x.iloc[-forecast_horizon:].copy())
+            else:
+                X_train.append(x[:-forecast_horizon].copy())
+                X_test.append(x[-forecast_horizon:].copy())
+        known_future_features = tuple(X[0].columns) if isinstance(X[0], pd.DataFrame) else \
+            np.arange(X[0].shape[-1]).tolist()
+    else:
+        X_train = None
+        X_test = None
 
     y_train = []
     y_test = []
@@ -441,11 +443,13 @@ def test_time_series_forecasting(forecasting_toy_dataset, resampling_strategy, b
             y_test.append(y[-forecast_horizon:].copy())
 
     # Search for a good configuration
+    # patch.mock  is not applied to partial func. We only test lightweight FFNN networks
     estimator = TimeSeriesForecastingTask(
         backend=backend,
         resampling_strategy=resampling_strategy,
         resampling_strategy_args=resampling_strategy_args,
         seed=42,
+        include_components={'network_backbone': {'flat_encoder:MLPEncoder'}}
     )
 
     with unittest.mock.patch.object(estimator, '_do_dummy_prediction', new=dummy_do_dummy_prediction):
@@ -454,12 +458,13 @@ def test_time_series_forecasting(forecasting_toy_dataset, resampling_strategy, b
             y_train=y_train,
             X_test=X_test,
             y_test=y_test,
-            optimize_metric='mean_MASE_forecasting',
+            memory_limit=None,
+            optimize_metric='mean_MSE_forecasting',
             n_prediction_steps=forecast_horizon,
             freq=freq,
             total_walltime_limit=50,
             func_eval_time_limit_secs=20,
-            known_future_features=known_future_features,
+            #known_future_features=known_future_features,
         )
 
     # Internal dataset has expected settings
@@ -540,7 +545,7 @@ def test_time_series_forecasting(forecasting_toy_dataset, resampling_strategy, b
                                        'test', estimator.seed, successful_num_run,
                                        run_key.budget))
     assert os.path.exists(test_prediction), test_prediction
-    assert np.shape(np.load(test_prediction, allow_pickle=True))[0] == forecast_horizon * np.shape(X_test)[0]
+    assert np.shape(np.load(test_prediction, allow_pickle=True))[0] == forecast_horizon * np.shape(y_test)[0]
 
     # Also, for ensemble builder, the OOF predictions should be there and match
     # the Ground truth that is also physically printed to disk
@@ -565,6 +570,11 @@ def test_time_series_forecasting(forecasting_toy_dataset, resampling_strategy, b
     y_pred = estimator.predict(X_test)
 
     assert np.shape(y_pred) == np.shape(y_test)
+
+    # Test refit on dummy data
+    estimator.refit(dataset=backend.load_datamanager())
+    # Make sure that a configuration space is stored in the estimator
+    assert isinstance(estimator.get_search_space(), CS.ConfigurationSpace)
 
 
 @pytest.mark.parametrize('openml_id', (
