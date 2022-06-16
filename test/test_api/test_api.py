@@ -430,6 +430,7 @@ def test_time_series_forecasting(forecasting_toy_dataset, resampling_strategy, b
     else:
         X_train = None
         X_test = None
+        known_future_features = None
 
     y_train = []
     y_test = []
@@ -464,7 +465,7 @@ def test_time_series_forecasting(forecasting_toy_dataset, resampling_strategy, b
             freq=freq,
             total_walltime_limit=50,
             func_eval_time_limit_secs=20,
-            #known_future_features=known_future_features,
+            known_future_features=known_future_features,
         )
 
     # Internal dataset has expected settings

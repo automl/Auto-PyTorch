@@ -560,7 +560,8 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             backcast (bool):
                 if back_cast module is activate (in which case window size is a multiple of n_prediction_steps)
             backcast_period (int):
-                activate if backcast is activate, the window size is then computed with backcast_period * n_prediction_steps
+                activate if backcast is activate, the window size is then computed with
+                 backcast_period * n_prediction_steps
             transform_time_features (bool)
                 if time feature trasnformation is applied
 
