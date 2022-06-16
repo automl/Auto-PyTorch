@@ -1,3 +1,25 @@
+# THE MIT License
+
+# Copyright 2020 Jan Beitner
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
 # This part of implementation follows pytorch-forecasting:
 # https://github.com/jdb78/pytorch-forecasting/blob/master/pytorch_forecasting/models/nbeats/sub_modules.py
 
@@ -22,6 +44,11 @@ class TransposeLinear(nn.Module):
 
 
 def linspace(backcast_length: int, forecast_length: int, centered: bool = False) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    a function to generate a linear space to encode the positions of the components. For details. We refer to
+    Oreshkin et al. N-BEATS: Neural basis expansion analysis for interpretable time series forecasting
+    https://arxiv.org/abs/1905.10437
+    """
     if centered:
         norm = max(backcast_length, forecast_length)
         start = -backcast_length
