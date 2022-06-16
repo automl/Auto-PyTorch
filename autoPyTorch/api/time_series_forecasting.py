@@ -537,7 +537,7 @@ class TimeSeriesForecastingTask(BaseTask):
             return forecasting * std + mean
         return forecasting
 
-    def update_sliding_window_size(self, n_prediction_steps: int):
+    def update_sliding_window_size(self, n_prediction_steps: int) -> None:
         """
         the size of the sliding window is heavily dependent on the dataset,
         so we only update them when we get the information from the

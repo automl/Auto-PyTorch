@@ -64,7 +64,6 @@ def find_active_choices(
 ) -> List[str]:
     if not hasattr(node, "get_available_components"):
         raise ValueError()
-
     available_components = node.get_available_components(dataset_properties,
                                                          include=include,
                                                          exclude=exclude)

@@ -22,7 +22,7 @@ from autoPyTorch.pipeline.components.training.metrics.metrics import (
 def sanitize_array(array: np.ndarray) -> np.ndarray:
     """
     Replace NaN and Inf (there should not be any!)
-    :param array:z
+    :param array:
     :return:
     """
     a = np.ravel(array)
@@ -117,11 +117,12 @@ def get_metrics(dataset_properties: Dict[str, Any],
 
 
 def calculate_score(
-        target: np.ndarray,
-        prediction: np.ndarray,
-        task_type: int,
-        metrics: Iterable[autoPyTorchMetric],
-        **score_kwargs: Any) -> Dict[str, float]:
+    target: np.ndarray,
+    prediction: np.ndarray,
+    task_type: int,
+    metrics: Iterable[autoPyTorchMetric],
+    **score_kwargs: Any
+) -> Dict[str, float]:
     score_dict = dict()
     if task_type in FORECASTING_TASKS:
         cprediction = sanitize_array(prediction)
@@ -150,6 +151,7 @@ def calculate_score(
                     continue
                 else:
                     raise e
+
     else:
         for metric_ in metrics:
             try:

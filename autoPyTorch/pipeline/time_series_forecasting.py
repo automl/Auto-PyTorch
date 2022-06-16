@@ -76,7 +76,6 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
             random_state is the random number generator
 
     Attributes:
-    Examples
     """
 
     def __init__(self,
@@ -194,20 +193,6 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                                 except IndexError:
                                     raise ValueError("Cannot find a legal default configuration")
                                 cs.get_hyperparameter('network_embedding:__choice__').default_value = default
-                                """
-                                # in this case we cannot deactivate the hps, we might need to think about this
-                                if 'RegressionLoss' in hp_loss.choices:
-                                    forbidden_hp_regression_loss = ForbiddenEqualsClause(hp_loss, 'RegressionLoss')
-                                    for hp_dist in hp_distribution_children:
-                                        forbidden_hp_dist = ForbiddenEqualsClause(hp_dist, True)
-                                        forbidden_hp_dist = AndConjunction(forbidden_hp_dist,
-                                                                           forbidden_hp_regression_loss)
-                                        forbidden_regression_losses_all.append(forbidden_hp_dist)
-                                else:
-                                    for hp_dist in hp_distribution_children:
-                                        forbidden_hp_dist = ForbiddenEqualsClause(hp_dist, True)
-                                        forbidden_regression_losses_all.append(forbidden_hp_dist)
-                                """
 
                 if 'network_backbone:flat_encoder:__choice__' in cs:
                     hp_flat_encoder = cs.get_hyperparameter('network_backbone:flat_encoder:__choice__')
@@ -354,7 +339,6 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                           ("preprocessing", TimeSeriesEarlyPreprocessing(random_state=self.random_state)),
                           ])
 
-        # TODO consider the correct way of doing imputer for time series forecasting tasks.
         steps.extend([
             ("target_imputer", TimeSeriesTargetImputer(random_state=self.random_state)),
             ("target_preprocessing", TimeSeriesTargetEarlyPreprocessing(random_state=self.random_state)),

@@ -11,7 +11,6 @@ class SparseInit(BaseNetworkInitializerComponent):
     """
     Fills the 2D input Tensor as a sparse matrix
     """
-
     def weights_init(self) -> Callable:
         """Returns the actual PyTorch model, that is dynamically created
         from a self.config object.
@@ -28,5 +27,4 @@ class SparseInit(BaseNetworkInitializerComponent):
                 torch.nn.init.sparse_(m.weight.data, 0.9)
                 if m.bias is not None and self.bias_strategy == 'Zero':
                     torch.nn.init.constant_(m.bias.data, 0.0)
-
         return initialization

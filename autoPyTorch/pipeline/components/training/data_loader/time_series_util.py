@@ -127,36 +127,35 @@ class PadSequenceCollector:
 
 
 class TimeSeriesSampler(SubsetRandomSampler):
+    """
+    A sampler designed for time series sequence. For the sake of efficiency, it will not sample each possible
+    sequences from indices. Instead, it samples 'num_instances_per_seqs' for each sequence. This sampler samples
+    the instances in a Latin-Hypercube likewise way: we divide each sequence in to num_instances_per_seqs interval
+    and  randomly sample one instance from each interval. If num_instances_per_seqs is not an integral, then the
+    first interval is selected with a certain probability:
+    for instance, if we want to sample 1.3 instance from a sequence [0,1,2,3,4,5], then we first divide the seuqence
+    into two parts: [0, 3] and [3, 6], one sample is sampled from the second part, while an expected value of 0.3 is
+    sampled from the first part (This part will be sampled in the very end with torch.multinomial)
+
+    Attributes:
+        indices (Sequence[int]):
+            The set of all the possible indices that can be sampled from
+        seq_lengths (Union[Sequence[int], np.ndarray]):
+            lengths of each sequence, applied to unsqueeze indices
+        num_instances_per_seqs (Optional[List[int]]):
+            expected number of instances to be sampled in each sequence, if it is None, all the sequences will be
+            sampled
+        min_start (int):
+            how many first time steps we want to skip (the first few sequences need to be padded with 0)
+        generator (Optional[torch.Generator]):
+            pytorch generator to control the randomness
+    """
     def __init__(self,
                  indices: Sequence[int],
                  seq_lengths: Union[Sequence[int], np.ndarray],
                  num_instances_per_seqs: Optional[Union[List[float], np.ndarray]] = None,
                  min_start: int = 0,
                  generator: Optional[torch.Generator] = None) -> None:
-        """
-        A sampler designed for time series sequence. For the sake of efficiency, it will not sample each possible
-        sequences from indices. Instead, it samples 'num_instances_per_seqs' for each sequence. This sampler samples
-        the instances in a Latin-Hypercube likewise way: we divide each sequence in to num_instances_per_seqs interval
-        and  randomly sample one instance from each interval. If num_instances_per_seqs is not an integral, then the
-        first interval is selected with a certain probability:
-        for instance, if we want to sample 1.3 instance from a sequence [0,1,2,3,4,5], then we first divide the seuqence
-        into two parts: [0, 3] and [3, 6], one sample is sampled from the second part, while an expected value of 0.3 is
-        sampled from the first part (This part will be sampled in the very end with torch.multinomial)
-
-        Parameters
-        ----------
-        indices: Sequence[int]
-            The set of all the possible indices that can be sampled from
-        seq_lengths:  Union[Sequence[int], np.ndarray]
-            lengths of each sequence, applied to unsqueeze indices
-        num_instances_per_seqs: Optional[List[int]]=None
-            expected number of instances to be sampled in each sequence, if it is None, all the sequences will be
-            sampled
-        min_start: int
-            the how many first instances we want to skip (the first few sequences need to be padded with 0)
-        generator: Optional[torch.Generator]
-            pytorch generator to control the randomness
-        """
         super().__init__(indices, generator)
         if num_instances_per_seqs is None:
             self.iter_all_seqs = True
@@ -246,6 +245,21 @@ class TimeSeriesSampler(SubsetRandomSampler):
 
 
 class SequentialSubSetSampler(SequentialSampler):
+    """
+    Sampler for validation set that allows to sample only a fraction of the datasetset. For those datasets that
+    have a big amount of datapoints. This function helps to reduce the inference time during validation after each
+    epoch
+
+
+    Attributes:
+        data_source (Dataset):
+            dataset to sample from, it is composed of several TimeSeriesSequence. for each TimeSeriesSequence only 1
+            sample is allowed
+        num_samples (int):
+            number of samples to be sampled from the dataset source
+        generator (Optional[torch.Generator]):
+            torch random generator
+    """
     data_source: Sized
 
     def __init__(self, data_source: Sized, num_samples: int, generator: Optional[torch.Generator] = None) -> None:

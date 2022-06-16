@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional, Union
 
-from ConfigSpace import ConfigurationSpace, CategoricalHyperparameter
+from ConfigSpace import CategoricalHyperparameter, ConfigurationSpace
 
 import numpy as np
 
@@ -12,7 +12,7 @@ import torch
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.components.setup.forecasting_target_scaling.utils import TargetScaler
-from autoPyTorch.utils.common import add_hyperparameter, HyperparameterSearchSpace
+from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
 class BaseTargetScaler(autoPyTorchComponent):

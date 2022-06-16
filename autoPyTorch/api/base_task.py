@@ -1342,8 +1342,13 @@ class BaseTask(ABC):
         dataset: BaseDataset,
         split_id: int = 0
     ) -> Dict[str, Any]:
-        X_test = dataset.test_tensors[0].copy() if dataset.test_tensors is not None else None
-        y_test = dataset.test_tensors[1].copy() if dataset.test_tensors is not None else None
+        if dataset.test_tensors is not None:
+            X_test = dataset.test_tensors[0].copy() if dataset.test_tensors[0] is not None else None
+            y_test = dataset.test_tensors[1].copy() if dataset.test_tensors[1] is not None else None
+        else:
+            X_test = None
+            y_test = None
+
         X_train = dataset.train_tensors[0].copy() if dataset.train_tensors[0] is not None else None
         y_train = dataset.train_tensors[1].copy()
         X: Dict[str, Any] = dict({'dataset_properties': dataset_properties,

@@ -201,28 +201,27 @@ class _ForecastingMetric(ForecastingMetricMixin, autoPyTorchMetric):
             sample_weight: Optional[List[float]] = None,
             **kwarg: Any,
     ) -> float:
-        """Evaluate time series forecasting losses given input data
+        """
+        Evaluate time series forecasting losses given input data
         The description is nearly the same as the one defined under
         https://www.sktime.org/en/stable/api_reference/performance_metrics.html
 
-        Parameters
-        ----------
-        y_true : array-like, [n_seq x n_prediction_steps, n_output]
-            Ground truth (correct) target values.
-
-        y_pred : array-like, [n_seq x n_prediction_steps, n_output]
-            Forecasted values.
-
-        sp: int
+        Args:
+        y_true (np.ndarray):
+             array-like ([n_seq x n_prediction_steps, n_output]). Ground truth (correct) target values.
+        y_pred (np.ndarray):
+            array-like ([n_seq x n_prediction_steps, n_output]). Forecasted values.
+        sp (int):
             Seasonal periodicity of training data.
-
-        horizon_weight : array-like, optional (default=None)
+        horizon_weight (Optional[List[float]]):
             Forecast horizon weights.
-            TODO consider weights for each individual prediction, i.e., we could mask the unobserved values
+        sample_weight (Optional[List[float]]):
+            weights w.r.t. each sample
+
         Returns
         -------
-        score : float
-            Score function applied to prediction of estimator on X.
+            score (float):
+                Score function applied to prediction of estimator on X.
         """
 
         agg = self._kwargs['aggregation']
@@ -250,7 +249,7 @@ class _ForecastingMetric(ForecastingMetricMixin, autoPyTorchMetric):
         # shape is [n_prediction_steps, n_sequence * n_outputs]
         y_true = y_true.reshape((n_prediction_steps, -1))
         y_pred = y_pred.reshape((n_prediction_steps, -1))
-
+        # TODO consider weights for each individual prediction, i.e., we could mask the unobserved values
         losses_all: np.ndarray = self._metric_func(y_true=y_true,
                                                    y_pred=y_pred,
                                                    sp=sp,
@@ -275,15 +274,15 @@ class _ForecastingMetric(ForecastingMetricMixin, autoPyTorchMetric):
 
 
 def make_metric(
-        name: str,
-        score_func: Callable,
-        optimum: float = 1.0,
-        worst_possible_result: float = 0.0,
-        greater_is_better: bool = True,
-        needs_proba: bool = False,
-        needs_threshold: bool = False,
-        do_forecasting: bool = False,
-        **kwargs: Any
+    name: str,
+    score_func: Callable,
+    optimum: float = 1.0,
+    worst_possible_result: float = 0.0,
+    greater_is_better: bool = True,
+    needs_proba: bool = False,
+    needs_threshold: bool = False,
+    do_forecasting: bool = False,
+    **kwargs: Any
 ) -> autoPyTorchMetric:
     """
     Make a autoPyTorchMetric from a performance metric or loss function.

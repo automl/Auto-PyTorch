@@ -11,7 +11,8 @@ from autoPyTorch.constants import (
     CONTINUOUS,
     OUTPUT_TYPES_TO_STRING,
     REGRESSION_TASKS,
-    TASK_TYPES_TO_STRING)
+    TASK_TYPES_TO_STRING
+)
 from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics
 from autoPyTorch.pipeline.components.training.trainer.base_trainer import BaseTrainerComponent, BudgetTracker
 

@@ -4,8 +4,10 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
 
 from ConfigSpace.conditions import EqualsCondition
 from ConfigSpace.configuration_space import ConfigurationSpace
-from ConfigSpace.hyperparameters import (CategoricalHyperparameter,
-                                         UniformIntegerHyperparameter)
+from ConfigSpace.hyperparameters import (
+    CategoricalHyperparameter,
+    UniformIntegerHyperparameter
+)
 
 from gluonts.time_feature import TimeFeature
 
@@ -543,23 +545,28 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         https://arxiv.org/abs/1905.10437)
         Currently back_cast_period is only activate when back_cast is activate
         Args:
-            dataset_properties (Optional[Dict]): dataset properties
-            batch_size (int): batch size
-            window_size (int): window size, (if activate) this value directly determines the window_size of the
-                               data loader
-            num_batches_per_epoch (int): how many batches are trained at each iteration
-            sample_strategy(str): how samples are distributed. if it is LengthUnifrom, then every single data point
-                                  has the same probability to be sampled, in which case longer sequence will occupy more
-                                  samples. If it is SeqUniform, then every sequence has the same probability to be
-                                  sampled regardless of their length
-            backcast (bool): if back_cast module is activate (in which case window size is a
-            multiple of n_prediction_steps)
-            backcast_period (int): activate if backcast is activate, the window size is then computed with
-                                   backcast_period * n_prediction_steps
-            transform_time_features (bool) if time feature trasnformation is applied
+            dataset_properties (Optional[Dict]):
+                dataset properties
+            batch_size (int):
+                batch size
+            window_size (int):
+                window size, (if activate) this value directly determines the window_size of the data loader
+            num_batches_per_epoch (int):
+                how many batches are trained at each iteration
+            sample_strategy(str):
+                how samples are distributed. if it is LengthUnifrom, then every single data point has the same
+                probability to be sampled, in which case longer sequence will occupy more samples. If it is
+                SeqUniform, then every sequence has the same probability to be sampled regardless of their length
+            backcast (bool):
+                if back_cast module is activate (in which case window size is a multiple of n_prediction_steps)
+            backcast_period (int):
+                activate if backcast is activate, the window size is then computed with backcast_period * n_prediction_steps
+            transform_time_features (bool)
+                if time feature trasnformation is applied
 
         Returns:
-            cs: Configuration Space
+            cs:
+                Configuration Space
 
         """
         cs = ConfigurationSpace()

@@ -106,10 +106,8 @@ def dummy_eval_train_function(
 ) -> None:
     if evaluator_class is None:
         evaluator_class = DummyTrainEvaluator
-    elif isinstance(evaluator_class, FORECASTING_TASKS):
+    else:
         evaluator_class = DummyForecastingEvaluator
-    import pdb
-    pdb.set_trace()
 
     evaluator = evaluator_class(
         backend=backend,
