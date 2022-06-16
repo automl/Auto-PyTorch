@@ -18,7 +18,6 @@ from autoPyTorch.datasets.base_dataset import (
     BaseDatasetPropertiesType
 )
 from autoPyTorch.datasets.resampling_strategy import (
-    CrossValTypes,
     HoldoutValTypes,
     ResamplingStrategies
 )
@@ -422,6 +421,8 @@ class TimeSeriesForecastingTask(BaseTask):
             self._dataset_compression = get_dataset_compression_mapping(
                 memory_limit, dataset_compression
             )
+        else:
+            self._dataset_compression = None
 
         self.dataset, self.input_validator = self._get_dataset_input_validator(
             X_train=X_train,
