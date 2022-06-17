@@ -273,4 +273,4 @@ class TestTimeSeriesForecastingTrainEvaluator(unittest.TestCase):
             status=StatusType.SUCCESS,
             **metric_kwargs
         )
-        self.assertTrue('test_loss' in queue_mock.put.call_args.args[0]['additional_run_info'])
+        self.assertTrue('test_loss' in queue_mock.put.call_args[0][0]['additional_run_info'])
