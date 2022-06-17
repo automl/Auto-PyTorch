@@ -436,6 +436,6 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
                 warnings.warn('| WARNING: ran out of memory, retrying batch')
                 torch.cuda.empty_cache()
                 batch_size = batch_size // 2
-                return self.predict(X, batch_size=batch_size // 2)
+                return self.predict(X, batch_size=batch_size // 2).flatten()
             else:
                 raise e

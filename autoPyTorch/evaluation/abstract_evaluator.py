@@ -353,14 +353,14 @@ class DummyTimeSeriesForecastingPipeline(DummyClassificationPipeline):
     def predict_proba(self, X: Union[np.ndarray, pd.DataFrame],
                       batch_size: int = 1000) -> np.ndarray:
         X_tail = self._generate_dummy_forecasting(X)
-        return np.tile(X_tail, (1, self.n_prediction_steps)).astype(np.float32).squeeze()
+        return np.tile(X_tail, (1, self.n_prediction_steps)).astype(np.float32).flatten()
 
     def predict(self, X: Union[np.ndarray, pd.DataFrame],
                 batch_size: int = 1000) -> np.ndarray:
         X_tail = np.asarray(self._generate_dummy_forecasting(X))
         if X_tail.ndim == 1:
             X_tail = np.expand_dims(X_tail, -1)
-        return np.tile(X_tail, (1, self.n_prediction_steps)).astype(np.float32).squeeze()
+        return np.tile(X_tail, (1, self.n_prediction_steps)).astype(np.float32).flatten()
 
     @staticmethod
     def get_default_pipeline_options() -> Dict[str, Any]:
