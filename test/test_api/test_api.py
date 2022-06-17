@@ -48,7 +48,7 @@ HOLDOUT_NUM_SPLITS = 1
 
 # Test
 # ====
-@unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_train_function',
+@unittest.mock.patch('autoPyTorch.evaluation.tae.eval_train_function',
                      new=dummy_eval_train_function)
 @pytest.mark.parametrize('openml_id', (40981, ))
 @pytest.mark.parametrize('resampling_strategy,resampling_strategy_args',
@@ -225,7 +225,7 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
 
 
 @pytest.mark.parametrize('openml_name', ("boston", ))
-@unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_train_function',
+@unittest.mock.patch('autoPyTorch.evaluation.tae.eval_train_function',
                      new=dummy_eval_train_function)
 @pytest.mark.parametrize('resampling_strategy,resampling_strategy_args',
                          ((HoldoutValTypes.holdout_validation, None),
@@ -411,7 +411,7 @@ def test_tabular_regression(openml_name, resampling_strategy, backend, resamplin
 
 
 @pytest.mark.parametrize('forecasting_toy_dataset', ['uni_variant_wo_missing'], indirect=True)
-@unittest.mock.patch('autoPyTorch.evaluation.time_series_forecasting_train_evaluator.forecasting_eval_train_function',
+@unittest.mock.patch('autoPyTorch.evaluation.tae.forecasting_eval_train_function',
                      new=dummy_forecasting_eval_train_function)
 @pytest.mark.parametrize('resampling_strategy,resampling_strategy_args',
                          ((HoldoutValTypes.time_series_hold_out_validation, None),
@@ -677,7 +677,7 @@ def test_do_dummy_prediction(dask_client, fit_dictionary_tabular):
     del estimator
 
 
-@unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_train_function',
+@unittest.mock.patch('autoPyTorch.evaluation.tae.eval_train_function',
                      new=dummy_eval_train_function)
 @pytest.mark.parametrize('openml_id', (40981, ))
 def test_portfolio_selection(openml_id, backend, n_samples):
@@ -719,7 +719,7 @@ def test_portfolio_selection(openml_id, backend, n_samples):
     assert any(successful_config in portfolio_configs for successful_config in successful_configs)
 
 
-@unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_train_function',
+@unittest.mock.patch('autoPyTorch.evaluation.tae.eval_train_function',
                      new=dummy_eval_train_function)
 @pytest.mark.parametrize('openml_id', (40981, ))
 def test_portfolio_selection_failure(openml_id, backend, n_samples):
