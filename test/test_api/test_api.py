@@ -456,6 +456,7 @@ def test_time_series_forecasting(forecasting_toy_dataset, resampling_strategy, b
         backend=backend,
         resampling_strategy=resampling_strategy,
         resampling_strategy_args=resampling_strategy_args,
+        ensemble_size=2,
         seed=42,
     )
 
