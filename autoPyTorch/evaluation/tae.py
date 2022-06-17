@@ -34,7 +34,7 @@ from autoPyTorch.datasets.resampling_strategy import (
     NoResamplingStrategyTypes
 )
 from autoPyTorch.evaluation.test_evaluator import eval_test_function
-from autoPyTorch.evaluation.time_series_forecasting_train_evaluator import TimeSeriesForecastingTrainEvaluator
+from autoPyTorch.evaluation.time_series_forecasting_train_evaluator import forecasting_eval_train_function
 from autoPyTorch.evaluation.train_evaluator import eval_train_function
 from autoPyTorch.evaluation.utils import (
     DisableFileOutputParameters,
@@ -152,8 +152,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         self.resampling_strategy_args = dm.resampling_strategy_args
 
         if STRING_TO_TASK_TYPES.get(dm.task_type, -1) == TIMESERIES_FORECASTING:
-            eval_function: Callable = functools.partial(eval_train_function,
-                                                        evaluator_class=TimeSeriesForecastingTrainEvaluator)
+            eval_function: Callable = forecasting_eval_train_function
             if isinstance(self.resampling_strategy, (HoldoutValTypes, CrossValTypes)):
                 self.output_y_hat_optimization = output_y_hat_optimization
             elif isinstance(self.resampling_strategy, NoResamplingStrategyTypes):

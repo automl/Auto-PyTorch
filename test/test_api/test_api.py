@@ -4,7 +4,11 @@ import pathlib
 import pickle
 import tempfile
 import unittest
-from test.test_api.utils import dummy_do_dummy_prediction, dummy_eval_train_function
+from test.test_api.utils import (
+    dummy_do_dummy_prediction,
+    dummy_eval_train_function,
+    dummy_forecasting_eval_train_function
+)
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import Configuration
@@ -407,8 +411,11 @@ def test_tabular_regression(openml_name, resampling_strategy, backend, resamplin
 
 
 @pytest.mark.parametrize('forecasting_toy_dataset', ['uni_variant_wo_missing'], indirect=True)
+@unittest.mock.patch('autoPyTorch.evaluation.time_series_forecasting_train_evaluator.forecasting_eval_train_function',
+                     new=dummy_forecasting_eval_train_function)
 @pytest.mark.parametrize('resampling_strategy,resampling_strategy_args',
                          ((HoldoutValTypes.time_series_hold_out_validation, None),
+                          (CrossValTypes.k_fold_cross_validation, {'num_splits': CV_NUM_SPLITS})
                           ))
 def test_time_series_forecasting(forecasting_toy_dataset, resampling_strategy, backend, resampling_strategy_args):
     forecast_horizon = 3
@@ -459,7 +466,7 @@ def test_time_series_forecasting(forecasting_toy_dataset, resampling_strategy, b
             y_train=y_train,
             X_test=X_test,
             y_test=y_test,
-            memory_limit=None,
+            memory_limit=8192,
             optimize_metric='mean_MSE_forecasting',
             n_prediction_steps=forecast_horizon,
             freq=freq,

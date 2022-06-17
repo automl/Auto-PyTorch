@@ -441,3 +441,118 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             test_pred = None
 
         return np.empty(1), opt_pred, valid_pred, test_pred
+
+
+# create closure for evaluating an algorithm
+def forecasting_eval_train_function(
+    backend: Backend,
+    queue: Queue,
+    metric: autoPyTorchMetric,
+    budget: float,
+    config: Optional[Configuration],
+    seed: int,
+    output_y_hat_optimization: bool,
+    num_run: int,
+    include: Optional[Dict[str, Any]],
+    exclude: Optional[Dict[str, Any]],
+    disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
+    pipeline_config: Optional[Dict[str, Any]] = None,
+    budget_type: str = None,
+    init_params: Optional[Dict[str, Any]] = None,
+    logger_port: Optional[int] = None,
+    all_supported_metrics: bool = True,
+    search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
+    instance: str = None,
+    max_budget: float = 1.0,
+    min_num_test_instances: Optional[int] = None
+) -> None:
+    """
+    This closure allows the communication between the ExecuteTaFuncWithQueue and the
+    pipeline trainer (TrainEvaluator).
+
+    Fundamentally, smac calls the ExecuteTaFuncWithQueue.run() method, which internally
+    builds a TrainEvaluator. The TrainEvaluator builds a pipeline, stores the output files
+    to disc via the backend, and puts the performance result of the run in the queue.
+
+
+    Attributes:
+        backend (Backend):
+            An object to interface with the disk storage. In particular, allows to
+            access the train and test datasets
+        queue (Queue):
+            Each worker available will instantiate an evaluator, and after completion,
+            it will return the evaluation result via a multiprocessing queue
+        metric (autoPyTorchMetric):
+            A scorer object that is able to evaluate how good a pipeline was fit. It
+            is a wrapper on top of the actual score method (a wrapper on top of scikit
+            lean accuracy for example) that formats the predictions accordingly.
+        budget: (float):
+            The amount of epochs/time a configuration is allowed to run.
+        budget_type  (str):
+            The budget type, which can be epochs or time
+        pipeline_config (Optional[Dict[str, Any]]):
+            Defines the content of the pipeline being evaluated. For example, it
+            contains pipeline specific settings like logging name, or whether or not
+            to use tensorboard.
+        config (Union[int, str, Configuration]):
+            Determines the pipeline to be constructed.
+        seed (int):
+            A integer that allows for reproducibility of results
+        output_y_hat_optimization (bool):
+            Whether this worker should output the target predictions, so that they are
+            stored on disk. Fundamentally, the resampling strategy might shuffle the
+            Y_train targets, so we store the split in order to re-use them for ensemble
+            selection.
+        num_run (Optional[int]):
+            An identifier of the current configuration being fit. This number is unique per
+            configuration.
+        include (Optional[Dict[str, Any]]):
+            An optional dictionary to include components of the pipeline steps.
+        exclude (Optional[Dict[str, Any]]):
+            An optional dictionary to exclude components of the pipeline steps.
+        disable_file_output (Union[bool, List[str]]):
+            By default, the model, it's predictions and other metadata is stored on disk
+            for each finished configuration. This argument allows the user to skip
+            saving certain file type, for example the model, from being written to disk.
+        init_params (Optional[Dict[str, Any]]):
+            Optional argument that is passed to each pipeline step. It is the equivalent of
+            kwargs for the pipeline steps.
+        logger_port (Optional[int]):
+            Logging is performed using a socket-server scheme to be robust against many
+            parallel entities that want to write to the same file. This integer states the
+            socket port for the communication channel. If None is provided, a traditional
+            logger is used.
+        instance (str):
+            An instance on which to evaluate the current pipeline. By default we work
+            with a single instance, being the provided X_train, y_train of a single dataset.
+            This instance is a compatibility argument for SMAC, that is capable of working
+            with multiple datasets at the same time.
+        max_budget (float):
+            maximal budget value available for the optimizer. This is applied to compute the size of the proxy
+            validation sets
+        min_num_test_instances (Optional[int]):
+            minimal number of instances to be validated. We do so to ensure that there are enough instances in
+            the validation set
+    """
+    evaluator = TimeSeriesForecastingTrainEvaluator(
+        backend=backend,
+        queue=queue,
+        metric=metric,
+        configuration=config,
+        seed=seed,
+        num_run=num_run,
+        output_y_hat_optimization=output_y_hat_optimization,
+        include=include,
+        exclude=exclude,
+        disable_file_output=disable_file_output,
+        init_params=init_params,
+        budget=budget,
+        budget_type=budget_type,
+        logger_port=logger_port,
+        all_supported_metrics=all_supported_metrics,
+        pipeline_config=pipeline_config,
+        search_space_updates=search_space_updates,
+        max_budget=max_budget,
+        min_num_test_instances=min_num_test_instances,
+    )
+    evaluator.fit_predict_and_loss()

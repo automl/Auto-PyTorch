@@ -101,15 +101,8 @@ def dummy_eval_train_function(
         all_supported_metrics=True,
         search_space_updates=None,
         instance: str = None,
-        evaluator_class=None,
-        **evaluator_kwargs,
 ) -> None:
-    if evaluator_class is None:
-        evaluator_class = DummyTrainEvaluator
-    else:
-        evaluator_class = DummyForecastingEvaluator
-
-    evaluator = evaluator_class(
+    evaluator = DummyTrainEvaluator(
         backend=backend,
         queue=queue,
         metric=metric,
@@ -127,7 +120,53 @@ def dummy_eval_train_function(
         all_supported_metrics=all_supported_metrics,
         pipeline_config=pipeline_config,
         search_space_updates=search_space_updates,
-        **evaluator_kwargs
+    )
+    evaluator.fit_predict_and_loss()
+
+
+# create closure for evaluating an algorithm
+def dummy_forecasting_eval_train_function(
+        backend,
+        queue,
+        metric,
+        budget: float,
+        config,
+        seed: int,
+        output_y_hat_optimization: bool,
+        num_run: int,
+        include,
+        exclude,
+        disable_file_output,
+        pipeline_config=None,
+        budget_type=None,
+        init_params=None,
+        logger_port=None,
+        all_supported_metrics=True,
+        search_space_updates=None,
+        instance: str = None,
+        max_budget=1.0,
+        min_num_test_instances=None
+) -> None:
+    evaluator = DummyForecastingEvaluator(
+        backend=backend,
+        queue=queue,
+        metric=metric,
+        configuration=config,
+        seed=seed,
+        num_run=num_run,
+        output_y_hat_optimization=output_y_hat_optimization,
+        include=include,
+        exclude=exclude,
+        disable_file_output=disable_file_output,
+        init_params=init_params,
+        budget=budget,
+        budget_type=budget_type,
+        logger_port=logger_port,
+        all_supported_metrics=all_supported_metrics,
+        pipeline_config=pipeline_config,
+        search_space_updates=search_space_updates,
+        max_budget=max_budget,
+        min_num_test_instances=min_num_test_instances,
     )
     evaluator.fit_predict_and_loss()
 

@@ -427,8 +427,6 @@ def eval_train_function(
     all_supported_metrics: bool = True,
     search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
     instance: str = None,
-    evaluator_class: Type[TrainEvaluator] = TrainEvaluator,
-    **evaluator_kwargs: Any,
 ) -> None:
     """
     This closure allows the communication between the ExecuteTaFuncWithQueue and the
@@ -491,12 +489,8 @@ def eval_train_function(
             with a single instance, being the provided X_train, y_train of a single dataset.
             This instance is a compatibility argument for SMAC, that is capable of working
             with multiple datasets at the same time.
-        evaluator_class (Type[AbstractEvaluator]):
-            the class name of evaluator, when not specified, it is set as vanilla TrainEvaluator
-        evaluator_kwargs: Any
-            additionally evaluation kwargs
     """
-    evaluator = evaluator_class(
+    evaluator = TrainEvaluator(
         backend=backend,
         queue=queue,
         metric=metric,
@@ -514,6 +508,5 @@ def eval_train_function(
         all_supported_metrics=all_supported_metrics,
         pipeline_config=pipeline_config,
         search_space_updates=search_space_updates,
-        **evaluator_kwargs  # type: ignore
     )
     evaluator.fit_predict_and_loss()
