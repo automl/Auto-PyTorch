@@ -415,7 +415,7 @@ def test_tabular_regression(openml_name, resampling_strategy, backend, resamplin
                      new=dummy_forecasting_eval_train_function)
 @pytest.mark.parametrize('resampling_strategy,resampling_strategy_args',
                          ((HoldoutValTypes.time_series_hold_out_validation, None),
-                          (CrossValTypes.k_fold_cross_validation, {'num_splits': CV_NUM_SPLITS})
+                          (CrossValTypes.time_series_cross_validation, {'num_splits': CV_NUM_SPLITS}),
                           ))
 def test_time_series_forecasting(forecasting_toy_dataset, resampling_strategy, backend, resampling_strategy_args):
     forecast_horizon = 3
@@ -457,7 +457,6 @@ def test_time_series_forecasting(forecasting_toy_dataset, resampling_strategy, b
         resampling_strategy=resampling_strategy,
         resampling_strategy_args=resampling_strategy_args,
         seed=42,
-        include_components={'network_backbone': {'flat_encoder:MLPEncoder'}}
     )
 
     with unittest.mock.patch.object(estimator, '_do_dummy_prediction', new=dummy_do_dummy_prediction):
@@ -466,12 +465,12 @@ def test_time_series_forecasting(forecasting_toy_dataset, resampling_strategy, b
             y_train=y_train,
             X_test=X_test,
             y_test=y_test,
-            memory_limit=8192,
+            memory_limit=None,
             optimize_metric='mean_MSE_forecasting',
             n_prediction_steps=forecast_horizon,
             freq=freq,
-            total_walltime_limit=50,
-            func_eval_time_limit_secs=20,
+            total_walltime_limit=30,
+            func_eval_time_limit_secs=10,
             known_future_features=known_future_features,
         )
 
