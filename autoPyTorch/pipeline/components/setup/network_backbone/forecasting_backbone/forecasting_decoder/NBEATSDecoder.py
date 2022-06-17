@@ -35,7 +35,7 @@ class NBEATSBlock(DecoderNetwork):
     Oreshkin et al., N-BEATS: Neural basis expansion analysis for interpretable time series forecasting
     https://arxiv.org/abs/1905.10437
 
-    The hyperaprameter defination are quite simialr to
+    The hyperaprameter definitions are quite similar to
     https://github.com/jdb78/pytorch-forecasting/tree/master/pytorch_forecasting/models/nbeats
 
     However, we only construct the forecast/ backcast head under
