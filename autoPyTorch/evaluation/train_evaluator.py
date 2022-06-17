@@ -1,5 +1,5 @@
 from multiprocessing.queues import Queue
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration
 
