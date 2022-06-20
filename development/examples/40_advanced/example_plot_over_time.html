@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>Plot the Performance over Time &#8212; AutoPyTorch 0.1.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
@@ -15,6 +15,7 @@
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -126,7 +127,7 @@
 to download the full example code or to run this example in your browser via Binder</p>
 </div>
 <section class="sphx-glr-example-title" id="plot-the-performance-over-time">
-<span id="sphx-glr-examples-40-advanced-example-plot-over-time-py"></span><h1>Plot the Performance over Time<a class="headerlink" href="#plot-the-performance-over-time" title="Permalink to this headline">¶</a></h1>
+<span id="sphx-glr-examples-40-advanced-example-plot-over-time-py"></span><h1>Plot the Performance over Time<a class="headerlink" href="#plot-the-performance-over-time" title="Permalink to this heading">¶</a></h1>
 <p>Auto-Pytorch uses SMAC to fit individual machine learning algorithms
 and then ensembles them together using <a class="reference external" href="https://www.cs.cornell.edu/~caruana/ctp/ct.papers/caruana.icml04.icdm06long.pdf">Ensemble Selection</a>.</p>
 <p>The following examples shows how to plot both the performance
@@ -153,7 +154,7 @@ please input plt.Axes obtained from matplotlib.pyplot.subplots.</p>
 </pre></div>
 </div>
 <section id="task-definition">
-<h2>Task Definition<a class="headerlink" href="#task-definition" title="Permalink to this headline">¶</a></h2>
+<h2>Task Definition<a class="headerlink" href="#task-definition" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">n_samples</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">2</span>
 <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">dim</span><span class="p">))</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span>
 <span class="n">y</span> <span class="o">=</span> <span class="p">((</span><span class="n">X</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
@@ -164,14 +165,14 @@ please input plt.Axes obtained from matplotlib.pyplot.subplots.</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>[1 1 1 1 0 0 1 0 0 0 1 0 0 0 0 1 0 1 1 1 1 0 1 1 0 1 1 1 0 0 0 0 1 0 1 0 0
- 1 1 1 0 1 0 1 1 1 0 1 1 1 1 0 0 0 0 0 0 1 0 1 0 1 1 1 0 1 0 1 1 1 0 1 0 1
- 0 0 1 1 1 0 1 0 0 0 0 0 1 1 1 0 0 1 1 1 1 0 0 0 1 0]
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>[0 0 1 1 1 0 1 0 0 0 1 0 0 0 0 0 1 0 1 1 1 0 1 0 0 1 1 1 1 0 1 0 1 0 0 0 0
+ 0 1 1 0 1 1 0 1 0 0 1 1 1 0 0 0 0 0 0 0 1 1 0 1 1 1 1 1 0 0 1 0 0 1 0 0 1
+ 1 0 1 1 0 0 0 0 0 0 1 1 1 1 1 1 1 1 0 1 1 0 1 1 1 1]
 </pre></div>
 </div>
 </section>
 <section id="api-instantiation-and-searching">
-<h2>API Instantiation and Searching<a class="headerlink" href="#api-instantiation-and-searching" title="Permalink to this headline">¶</a></h2>
+<h2>API Instantiation and Searching<a class="headerlink" href="#api-instantiation-and-searching" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">api</span> <span class="o">=</span> <span class="n">TabularClassificationTask</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
 
 <span class="n">api</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="p">,</span>
@@ -179,12 +180,12 @@ please input plt.Axes obtained from matplotlib.pyplot.subplots.</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f2710ef49a0&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fdc1a1c7d90&gt;
 </pre></div>
 </div>
 </section>
 <section id="create-setting-parameters-object">
-<h2>Create Setting Parameters Object<a class="headerlink" href="#create-setting-parameters-object" title="Permalink to this headline">¶</a></h2>
+<h2>Create Setting Parameters Object<a class="headerlink" href="#create-setting-parameters-object" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">metric_name</span> <span class="o">=</span> <span class="s1">&#39;accuracy&#39;</span>
 
 <span class="n">params</span> <span class="o">=</span> <span class="n">PlotSettingParams</span><span class="p">(</span>
@@ -200,7 +201,7 @@ please input plt.Axes obtained from matplotlib.pyplot.subplots.</p>
 </div>
 </section>
 <section id="plot-with-the-specified-setting-parameters">
-<h2>Plot with the Specified Setting Parameters<a class="headerlink" href="#plot-with-the-specified-setting-parameters" title="Permalink to this headline">¶</a></h2>
+<h2>Plot with the Specified Setting Parameters<a class="headerlink" href="#plot-with-the-specified-setting-parameters" title="Permalink to this heading">¶</a></h2>
 <p>_, ax = plt.subplots()  &lt;=== You can feed it to post-process the figure.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># You might need to run `export DISPLAY=:0.0` if you are using non-GUI based environment.</span>
 <span class="n">api</span><span class="o">.</span><span class="n">plot_perf_over_time</span><span class="p">(</span>
@@ -211,7 +212,7 @@ please input plt.Axes obtained from matplotlib.pyplot.subplots.</p>
 <span class="p">)</span>
 </pre></div>
 </div>
-<img src="../../_images/sphx_glr_example_plot_over_time_001.png" srcset="../../_images/sphx_glr_example_plot_over_time_001.png" alt="Toy Example" class = "sphx-glr-single-img"/><p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 2 minutes  14.170 seconds)</p>
+<img src="../../_images/sphx_glr_example_plot_over_time_001.png" srcset="../../_images/sphx_glr_example_plot_over_time_001.png" alt="Toy Example" class = "sphx-glr-single-img"/><p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 2 minutes  21.644 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-plot-over-time-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_plot_over_time.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>
@@ -247,7 +248,7 @@ please input plt.Axes obtained from matplotlib.pyplot.subplots.</p>
     </p>
     <p>
         &copy; Copyright 2014-2022, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.2.<br/>
     </p>
   </div>
 </footer>

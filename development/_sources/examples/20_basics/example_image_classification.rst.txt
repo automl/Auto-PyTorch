@@ -85,14 +85,17 @@ Image Classification
     Pipeline Random Config:
      ________________________________________ 
     Configuration(values={
-      'image_augmenter:GaussianBlur:sigma_min': 1.2329755725391824,
-      'image_augmenter:GaussianBlur:sigma_offset': 2.17995589356565,
-      'image_augmenter:GaussianBlur:use_augmenter': True,
+      'image_augmenter:GaussianBlur:use_augmenter': False,
       'image_augmenter:GaussianNoise:use_augmenter': False,
-      'image_augmenter:RandomAffine:use_augmenter': False,
-      'image_augmenter:RandomCutout:use_augmenter': False,
-      'image_augmenter:Resize:use_augmenter': True,
-      'image_augmenter:ZeroPadAndCrop:percent': 0.33852145254374955,
+      'image_augmenter:RandomAffine:rotate': 25,
+      'image_augmenter:RandomAffine:scale_offset': 0.17911084673615535,
+      'image_augmenter:RandomAffine:shear': 29,
+      'image_augmenter:RandomAffine:translate_percent_offset': 0.2595162834252603,
+      'image_augmenter:RandomAffine:use_augmenter': True,
+      'image_augmenter:RandomCutout:p': 0.41657143992832846,
+      'image_augmenter:RandomCutout:use_augmenter': True,
+      'image_augmenter:Resize:use_augmenter': False,
+      'image_augmenter:ZeroPadAndCrop:percent': 0.2504071930090588,
       'normalizer:__choice__': 'NoNormalizer',
     })
 
@@ -173,7 +176,7 @@ Image Classification
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  6.608 seconds)
+   **Total running time of the script:** ( 0 minutes  5.591 seconds)
 
 
 .. _sphx_glr_download_examples_20_basics_example_image_classification.py:

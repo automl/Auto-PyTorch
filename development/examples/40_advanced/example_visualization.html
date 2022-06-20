@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>Visualizing the Results &#8212; AutoPyTorch 0.1.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
@@ -15,6 +15,7 @@
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -126,7 +127,7 @@
 to download the full example code or to run this example in your browser via Binder</p>
 </div>
 <section class="sphx-glr-example-title" id="visualizing-the-results">
-<span id="sphx-glr-examples-40-advanced-example-visualization-py"></span><h1>Visualizing the Results<a class="headerlink" href="#visualizing-the-results" title="Permalink to this headline">¶</a></h1>
+<span id="sphx-glr-examples-40-advanced-example-visualization-py"></span><h1>Visualizing the Results<a class="headerlink" href="#visualizing-the-results" title="Permalink to this heading">¶</a></h1>
 <p>Auto-Pytorch uses SMAC to fit individual machine learning algorithms
 and then ensembles them together using <a class="reference external" href="https://www.cs.cornell.edu/~caruana/ctp/ct.papers/caruana.icml04.icdm06long.pdf">Ensemble Selection</a>.</p>
 <p>The following examples shows how to visualize both the performance
@@ -168,7 +169,7 @@ we show how to further interact with <a class="reference external" href="https:/
 </pre></div>
 </div>
 <section id="data-loading">
-<h2>Data Loading<a class="headerlink" href="#data-loading" title="Permalink to this headline">¶</a></h2>
+<h2>Data Loading<a class="headerlink" href="#data-loading" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># We will use the iris dataset for this Toy example</span>
 <span class="n">seed</span> <span class="o">=</span> <span class="mi">42</span>
 <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">fetch_openml</span><span class="p">(</span><span class="n">data_id</span><span class="o">=</span><span class="mi">61</span><span class="p">,</span> <span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -181,7 +182,7 @@ we show how to further interact with <a class="reference external" href="https:/
 </div>
 </section>
 <section id="build-and-fit-a-classifier">
-<h2>Build and fit a classifier<a class="headerlink" href="#build-and-fit-a-classifier" title="Permalink to this headline">¶</a></h2>
+<h2>Build and fit a classifier<a class="headerlink" href="#build-and-fit-a-classifier" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">api</span> <span class="o">=</span> <span class="n">TabularClassificationTask</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
 <span class="n">api</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
     <span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span>
@@ -195,12 +196,12 @@ we show how to further interact with <a class="reference external" href="https:/
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f2710f23fd0&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fdc1b3ff820&gt;
 </pre></div>
 </div>
 </section>
 <section id="one-can-also-save-the-model-for-future-inference">
-<h2>One can also save the model for future inference<a class="headerlink" href="#one-can-also-save-the-model-for-future-inference" title="Permalink to this headline">¶</a></h2>
+<h2>One can also save the model for future inference<a class="headerlink" href="#one-can-also-save-the-model-for-future-inference" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># For more details on how to deploy a model, please check</span>
 <span class="c1"># `Scikit-Learn persistence</span>
 <span class="c1"># &lt;https://scikit-learn.org/stable/modules/model_persistence.html&gt;`_ support.</span>
@@ -214,7 +215,7 @@ we show how to further interact with <a class="reference external" href="https:/
 </div>
 </section>
 <section id="plotting-the-model-performance">
-<h2>Plotting the model performance<a class="headerlink" href="#plotting-the-model-performance" title="Permalink to this headline">¶</a></h2>
+<h2>Plotting the model performance<a class="headerlink" href="#plotting-the-model-performance" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># We will plot the search incumbent through time.</span>
 
 <span class="c1"># Collect the performance of individual machine learning algorithms</span>
@@ -271,7 +272,7 @@ we show how to further interact with <a class="reference external" href="https:/
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../../_images/sphx_glr_example_visualization_001.png" srcset="../../_images/sphx_glr_example_visualization_001.png" alt="Auto-PyTorch accuracy over time" class = "sphx-glr-single-img"/><p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 3 minutes  36.001 seconds)</p>
+<img src="../../_images/sphx_glr_example_visualization_001.png" srcset="../../_images/sphx_glr_example_visualization_001.png" alt="Auto-PyTorch accuracy over time" class = "sphx-glr-single-img"/><p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 3 minutes  41.881 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-visualization-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_visualization.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>
@@ -307,7 +308,7 @@ we show how to further interact with <a class="reference external" href="https:/
     </p>
     <p>
         &copy; Copyright 2014-2022, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.2.<br/>
     </p>
   </div>
 </footer>

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>Manual &#8212; AutoPyTorch 0.1.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
@@ -15,6 +15,7 @@
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -124,7 +125,7 @@
     <div class="body col-md-9 content" role="main">
       
   <section id="manual">
-<span id="id1"></span><h1>Manual<a class="headerlink" href="#manual" title="Permalink to this headline">¶</a></h1>
+<span id="id1"></span><h1>Manual<a class="headerlink" href="#manual" title="Permalink to this heading">¶</a></h1>
 <p>This manual shows how to get started with Auto-PyTorch. We recommend going over the examples first.
 There are additional recommendations on how to interact with the API, further below in this manual.
 However, you are welcome to contribute to this documentation by making a Pull-Request.</p>
@@ -132,7 +133,7 @@ However, you are welcome to contribute to this documentation by making a Pull-Re
 Currently, we are supporting Tabular classification and Tabular Regression.
 We expand the support to image processing tasks in the future.</p>
 <section id="examples">
-<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><a class="reference external" href="examples/20_basics/example_tabular_classification.html">Classification</a></p></li>
 <li><p><a class="reference external" href="examples/20_basics/example_tabular_regression.html">Regression</a></p></li>
@@ -142,7 +143,7 @@ We expand the support to image processing tasks in the future.</p>
 </ul>
 </section>
 <section id="data-validation">
-<h2>Data validation<a class="headerlink" href="#data-validation" title="Permalink to this headline">¶</a></h2>
+<h2>Data validation<a class="headerlink" href="#data-validation" title="Permalink to this heading">¶</a></h2>
 <p>For tabular tasks, <em>Auto-PyTorch</em> uses a feature and target validator on the input feature set and target set respectively.</p>
 <p>The feature validator checks whether the data is supported by <em>Auto-PyTorch</em> or not. Additionally, a sklearn column transformer
 is also used which imputes and ordinally encodes the categorical columns of the dataset. This ensures
@@ -150,7 +151,7 @@ that no unseen category is found while fitting the data.</p>
 <p>The target validator applies a label encoder on the target column.</p>
 </section>
 <section id="data-preprocessing">
-<h2>Data Preprocessing<a class="headerlink" href="#data-preprocessing" title="Permalink to this headline">¶</a></h2>
+<h2>Data Preprocessing<a class="headerlink" href="#data-preprocessing" title="Permalink to this heading">¶</a></h2>
 <p>The tabular preprocessing pipeline in <em>Auto-PyTorch</em> consists of</p>
 <ol class="arabic simple">
 <li><p><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/tabular_preprocessing/imputation">Imputation</a></p></li>
@@ -176,7 +177,7 @@ relevant preprocessors chosen in the previous steps. The column transformer is c
 and is therefore passed to the DataLoader.</p>
 </section>
 <section id="resource-allocation">
-<h2>Resource Allocation<a class="headerlink" href="#resource-allocation" title="Permalink to this headline">¶</a></h2>
+<h2>Resource Allocation<a class="headerlink" href="#resource-allocation" title="Permalink to this heading">¶</a></h2>
 <p><em>Auto-PyTorch</em> allows to control the maximum allowed resident set size memory (RSS) that an estimator can use.
 By providing the <cite>memory_limit</cite> argument to the <cite>search()</cite> method, one can make sure that neither the individual
 machine learning models fitted by SMAC nor the final ensemble consume more than <cite>memory_limit</cite> megabytes.</p>
@@ -185,7 +186,7 @@ to the <cite>search()</cite> method. This argument controls the total time SMAC 
 The more time is allocated, the better the final estimator will be.</p>
 </section>
 <section id="ensemble-building-process">
-<h2>Ensemble Building Process<a class="headerlink" href="#ensemble-building-process" title="Permalink to this headline">¶</a></h2>
+<h2>Ensemble Building Process<a class="headerlink" href="#ensemble-building-process" title="Permalink to this heading">¶</a></h2>
 <p><em>Auto-PyTorch</em> uses ensemble selection by <a class="reference external" href="https://dl.acm.org/doi/pdf/10.1145/1015330.1015432">Caruana et al. (2004)</a>
 to build an ensemble based on the models’ prediction for the validation set. The following hyperparameters control how the ensemble is constructed:</p>
 <ul class="simple">
@@ -218,7 +219,7 @@ determines the maximal amount of models used in the ensemble). If set to None, t
 </ul>
 </section>
 <section id="inspecting-the-results">
-<h2>Inspecting the results<a class="headerlink" href="#inspecting-the-results" title="Permalink to this headline">¶</a></h2>
+<h2>Inspecting the results<a class="headerlink" href="#inspecting-the-results" title="Permalink to this heading">¶</a></h2>
 <p>Auto-PyTorch allows users to inspect the training results and statistics. The following example shows how different statistics can be printed for the inspection.</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">autoPyTorch.api.tabular_classification</span> <span class="kn">import</span> <span class="n">TabularClassificationTask</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">automl</span> <span class="o">=</span> <span class="n">TabularClassificationTask</span><span class="p">()</span>
@@ -228,7 +229,7 @@ determines the maximal amount of models used in the ensemble). If set to None, t
 </div>
 </section>
 <section id="parallel-computation">
-<h2>Parallel computation<a class="headerlink" href="#parallel-computation" title="Permalink to this headline">¶</a></h2>
+<h2>Parallel computation<a class="headerlink" href="#parallel-computation" title="Permalink to this heading">¶</a></h2>
 <p>In it’s default mode, <em>Auto-PyTorch</em> already uses two cores. The first one is used for model building, the second for building an ensemble every time a new machine learning model has finished training.</p>
 <p>Nevertheless, <em>Auto-PyTorch</em> also supports parallel Bayesian optimization via the use of <a class="reference external" href="https://distributed.dask.org/">Dask.distributed</a>. By providing the arguments <code class="docutils literal notranslate"><span class="pre">n_jobs</span></code> to the estimator construction, one can control the number of cores available to <em>Auto-PyTorch</em> (As shown in the Example <a class="reference internal" href="examples/40_advanced/example_parallel_n_jobs.html#sphx-glr-examples-40-advanced-example-parallel-n-jobs-py"><span class="std std-ref">Tabular Classification with n parallel jobs</span></a>). When multiple cores are available, <em>Auto-PyTorch</em> will create a worker per core, and use the  available workers to both search for better machine learning models as well as building  an ensemble with them until the time resource is exhausted.</p>
 <p><strong>Note:</strong> <em>Auto-PyTorch</em> requires all workers to have access to a shared file system for storing training data and models.</p>
@@ -263,7 +264,7 @@ employed by the pipelines by setting the following variables in your environment
     </p>
     <p>
         &copy; Copyright 2014-2022, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.2.<br/>
     </p>
   </div>
 </footer>

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>Tabular Classification with n parallel jobs &#8212; AutoPyTorch 0.1.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
@@ -15,6 +15,7 @@
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -120,19 +121,49 @@
 to download the full example code or to run this example in your browser via Binder</p>
 </div>
 <section class="sphx-glr-example-title" id="tabular-classification-with-n-parallel-jobs">
-<span id="sphx-glr-examples-40-advanced-example-parallel-n-jobs-py"></span><h1>Tabular Classification with n parallel jobs<a class="headerlink" href="#tabular-classification-with-n-parallel-jobs" title="Permalink to this headline">¶</a></h1>
+<span id="sphx-glr-examples-40-advanced-example-parallel-n-jobs-py"></span><h1>Tabular Classification with n parallel jobs<a class="headerlink" href="#tabular-classification-with-n-parallel-jobs" title="Permalink to this heading">¶</a></h1>
 <p>The following example shows how to fit a sample classification model parallely on 2 cores
 with AutoPyTorch</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.838150289017341}
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>[ERROR] [2022-06-20 09:10:20,837:asyncio.events]
+Traceback (most recent call last):
+  File &quot;/opt/hostedtoolcache/Python/3.8.12/x64/lib/python3.8/site-packages/distributed/utils.py&quot;, line 761, in wrapper
+    return await func(*args, **kwargs)
+  File &quot;/opt/hostedtoolcache/Python/3.8.12/x64/lib/python3.8/site-packages/distributed/client.py&quot;, line 1211, in _reconnect
+    await self._ensure_connected(timeout=timeout)
+  File &quot;/opt/hostedtoolcache/Python/3.8.12/x64/lib/python3.8/site-packages/distributed/client.py&quot;, line 1241, in _ensure_connected
+    comm = await connect(
+  File &quot;/opt/hostedtoolcache/Python/3.8.12/x64/lib/python3.8/site-packages/distributed/comm/core.py&quot;, line 313, in connect
+    await asyncio.sleep(backoff)
+  File &quot;/opt/hostedtoolcache/Python/3.8.12/x64/lib/python3.8/asyncio/tasks.py&quot;, line 659, in sleep
+    return await future
+asyncio.exceptions.CancelledError
+[ERROR] [2022-06-20 09:10:20,861:asyncio.events]
+Traceback (most recent call last):
+  File &quot;/opt/hostedtoolcache/Python/3.8.12/x64/lib/python3.8/site-packages/distributed/utils.py&quot;, line 761, in wrapper
+    return await func(*args, **kwargs)
+  File &quot;/opt/hostedtoolcache/Python/3.8.12/x64/lib/python3.8/site-packages/distributed/client.py&quot;, line 1400, in _handle_report
+    await self._reconnect()
+  File &quot;/opt/hostedtoolcache/Python/3.8.12/x64/lib/python3.8/site-packages/distributed/utils.py&quot;, line 761, in wrapper
+    return await func(*args, **kwargs)
+  File &quot;/opt/hostedtoolcache/Python/3.8.12/x64/lib/python3.8/site-packages/distributed/client.py&quot;, line 1211, in _reconnect
+    await self._ensure_connected(timeout=timeout)
+  File &quot;/opt/hostedtoolcache/Python/3.8.12/x64/lib/python3.8/site-packages/distributed/client.py&quot;, line 1241, in _ensure_connected
+    comm = await connect(
+  File &quot;/opt/hostedtoolcache/Python/3.8.12/x64/lib/python3.8/site-packages/distributed/comm/core.py&quot;, line 313, in connect
+    await asyncio.sleep(backoff)
+  File &quot;/opt/hostedtoolcache/Python/3.8.12/x64/lib/python3.8/asyncio/tasks.py&quot;, line 659, in sleep
+    return await future
+asyncio.exceptions.CancelledError
+{&#39;accuracy&#39;: 0.8554913294797688}
 autoPyTorch results:
-        Dataset name: 0f890410-9f9e-11ec-87f1-01dea1401669
+        Dataset name: 13ac82dd-f078-11ec-8806-a30cbc8a0bb8
         Optimisation Metric: accuracy
         Best validation score: 0.8713450292397661
-        Number of target algorithm runs: 48
-        Number of successful target algorithm runs: 38
-        Number of crashed target algorithm runs: 8
-        Number of target algorithms that exceeded the time limit: 2
+        Number of target algorithm runs: 50
+        Number of successful target algorithm runs: 41
+        Number of crashed target algorithm runs: 9
+        Number of target algorithms that exceeded the time limit: 0
         Number of target algorithms that exceeded the memory limit: 0
 </pre></div>
 </div>
@@ -200,7 +231,7 @@ autoPyTorch results:
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">sprint_statistics</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  25.415 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  25.371 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-parallel-n-jobs-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_parallel_n_jobs.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>
@@ -235,7 +266,7 @@ autoPyTorch results:
     </p>
     <p>
         &copy; Copyright 2014-2022, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.2.<br/>
     </p>
   </div>
 </footer>

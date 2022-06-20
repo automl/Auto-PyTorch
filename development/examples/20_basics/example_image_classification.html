@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>Image Classification &#8212; AutoPyTorch 0.1.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
@@ -15,6 +15,7 @@
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -120,7 +121,7 @@
 to download the full example code or to run this example in your browser via Binder</p>
 </div>
 <section class="sphx-glr-example-title" id="image-classification">
-<span id="sphx-glr-examples-20-basics-example-image-classification-py"></span><h1>Image Classification<a class="headerlink" href="#image-classification" title="Permalink to this headline">¶</a></h1>
+<span id="sphx-glr-examples-20-basics-example-image-classification-py"></span><h1>Image Classification<a class="headerlink" href="#image-classification" title="Permalink to this heading">¶</a></h1>
 <p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz
 Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz to ../datasets/FashionMNIST/raw/train-images-idx3-ubyte.gz
@@ -30331,14 +30332,17 @@ Configuration space object:
 Pipeline Random Config:
  ________________________________________
 Configuration(values={
-  &#39;image_augmenter:GaussianBlur:sigma_min&#39;: 1.2329755725391824,
-  &#39;image_augmenter:GaussianBlur:sigma_offset&#39;: 2.17995589356565,
-  &#39;image_augmenter:GaussianBlur:use_augmenter&#39;: True,
+  &#39;image_augmenter:GaussianBlur:use_augmenter&#39;: False,
   &#39;image_augmenter:GaussianNoise:use_augmenter&#39;: False,
-  &#39;image_augmenter:RandomAffine:use_augmenter&#39;: False,
-  &#39;image_augmenter:RandomCutout:use_augmenter&#39;: False,
-  &#39;image_augmenter:Resize:use_augmenter&#39;: True,
-  &#39;image_augmenter:ZeroPadAndCrop:percent&#39;: 0.33852145254374955,
+  &#39;image_augmenter:RandomAffine:rotate&#39;: 25,
+  &#39;image_augmenter:RandomAffine:scale_offset&#39;: 0.17911084673615535,
+  &#39;image_augmenter:RandomAffine:shear&#39;: 29,
+  &#39;image_augmenter:RandomAffine:translate_percent_offset&#39;: 0.2595162834252603,
+  &#39;image_augmenter:RandomAffine:use_augmenter&#39;: True,
+  &#39;image_augmenter:RandomCutout:p&#39;: 0.41657143992832846,
+  &#39;image_augmenter:RandomCutout:use_augmenter&#39;: True,
+  &#39;image_augmenter:Resize:use_augmenter&#39;: False,
+  &#39;image_augmenter:ZeroPadAndCrop:percent&#39;: 0.2504071930090588,
   &#39;normalizer:__choice__&#39;: &#39;NoNormalizer&#39;,
 })
 
@@ -30412,7 +30416,7 @@ ________________________________________
 <span class="nb">print</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  6.608 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  5.591 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-20-basics-example-image-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/20_basics/example_image_classification.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo.svg" width="150px" /></a>
@@ -30447,7 +30451,7 @@ ________________________________________
     </p>
     <p>
         &copy; Copyright 2014-2022, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.2.<br/>
     </p>
   </div>
 </footer>
