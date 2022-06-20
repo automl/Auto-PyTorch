@@ -308,7 +308,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
             ])
 
             if self.y_valid is not None:
-                warnings.warn('valid_pred is current unsuported for fore casting tasks!')
+                warnings.warn('valid_pred is currently unsupported for fore casting tasks!')
             Y_valid_preds = None
 
             if self.y_test is not None:

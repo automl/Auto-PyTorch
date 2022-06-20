@@ -38,6 +38,7 @@ from autoPyTorch.datasets.resampling_strategy import (
     HoldOutFuncs,
     HoldoutValTypes,
     NoResamplingStrategyTypes,
+    ResamplingStrategies
 )
 from autoPyTorch.pipeline.components.training.metrics.metrics import compute_mase_coefficient
 from autoPyTorch.utils.common import FitRequirement
@@ -472,7 +473,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         gluonts.time_feature
     freq (Optional[Union[str, int, List[int]]]):
         the frequency that the data is sampled. It needs to keep consistent within one dataset
-    resampling_strategy (Optional[Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]])
+    resampling_strategy (Optional[ResamplingStrategies])
         resampling strategy. We designed several special resampling resampling_strategy for forecasting tasks. Please
         refer to autoPyTorch.datasets.resampling_strategy
     resampling_strategy_args (Optional[Dict[str, Any]]):
@@ -509,9 +510,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                  known_future_features: Optional[Union[Tuple[Union[str, int]], Tuple[()]]] = None,
                  time_feature_transform: Optional[List[TimeFeature]] = None,
                  freq: Optional[Union[str, int, List[int]]] = None,
-                 resampling_strategy: Optional[
-                     Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]
-                 ] = HoldoutValTypes.time_series_hold_out_validation,
+                 resampling_strategy: Optional[ResamplingStrategies] = HoldoutValTypes.time_series_hold_out_validation,
                  resampling_strategy_args: Optional[Dict[str, Any]] = None,
                  seed: Optional[int] = 42,
                  train_transforms: Optional[torchvision.transforms.Compose] = None,
@@ -1090,11 +1089,9 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
     def get_split_strategy(sequence_lengths: List[int],
                            n_prediction_steps: int,
                            freq_value: Union[float, int],
-                           resampling_strategy: Union[
-                               CrossValTypes, HoldoutValTypes,
-                               NoResamplingStrategyTypes] = HoldoutValTypes.time_series_hold_out_validation,
+                           resampling_strategy: ResamplingStrategies = HoldoutValTypes.time_series_hold_out_validation,
                            resampling_strategy_args: Optional[Dict[str, Any]] = None, ) -> \
-            Tuple[Optional[Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]], Optional[Dict[str, Any]]]:
+            Tuple[ResamplingStrategies, Optional[Dict[str, Any]]]:
         """
         Determines the most possible sampling strategy for the datasets: the lengths of each sequence might not be long
         enough to support cross-validation split, thus we need to carefully compute the number of folds
@@ -1105,12 +1102,12 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 forecasting horizon
             freq_value (Union[float, int]):
                 period of the dataset, determined by its sampling frequency
-            resampling_strategy(Optional[Union[CrossValTypes, HoldoutValTypes]]):
+            resampling_strategy(ResamplingStrategies):
                 resampling strategy to be checked
             resampling_strategy_args (Optional[Dict[str, Any]]):
                 resampling strategy arguments to be checked
         Returns:
-            resampling_strategy(Optional[Union[CrossValTypes, HoldoutValTypes]]):
+            resampling_strategy(ResamplingStrategies):
                 resampling strategy
             resampling_strategy_args (Optional[Dict[str, Any]]):
                 resampling strategy arguments

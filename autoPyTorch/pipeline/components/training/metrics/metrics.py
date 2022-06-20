@@ -60,7 +60,8 @@ f1 = make_metric('f1',
 def compute_mase_coefficient(past_target: Union[List, np.ndarray], sp: int) -> np.ndarray:
     """
     compute mase coefficient, then mase value is computed as mase_coefficient * mse_error,
-    this function aims at reducing the memroy requirement
+    this function aims at reducing the memory requirement
+
     Args:
         past_target (Optional[List, np.ndarray]):
             past target observations

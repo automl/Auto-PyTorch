@@ -22,6 +22,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
     As a time series forecasting dataset might contain several time sequence with different length, we will transform
     all the data to DataFrameGroupBy whereas each group represents a series
     TODO for multiple output: target names and shapes
+    TODO check if we can compress time series forecasting datasets
     """
 
     def __init__(
@@ -56,6 +57,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
     ) -> BaseEstimator:
         """
         fit the validator with the training data, (optionally) start times and other information
+
         Args:
             X_train (Optional[Union[List, pd.DataFrame]]):
                 training features, could be None for uni-variant forecasting tasks
@@ -175,6 +177,7 @@ class TimeSeriesForecastingInputValidator(TabularInputValidator):
     ) -> Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame], np.ndarray]:
         """
         transform the data with the fitted validator
+
         Args:
             X: Optional[Union[List, pd.DataFrame]]
                 time features
