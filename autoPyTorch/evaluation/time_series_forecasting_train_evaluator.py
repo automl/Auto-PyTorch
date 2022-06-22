@@ -431,7 +431,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
         opt_pred = opt_pred.reshape(-1, self.num_targets)
 
         if self.y_valid is not None:
-            warnings.warn('valid_pred is current unsuported for fore casting tasks!')
+            warnings.warn('valid_pred is current unsupported for forecasting tasks!')
         valid_pred = None
 
         if self.y_test is not None and self.eval_test_tensors:
