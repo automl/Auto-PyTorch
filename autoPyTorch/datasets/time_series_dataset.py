@@ -49,6 +49,7 @@ def extract_feature_index(feature_shapes: Dict[str, int],
                           queried_features: Union[Tuple[Union[str, int]], Tuple[()]]) -> Tuple[int]:
     """
     extract the index of a set of queried_features from the extracted feature_shapes
+
     Args:
         feature_shapes (dict):
             feature_shapes recoding the shape of each features
@@ -93,6 +94,7 @@ def compute_time_features(start_time: pd.DatetimeIndex,
 class TimeSeriesSequence(Dataset):
     """
     A dataset representing a time series sequence. It returns all the previous observations once it is asked for an item
+
     Args:
         X (Optional[np.ndarray]):
             past features
@@ -450,51 +452,52 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
     """
     Dataset class for time series forecasting used in AutoPyTorch. It consists of multiple TimeSeriesSequence.
     Train and test tensors are stored as pd.DataFrame whereas their index indicates which series the data belongs to
+
     Args:
-    X (Optional[Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]]):
-        time series features. can be None if we work with a uni-variant forecasting task
-    Y (Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]):
-        forecasting targets. Must be given
-    X_test (Optional[Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]]):
-        known future features. It is a collection of series that has the same amount of data as X. It
-        is designed to be at the tail of X. If no feature is known in the future, this value can be omitted.
-    Y_test (Optional[Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]] = None):
-        future targets. It is a collection of series that has the same data of series as Y. It is designed to be at
-        the tail of Y after the timestamps that need to be predicted.
-    start_times (Optional[List[pd.DatetimeIndex]]):
-        starting time of each series when they are sampled. If it is not given, we simply start with a fixed timestamp.
-    series_idx (Optional[Union[List[Union[str, int]], str, int]]):
-        (only works if X is stored as pd.DataFrame). This value is applied to identify  towhich series the data belongs
-        if the data is presented as a "chunk" dataframe
-    known_future_features (Optional[Union[Tuple[Union[str, int]], Tuple[()]]]):
-        future features that are known in advance. For instance, holidays.
-    time_feature_transform (Optional[List[TimeFeature]]):
-        A list of time feature transformation methods implemented in gluonts. For more information, please check
-        gluonts.time_feature
-    freq (Optional[Union[str, int, List[int]]]):
-        the frequency that the data is sampled. It needs to keep consistent within one dataset
-    resampling_strategy (Optional[ResamplingStrategies])
-        resampling strategy. We designed several special resampling resampling_strategy for forecasting tasks. Please
-        refer to autoPyTorch.datasets.resampling_strategy
-    resampling_strategy_args (Optional[Dict[str, Any]]):
-        arguments passed to resampling_strategy
-    seed (int):
-        random seeds
-    train_transforms (Optional[torchvision.transforms.Compose]):
-        Transformation applied to training data before it is fed to the dataloader
-    val_transforms (Optional[torchvision.transforms.Compose]):
-        Transformation applied to validation data before it is fed to the dataloader
-    validator (Optional[TimeSeriesForecastingInputValidator]):
-        Input Validator
-    lagged_value (Optional[List[int]])
-        We could consider past targets as additional features for the current timestep. This item indicates the number
-        timesteps in advanced that we want to apply the targets as our current features
-    n_prediction_steps (int):
-        The number of steps you want to forecast into the future (forecast horizon)
-    dataset_name (Optional[str]):
-        dataset name
-    normalize_y(bool):
-        if targets are normalized within each series
+        X (Optional[Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]]):
+            time series features. can be None if we work with a uni-variant forecasting task
+        Y (Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]):
+            forecasting targets. Must be given
+        X_test (Optional[Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]]):
+            known future features. It is a collection of series that has the same amount of data as X. It
+            is designed to be at the tail of X. If no feature is known in the future, this value can be omitted.
+        Y_test (Optional[Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]] = None):
+            future targets. It is a collection of series that has the same data of series as Y. It is designed to be at
+            the tail of Y after the timestamps that need to be predicted.
+        start_times (Optional[List[pd.DatetimeIndex]]):
+            starting time of each series when they are sampled. If it is not given, we simply start with a fixed timestamp.
+        series_idx (Optional[Union[List[Union[str, int]], str, int]]):
+            (only works if X is stored as pd.DataFrame). This value is applied to identify  towhich series the data belongs
+            if the data is presented as a "chunk" dataframe
+        known_future_features (Optional[Union[Tuple[Union[str, int]], Tuple[()]]]):
+            future features that are known in advance. For instance, holidays.
+        time_feature_transform (Optional[List[TimeFeature]]):
+            A list of time feature transformation methods implemented in gluonts. For more information, please check
+            gluonts.time_feature
+        freq (Optional[Union[str, int, List[int]]]):
+            the frequency that the data is sampled. It needs to keep consistent within one dataset
+        resampling_strategy (Optional[ResamplingStrategies])
+            resampling strategy. We designed several special resampling resampling_strategy for forecasting tasks. Please
+            refer to autoPyTorch.datasets.resampling_strategy
+        resampling_strategy_args (Optional[Dict[str, Any]]):
+            arguments passed to resampling_strategy
+        seed (int):
+            random seeds
+        train_transforms (Optional[torchvision.transforms.Compose]):
+            Transformation applied to training data before it is fed to the dataloader
+        val_transforms (Optional[torchvision.transforms.Compose]):
+            Transformation applied to validation data before it is fed to the dataloader
+        validator (Optional[TimeSeriesForecastingInputValidator]):
+            Input Validator
+        lagged_value (Optional[List[int]])
+            We could consider past targets as additional features for the current timestep. This item indicates the number
+            timesteps in advanced that we want to apply the targets as our current features
+        n_prediction_steps (int):
+            The number of steps you want to forecast into the future (forecast horizon)
+        dataset_name (Optional[str]):
+            dataset name
+        normalize_y(bool):
+            if targets are normalized within each series
     """
 
     datasets: List[TimeSeriesSequence]
@@ -821,6 +824,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         """
         Transform the raw data into a list of TimeSeriesSequence that can be processed by AutoPyTorch Time Series
                 build a series time sequence datasets
+
         Args:
             X: Optional[Union[np.ndarray, List[Union[pd.DataFrame, np.ndarray]]]]
                 features, if is_test_set is True, then its length of
@@ -834,7 +838,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             Y_test: np.ndarray (N_all_test, N_target)
                 flattened test target array with size N_all (the sum of all the series sequences) and number of targets
             is_test_set: Optional[List[pd.DatetimeIndex]]
-                if the genereated sequecne used for test
+                if the generated sequence used for test
+
         Returns:
             sequence_datasets : List[TimeSeriesSequence]
                 a list of datasets
@@ -891,6 +896,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
     ]:
         """
         build a series time sequence datasets
+
         Args:
             X: pd.DataFrame (N_all, N_feature)
                 flattened train feature DataFrame with size N_all (the sum of all the series sequences) and N_feature,
@@ -910,6 +916,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 if the generated sequence used for test
             sequences_kwargs: Dict
                 additional arguments for test sets
+
         Returns:
             sequence_datasets : List[TimeSeriesSequence]
                 a list of datasets
@@ -1094,7 +1101,10 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             Tuple[ResamplingStrategies, Optional[Dict[str, Any]]]:
         """
         Determines the most possible sampling strategy for the datasets: the lengths of each sequence might not be long
-        enough to support cross-validation split, thus we need to carefully compute the number of folds
+        enough to support cross-validation split, thus we need to carefully compute the number of folds. Additionally,
+        each fold might contain multiple forecasting instances (each with length n_prediction_steps and there is no
+        overlapping between the test instances). This value is considered as 'n_repeats'
+
         Args:
             sequence_lengths (List[int]):
                 lengths of each sequence
@@ -1106,6 +1116,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 resampling strategy to be checked
             resampling_strategy_args (Optional[Dict[str, Any]]):
                 resampling strategy arguments to be checked
+
         Returns:
             resampling_strategy(ResamplingStrategies):
                 resampling strategy
@@ -1120,6 +1131,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             if resampling_strategy_args is not None:
                 num_splits = resampling_strategy_args.get('num_splits', num_splits)
 
+            # Check if all the series can be properly split, if not, we reduce the number of split
             if resampling_strategy != CrossValTypes.time_series_ts_cross_validation:
                 while minimal_seq_length - n_prediction_steps * num_splits <= 0:
                     num_splits -= 1
@@ -1154,17 +1166,19 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         if resampling_strategy_args is not None and "n_repeats" in resampling_strategy_args:
             n_repeats = resampling_strategy_args["n_repeats"]
         else:
-            n_repeats = None
-        if (num_seqs < 100 and minimal_seq_length > 10 * n_prediction_steps) or \
-                minimal_seq_length > 50 * n_prediction_steps:
-            if n_repeats is None:
+            # we want to keep the amount of forecasting instances large enough to generalize well or make full use of
+            # the information from the training set
+            # if there are not enough series in the dataset or the minimal length of the sequence is large enough
+            # to support multiple predictions
+            if (num_seqs < 100 and minimal_seq_length > 10 * n_prediction_steps) or \
+                    minimal_seq_length > 50 * n_prediction_steps:
                 if num_seqs < 100:
                     n_repeats = int(np.ceil(100.0 / num_seqs))
                 else:
                     n_repeats = int(np.round(minimal_seq_length / (50 * n_prediction_steps)))
+            else:
+                n_repeats = 1
 
-        if n_repeats is None:
-            n_repeats = 1
         if resampling_strategy == CrossValTypes.time_series_cross_validation:
             n_repeats = min(n_repeats, minimal_seq_length // (5 * n_prediction_steps * num_splits))
         elif resampling_strategy == CrossValTypes.time_series_ts_cross_validation:
@@ -1182,9 +1196,6 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         n_repeats = max(n_repeats, 1)
 
-        if n_repeats is None:
-            n_repeats = 1
-
         if resampling_strategy_args is None:
             resampling_strategy_args = {'n_repeats': n_repeats}
         else:
@@ -1201,6 +1212,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         This function creates the cross validation split for the given task.
 
         It is done once per dataset to have comparable results among pipelines
+
         Args:
             cross_val_type (CrossValTypes):
                 cross validation type
@@ -1261,6 +1273,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         This function creates the holdout split for the given task.
 
         It is done once per dataset to have comparable results among pipelines
+
         Args:
             holdout_val_type (HoldoutValTypes):
                 holdout type
