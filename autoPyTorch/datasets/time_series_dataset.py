@@ -465,10 +465,11 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             future targets. It is a collection of series that has the same data of series as Y. It is designed to be at
             the tail of Y after the timestamps that need to be predicted.
         start_times (Optional[List[pd.DatetimeIndex]]):
-            starting time of each series when they are sampled. If it is not given, we simply start with a fixed timestamp.
+            starting time of each series when they are sampled. If it is not given, we simply start with a fixed
+            timestamp.
         series_idx (Optional[Union[List[Union[str, int]], str, int]]):
-            (only works if X is stored as pd.DataFrame). This value is applied to identify  towhich series the data belongs
-            if the data is presented as a "chunk" dataframe
+            (only works if X is stored as pd.DataFrame). This value is applied to identify  towhich series the data
+            belongs if the data is presented as a "chunk" dataframe
         known_future_features (Optional[Union[Tuple[Union[str, int]], Tuple[()]]]):
             future features that are known in advance. For instance, holidays.
         time_feature_transform (Optional[List[TimeFeature]]):
@@ -477,8 +478,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         freq (Optional[Union[str, int, List[int]]]):
             the frequency that the data is sampled. It needs to keep consistent within one dataset
         resampling_strategy (Optional[ResamplingStrategies])
-            resampling strategy. We designed several special resampling resampling_strategy for forecasting tasks. Please
-            refer to autoPyTorch.datasets.resampling_strategy
+            resampling strategy. We designed several special resampling resampling_strategy for forecasting tasks.
+            Please refer to autoPyTorch.datasets.resampling_strategy
         resampling_strategy_args (Optional[Dict[str, Any]]):
             arguments passed to resampling_strategy
         seed (int):
@@ -490,8 +491,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         validator (Optional[TimeSeriesForecastingInputValidator]):
             Input Validator
         lagged_value (Optional[List[int]])
-            We could consider past targets as additional features for the current timestep. This item indicates the number
-            timesteps in advanced that we want to apply the targets as our current features
+            We could consider past targets as additional features for the current timestep. This item indicates the
+            number of timesteps in advanced that we want to apply the targets as our current features
         n_prediction_steps (int):
             The number of steps you want to forecast into the future (forecast horizon)
         dataset_name (Optional[str]):
