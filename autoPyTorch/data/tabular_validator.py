@@ -58,6 +58,7 @@ class TabularInputValidator(BaseInputValidator):
         self._reduced_dtype: Optional[DatasetDTypeContainerType] = None
         self.is_classification = is_classification
         self.logger_port = logger_port
+        self.feat_types = feat_types
         self.seed = seed
         if self.logger_port is not None:
             self.logger: Union[logging.Logger, PicklableClientLogger] = get_named_client_logger(
@@ -69,7 +70,7 @@ class TabularInputValidator(BaseInputValidator):
 
         self.feature_validator = TabularFeatureValidator(
             logger=self.logger,
-            feat_types=feat_types)
+            feat_types=self.feat_types)
         self.target_validator = TabularTargetValidator(
             is_classification=self.is_classification,
             logger=self.logger
