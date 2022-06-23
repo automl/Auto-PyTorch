@@ -365,8 +365,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
     def get_columns_to_encode(
         self,
-        X: SupportedFeatTypes
-        ) -> Tuple[List[str], List[str]]:
+        X: pd.DataFrame
+    ) -> Tuple[List[str], List[str]]:
         """
         Return the columns to be transformed as well as
         the type of feature for each column.
@@ -389,10 +389,11 @@ class TabularFeatureValidator(BaseFeatureValidator):
             if len(self.feat_types) != len(X.columns):
                 raise ValueError(f"Expected number of `feat_types`: {len(self.feat_types)}"
                                  f" to be the same as the number of features {len(X.columns)}")
-            transformed_columns = [X.columns[i] for i, col in enumerate(self.feat_types) if col.lower() == 'categorical']
+            transformed_columns = [X.columns[i] for i, col in enumerate(self.feat_types)
+                                   if col.lower() == 'categorical']
             return transformed_columns, self.feat_types
         else:
-            transformed_columns, feat_types
+            return transformed_columns, feat_types
 
     def _get_columns_to_encode(
         self,

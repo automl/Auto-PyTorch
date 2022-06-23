@@ -479,7 +479,8 @@ def test_feature_validator_get_columns_to_encode_error_string(input_data_feature
     """
     X, feat_types = input_data_feature_feat_types
     validator = TabularFeatureValidator(feat_types=feat_types)
-    with pytest.raises(ValueError, match=r"Passed numerical as the feature type for column: B but the column is categorical"):
+    with pytest.raises(ValueError, match=r"Passed numerical as the feature type for column: B but "
+                                         r"the column is categorical"):
         validator.get_columns_to_encode(X)
 
 
