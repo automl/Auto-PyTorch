@@ -1,6 +1,15 @@
 import numpy as np
 
-from autoPyTorch.datasets.resampling_strategy import CrossValFuncs, HoldOutFuncs
+import pytest
+
+from autoPyTorch.datasets.resampling_strategy import (
+    CrossValFuncs,
+    CrossValTypes,
+    HoldOutFuncs,
+    HoldoutValTypes,
+    NoResamplingStrategyTypes,
+    check_resampling_strategy
+)
 
 
 def test_holdoutfuncs():
@@ -40,3 +49,12 @@ def test_crossvalfuncs():
     splits = split.stratified_k_fold_cross_validation(0, 10, X, stratify=y)
     assert len(splits) == 10
     assert all([0 in y[s[1]] for s in splits])
+
+
+def test_check_resampling_strategy():
+    for rs in (CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes):
+        for rs_func in rs:
+            check_resampling_strategy(rs_func)
+
+    with pytest.raises(ValueError):
+        check_resampling_strategy(None)

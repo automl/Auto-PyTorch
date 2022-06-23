@@ -93,6 +93,14 @@ class NoResamplingStrategyTypes(IntEnum):
 # TODO: replace it with another way
 ResamplingStrategies = Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]
 
+
+def check_resampling_strategy(resampling_strategy: Optional[ResamplingStrategies]) -> None:
+    choices = (CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes)
+    if not isinstance(resampling_strategy, choices):
+        rs_names = (rs.__mro__[0].__name__ for rs in choices)
+        raise ValueError(f'resampling_strategy must be in {rs_names}, but got {resampling_strategy}')
+
+
 DEFAULT_RESAMPLING_PARAMETERS: Dict[
     ResamplingStrategies,
     Dict[str, Any]

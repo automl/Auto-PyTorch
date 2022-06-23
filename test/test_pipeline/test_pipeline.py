@@ -115,12 +115,3 @@ def test_pipeline_set_config(base_pipeline):
     # choice, as it is not a hyperparameter from the cs
     assert isinstance(base_pipeline.named_steps['DummyChoice'].choice, DummyComponent)
     assert 'orange' == base_pipeline.named_steps['DummyChoice'].choice.b
-
-
-def test_get_default_options(base_pipeline):
-    default_options = base_pipeline.get_default_pipeline_options()
-    # test if dict is returned
-    assert isinstance(default_options, dict)
-    for option, default in default_options.items():
-        # check whether any defaults is none
-        assert default is not None

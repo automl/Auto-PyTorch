@@ -566,17 +566,3 @@ class BasePipeline(Pipeline):
             Dict: contains the pipeline representation in a short format
         """
         raise NotImplementedError()
-
-    @staticmethod
-    def get_default_pipeline_options() -> Dict[str, Any]:
-        return {
-            'num_run': 0,
-            'device': 'cpu',
-            'budget_type': 'epochs',
-            'epochs': 5,
-            'runtime': 3600,
-            'torch_num_threads': 1,
-            'early_stopping': 10,
-            'use_tensorboard_logger': True,
-            'metrics_during_training': True
-        }

@@ -23,6 +23,9 @@ class autoPyTorchMetric(object, metaclass=ABCMeta):
         self._worst_possible_result = worst_possible_result
         self._sign = sign
 
+        # AutoPytorch MINIMIZES a metric, so cost of crash must be largest possible value
+        self._cost_of_crash = worst_possible_result if sign < 0 else optimum - worst_possible_result
+
     def __call__(self,
                  y_true: np.ndarray,
                  y_pred: np.ndarray,

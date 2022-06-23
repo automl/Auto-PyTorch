@@ -534,3 +534,16 @@ def test_train_pipeline_with_runtime_max_reached(fit_dictionary_tabular_dummy):
         patch.is_max_time_reached.return_value = True
         with pytest.raises(RuntimeError):
             pipeline.fit(fit_dictionary_tabular_dummy)
+
+
+def test_get_pipeline_representation():
+    pipeline = TabularClassificationPipeline(
+        dataset_properties={
+            'numerical_columns': [],
+            'categorical_columns': [],
+            'task_type': 'tabular_classification'
+        }
+    )
+    repr = pipeline.get_pipeline_representation()
+    assert isinstance(repr, dict)
+    assert all(word in repr for word in ['Preprocessing', 'Estimator'])

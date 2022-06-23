@@ -1,10 +1,9 @@
 import json
 import os
-import pathlib
 import pickle
 import tempfile
 import unittest
-from test.test_api.utils import dummy_do_dummy_prediction, dummy_eval_train_function
+from test.test_api.utils import dummy_do_dummy_prediction, dummy_eval_fn
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import Configuration
@@ -21,7 +20,7 @@ import sklearn.datasets
 from sklearn.base import BaseEstimator, clone
 from sklearn.ensemble import VotingClassifier, VotingRegressor
 
-from smac.runhistory.runhistory import RunHistory, RunInfo, RunValue
+from smac.runhistory.runhistory import RunHistory, RunInfo, RunValue, StatusType
 
 from autoPyTorch.api.tabular_classification import TabularClassificationTask
 from autoPyTorch.api.tabular_regression import TabularRegressionTask
@@ -41,92 +40,68 @@ CV_NUM_SPLITS = 2
 HOLDOUT_NUM_SPLITS = 1
 
 
-# Test
-# ====
-@unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_train_function',
-                     new=dummy_eval_train_function)
-@pytest.mark.parametrize('openml_id', (40981, ))
-@pytest.mark.parametrize('resampling_strategy,resampling_strategy_args',
-                         ((HoldoutValTypes.holdout_validation, None),
-                          (CrossValTypes.k_fold_cross_validation, {'num_splits': CV_NUM_SPLITS})
-                          ))
-def test_tabular_classification(openml_id, resampling_strategy, backend, resampling_strategy_args, n_samples):
+def _get_dataset(openml_id: int, n_samples: int, seed: int = 42, split: bool = True):
+    X, y = sklearn.datasets.fetch_openml(data_id=int(openml_id), return_X_y=True, as_frame=True)
+    X, y = X[:n_samples], y[:n_samples]
 
-    # Get the data and check that contents of data-manager make sense
-    X, y = sklearn.datasets.fetch_openml(
-        data_id=int(openml_id),
-        return_X_y=True, as_frame=True
-    )
-    X, y = X.iloc[:n_samples], y.iloc[:n_samples]
+    if split:
+        X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=seed)
+        return X_train, X_test, y_train, y_test
+    else:
+        return X, y
 
-    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
-        X, y, random_state=42)
 
-    # Search for a good configuration
-    estimator = TabularClassificationTask(
-        backend=backend,
-        resampling_strategy=resampling_strategy,
-        resampling_strategy_args=resampling_strategy_args,
-        seed=42,
-    )
-
-    with unittest.mock.patch.object(estimator, '_do_dummy_prediction', new=dummy_do_dummy_prediction):
-        estimator.search(
-            X_train=X_train, y_train=y_train,
-            X_test=X_test, y_test=y_test,
-            optimize_metric='accuracy',
-            total_walltime_limit=40,
-            func_eval_time_limit_secs=10,
-            enable_traditional_pipeline=False,
-        )
-
-    # Internal dataset has expected settings
-    assert estimator.dataset.task_type == 'tabular_classification'
-    expected_num_splits = HOLDOUT_NUM_SPLITS if resampling_strategy == HoldoutValTypes.holdout_validation \
-        else CV_NUM_SPLITS
-    assert estimator.resampling_strategy == resampling_strategy
-    assert estimator.dataset.resampling_strategy == resampling_strategy
-    assert len(estimator.dataset.splits) == expected_num_splits
-
-    # TODO: check for budget
-
-    # Check for the created files
+def _check_created_files(estimator, no_resampling):
     tmp_dir = estimator._backend.temporary_directory
     loaded_datamanager = estimator._backend.load_datamanager()
     assert len(loaded_datamanager.train_tensors) == len(estimator.dataset.train_tensors)
 
     expected_files = [
-        'smac3-output/run_42/configspace.json',
-        'smac3-output/run_42/runhistory.json',
-        'smac3-output/run_42/scenario.txt',
-        'smac3-output/run_42/stats.json',
-        'smac3-output/run_42/train_insts.txt',
-        'smac3-output/run_42/trajectory.json',
-        '.autoPyTorch/datamanager.pkl',
-        '.autoPyTorch/ensemble_read_preds.pkl',
-        '.autoPyTorch/start_time_42',
-        '.autoPyTorch/ensemble_history.json',
-        '.autoPyTorch/ensemble_read_losses.pkl',
-        '.autoPyTorch/true_targets_ensemble.npy',
+        fn
+        for fn in [
+            'smac3-output/run_42/configspace.json',
+            'smac3-output/run_42/runhistory.json',
+            'smac3-output/run_42/scenario.txt',
+            'smac3-output/run_42/stats.json',
+            'smac3-output/run_42/train_insts.txt',
+            'smac3-output/run_42/trajectory.json',
+            '.autoPyTorch/datamanager.pkl',
+            '.autoPyTorch/start_time_42',
+            '.autoPyTorch/ensemble_read_preds.pkl' if not no_resampling else None,
+            '.autoPyTorch/ensemble_history.json' if not no_resampling else None,
+            '.autoPyTorch/ensemble_read_losses.pkl' if not no_resampling else None,
+            '.autoPyTorch/true_targets_ensemble.npy' if not no_resampling else None,
+        ] if fn is not None
     ]
     for expected_file in expected_files:
-        assert os.path.exists(os.path.join(tmp_dir, expected_file)), "{}/{}/{}".format(
-            tmp_dir,
-            [data for data in pathlib.Path(tmp_dir).glob('*')],
-            expected_file,
-        )
+        assert os.path.exists(os.path.join(tmp_dir, expected_file))
 
-    # Check that smac was able to find proper models
-    succesful_runs = [run_value.status for run_value in estimator.run_history.data.values(
-    ) if 'SUCCESS' in str(run_value.status)]
-    assert len(succesful_runs) > 1, [(k, v) for k, v in estimator.run_history.data.items()]
+
+def _check_internal_dataset_settings(estimator, resampling_strategy, task_type: str):
+    assert estimator.dataset.task_type == task_type
+    assert estimator.resampling_strategy == resampling_strategy
+    assert estimator.dataset.resampling_strategy == resampling_strategy
+
+    if isinstance(resampling_strategy, NoResamplingStrategyTypes):
+        if resampling_strategy == HoldoutValTypes.holdout_validation:
+            assert len(estimator.dataset.splits) == HOLDOUT_NUM_SPLITS
+        elif resampling_strategy == CrossValTypes.k_fold_cross_validation:
+            assert len(estimator.dataset.splits) == CV_NUM_SPLITS
+        else:
+            assert len(estimator.dataset.splits) == 1  # no resampling ==> no split, i.e. 1
+
+
+def _check_smac_success(estimator, n_successful_runs: int = 1):
+    data = estimator.run_history.data
+    succesful_runs = [rv.status for rv in data.values() if rv.status == StatusType.SUCCESS]
+    assert len(succesful_runs) >= n_successful_runs, [(k, v) for k, v in data.items()]
 
     # Search for an existing run key in disc. A individual model might have
     # a timeout and hence was not written to disc
     successful_num_run = None
     SUCCESS = False
-    for i, (run_key, value) in enumerate(estimator.run_history.data.items()):
-        if 'SUCCESS' in str(value.status):
+    for i, (run_key, value) in enumerate(data.items()):
+        if value.status == StatusType.SUCCESS:
             run_key_model_run_dir = estimator._backend.get_numrun_directory(
                 estimator.seed, run_key.config_id + 1, run_key.budget)
             successful_num_run = run_key.config_id + 1
@@ -138,27 +113,41 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
 
     assert SUCCESS, f"Successful run was not properly saved for num_run: {successful_num_run}"
 
+    return run_key_model_run_dir, run_key, successful_num_run
+
+
+def _check_model_file(estimator, resampling_strategy, run_key, run_key_model_run_dir, successful_num_run):
     if resampling_strategy == HoldoutValTypes.holdout_validation:
         model_file = os.path.join(run_key_model_run_dir,
                                   f"{estimator.seed}.{successful_num_run}.{run_key.budget}.model")
         assert os.path.exists(model_file), model_file
         model = estimator._backend.load_model_by_seed_and_id_and_budget(
             estimator.seed, successful_num_run, run_key.budget)
+    elif resampling_strategy == NoResamplingStrategyTypes.no_resampling:
+        model_file = os.path.join(run_key_model_run_dir,
+                                  f"{estimator.seed}.{successful_num_run}.{run_key.budget}.model")
+        assert os.path.exists(model_file), model_file
     elif resampling_strategy == CrossValTypes.k_fold_cross_validation:
         model_file = os.path.join(
             run_key_model_run_dir,
             f"{estimator.seed}.{successful_num_run}.{run_key.budget}.cv_model"
         )
         assert os.path.exists(model_file), model_file
-
         model = estimator._backend.load_cv_model_by_seed_and_id_and_budget(
             estimator.seed, successful_num_run, run_key.budget)
-        assert isinstance(model, VotingClassifier)
+
+        if estimator.task_type.endswith('classification'):
+            assert isinstance(model, VotingClassifier)
+        elif estimator.task_type.endswith('regression'):
+            assert isinstance(model, VotingRegressor)
+        else:
+            raise RuntimeError(f'Got unknown model: {type(model)}')
         assert len(model.estimators_) == CV_NUM_SPLITS
     else:
         pytest.fail(resampling_strategy)
 
-    # Make sure that predictions on the test data are printed and make sense
+
+def _check_test_prediction(estimator, X_test, y_test, run_key, run_key_model_run_dir, successful_num_run):
     test_prediction = os.path.join(run_key_model_run_dir,
                                    estimator._backend.get_prediction_filename(
                                        'test', estimator.seed, successful_num_run,
@@ -166,6 +155,30 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
     assert os.path.exists(test_prediction), test_prediction
     assert np.shape(np.load(test_prediction, allow_pickle=True))[0] == np.shape(X_test)[0]
 
+    pred = estimator.predict(X_test)
+    score = estimator.score(pred, y_test)
+    assert np.shape(pred)[0] == np.shape(X_test)[0]
+
+    if 'accuracy' in score:
+        # Make sure that predict proba has the expected shape
+        probabilites = estimator.predict_proba(X_test)
+        assert np.shape(probabilites) == (np.shape(X_test)[0], 2)
+    elif 'r2' not in score:
+        raise ValueError(f'Got unknown score `{score}`')
+
+
+def _check_picklable(estimator, X_test):
+    dump_file = os.path.join(estimator._backend.temporary_directory, 'dump.pkl')
+
+    with open(dump_file, 'wb') as f:
+        pickle.dump(estimator, f)
+
+    with open(dump_file, 'rb') as f:
+        restored_estimator = pickle.load(f)
+    restored_estimator.predict(X_test)
+
+
+def _check_ensemble_prediction(estimator, run_key, run_key_model_run_dir, successful_num_run):
     # Also, for ensemble builder, the OOF predictions should be there and match
     # the Ground truth that is also physically printed to disk
     ensemble_prediction = os.path.join(run_key_model_run_dir,
@@ -184,17 +197,8 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
     # There should be a weight for each element of the ensemble
     assert len(estimator.ensemble_.identifiers_) == len(estimator.ensemble_.weights_)
 
-    y_pred = estimator.predict(X_test)
-    assert np.shape(y_pred)[0] == np.shape(X_test)[0]
 
-    # Make sure that predict proba has the expected shape
-    probabilites = estimator.predict_proba(X_test)
-    assert np.shape(probabilites) == (np.shape(X_test)[0], 2)
-
-    score = estimator.score(y_pred, y_test)
-    assert 'accuracy' in score
-
-    # check incumbent config and results
+def _check_incumbent(estimator, successful_num_run):
     incumbent_config, incumbent_results = estimator.get_incumbent_results()
     assert isinstance(incumbent_config, Configuration)
     assert isinstance(incumbent_results, dict)
@@ -202,39 +206,121 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
                                                                                              successful_num_run)
     assert 'train_loss' in incumbent_results
 
-    # Check that we can pickle
-    dump_file = os.path.join(estimator._backend.temporary_directory, 'dump.pkl')
 
-    with open(dump_file, 'wb') as f:
-        pickle.dump(estimator, f)
+def _get_estimator(
+    backend,
+    task_class,
+    X_train,
+    y_train,
+    X_test,
+    y_test,
+    resampling_strategy,
+    resampling_strategy_args,
+    metric,
+    total_walltime_limit=18,
+    func_eval_time_limit_secs=6,
+    **kwargs
+):
 
-    with open(dump_file, 'rb') as f:
-        restored_estimator = pickle.load(f)
-    restored_estimator.predict(X_test)
+    is_no_resample = isinstance(resampling_strategy, NoResamplingStrategyTypes)
+    # No resampling strategy must have ensemble_size == 0
+    cls_kwargs = {key: 0 for key in ['ensemble_size'] if is_no_resample}
+    # Search for a good configuration
+    estimator = task_class(
+        backend=backend,
+        resampling_strategy=resampling_strategy,
+        resampling_strategy_args=resampling_strategy_args,
+        seed=42,
+        **cls_kwargs
+    )
+
+    # train size: 225, test size: 75 ==> 300 / 225 = 1.3333...
+    mul_factor = 1.35 if is_no_resample else 1.0  # increase time for no resample
+    with unittest.mock.patch.object(estimator, '_do_dummy_prediction', new=dummy_do_dummy_prediction):
+        estimator.search(
+            X_train=X_train, y_train=y_train,
+            X_test=X_test, y_test=y_test,
+            optimize_metric=metric,
+            total_walltime_limit=total_walltime_limit * mul_factor,
+            func_eval_time_limit_secs=func_eval_time_limit_secs * mul_factor,
+            enable_traditional_pipeline=False,
+            **kwargs
+        )
+
+    return estimator
+
+
+def _check_tabular_task(estimator, X_test, y_test, task_type, resampling_strategy, n_successful_runs):
+    no_resampling = isinstance(resampling_strategy, NoResamplingStrategyTypes)
+
+    _check_internal_dataset_settings(estimator, resampling_strategy, task_type=task_type)
+    _check_created_files(estimator, no_resampling)
+    run_key_model_run_dir, run_key, successful_num_run = _check_smac_success(estimator,
+                                                                             n_successful_runs=n_successful_runs)
+    _check_model_file(estimator, resampling_strategy, run_key, run_key_model_run_dir, successful_num_run)
+    _check_test_prediction(estimator, X_test, y_test, run_key, run_key_model_run_dir, successful_num_run)
+
+    if not no_resampling:
+        _check_ensemble_prediction(estimator, run_key, run_key_model_run_dir, successful_num_run)
+
+    _check_incumbent(estimator, successful_num_run)
+
+    if no_resampling:
+        # no ensemble for no resampling, so early-return
+        return
 
     # Test refit on dummy data
-    estimator.refit(dataset=backend.load_datamanager())
+    # This process yields a mysterious bug after _check_picklable
+    # However, we can process it in the _check_picklable function.
+    estimator.refit(dataset=estimator._backend.load_datamanager())
 
     # Make sure that a configuration space is stored in the estimator
     assert isinstance(estimator.get_search_space(), CS.ConfigurationSpace)
 
+    _check_picklable(estimator, X_test)
 
-@pytest.mark.parametrize('openml_name', ("boston", ))
-@unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_train_function',
-                     new=dummy_eval_train_function)
+    representation = estimator.show_models()
+    assert isinstance(representation, str)
+    assert all(word in representation for word in ['Weight', 'Preprocessing', 'Estimator'])
+
+
+# Test
+# ====
+@unittest.mock.patch('autoPyTorch.evaluation.tae.eval_fn',
+                     new=dummy_eval_fn)
+@pytest.mark.parametrize('openml_id', (40981, ))
 @pytest.mark.parametrize('resampling_strategy,resampling_strategy_args',
                          ((HoldoutValTypes.holdout_validation, None),
-                          (CrossValTypes.k_fold_cross_validation, {'num_splits': CV_NUM_SPLITS})
+                          (CrossValTypes.k_fold_cross_validation, {'num_splits': CV_NUM_SPLITS}),
+                          (NoResamplingStrategyTypes.no_resampling, None)
                           ))
-def test_tabular_regression(openml_name, resampling_strategy, backend, resampling_strategy_args, n_samples):
+def test_tabular_classification(openml_id, resampling_strategy, backend, resampling_strategy_args, n_samples):
+    """NOTE: Check DummyEvaluator if something wrong"""
+    X_train, X_test, y_train, y_test = _get_dataset(openml_id, n_samples, seed=42)
 
-    # Get the data and check that contents of data-manager make sense
-    X, y = sklearn.datasets.fetch_openml(
-        openml_name,
-        return_X_y=True,
-        as_frame=True
+    estimator = _get_estimator(
+        backend, TabularClassificationTask, X_train, y_train, X_test, y_test,
+        resampling_strategy, resampling_strategy_args, metric='accuracy'
     )
-    X, y = X.iloc[:n_samples], y.iloc[:n_samples]
+    _check_tabular_task(
+        estimator, X_test, y_test,
+        task_type='tabular_classification',
+        resampling_strategy=resampling_strategy,
+        n_successful_runs=2
+    )
+
+
+@pytest.mark.parametrize('openml_id', (531, ))
+@unittest.mock.patch('autoPyTorch.evaluation.tae.eval_fn',
+                     new=dummy_eval_fn)
+@pytest.mark.parametrize('resampling_strategy,resampling_strategy_args',
+                         ((HoldoutValTypes.holdout_validation, None),
+                          (CrossValTypes.k_fold_cross_validation, {'num_splits': CV_NUM_SPLITS}),
+                          (NoResamplingStrategyTypes.no_resampling, None)
+                          ))
+def test_tabular_regression(openml_id, resampling_strategy, backend, resampling_strategy_args, n_samples):
+    """NOTE: Check DummyEvaluator if something wrong"""
+    X, y = _get_dataset(openml_id, n_samples, split=False)
 
     # normalize values
     y = (y - y.mean()) / y.std()
@@ -242,167 +328,25 @@ def test_tabular_regression(openml_name, resampling_strategy, backend, resamplin
     # fill NAs for now since they are not yet properly handled
     for column in X.columns:
         if X[column].dtype.name == "category":
-            X[column] = pd.Categorical(X[column],
-                                       categories=list(X[column].cat.categories) + ["missing"]).fillna("missing")
+            cats = list(X[column].cat.categories) + ["missing"]
+            X[column] = pd.Categorical(X[column], categories=cats).fillna("missing")
         else:
             X[column] = X[column].fillna(0)
 
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
         X, y, random_state=1)
 
-    # Search for a good configuration
-    estimator = TabularRegressionTask(
-        backend=backend,
-        resampling_strategy=resampling_strategy,
-        resampling_strategy_args=resampling_strategy_args,
-        seed=42,
+    estimator = _get_estimator(
+        backend, TabularRegressionTask, X_train, y_train, X_test, y_test,
+        resampling_strategy, resampling_strategy_args, metric='r2'
     )
 
-    with unittest.mock.patch.object(estimator, '_do_dummy_prediction', new=dummy_do_dummy_prediction):
-        estimator.search(
-            X_train=X_train, y_train=y_train,
-            X_test=X_test, y_test=y_test,
-            optimize_metric='r2',
-            total_walltime_limit=40,
-            func_eval_time_limit_secs=10,
-            enable_traditional_pipeline=False,
-        )
-
-    # Internal dataset has expected settings
-    assert estimator.dataset.task_type == 'tabular_regression'
-    expected_num_splits = HOLDOUT_NUM_SPLITS if resampling_strategy == HoldoutValTypes.holdout_validation\
-        else CV_NUM_SPLITS
-    assert estimator.resampling_strategy == resampling_strategy
-    assert estimator.dataset.resampling_strategy == resampling_strategy
-    assert len(estimator.dataset.splits) == expected_num_splits
-
-    # TODO: check for budget
-
-    # Check for the created files
-    tmp_dir = estimator._backend.temporary_directory
-    loaded_datamanager = estimator._backend.load_datamanager()
-    assert len(loaded_datamanager.train_tensors) == len(estimator.dataset.train_tensors)
-
-    expected_files = [
-        'smac3-output/run_42/configspace.json',
-        'smac3-output/run_42/runhistory.json',
-        'smac3-output/run_42/scenario.txt',
-        'smac3-output/run_42/stats.json',
-        'smac3-output/run_42/train_insts.txt',
-        'smac3-output/run_42/trajectory.json',
-        '.autoPyTorch/datamanager.pkl',
-        '.autoPyTorch/ensemble_read_preds.pkl',
-        '.autoPyTorch/start_time_42',
-        '.autoPyTorch/ensemble_history.json',
-        '.autoPyTorch/ensemble_read_losses.pkl',
-        '.autoPyTorch/true_targets_ensemble.npy',
-    ]
-    for expected_file in expected_files:
-        assert os.path.exists(os.path.join(tmp_dir, expected_file)), expected_file
-
-    # Check that smac was able to find proper models
-    succesful_runs = [run_value.status for run_value in estimator.run_history.data.values(
-    ) if 'SUCCESS' in str(run_value.status)]
-    assert len(succesful_runs) >= 1, [(k, v) for k, v in estimator.run_history.data.items()]
-
-    # Search for an existing run key in disc. A individual model might have
-    # a timeout and hence was not written to disc
-    successful_num_run = None
-    SUCCESS = False
-    for i, (run_key, value) in enumerate(estimator.run_history.data.items()):
-        if 'SUCCESS' in str(value.status):
-            run_key_model_run_dir = estimator._backend.get_numrun_directory(
-                estimator.seed, run_key.config_id + 1, run_key.budget)
-            successful_num_run = run_key.config_id + 1
-            if os.path.exists(run_key_model_run_dir):
-                # Runkey config id is different from the num_run
-                # more specifically num_run = config_id + 1(dummy)
-                SUCCESS = True
-                break
-
-    assert SUCCESS, f"Successful run was not properly saved for num_run: {successful_num_run}"
-
-    if resampling_strategy == HoldoutValTypes.holdout_validation:
-        model_file = os.path.join(run_key_model_run_dir,
-                                  f"{estimator.seed}.{successful_num_run}.{run_key.budget}.model")
-        assert os.path.exists(model_file), model_file
-        model = estimator._backend.load_model_by_seed_and_id_and_budget(
-            estimator.seed, successful_num_run, run_key.budget)
-    elif resampling_strategy == CrossValTypes.k_fold_cross_validation:
-        model_file = os.path.join(
-            run_key_model_run_dir,
-            f"{estimator.seed}.{successful_num_run}.{run_key.budget}.cv_model"
-        )
-        assert os.path.exists(model_file), model_file
-        model = estimator._backend.load_cv_model_by_seed_and_id_and_budget(
-            estimator.seed, successful_num_run, run_key.budget)
-        assert isinstance(model, VotingRegressor)
-        assert len(model.estimators_) == CV_NUM_SPLITS
-    else:
-        pytest.fail(resampling_strategy)
-
-    # Make sure that predictions on the test data are printed and make sense
-    test_prediction = os.path.join(run_key_model_run_dir,
-                                   estimator._backend.get_prediction_filename(
-                                       'test', estimator.seed, successful_num_run,
-                                       run_key.budget))
-    assert os.path.exists(test_prediction), test_prediction
-    assert np.shape(np.load(test_prediction, allow_pickle=True))[0] == np.shape(X_test)[0]
-
-    # Also, for ensemble builder, the OOF predictions should be there and match
-    # the Ground truth that is also physically printed to disk
-    ensemble_prediction = os.path.join(run_key_model_run_dir,
-                                       estimator._backend.get_prediction_filename(
-                                           'ensemble',
-                                           estimator.seed, successful_num_run,
-                                           run_key.budget))
-    assert os.path.exists(ensemble_prediction), ensemble_prediction
-    assert np.shape(np.load(ensemble_prediction, allow_pickle=True))[0] == np.shape(
-        estimator._backend.load_targets_ensemble()
-    )[0]
-
-    # Ensemble Builder produced an ensemble
-    estimator.ensemble_ is not None
-
-    # There should be a weight for each element of the ensemble
-    assert len(estimator.ensemble_.identifiers_) == len(estimator.ensemble_.weights_)
-
-    y_pred = estimator.predict(X_test)
-
-    assert np.shape(y_pred)[0] == np.shape(X_test)[0]
-
-    score = estimator.score(y_pred, y_test)
-    assert 'r2' in score
-
-    # check incumbent config and results
-    incumbent_config, incumbent_results = estimator.get_incumbent_results()
-    assert isinstance(incumbent_config, Configuration)
-    assert isinstance(incumbent_results, dict)
-    assert 'opt_loss' in incumbent_results, "run history: {}, successful_num_run: {}".format(estimator.run_history.data,
-                                                                                             successful_num_run)
-    assert 'train_loss' in incumbent_results, estimator.run_history.data
-
-    # Check that we can pickle
-    dump_file = os.path.join(estimator._backend.temporary_directory, 'dump.pkl')
-
-    with open(dump_file, 'wb') as f:
-        pickle.dump(estimator, f)
-
-    with open(dump_file, 'rb') as f:
-        restored_estimator = pickle.load(f)
-    restored_estimator.predict(X_test)
-
-    # Test refit on dummy data
-    estimator.refit(dataset=backend.load_datamanager())
-
-    # Make sure that a configuration space is stored in the estimator
-    assert isinstance(estimator.get_search_space(), CS.ConfigurationSpace)
-
-    representation = estimator.show_models()
-    assert isinstance(representation, str)
-    assert 'Weight' in representation
-    assert 'Preprocessing' in representation
-    assert 'Estimator' in representation
+    _check_tabular_task(
+        estimator, X_test, y_test,
+        task_type='tabular_regression',
+        resampling_strategy=resampling_strategy,
+        n_successful_runs=1
+    )
 
 
 @pytest.mark.parametrize('openml_id', (
@@ -440,8 +384,8 @@ def test_tabular_input_support(openml_id, backend):
             X_train=X_train, y_train=y_train,
             X_test=X_test, y_test=y_test,
             optimize_metric='accuracy',
-            total_walltime_limit=150,
-            func_eval_time_limit_secs=50,
+            total_walltime_limit=30,
+            func_eval_time_limit_secs=6,
             enable_traditional_pipeline=False,
             load_models=False,
         )
@@ -466,24 +410,19 @@ def test_do_dummy_prediction(dask_client, fit_dictionary_tabular):
     estimator._all_supported_metrics = False
 
     with pytest.raises(ValueError, match=r".*Dummy prediction failed with run state.*"):
-        with unittest.mock.patch('autoPyTorch.evaluation.tae.eval_train_function') as dummy:
+        with unittest.mock.patch('autoPyTorch.evaluation.tae.eval_fn') as dummy:
             dummy.side_effect = MemoryError
             estimator._do_dummy_prediction()
 
     estimator._do_dummy_prediction()
 
+    dir_names = [backend.temporary_directory, '.autoPyTorch', 'runs', '1_1_1.0']
     # Ensure that the dummy predictions are not in the current working
     # directory, but in the temporary directory.
     assert not os.path.exists(os.path.join(os.getcwd(), '.autoPyTorch'))
-    assert os.path.exists(os.path.join(
-        backend.temporary_directory, '.autoPyTorch', 'runs', '1_1_50.0',
-        'predictions_ensemble_1_1_50.0.npy')
-    )
+    assert os.path.exists(os.path.join(*dir_names, 'predictions_ensemble_1_1_1.0.npy'))
 
-    model_path = os.path.join(backend.temporary_directory,
-                              '.autoPyTorch',
-                              'runs', '1_1_50.0',
-                              '1.1.50.0.model')
+    model_path = os.path.join(*dir_names, '1.1.1.0.model')
 
     # Make sure the dummy model complies with scikit learn
     # get/set params
@@ -497,50 +436,34 @@ def test_do_dummy_prediction(dask_client, fit_dictionary_tabular):
     del estimator
 
 
-@unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_train_function',
-                     new=dummy_eval_train_function)
+@unittest.mock.patch('autoPyTorch.evaluation.tae.eval_fn',
+                     new=dummy_eval_fn)
 @pytest.mark.parametrize('openml_id', (40981, ))
 def test_portfolio_selection(openml_id, backend, n_samples):
 
-    # Get the data and check that contents of data-manager make sense
-    X, y = sklearn.datasets.fetch_openml(
-        data_id=int(openml_id),
-        return_X_y=True, as_frame=True
-    )
-    X, y = X.iloc[:n_samples], y.iloc[:n_samples]
+    X_train, X_test, y_train, y_test = _get_dataset(openml_id, n_samples, seed=1)
 
-    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
-        X, y, random_state=1)
-
-    # Search for a good configuration
-    estimator = TabularClassificationTask(
-        backend=backend,
+    path = os.path.join(os.path.dirname(__file__), "../../autoPyTorch/configs/greedy_portfolio.json")
+    estimator = _get_estimator(
+        backend, TabularClassificationTask, X_train, y_train, X_test, y_test,
         resampling_strategy=HoldoutValTypes.holdout_validation,
+        resampling_strategy_args={'val_share': 0.33},
+        metric='accuracy',
+        total_walltime_limit=30,
+        func_eval_time_limit_secs=5,
+        portfolio_selection=path
     )
 
-    with unittest.mock.patch.object(estimator, '_do_dummy_prediction', new=dummy_do_dummy_prediction):
-        estimator.search(
-            X_train=X_train, y_train=y_train,
-            X_test=X_test, y_test=y_test,
-            optimize_metric='accuracy',
-            total_walltime_limit=30,
-            func_eval_time_limit_secs=5,
-            enable_traditional_pipeline=False,
-            portfolio_selection=os.path.join(os.path.dirname(__file__),
-                                             "../../autoPyTorch/configs/greedy_portfolio.json")
-        )
-
-    successful_config_ids = [run_key.config_id for run_key, run_value in estimator.run_history.data.items(
-    ) if 'SUCCESS' in str(run_value.status)]
+    data = estimator.run_history.data
+    successful_config_ids = [k.config_id for k, v in data.items() if v.status == StatusType.SUCCESS]
     successful_configs = [estimator.run_history.ids_config[id].get_dictionary() for id in successful_config_ids]
-    portfolio_configs = json.load(open(os.path.join(os.path.dirname(__file__),
-                                                    "../../autoPyTorch/configs/greedy_portfolio.json")))
+    portfolio_configs = json.load(open(path))
     # check if any configs from greedy portfolio were compatible with australian
     assert any(successful_config in portfolio_configs for successful_config in successful_configs)
 
 
-@unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_train_function',
-                     new=dummy_eval_train_function)
+@unittest.mock.patch('autoPyTorch.evaluation.tae.eval_fn',
+                     new=dummy_eval_fn)
 @pytest.mark.parametrize('openml_id', (40981, ))
 def test_portfolio_selection_failure(openml_id, backend, n_samples):
 
@@ -793,117 +716,6 @@ def test_pipeline_fit_error(
 
     assert 'TIMEOUT' in str(run_value.status)
     assert pipeline is None
-
-
-@pytest.mark.parametrize('openml_id', (40981, ))
-def test_tabular_classification_test_evaluator(openml_id, backend, n_samples):
-
-    # Get the data and check that contents of data-manager make sense
-    X, y = sklearn.datasets.fetch_openml(
-        data_id=int(openml_id),
-        return_X_y=True, as_frame=True
-    )
-    X, y = X.iloc[:n_samples], y.iloc[:n_samples]
-
-    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
-        X, y, random_state=42)
-
-    # Search for a good configuration
-    estimator = TabularClassificationTask(
-        backend=backend,
-        resampling_strategy=NoResamplingStrategyTypes.no_resampling,
-        seed=42,
-        ensemble_size=0
-    )
-
-    with unittest.mock.patch.object(estimator, '_do_dummy_prediction', new=dummy_do_dummy_prediction):
-        estimator.search(
-            X_train=X_train, y_train=y_train,
-            X_test=X_test, y_test=y_test,
-            optimize_metric='accuracy',
-            total_walltime_limit=50,
-            func_eval_time_limit_secs=20,
-            enable_traditional_pipeline=False,
-        )
-
-    # Internal dataset has expected settings
-    assert estimator.dataset.task_type == 'tabular_classification'
-
-    assert estimator.resampling_strategy == NoResamplingStrategyTypes.no_resampling
-    assert estimator.dataset.resampling_strategy == NoResamplingStrategyTypes.no_resampling
-    # Check for the created files
-    tmp_dir = estimator._backend.temporary_directory
-    loaded_datamanager = estimator._backend.load_datamanager()
-    assert len(loaded_datamanager.train_tensors) == len(estimator.dataset.train_tensors)
-
-    expected_files = [
-        'smac3-output/run_42/configspace.json',
-        'smac3-output/run_42/runhistory.json',
-        'smac3-output/run_42/scenario.txt',
-        'smac3-output/run_42/stats.json',
-        'smac3-output/run_42/train_insts.txt',
-        'smac3-output/run_42/trajectory.json',
-        '.autoPyTorch/datamanager.pkl',
-        '.autoPyTorch/start_time_42',
-    ]
-    for expected_file in expected_files:
-        assert os.path.exists(os.path.join(tmp_dir, expected_file)), "{}/{}/{}".format(
-            tmp_dir,
-            [data for data in pathlib.Path(tmp_dir).glob('*')],
-            expected_file,
-        )
-
-    # Check that smac was able to find proper models
-    succesful_runs = [run_value.status for run_value in estimator.run_history.data.values(
-    ) if 'SUCCESS' in str(run_value.status)]
-    assert len(succesful_runs) > 1, [(k, v) for k, v in estimator.run_history.data.items()]
-
-    # Search for an existing run key in disc. A individual model might have
-    # a timeout and hence was not written to disc
-    successful_num_run = None
-    SUCCESS = False
-    for i, (run_key, value) in enumerate(estimator.run_history.data.items()):
-        if 'SUCCESS' in str(value.status):
-            run_key_model_run_dir = estimator._backend.get_numrun_directory(
-                estimator.seed, run_key.config_id + 1, run_key.budget)
-            successful_num_run = run_key.config_id + 1
-            if os.path.exists(run_key_model_run_dir):
-                # Runkey config id is different from the num_run
-                # more specifically num_run = config_id + 1(dummy)
-                SUCCESS = True
-                break
-
-    assert SUCCESS, f"Successful run was not properly saved for num_run: {successful_num_run}"
-
-    model_file = os.path.join(run_key_model_run_dir,
-                              f"{estimator.seed}.{successful_num_run}.{run_key.budget}.model")
-    assert os.path.exists(model_file), model_file
-
-    # Make sure that predictions on the test data are printed and make sense
-    test_prediction = os.path.join(run_key_model_run_dir,
-                                   estimator._backend.get_prediction_filename(
-                                       'test', estimator.seed, successful_num_run,
-                                       run_key.budget))
-    assert os.path.exists(test_prediction), test_prediction
-    assert np.shape(np.load(test_prediction, allow_pickle=True))[0] == np.shape(X_test)[0]
-
-    y_pred = estimator.predict(X_test)
-    assert np.shape(y_pred)[0] == np.shape(X_test)[0]
-
-    # Make sure that predict proba has the expected shape
-    probabilites = estimator.predict_proba(X_test)
-    assert np.shape(probabilites) == (np.shape(X_test)[0], 2)
-
-    score = estimator.score(y_pred, y_test)
-    assert 'accuracy' in score
-
-    # check incumbent config and results
-    incumbent_config, incumbent_results = estimator.get_incumbent_results()
-    assert isinstance(incumbent_config, Configuration)
-    assert isinstance(incumbent_results, dict)
-    assert 'opt_loss' in incumbent_results, "run history: {}, successful_num_run: {}".format(estimator.run_history.data,
-                                                                                             successful_num_run)
-    assert 'train_loss' in incumbent_results
 
 
 @pytest.mark.parametrize("ans,task_class", (
