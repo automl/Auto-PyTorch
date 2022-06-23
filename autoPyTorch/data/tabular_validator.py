@@ -41,6 +41,10 @@ class TabularInputValidator(BaseInputValidator):
         dataset_compression (Optional[DatasetCompressionSpec]):
             specifications for dataset compression. For more info check
             documentation for `BaseTask.get_dataset`.
+        feat_types (List[str]):
+                Description about the feature types of the columns.
+                Accepts `numerical` for integers, float data and `categorical`
+                for categories, strings and bool
     """
     def __init__(
         self,

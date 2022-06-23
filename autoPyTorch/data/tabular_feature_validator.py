@@ -94,6 +94,10 @@ class TabularFeatureValidator(BaseFeatureValidator):
             List of indices of numerical columns
         categorical_columns (List[int]):
             List of indices of categorical columns
+        feat_types (List[str]):
+                Description about the feature types of the columns.
+                Accepts `numerical` for integers, float data and `categorical`
+                for categories, strings and bool.
     """
     def __init__(
         self,
