@@ -49,8 +49,8 @@ def test_data_validation_for_classification(openmlid, as_frame):
 
     # Categorical columns are sorted to the beginning
     if as_frame:
-        validator.feature_validator.feat_type is not None
-        ordered_unique_elements = list(dict.fromkeys(validator.feature_validator.feat_type))
+        validator.feature_validator.feat_types is not None
+        ordered_unique_elements = list(dict.fromkeys(validator.feature_validator.feat_types))
         if len(ordered_unique_elements) > 1:
             assert ordered_unique_elements[0] == 'categorical'
 
@@ -91,8 +91,8 @@ def test_data_validation_for_regression(openmlid, as_frame):
 
     # Categorical columns are sorted to the beginning
     if as_frame:
-        validator.feature_validator.feat_type is not None
-        ordered_unique_elements = list(dict.fromkeys(validator.feature_validator.feat_type))
+        validator.feature_validator.feat_types is not None
+        ordered_unique_elements = list(dict.fromkeys(validator.feature_validator.feat_types))
         if len(ordered_unique_elements) > 1:
             assert ordered_unique_elements[0] == 'categorical'
 

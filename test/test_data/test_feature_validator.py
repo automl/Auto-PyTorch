@@ -259,12 +259,12 @@ def test_column_transformer_created(input_data_featuretest):
     transformed_columns, feature_types = validator._get_columns_to_encode(input_data_featuretest)
 
     # At least one categorical
-    assert 'categorical' in validator.feat_type
+    assert 'categorical' in validator.feat_types
 
     # Numerical if the original data has numerical only columns
     if np.any([pd.api.types.is_numeric_dtype(input_data_featuretest[col]
                                              ) for col in input_data_featuretest.columns]):
-        assert 'numerical' in validator.feat_type
+        assert 'numerical' in validator.feat_types
     for i, feat_type in enumerate(feature_types):
         if 'numerical' in feat_type:
             np.testing.assert_array_equal(
@@ -406,3 +406,97 @@ def test_comparator():
         key=functools.cmp_to_key(validator._comparator)
     )
     assert ans == feat_type
+
+
+@pytest.fixture
+def input_data_feature_feat_types(request):
+    if request.param == 'pandas_categoricalonly':
+        return pd.DataFrame([
+            {'A': 1, 'B': 2},
+            {'A': 3, 'B': 4},
+        ], dtype='category'), ['categorical', 'categorical']
+    elif request.param == 'pandas_numericalonly':
+        return pd.DataFrame([
+            {'A': 1, 'B': 2},
+            {'A': 3, 'B': 4},
+        ], dtype='float'), ['numerical', 'numerical']
+    elif request.param == 'pandas_mixed':
+        frame = pd.DataFrame([
+            {'A': 1, 'B': 2},
+            {'A': 3, 'B': 4},
+        ], dtype='category')
+        frame['B'] = pd.to_numeric(frame['B'])
+        return frame, ['categorical', 'numerical']
+    elif request.param == 'pandas_string_error':
+        frame = pd.DataFrame([
+            {'A': 1, 'B': '2'},
+            {'A': 3, 'B': '4'},
+        ], dtype='category')
+        return frame, ['categorical', 'numerical']
+    elif request.param == 'pandas_length_error':
+        frame = pd.DataFrame([
+            {'A': 1, 'B': '2'},
+            {'A': 3, 'B': '4'},
+        ], dtype='category')
+        return frame, ['categorical', 'categorical', 'numerical']
+    else:
+        ValueError("Unsupported indirect fixture {}".format(request.param))
+
+
+@pytest.mark.parametrize(
+    'input_data_feature_feat_types',
+    (
+        'pandas_categoricalonly',
+        'pandas_numericalonly',
+        'pandas_mixed',
+    ),
+    indirect=True
+)
+def test_feature_validator_get_columns_to_encode(input_data_feature_feat_types):
+    X, feat_types = input_data_feature_feat_types
+    validator = TabularFeatureValidator(feat_types=feat_types)
+    transformed_columns, val_feat_types = validator.get_columns_to_encode(X)
+
+    assert feat_types == val_feat_types
+
+    for feat_type, col in zip(X.columns, val_feat_types):
+        if feat_type.lower() == 'categorical':
+            assert col in transformed_columns
+
+
+@pytest.mark.parametrize(
+    'input_data_feature_feat_types',
+    (
+        'pandas_string_error',
+    ),
+    indirect=True
+)
+def test_feature_validator_get_columns_to_encode_error_string(input_data_feature_feat_types):
+    """
+    Tests the correct error is raised when feat types passed to
+    the validator disagree with the column dtypes.
+
+    """
+    X, feat_types = input_data_feature_feat_types
+    validator = TabularFeatureValidator(feat_types=feat_types)
+    with pytest.raises(ValueError, match=r"Passed numerical as the feature type for column: B but the column is categorical"):
+        validator.get_columns_to_encode(X)
+
+
+@pytest.mark.parametrize(
+    'input_data_feature_feat_types',
+    (
+        'pandas_length_error',
+    ),
+    indirect=True
+)
+def test_feature_validator_get_columns_to_encode_error_length(input_data_feature_feat_types):
+    """
+    Tests the correct error is raised when the length of feat types passed to
+    the validator is not the same as the number of features
+
+    """
+    X, feat_types = input_data_feature_feat_types
+    validator = TabularFeatureValidator(feat_types=feat_types)
+    with pytest.raises(ValueError, match=r"Expected number of `feat_types`: .*"):
+        validator.get_columns_to_encode(X)

@@ -96,6 +96,7 @@ class TabularClassificationTask(BaseTask):
         exclude_components: Optional[Dict[str, Any]] = None,
         resampling_strategy: ResamplingStrategies = HoldoutValTypes.holdout_validation,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
+        feat_types: Optional[List[str]] = None,
         backend: Optional[Backend] = None,
         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
     ):
@@ -119,6 +120,7 @@ class TabularClassificationTask(BaseTask):
             search_space_updates=search_space_updates,
             task_type=TASK_TYPES_TO_STRING[TABULAR_CLASSIFICATION],
         )
+        self.feat_types = feat_types
 
     def build_pipeline(
         self,
@@ -168,6 +170,7 @@ class TabularClassificationTask(BaseTask):
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         dataset_name: Optional[str] = None,
         dataset_compression: Optional[DatasetCompressionSpec] = None,
+        **kwargs: Any,
     ) -> Tuple[TabularDataset, TabularInputValidator]:
         """
         Returns an object of `TabularDataset` and an object of
@@ -194,6 +197,9 @@ class TabularClassificationTask(BaseTask):
             dataset_compression (Optional[DatasetCompressionSpec]):
                 specifications for dataset compression. For more info check
                 documentation for `BaseTask.get_dataset`.
+            kwargs (Any):
+                Currently for tabular tasks, expect `feat_types: (Optional[List[str]]` which
+                specifies whether a feature is 'numerical' or 'categorical'.
 
         Returns:
             TabularDataset:
@@ -206,12 +212,14 @@ class TabularClassificationTask(BaseTask):
         resampling_strategy_args = resampling_strategy_args if resampling_strategy_args is not None else \
             self.resampling_strategy_args
 
+        feat_types = kwargs.pop('feat_types', self.feat_types)
         # Create a validator object to make sure that the data provided by
         # the user matches the autopytorch requirements
         input_validator = TabularInputValidator(
             is_classification=True,
             logger_port=self._logger_port,
-            dataset_compression=dataset_compression
+            dataset_compression=dataset_compression,
+            feat_types=feat_types
         )
 
         # Fit a input validator to check the provided data

@@ -307,6 +307,7 @@ class BaseTask(ABC):
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         dataset_name: Optional[str] = None,
         dataset_compression: Optional[DatasetCompressionSpec] = None,
+        **kwargs: Any
     ) -> Tuple[BaseDataset, BaseInputValidator]:
         """
         Returns an object of a child class of `BaseDataset` and
@@ -353,6 +354,7 @@ class BaseTask(ABC):
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         dataset_name: Optional[str] = None,
         dataset_compression: Optional[DatasetCompressionSpec] = None,
+        **kwargs: Any
     ) -> BaseDataset:
         """
         Returns an object of a child class of `BaseDataset` according to the current task.
@@ -407,6 +409,10 @@ class BaseTask(ABC):
                         Subsampling takes into account classification labels and stratifies
                         accordingly. We guarantee that at least one occurrence of each
                         label is included in the sampled set.
+            kwargs (Any):
+                can be used to pass task specific dataset arguments. Currently supports
+                passing `feat_types` for tabular tasks which specifies whether a feature is
+                'numerical' or 'categorical'.
 
         Returns:
             BaseDataset:
@@ -420,7 +426,8 @@ class BaseTask(ABC):
             resampling_strategy=resampling_strategy,
             resampling_strategy_args=resampling_strategy_args,
             dataset_name=dataset_name,
-            dataset_compression=dataset_compression)
+            dataset_compression=dataset_compression,
+            **kwargs)
 
         return dataset
 

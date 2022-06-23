@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 import logging
-from typing import Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -47,6 +47,7 @@ class TabularInputValidator(BaseInputValidator):
         is_classification: bool = False,
         logger_port: Optional[int] = None,
         dataset_compression: Optional[DatasetCompressionSpec] = None,
+        feat_types: Optional[List[str]] = None,
         seed: int = 42,
     ):
         self.dataset_compression = dataset_compression
@@ -63,7 +64,8 @@ class TabularInputValidator(BaseInputValidator):
             self.logger = logging.getLogger('Validation')
 
         self.feature_validator = TabularFeatureValidator(
-            logger=self.logger)
+            logger=self.logger,
+            feat_types=feat_types)
         self.target_validator = TabularTargetValidator(
             is_classification=self.is_classification,
             logger=self.logger
