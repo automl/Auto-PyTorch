@@ -60,10 +60,23 @@ handle column-reordering.
 Note that column-reordering shifts categorical columns to the earlier indices
 and it is activated only if one uses a ColumnTransformer.
 
+Similar procedures can be found under time series forecasting tasks:
+
+#. `Feature Imputation <https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/time_series_preprocessing/imputation>`_
+#. `Feature scaling <https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/time_series_preprocessing/scaling>`_
+#. `Feature Encoding <https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/time_series_preprocessing/encoding>`_
+#. `Feature preprocessing <https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/time_series_preprocessing>`_
+#. `Target Imputation <https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/time_series_preprocessing/imputation>`_
+#. `Target Preprocessing <https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/time_series_preprocessing>`_
+#. `Target Scaling <https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/setup/forecasting_target_scaling>`_
+#. `Loss Types <https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/setup>`_
+#. `Algorithm setup <https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/setup>`_
+#. `Training <https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/training>`_
+
 Training of individual models
 -----------------------------
 
-Auto-PyTorch can fit 3 types of pipelines:
+**Auto-PyTorch Tabular** can fit 3 types of pipelines:
 
 #. Dummy pipeline: Use sklearn.dummy to construct an estimator that predicts using simple rules such as most frequent class
 #. Traditional machine learning pipelines: Use LightGBM, CatBoost, RandomForest, ExtraTrees, K-Nearest-Neighbors, and SupportVectorMachines
@@ -77,6 +90,9 @@ and data loaders required to perform the neural architecture search.
 
 After the training (fitting a pipeline), we use pickle to save it
 to disk as stated `here <https://scikit-learn.org/stable/modules/model_persistence.html>`_.
+
+**Auto-PyTorch Time Series Forecasting** currently only allows Dummy pipelines and PyTorch neural networks. Traditional machine learning pipelines
+will be introduced in the future iteration.
 
 Optimization of pipeline
 ------------------------
