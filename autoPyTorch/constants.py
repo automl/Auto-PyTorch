@@ -54,7 +54,17 @@ STRING_TO_OUTPUT_TYPES = \
 CLASSIFICATION_OUTPUTS = [BINARY, MULTICLASS, MULTICLASSMULTIOUTPUT]
 REGRESSION_OUTPUTS = [CONTINUOUS, CONTINUOUSMULTIOUTPUT]
 
+
 # Constants for Forecasting Tasks
+# Exceptions
+class ForecastingDependenciesNotInstalledError(ModuleNotFoundError):
+    def __init__(self, msg=None):
+        if msg is None:
+            msg = "Additional dependencies must be installed to work with time series forecasting" \
+                  "tasks! Please run \n pip install autoPyTorch[forecasting] \n to install the" \
+                  "corresponding dependencies!"
+        super().__init__(msg)
+
 
 # The constant values for time series forecasting comes from
 # https://github.com/rakshitha123/TSForecasting/blob/master/experiments/deep_learning_experiments.py

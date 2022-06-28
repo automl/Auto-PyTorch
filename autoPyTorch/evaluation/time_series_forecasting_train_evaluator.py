@@ -13,9 +13,9 @@ from smac.tae import StatusType
 
 from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.constants import SEASONALITY_MAP
-from autoPyTorch.evaluation.abstract_evaluator import DummyTimeSeriesForecastingPipeline
 from autoPyTorch.evaluation.train_evaluator import TrainEvaluator
 from autoPyTorch.evaluation.utils import DisableFileOutputParameters
+from autoPyTorch.evaluation.utils_extra import DummyTimeSeriesForecastingPipeline
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.pipeline.components.training.metrics.metrics import MASE_LOSSES
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
