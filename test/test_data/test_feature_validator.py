@@ -180,13 +180,11 @@ def test_features_unsupported_calls_are_raised():
     expected
     """
     validator = TabularFeatureValidator()
-    with pytest.raises(ValueError, match=r"AutoPyTorch does not support time"):
-        validator.fit(
-            pd.DataFrame({'datetime': [pd.Timestamp('20180310')]})
-        )
+    with pytest.raises(TypeError, match=r"invalid type `time and/or date datatype`."):
+        validator.fit(pd.DataFrame({'datetime': [pd.Timestamp('20180310')]}))
     with pytest.raises(ValueError, match=r"AutoPyTorch only supports.*yet, the provided input"):
         validator.fit({'input1': 1, 'input2': 2})
-    with pytest.raises(ValueError, match=r"has unsupported dtype string"):
+    with pytest.raises(TypeError, match=r"invalid type `string`."):
         validator.fit(pd.DataFrame([{'A': 1, 'B': 2}], dtype='string'))
     with pytest.raises(ValueError, match=r"The feature dimensionality of the train and test"):
         validator.fit(X_train=np.array([[1, 2, 3], [4, 5, 6]]),
