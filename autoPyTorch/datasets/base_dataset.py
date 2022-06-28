@@ -30,7 +30,7 @@ from autoPyTorch.datasets.resampling_strategy import (
 from autoPyTorch.utils.common import FitRequirement, ispandas
 
 BaseDatasetInputType = Union[Tuple[np.ndarray, np.ndarray], Dataset]
-BaseDatasetPropertiesType = Union[int, float, str, List, bool]
+BaseDatasetPropertiesType = Union[int, float, str, List, bool, Tuple]
 
 
 def check_valid_data(data: Any) -> None:

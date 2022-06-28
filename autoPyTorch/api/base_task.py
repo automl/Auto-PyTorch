@@ -34,9 +34,12 @@ from smac.tae import StatusType
 from autoPyTorch import metrics
 from autoPyTorch.automl_common.common.utils.backend import Backend, create
 from autoPyTorch.constants import (
+    FORECASTING_BUDGET_TYPE,
+    FORECASTING_TASKS,
     REGRESSION_TASKS,
     STRING_TO_OUTPUT_TYPES,
     STRING_TO_TASK_TYPES,
+    TIMESERIES_FORECASTING,
 )
 from autoPyTorch.data.base_validator import BaseInputValidator
 from autoPyTorch.data.utils import DatasetCompressionSpec
@@ -77,7 +80,8 @@ def _pipeline_predict(pipeline: BasePipeline,
                       X: Union[np.ndarray, pd.DataFrame],
                       batch_size: int,
                       logger: PicklableClientLogger,
-                      task: int) -> np.ndarray:
+                      task: int,
+                      task_type: str = "") -> np.ndarray:
     @typing.no_type_check
     def send_warnings_to_log(
             message, category, filename, lineno, file=None, line=None):
@@ -87,7 +91,7 @@ def _pipeline_predict(pipeline: BasePipeline,
     X_ = X.copy()
     with warnings.catch_warnings():
         warnings.showwarning = send_warnings_to_log
-        if task in REGRESSION_TASKS:
+        if task in REGRESSION_TASKS or task in FORECASTING_TASKS:
             # Voting regressor does not support batch size
             prediction = pipeline.predict(X_)
         else:
@@ -101,13 +105,13 @@ def _pipeline_predict(pipeline: BasePipeline,
                     prediction,
                     np.sum(prediction, axis=1)
                 ))
-
-    if len(prediction.shape) < 1 or len(X_.shape) < 1 or \
-            X_.shape[0] < 1 or prediction.shape[0] != X_.shape[0]:
-        logger.warning(
-            "Prediction shape for model %s is %s while X_.shape is %s",
-            pipeline, str(prediction.shape), str(X_.shape)
-        )
+    if STRING_TO_TASK_TYPES.get(task_type, -1) != TIMESERIES_FORECASTING:
+        if len(prediction.shape) < 1 or len(X_.shape) < 1 or \
+                X_.shape[0] < 1 or prediction.shape[0] != X_.shape[0]:
+            logger.warning(
+                "Prediction shape for model %s is %s while X_.shape is %s",
+                pipeline, str(prediction.shape), str(X_.shape)
+            )
     return prediction
 
 
@@ -218,6 +222,8 @@ class BaseTask(ABC):
         self.search_space: Optional[ConfigurationSpace] = None
         self._dataset_requirements: Optional[List[FitRequirement]] = None
         self._metric: Optional[autoPyTorchMetric] = None
+        self._metrics_kwargs: Dict = {}
+
         self._scoring_functions: Optional[List[autoPyTorchMetric]] = None
         self._logger: Optional[PicklableClientLogger] = None
         self.dataset_name: Optional[str] = None
@@ -737,7 +743,7 @@ class BaseTask(ABC):
             stats=stats,
             memory_limit=memory_limit,
             disable_file_output=self._disable_file_output,
-            all_supported_metrics=self._all_supported_metrics
+            all_supported_metrics=self._all_supported_metrics,
         )
 
         status, _, _, additional_info = ta.run(num_run, cutoff=self._time_for_task)
@@ -822,7 +828,7 @@ class BaseTask(ABC):
                     stats=stats,
                     memory_limit=memory_limit,
                     disable_file_output=self._disable_file_output,
-                    all_supported_metrics=self._all_supported_metrics
+                    all_supported_metrics=self._all_supported_metrics,
                 )
                 dask_futures.append([
                     classifier,
@@ -906,8 +912,8 @@ class BaseTask(ABC):
         optimize_metric: str,
         dataset: BaseDataset,
         budget_type: str = 'epochs',
-        min_budget: int = 5,
-        max_budget: int = 50,
+        min_budget: Union[int, float] = 5,
+        max_budget: Union[int, float] = 50,
         total_walltime_limit: int = 100,
         func_eval_time_limit_secs: Optional[int] = None,
         enable_traditional_pipeline: bool = True,
@@ -920,7 +926,8 @@ class BaseTask(ABC):
         disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
         load_models: bool = True,
         portfolio_selection: Optional[str] = None,
-        dask_client: Optional[dask.distributed.Client] = None
+        dask_client: Optional[dask.distributed.Client] = None,
+        **kwargs: Any
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -1048,7 +1055,14 @@ class BaseTask(ABC):
                 Additionally, the keyword 'greedy' is supported,
                 which would use the default portfolio from
                 `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`_
-
+            kwargs: Any
+                additional arguments that are customed by some specific task.
+                For instance, forecasting tasks require:
+                    min_num_test_instances (int):  minimal number of instances used to initialize a proxy validation set
+                    suggested_init_models (List[str]):  A set of initial models suggested by the users. Their
+                        hyperparameters are determined by the default configurations
+                    custom_init_setting_path (str): The path to the initial hyperparameter configurations set by
+                    the users
         Returns:
             self
 
@@ -1110,7 +1124,10 @@ class BaseTask(ABC):
         self.search_space = self.get_search_space(dataset)
 
         # Incorporate budget to pipeline config
-        if budget_type not in ('epochs', 'runtime'):
+        if budget_type not in ('epochs', 'runtime') and (
+                budget_type in FORECASTING_BUDGET_TYPE
+                and STRING_TO_TASK_TYPES[self.task_type] != TIMESERIES_FORECASTING
+        ):
             raise ValueError("Budget type must be one ('epochs', 'runtime')"
                              f" yet {budget_type} was provided")
         self.pipeline_options['budget_type'] = budget_type
@@ -1216,6 +1233,7 @@ class BaseTask(ABC):
                 precision=precision,
                 logger_port=self._logger_port,
                 pynisher_context=self._multiprocessing_context,
+                metrics_kwargs=self._metrics_kwargs,
             )
             self._stopwatch.stop_task(ensemble_task_name)
 
@@ -1229,7 +1247,6 @@ class BaseTask(ABC):
         if time_left_for_smac <= 0:
             self._logger.warning(" Not starting SMAC because there is no time left")
         else:
-
             _proc_smac = AutoMLSMBO(
                 config_space=self.search_space,
                 dataset_name=str(dataset.dataset_name),
@@ -1259,6 +1276,8 @@ class BaseTask(ABC):
                 search_space_updates=self.search_space_updates,
                 portfolio_selection=portfolio_selection,
                 pynisher_context=self._multiprocessing_context,
+                task_type=self.task_type,
+                **kwargs,
             )
             try:
                 run_history, self._results_manager.trajectory, budget_type = \
@@ -1323,12 +1342,19 @@ class BaseTask(ABC):
         dataset: BaseDataset,
         split_id: int = 0
     ) -> Dict[str, Any]:
-        X_test = dataset.test_tensors[0].copy() if dataset.test_tensors is not None else None
-        y_test = dataset.test_tensors[1].copy() if dataset.test_tensors is not None else None
+        if dataset.test_tensors is not None:
+            X_test = dataset.test_tensors[0].copy() if dataset.test_tensors[0] is not None else None
+            y_test = dataset.test_tensors[1].copy() if dataset.test_tensors[1] is not None else None
+        else:
+            X_test = None
+            y_test = None
+
+        X_train = dataset.train_tensors[0].copy() if dataset.train_tensors[0] is not None else None
+        y_train = dataset.train_tensors[1].copy()
         X: Dict[str, Any] = dict({'dataset_properties': dataset_properties,
                                   'backend': self._backend,
-                                  'X_train': dataset.train_tensors[0].copy(),
-                                  'y_train': dataset.train_tensors[1].copy(),
+                                  'X_train': X_train,
+                                  'y_train': y_train,
                                   'X_test': X_test,
                                   'y_test': y_test,
                                   'train_indices': dataset.splits[split_id][0],
@@ -1336,6 +1362,10 @@ class BaseTask(ABC):
                                   'split_id': split_id,
                                   'num_run': self._backend.get_next_num_run(),
                                   })
+        if STRING_TO_TASK_TYPES[self.task_type] == TIMESERIES_FORECASTING:
+            warnings.warn("Currently Time Series Forecasting tasks do not allow computing metrics "
+                          "during training. It will be automatically set as False")
+            self.pipeline_options["metrics_during_training"] = False
         X.update(self.pipeline_options)
         return X
 
@@ -1398,7 +1428,7 @@ class BaseTask(ABC):
             # could alleviate the problem in algorithms that depend on
             # the ordering of the data.
             X = self._get_fit_dictionary(
-                dataset_properties=dataset_properties,
+                dataset_properties=copy.copy(dataset_properties),
                 dataset=dataset,
                 split_id=split_id)
             fit_and_suppress_warnings(self._logger, model, X, y=None)
@@ -1630,7 +1660,7 @@ class BaseTask(ABC):
             exclude=exclude_components,
             search_space_updates=search_space_updates,
             pipeline_config=pipeline_options,
-            pynisher_context=self._multiprocessing_context
+            pynisher_context=self._multiprocessing_context,
         )
 
         run_info, run_value = tae.run_wrapper(
@@ -1722,7 +1752,8 @@ class BaseTask(ABC):
 
         all_predictions = joblib.Parallel(n_jobs=n_jobs)(
             joblib.delayed(_pipeline_predict)(
-                models[identifier], X_test, batch_size, self._logger, STRING_TO_TASK_TYPES[self.task_type]
+                models[identifier], X_test, batch_size, self._logger, STRING_TO_TASK_TYPES[self.task_type],
+                self.task_type
             )
             for identifier in self.ensemble_.get_selected_model_identifiers()
         )

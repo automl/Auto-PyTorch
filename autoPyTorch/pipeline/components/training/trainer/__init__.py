@@ -204,8 +204,7 @@ class TrainerChoice(autoPyTorchChoice):
         self.logger = get_named_client_logger(
             name=f"{X['num_run']}_{time.time()}",
             # Log to a user provided port else to the default logging port
-            port=X['logger_port'
-                   ] if 'logger_port' in X else logging.handlers.DEFAULT_TCP_LOGGING_PORT,
+            port=X['logger_port'] if 'logger_port' in X else logging.handlers.DEFAULT_TCP_LOGGING_PORT,
         )
 
         # Call the actual fit function.
@@ -216,6 +215,44 @@ class TrainerChoice(autoPyTorchChoice):
         )
 
         return cast(autoPyTorchComponent, self.choice)
+
+    def prepare_trainer(self, X: Dict) -> None:
+        """
+        prepare trainer, forecasting tasks require more parameters
+        """
+        assert self.choice is not None
+
+        # Support additional user metrics
+        metrics = get_metrics(dataset_properties=X['dataset_properties'])
+        if 'additional_metrics' in X:
+            metrics.extend(get_metrics(dataset_properties=X['dataset_properties'], names=X['additional_metrics']))
+        if 'optimize_metric' in X and X['optimize_metric'] not in [m.name for m in metrics]:
+            metrics.extend(get_metrics(dataset_properties=X['dataset_properties'], names=[X['optimize_metric']]))
+        additional_losses = X['additional_losses'] if 'additional_losses' in X else None
+
+        labels = self._get_train_label(X)
+
+        self.choice.prepare(
+            model=X['network'],
+            metrics=metrics,
+            criterion=get_loss(X['dataset_properties'],
+                               name=additional_losses),
+            budget_tracker=self.budget_tracker,
+            optimizer=X['optimizer'],
+            device=get_device_from_fit_dictionary(X),
+            metrics_during_training=X['metrics_during_training'],
+            scheduler=X['lr_scheduler'],
+            task_type=STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']],
+            labels=labels,
+            step_interval=X['step_interval']
+        )
+
+    def get_budget_tracker(self, X: Dict) -> BudgetTracker:
+        return BudgetTracker(
+            budget_type=X['budget_type'],
+            max_runtime=X['runtime'] if 'runtime' in X else None,
+            max_epochs=X['epochs'] if 'epochs' in X else None,
+        )
 
     def _fit(self, X: Dict[str, Any], y: Any = None, **kwargs: Any) -> 'TrainerChoice':
         """
@@ -244,36 +281,10 @@ class TrainerChoice(autoPyTorchChoice):
         if X["torch_num_threads"] > 0:
             torch.set_num_threads(X["torch_num_threads"])
 
-        self.budget_tracker = BudgetTracker(
-            budget_type=X['budget_type'],
-            max_runtime=X['runtime'] if 'runtime' in X else None,
-            max_epochs=X['epochs'] if 'epochs' in X else None,
-        )
+        self.budget_tracker = self.get_budget_tracker(X)
 
-        # Support additional user metrics
-        metrics = get_metrics(dataset_properties=X['dataset_properties'])
-        if 'additional_metrics' in X:
-            metrics.extend(get_metrics(dataset_properties=X['dataset_properties'], names=X['additional_metrics']))
-        if 'optimize_metric' in X and X['optimize_metric'] not in [m.name for m in metrics]:
-            metrics.extend(get_metrics(dataset_properties=X['dataset_properties'], names=[X['optimize_metric']]))
-        additional_losses = X['additional_losses'] if 'additional_losses' in X else None
+        self.prepare_trainer(X)
 
-        labels = self._get_train_label(X)
-
-        self.choice.prepare(
-            model=X['network'],
-            metrics=metrics,
-            criterion=get_loss(X['dataset_properties'],
-                               name=additional_losses),
-            budget_tracker=self.budget_tracker,
-            optimizer=X['optimizer'],
-            device=get_device_from_fit_dictionary(X),
-            metrics_during_training=X['metrics_during_training'],
-            scheduler=X['lr_scheduler'],
-            task_type=STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']],
-            labels=labels,
-            step_interval=X['step_interval']
-        )
         total_parameter_count, trainable_parameter_count = self.count_parameters(X['network'])
         self.run_summary = RunSummary(
             total_parameter_count,
@@ -442,6 +453,9 @@ class TrainerChoice(autoPyTorchChoice):
         # Store the best weights seen so far:
         if self.checkpoint_dir is None:
             self.checkpoint_dir = tempfile.mkdtemp(dir=X['backend'].temporary_directory)
+
+        if not os.path.exists(self.checkpoint_dir):
+            os.makedirs(self.checkpoint_dir, exist_ok=True)
 
         last_epoch = self.run_summary.get_last_epoch()
         best_epoch = self.run_summary.get_best_epoch(split_type=self.early_stopping_split_type)

@@ -11,7 +11,6 @@ class SparseInit(BaseNetworkInitializerComponent):
     """
     Fills the 2D input Tensor as a sparse matrix
     """
-
     def weights_init(self) -> Callable:
         """Returns the actual PyTorch model, that is dynamically created
         from a self.config object.
@@ -19,6 +18,7 @@ class SparseInit(BaseNetworkInitializerComponent):
         self.config is a dictionary created form a given config in the config space.
         It contains the necessary information to build a network.
         """
+
         def initialization(m: torch.nn.Module) -> None:
             if isinstance(m, (torch.nn.Conv1d,
                               torch.nn.Conv2d,

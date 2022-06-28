@@ -1,16 +1,16 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from ConfigSpace.configuration_space import ConfigurationSpace
-from ConfigSpace.hyperparameters import (
-    UniformIntegerHyperparameter
-)
+from ConfigSpace.hyperparameters import UniformIntegerHyperparameter
 
 import torch
 from torch import nn
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
-from autoPyTorch.pipeline.components.setup.network_backbone.base_network_backbone import NetworkBackboneComponent
-from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
+from autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone.forecasting_encoder.\
+    base_forecasting_encoder import BaseForecastingEncoder
+from autoPyTorch.utils.common import (HyperparameterSearchSpace,
+                                      add_hyperparameter)
 
 
 # Code inspired by https://github.com/hfawaz/InceptionTime
@@ -94,11 +94,14 @@ class _InceptionTime(nn.Module):
         bottleneck_size = self.config["bottleneck_size"]
         kernel_size = self.config["kernel_size"]
         n_res_inputs = in_features
+
+        receptive_field = 1
         for i in range(self.config["num_blocks"]):
             block = _InceptionBlock(n_inputs=n_inputs,
                                     n_filters=n_filters,
                                     bottleneck=bottleneck_size,
                                     kernel_size=kernel_size)
+            receptive_field += max(kernel_size, 3) - 1
             self.__setattr__(f"inception_block_{i}", block)
 
             # add a residual block after every 3 inception blocks
@@ -108,8 +111,9 @@ class _InceptionTime(nn.Module):
                                                                        n_outputs=n_res_outputs))
                 n_res_inputs = n_res_outputs
             n_inputs = block.get_n_outputs()
+        self.receptive_field = receptive_field
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, output_seq: bool = False) -> torch.Tensor:
         # swap sequence and feature dimensions for use with convolutional nets
         x = x.transpose(1, 2).contiguous()
         res = x
@@ -119,48 +123,75 @@ class _InceptionTime(nn.Module):
                 x = self.__getattr__(f"residual_block_{i}")(x, res)
                 res = x
         x = x.transpose(1, 2).contiguous()
-        return x
+        if output_seq:
+            return x
+        else:
+            return self.get_last_seq_value(x)
+
+    def get_last_seq_value(self, x: torch.Tensor) -> torch.Tensor:
+        return x[:, -1:, :]
 
 
-class InceptionTimeBackbone(NetworkBackboneComponent):
+class InceptionTimeEncoder(BaseForecastingEncoder):
+    _receptive_field = 1
     """
     InceptionTime backbone for time series data (see https://arxiv.org/pdf/1909.04939.pdf).
     """
 
-    def build_backbone(self, input_shape: Tuple[int, ...]) -> nn.Module:
-        backbone = _InceptionTime(in_features=input_shape[-1],
-                                  config=self.config)
-        self.backbone = backbone
-        return backbone
+    def build_encoder(self, input_shape: Tuple[int, ...] = (0,)) -> nn.Module:
+        in_features = input_shape[-1]
+        encoder = _InceptionTime(in_features=in_features,
+                                 config=self.config)
+        self._receptive_field = encoder.receptive_field
+        return encoder
+
+    def n_encoder_output_feature(self) -> int:
+        # see _InceptionBlock.forward()
+        num_filters_out: int = self.config['num_filters']
+        return num_filters_out * 4
+
+    @staticmethod
+    def allowed_decoders() -> List[str]:
+        """
+        decoder that is compatible with the encoder
+        """
+        return ['MLPDecoder']
 
     @staticmethod
     def get_properties(dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None) -> Dict[str, Any]:
         return {
-            'shortname': 'InceptionTimeBackbone',
-            'name': 'InceptionTimeBackbone',
+            'shortname': 'InceptionTimeEncoder',
+            'name': 'InceptionTimeEncoder',
             'handles_tabular': False,
             'handles_image': False,
             'handles_time_series': True,
         }
 
+    def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
+        X.update({'window_size': self._receptive_field})
+        return super().transform(X)
+
     @staticmethod
     def get_hyperparameter_search_space(
         dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         num_blocks: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_blocks",
-                                                                          value_range=(1, 10),
-                                                                          default_value=5,
+                                                                          value_range=(1, 5),
+                                                                          default_value=3,
                                                                           ),
         num_filters: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="num_filters",
                                                                            value_range=(4, 64),
                                                                            default_value=32,
+                                                                           log=True,
                                                                            ),
         kernel_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="kernel_size",
                                                                            value_range=(4, 64),
                                                                            default_value=32,
+                                                                           log=True,
                                                                            ),
         bottleneck_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="bottleneck_size",
                                                                                value_range=(16, 64),
                                                                                default_value=32,
+                                                                               log=True
                                                                                ),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
@@ -169,5 +200,4 @@ class InceptionTimeBackbone(NetworkBackboneComponent):
         add_hyperparameter(cs, num_filters, UniformIntegerHyperparameter)
         add_hyperparameter(cs, kernel_size, UniformIntegerHyperparameter)
         add_hyperparameter(cs, bottleneck_size, UniformIntegerHyperparameter)
-
         return cs

@@ -183,3 +183,7 @@ class BaseTargetValidator(BaseEstimator):
         Output is encoded with a single column encoding
         """
         return self.out_dimensionality == 1
+
+    @property
+    def allow_missing_values(self) -> bool:
+        return False

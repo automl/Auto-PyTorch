@@ -12,11 +12,14 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
-
-from autoPyTorch.constants import REGRESSION_TASKS
+from autoPyTorch.constants import FORECASTING_TASKS, REGRESSION_TASKS
 from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
-from autoPyTorch.pipeline.components.training.metrics.metrics import CLASSIFICATION_METRICS, REGRESSION_METRICS
+from autoPyTorch.pipeline.components.training.metrics.metrics import (
+    CLASSIFICATION_METRICS,
+    FORECASTING_METRICS,
+    REGRESSION_METRICS,
+)
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
 from autoPyTorch.utils.implementations import get_loss_weight_strategy
 
@@ -124,11 +127,15 @@ class RunSummary(object):
         # metric to the loss
         if self.optimize_metric is not None:
             metrics_type = f"{split_type}_metrics"
-            scorer = CLASSIFICATION_METRICS[
-                self.optimize_metric
-            ] if self.optimize_metric in CLASSIFICATION_METRICS else REGRESSION_METRICS[
-                self.optimize_metric
-            ]
+            if self.optimize_metric in CLASSIFICATION_METRICS:
+                scorer = CLASSIFICATION_METRICS[self.optimize_metric]
+            elif self.optimize_metric in REGRESSION_METRICS:
+                scorer = REGRESSION_METRICS[self.optimize_metric]
+            elif self.optimize_metric in FORECASTING_METRICS:
+                scorer = FORECASTING_METRICS[self.optimize_metric]
+            else:
+                raise NotImplementedError(f"Unsupported optimizer metric: {self.optimize_metric}")
+
             # Some metrics maximize, other minimize!
             opt_func = np.argmax if scorer._sign > 0 else np.argmin
             return int(opt_func(
@@ -215,7 +222,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         scheduler: _LRScheduler,
         task_type: int,
         labels: Union[np.ndarray, torch.Tensor, pd.DataFrame],
-        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.batch
+        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.batch,
+        **kwargs: Dict
     ) -> None:
 
         # Save the device to be used
@@ -312,9 +320,10 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
             loss, outputs = self.train_step(data, targets)
 
-            # save for metric evaluation
-            outputs_data.append(outputs.detach().cpu())
-            targets_data.append(targets.detach().cpu())
+            if self.metrics_during_training:
+                # save for metric evaluation
+                outputs_data.append(outputs.detach().cpu())
+                targets_data.append(targets.detach().cpu())
 
             batch_size = data.size(0)
             loss_sum += loss * batch_size
@@ -338,7 +347,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
             return loss_sum / N, {}
 
     def cast_targets(self, targets: torch.Tensor) -> torch.Tensor:
-        if self.task_type in REGRESSION_TASKS:
+        if self.task_type in (REGRESSION_TASKS + FORECASTING_TASKS):
             targets = targets.float().to(self.device)
             # make sure that targets will have same shape as outputs (really important for mse loss for example)
             if targets.ndim == 1:

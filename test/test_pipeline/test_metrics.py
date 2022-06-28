@@ -4,6 +4,7 @@ import pytest
 
 import sklearn.metrics
 
+import sktime.performance_metrics.forecasting as forecasting_metrics
 
 from autoPyTorch.constants import (
     BINARY,
@@ -12,20 +13,24 @@ from autoPyTorch.constants import (
     STRING_TO_TASK_TYPES,
     TABULAR_CLASSIFICATION,
     TABULAR_REGRESSION,
-    TASK_TYPES_TO_STRING
+    TASK_TYPES_TO_STRING,
+    TIMESERIES_FORECASTING
 )
-from autoPyTorch.metrics import accuracy, balanced_accuracy, mean_squared_error
+from autoPyTorch.metrics import (
+    accuracy,
+    balanced_accuracy,
+    compute_mase_coefficient,
+    mean_squared_error
+)
 from autoPyTorch.pipeline.components.training.metrics.base import (
+    ForecastingMetricMixin,
+    _ForecastingMetric,
     _PredictMetric,
     _ThresholdMetric,
     autoPyTorchMetric,
-    make_metric,
+    make_metric
 )
-from autoPyTorch.pipeline.components.training.metrics.utils import (
-    calculate_loss,
-    calculate_score,
-    get_metrics,
-)
+from autoPyTorch.pipeline.components.training.metrics.utils import calculate_loss, calculate_score, get_metrics
 
 
 @pytest.mark.parametrize('output_type', ['multiclass',
@@ -46,6 +51,15 @@ def test_get_no_name_regression(output_type):
     metrics = get_metrics(dataset_properties)
     for metric in metrics:
         assert isinstance(metric, autoPyTorchMetric)
+
+
+@pytest.mark.parametrize('output_type', ['continuous', 'continuous-multioutput'])
+def test_get_no_name_forecasting(output_type):
+    dataset_properties = {'task_type': 'time_series_forecasting',
+                          'output_type': output_type}
+    metrics = get_metrics(dataset_properties)
+    for metric in metrics:
+        assert isinstance(metric, ForecastingMetricMixin)
 
 
 @pytest.mark.parametrize('metric', ['accuracy', 'average_precision',
@@ -94,6 +108,37 @@ def test_regression_metrics():
     for name, score in score_dict.items():
         assert isinstance(name, str)
         assert isinstance(score, float)
+
+
+def test_forecasting_metric():
+    # test of all regression metrics
+    dataset_properties = {'task_type': TASK_TYPES_TO_STRING[TIMESERIES_FORECASTING],
+                          'output_type': OUTPUT_TYPES_TO_STRING[CONTINUOUS]}
+    n_prediction_steps = 5
+    n_seq = 2
+    n_targets = 2
+
+    y_target = np.zeros([n_seq, n_prediction_steps, n_targets])
+    y_pred = np.ones([n_seq, n_prediction_steps, n_targets])
+    mase_coefficient = np.ones([n_seq, n_prediction_steps, n_targets]) * 2
+    metrics = get_metrics(dataset_properties=dataset_properties, all_supported_metrics=True)
+    forecasting_kwargs = {'sp': 4,
+                          'n_prediction_steps': n_prediction_steps,
+                          'mase_coefficient': mase_coefficient,
+                          }
+    score_dict = calculate_score(y_pred, y_target, STRING_TO_TASK_TYPES[dataset_properties['task_type']], metrics,
+                                 **forecasting_kwargs)
+    assert isinstance(score_dict, dict)
+    for name, score in score_dict.items():
+        assert isinstance(name, str)
+        assert isinstance(score, float)
+    forecasting_kwargs = {'sp': 4,
+                          'n_prediction_steps': n_prediction_steps,
+                          'mase_coefficient': np.ones([1, n_prediction_steps, n_targets]),
+                          }
+    with pytest.raises(ValueError, match="the shape of MASE coefficient and target_shape must be consistent"):
+        score_dict = calculate_score(y_pred, y_target, STRING_TO_TASK_TYPES[dataset_properties['task_type']], metrics,
+                                     **forecasting_kwargs)
 
 
 def test_predictmetric_binary():
@@ -153,6 +198,44 @@ def test_threshold_scorer_binary():
     y_pred = np.array([[1.0, 0.0], [1.0, 0.0], [0.0, 1.0], [0.0, 1.0]])
     score = scorer(y_true, y_pred)
     assert score == pytest.approx(-1.0)
+
+
+def test_forecastingcomputation():
+    scorer_mean = _ForecastingMetric(
+        'mean_mape', forecasting_metrics.mean_absolute_percentage_error, 0.0, np.finfo(np.float64).max, 1,
+        kwargs=dict(aggregation='mean'),
+    )
+    scorer_median = _ForecastingMetric(
+        'median_mape', forecasting_metrics.mean_absolute_percentage_error, 0.0, np.finfo(np.float64).max, 1,
+        kwargs=dict(aggregation='median'),
+    )
+
+    n_seq = 3
+    n_prediction_steps = 5
+    n_targets = 2
+
+    y_true = np.expand_dims(
+        [np.arange(n_prediction_steps) + i * 10 for i in range(n_seq)], -1
+    ).repeat(n_targets, axis=-1)
+    y_pred = y_true + 1
+    score_mean = scorer_mean(y_true=y_true, y_pred=y_pred, sp=1, n_prediction_steps=n_prediction_steps)
+    score_median = scorer_median(y_true=y_true, y_pred=y_pred, sp=1, n_prediction_steps=n_prediction_steps)
+
+    score_all = []
+    for true_seq, pred_seq in zip(y_true, y_pred):
+        score_all.append(forecasting_metrics.mean_absolute_percentage_error(y_true=true_seq, y_pred=pred_seq))
+    assert score_mean == np.mean(score_all)
+    assert score_median == np.median(score_all)
+
+    # Additional parameters
+    horizon_weight = [0.1, 0.2, 0.3, 0.4, 0.5]
+    score_mean = scorer_mean(y_true=y_true, y_pred=y_pred, sp=1,
+                             n_prediction_steps=n_prediction_steps, horizon_weight=horizon_weight)
+    score_all = []
+    for true_seq, pred_seq in zip(y_true, y_pred):
+        score_all.append(forecasting_metrics.mean_absolute_percentage_error(y_true=true_seq, y_pred=pred_seq,
+                                                                            horizon_weight=horizon_weight))
+    assert score_mean == np.mean(score_all)
 
 
 def test_sign_flip():
@@ -255,3 +338,19 @@ def test_calculate_loss():
         task_type=TABULAR_REGRESSION,
         metrics=[mean_squared_error],
     )['mean_squared_error']
+
+
+def test_compute_mase_coefficient():
+    past_target = np.arange(12)
+    mase_value_1 = compute_mase_coefficient(past_target, 15)
+    assert mase_value_1 == 1 / np.mean(past_target)
+    mase_value_2 = compute_mase_coefficient(past_target, 5)
+    assert mase_value_2 == 0.2
+
+    past_target = np.ones(12) * 2
+    assert compute_mase_coefficient(past_target, 15) == 0.5
+    assert compute_mase_coefficient(past_target, 5) == 0.5
+
+    past_target = np.zeros(12)
+    assert compute_mase_coefficient(past_target, 15) == 1.
+    assert compute_mase_coefficient(past_target, 5) == 1.
