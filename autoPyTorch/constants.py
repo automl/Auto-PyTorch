@@ -1,5 +1,3 @@
-from typing import Optional
-
 TABULAR_CLASSIFICATION = 1
 IMAGE_CLASSIFICATION = 2
 TABULAR_REGRESSION = 3
@@ -56,16 +54,9 @@ STRING_TO_OUTPUT_TYPES = \
 CLASSIFICATION_OUTPUTS = [BINARY, MULTICLASS, MULTICLASSMULTIOUTPUT]
 REGRESSION_OUTPUTS = [CONTINUOUS, CONTINUOUSMULTIOUTPUT]
 
-
-# Constants for Forecasting Tasks
-# Exceptions
-class ForecastingDependenciesNotInstalledError(ModuleNotFoundError):
-    def __init__(self, msg: Optional[str] = None):
-        if msg is None:
-            msg = "Additional dependencies must be installed to work with time series forecasting" \
-                  "tasks! Please run \n pip install autoPyTorch[forecasting] \n to install the" \
-                  "corresponding dependencies!"
-        super().__init__(msg)
+ForecastingDependenciesNotInstalledMSG = "Additional dependencies must be installed to work with time series " \
+                                         "forecasting tasks! Please run \n pip install autoPyTorch[forecasting] \n to "\
+                                         "install the corresponding dependencies!"
 
 
 # The constant values for time series forecasting comes from

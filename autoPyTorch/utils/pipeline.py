@@ -6,7 +6,7 @@ from ConfigSpace.configuration_space import ConfigurationSpace
 from autoPyTorch.constants import (
     CLASSIFICATION_TASKS,
     FORECASTING_TASKS,
-    ForecastingDependenciesNotInstalledError,
+    ForecastingDependenciesNotInstalledMSG,
     IMAGE_TASKS,
     REGRESSION_TASKS,
     STRING_TO_TASK_TYPES,
@@ -79,7 +79,7 @@ def get_dataset_requirements(info: Dict[str, Any],
                                                         )
     else:
         if not forecasting_dependencies_installed:
-            raise ForecastingDependenciesNotInstalledError
+            raise ModuleNotFoundError(ForecastingDependenciesNotInstalledMSG)
         return _get_forecasting_dataset_requirements(info,
                                                      include if include is not None else {},
                                                      exclude if exclude is not None else {},
@@ -137,7 +137,7 @@ def _get_forecasting_dataset_requirements(info: Dict[str, Any],
 
     if task_type in FORECASTING_TASKS:
         if not forecasting_dependencies_installed:
-            raise ForecastingDependenciesNotInstalledError
+            raise ModuleNotFoundError(ForecastingDependenciesNotInstalledMSG)
         return TimeSeriesForecastingPipeline(
             dataset_properties=info,
             include=include,

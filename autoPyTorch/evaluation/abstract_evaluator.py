@@ -31,7 +31,7 @@ from autoPyTorch.constants import (
     CLASSIFICATION_TASKS,
     FORECASTING_BUDGET_TYPE,
     FORECASTING_TASKS,
-    ForecastingDependenciesNotInstalledError,
+    ForecastingDependenciesNotInstalledMSG,
     IMAGE_TASKS,
     MULTICLASS,
     REGRESSION_TASKS,
@@ -498,7 +498,7 @@ class AbstractEvaluator(object):
         elif self.task_type in FORECASTING_TASKS:
             if isinstance(self.configuration, int):
                 if not forecasting_dependencies_installed:
-                    raise ForecastingDependenciesNotInstalledError
+                    raise ModuleNotFoundError(ForecastingDependenciesNotInstalledMSG)
                 self.pipeline_class = DummyTimeSeriesForecastingPipeline
             elif isinstance(self.configuration, str):
                 raise ValueError("Only tabular classifications tasks "
