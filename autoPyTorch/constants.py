@@ -1,3 +1,5 @@
+from typing import Optional
+
 TABULAR_CLASSIFICATION = 1
 IMAGE_CLASSIFICATION = 2
 TABULAR_REGRESSION = 3
@@ -58,7 +60,7 @@ REGRESSION_OUTPUTS = [CONTINUOUS, CONTINUOUSMULTIOUTPUT]
 # Constants for Forecasting Tasks
 # Exceptions
 class ForecastingDependenciesNotInstalledError(ModuleNotFoundError):
-    def __init__(self, msg=None):
+    def __init__(self, msg: Optional[str] = None):
         if msg is None:
             msg = "Additional dependencies must be installed to work with time series forecasting" \
                   "tasks! Please run \n pip install autoPyTorch[forecasting] \n to install the" \
