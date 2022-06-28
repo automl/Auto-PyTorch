@@ -54,6 +54,7 @@ pip install autoPyTorch
 ```
 
 Auto-PyTorch for Time Series Forecasting requires additional dependencies 
+
 ```sh
 
 pip install autoPyTorch[forecasting]

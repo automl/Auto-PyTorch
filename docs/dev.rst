@@ -62,13 +62,13 @@ and it is activated only if one uses a ColumnTransformer.
 
 Similar procedures can be found under time series forecasting tasks:
 
-#. `Feature Imputation <https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/time_series_preprocessing/imputationn>`_
-#. `Feature scaling <https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/time_series_preprocessing/encoding>`_
-#. `Feature Encoding <https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/time_series_preprocessing/scaling>`_
-#. `Feature preprocessing <https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/time_series_preprocessing/base_time_series_preprocessing>`_
+#. `Feature Imputation <https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/time_series_preprocessing/imputation>`_
+#. `Feature scaling <https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/time_series_preprocessing/scaling>`_
+#. `Feature Encoding <https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/time_series_preprocessing/encoding>`_
+#. `Feature preprocessing <https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/time_series_preprocessing>`_
 #. `Target Imputation <https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/time_series_preprocessing/imputation>`_
-#. `Target Preprocessing <https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/time_series_preprocessing/base_time_series_preprocessing>`_
-#. `Target Scaling <https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/forecasting_target_scaling>`_
+#. `Target Preprocessing <https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/time_series_preprocessing>`_
+#. `Target Scaling <https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/setup/forecasting_target_scaling>`_
 #. `Loss Types <https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/setup>`_
 #. `Algorithm setup <https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/setup>`_
 #. `Training <https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/training>`_

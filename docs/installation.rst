@@ -26,6 +26,7 @@ PyPI Installation
     pip install autoPyTorch
 
 Auto-PyTorch for Time Series Forecasting requires additional dependencies
+
 .. code:: bash
     pip install autoPyTorch[forecasting]
 
@@ -49,7 +50,8 @@ Manual Installation
     cat requirements.txt | xargs -n 1 -L 1 pip install
     python setup.py install
 
-Simialrly, Auto-PyTorch for time series forecasting requires additional dependencies
+Similarly, Auto-PyTorch for time series forecasting requires additional dependencies
+
 .. code:: bash
     git submodule update --init --recursive
 

@@ -40,8 +40,8 @@ check the information specify for time series forecasting tasks: it checks
     * the sample frequency of the datasets
     * the static features in the dataset, i.e., features that contain only one value within each series
 
-Time Series forecasting validator then transforms the features and targets into a pd.DataFrame whose index is used to
-identify different series
+Time Series forecasting validator then transforms the features and targets into a `pd.DataFrame <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html>`_
+whose index is applied to identify the series that the time step belongs to.
 
 Data Preprocessing
 ==================
