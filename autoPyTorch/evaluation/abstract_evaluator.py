@@ -19,29 +19,36 @@ from smac.tae import StatusType
 import autoPyTorch.pipeline.image_classification
 import autoPyTorch.pipeline.tabular_classification
 import autoPyTorch.pipeline.tabular_regression
+import autoPyTorch.pipeline.time_series_forecasting
 import autoPyTorch.pipeline.traditional_tabular_classification
 import autoPyTorch.pipeline.traditional_tabular_regression
 from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.constants import (
     CLASSIFICATION_TASKS,
+    FORECASTING_BUDGET_TYPE,
+    FORECASTING_TASKS,
     IMAGE_TASKS,
     MULTICLASS,
     REGRESSION_TASKS,
     STRING_TO_OUTPUT_TYPES,
     STRING_TO_TASK_TYPES,
-    TABULAR_TASKS,
+    TABULAR_TASKS
 )
-from autoPyTorch.datasets.base_dataset import BaseDataset, BaseDatasetPropertiesType
+from autoPyTorch.datasets.base_dataset import (
+    BaseDataset,
+    BaseDatasetPropertiesType
+)
+from autoPyTorch.datasets.time_series_dataset import TimeSeriesSequence
 from autoPyTorch.evaluation.utils import (
     DisableFileOutputParameters,
     VotingRegressorWrapper,
-    convert_multioutput_multiclass_to_multilabel,
+    convert_multioutput_multiclass_to_multilabel
 )
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.pipeline.components.training.metrics.utils import (
     calculate_loss,
-    get_metrics,
+    get_metrics
 )
 from autoPyTorch.utils.common import dict_repr, subsampler
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
@@ -307,6 +314,61 @@ class DummyRegressionPipeline(DummyRegressor):
                 'runtime': 1}
 
 
+class DummyTimeSeriesForecastingPipeline(DummyClassificationPipeline):
+    """
+    A wrapper class that holds a pipeline for dummy forecasting. For each series, it simply repeats the last element
+    in the training series
+
+
+    Attributes:
+        random_state (Optional[Union[int, np.random.RandomState]]):
+            Object that contains a seed and allows for reproducible results
+        init_params  (Optional[Dict]):
+            An optional dictionary that is passed to the pipeline's steps. It complies
+            a similar function as the kwargs
+        n_prediction_steps (int):
+            forecasting horizon
+    """
+    def __init__(self, config: Configuration,
+                 random_state: Optional[Union[int, np.random.RandomState]] = None,
+                 init_params: Optional[Dict] = None,
+                 n_prediction_steps: int = 1,
+                 ) -> None:
+        super(DummyTimeSeriesForecastingPipeline, self).__init__(config, random_state, init_params)
+        self.n_prediction_steps = n_prediction_steps
+
+    def fit(self, X: Dict[str, Any], y: Any,
+            sample_weight: Optional[np.ndarray] = None) -> object:
+        self.n_prediction_steps = X['dataset_properties']['n_prediction_steps']
+        y_train = subsampler(X['y_train'], X['train_indices'])
+        return DummyClassifier.fit(self, np.ones((y_train.shape[0], 1)), y_train, sample_weight)
+
+    def _generate_dummy_forecasting(self, X: List[Union[TimeSeriesSequence, np.ndarray]]) -> List:
+        if isinstance(X[0], TimeSeriesSequence):
+            X_tail = [x.get_target_values(-1) for x in X]
+        else:
+            X_tail = [x[-1] for x in X]
+        return X_tail
+
+    def predict_proba(self, X: Union[np.ndarray, pd.DataFrame],
+                      batch_size: int = 1000) -> np.ndarray:
+        X_tail = self._generate_dummy_forecasting(X)
+        return np.tile(X_tail, (1, self.n_prediction_steps)).astype(np.float32).flatten()
+
+    def predict(self, X: Union[np.ndarray, pd.DataFrame],
+                batch_size: int = 1000) -> np.ndarray:
+        X_tail = np.asarray(self._generate_dummy_forecasting(X))
+        if X_tail.ndim == 1:
+            X_tail = np.expand_dims(X_tail, -1)
+        return np.tile(X_tail, (1, self.n_prediction_steps)).astype(np.float32).flatten()
+
+    @staticmethod
+    def get_default_pipeline_options() -> Dict[str, Any]:
+        return {'budget_type': 'epochs',
+                'epochs': 1,
+                'runtime': 1}
+
+
 def fit_and_suppress_warnings(logger: PicklableClientLogger, pipeline: BaseEstimator,
                               X: Dict[str, Any], y: Any
                               ) -> BaseEstimator:
@@ -463,7 +525,7 @@ class AbstractEvaluator(object):
             else:
                 raise ValueError('task {} not available'.format(self.task_type))
             self.predict_function = self._predict_regression
-        else:
+        elif self.task_type in CLASSIFICATION_TASKS:
             if isinstance(self.configuration, int):
                 self.pipeline_class = DummyClassificationPipeline
             elif isinstance(self.configuration, str):
@@ -479,6 +541,17 @@ class AbstractEvaluator(object):
                 else:
                     raise ValueError('task {} not available'.format(self.task_type))
             self.predict_function = self._predict_proba
+        elif self.task_type in FORECASTING_TASKS:
+            if isinstance(self.configuration, int):
+                self.pipeline_class = DummyTimeSeriesForecastingPipeline
+            elif isinstance(self.configuration, str):
+                raise ValueError("Only tabular classifications tasks "
+                                 "are currently supported with traditional methods")
+            elif isinstance(self.configuration, Configuration):
+                self.pipeline_class = autoPyTorch.pipeline.time_series_forecasting.TimeSeriesForecastingPipeline
+            else:
+                raise ValueError('task {} not available'.format(self.task_type))
+            self.predict_function = self._predict_regression
 
         self.additional_metrics: Optional[List[autoPyTorchMetric]] = None
         metrics_dict: Optional[Dict[str, List[str]]] = None
@@ -613,8 +686,21 @@ class AbstractEvaluator(object):
         elif self.budget_type == 'runtime':
             self.fit_dictionary['runtime'] = self.budget
             self.fit_dictionary.pop('epochs', None)
+        elif self.budget_type == 'resolution' and self.task_type in FORECASTING_TASKS:
+            self.fit_dictionary['sample_interval'] = int(np.ceil(1.0 / self.budget))
+            self.fit_dictionary.pop('epochs', None)
+            self.fit_dictionary.pop('runtime', None)
+        elif self.budget_type == 'num_seq':
+            self.fit_dictionary['fraction_seq'] = self.budget
+            self.fit_dictionary.pop('epochs', None)
+            self.fit_dictionary.pop('runtime', None)
+        elif self.budget_type == 'num_sample_per_seq':
+            self.fit_dictionary['fraction_samples_per_seq'] = self.budget
+            self.fit_dictionary.pop('epochs', None)
+            self.fit_dictionary.pop('runtime', None)
         else:
-            raise ValueError(f"budget type must be `epochs` or `runtime`, but got {self.budget_type}")
+            raise ValueError(f"budget type must be `epochs` or `runtime` or {FORECASTING_BUDGET_TYPE} "
+                             f"(Only used by forecasting taskss), but got {self.budget_type}")
 
     def _get_pipeline(self) -> BaseEstimator:
         """
@@ -656,7 +742,7 @@ class AbstractEvaluator(object):
             raise ValueError("Invalid configuration entered")
         return pipeline
 
-    def _loss(self, y_true: np.ndarray, y_hat: np.ndarray) -> Dict[str, float]:
+    def _loss(self, y_true: np.ndarray, y_hat: np.ndarray, **metric_kwargs: Any) -> Dict[str, float]:
         """SMAC follows a minimization goal, so the make_scorer
         sign is used as a guide to obtain the value to reduce.
         The calculate_loss internally translate a score function to
@@ -681,14 +767,13 @@ class AbstractEvaluator(object):
             metrics = self.additional_metrics
         else:
             metrics = [self.metric]
-
         return calculate_loss(
-            y_true, y_hat, self.task_type, metrics)
+            y_true, y_hat, self.task_type, metrics, **metric_kwargs)
 
     def finish_up(self, loss: Dict[str, float], train_loss: Dict[str, float],
                   opt_pred: np.ndarray, valid_pred: Optional[np.ndarray],
                   test_pred: Optional[np.ndarray], additional_run_info: Optional[Dict],
-                  file_output: bool, status: StatusType
+                  file_output: bool, status: StatusType, **metric_kwargs: Any
                   ) -> Optional[Tuple[float, float, int, Dict]]:
         """This function does everything necessary after the fitting is done:
 
@@ -718,6 +803,8 @@ class AbstractEvaluator(object):
                 Whether or not this pipeline should output information to disk
             status (StatusType)
                 The status of the run, following SMAC StatusType syntax.
+            metric_kwargs (Any)
+                Additional arguments for computing metrics
 
         Returns:
             duration (float):
@@ -741,7 +828,7 @@ class AbstractEvaluator(object):
             additional_run_info_ = {}
 
         validation_loss, test_loss = self.calculate_auxiliary_losses(
-            valid_pred, test_pred
+            valid_pred, test_pred, **metric_kwargs
         )
 
         if loss_ is not None:
@@ -773,6 +860,7 @@ class AbstractEvaluator(object):
         self,
         Y_valid_pred: np.ndarray,
         Y_test_pred: np.ndarray,
+        **metric_kwargs: Any
     ) -> Tuple[Optional[Dict[str, float]], Optional[Dict[str, float]]]:
         """
         A helper function to calculate the performance estimate of the
@@ -785,6 +873,8 @@ class AbstractEvaluator(object):
             Y_test_pred (np.ndarray):
                 predictions on a test set provided by the user,
                 matching self.y_test
+            metric_kwargs (Any)
+                additional argument for evaluating the loss metric
 
         Returns:
             validation_loss_dict (Optional[Dict[str, float]]):
@@ -797,12 +887,12 @@ class AbstractEvaluator(object):
 
         if Y_valid_pred is not None:
             if self.y_valid is not None:
-                validation_loss_dict = self._loss(self.y_valid, Y_valid_pred)
+                validation_loss_dict = self._loss(self.y_valid, Y_valid_pred, **metric_kwargs)
 
         test_loss_dict: Optional[Dict[str, float]] = None
         if Y_test_pred is not None:
             if self.y_test is not None:
-                test_loss_dict = self._loss(self.y_test, Y_test_pred)
+                test_loss_dict = self._loss(self.y_test, Y_test_pred, **metric_kwargs)
 
         return validation_loss_dict, test_loss_dict
 

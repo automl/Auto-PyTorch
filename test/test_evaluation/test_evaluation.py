@@ -22,7 +22,7 @@ from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy, l
 
 this_directory = os.path.dirname(__file__)
 sys.path.append(this_directory)
-from evaluation_util import get_multiclass_classification_datamanager  # noqa E402
+from evaluation_util import get_forecasting_dataset, get_multiclass_classification_datamanager  # noqa E402
 
 
 def safe_eval_success_mock(*args, **kwargs):
@@ -42,6 +42,18 @@ class BackendMock(object):
 
     def load_datamanager(self):
         return get_multiclass_classification_datamanager()
+
+
+class BackendMockForecasting(object):
+    def __init__(self):
+        self.temporary_directory = './.tmp_evaluation'
+        try:
+            os.mkdir(self.temporary_directory)
+        except:  # noqa 3722
+            pass
+
+    def load_datamanager(self):
+        return get_forecasting_dataset()
 
 
 class EvaluationTest(unittest.TestCase):
@@ -420,6 +432,34 @@ class EvaluationTest(unittest.TestCase):
                                     pynisher_context='fork',
                                     budget_type='runtime'
                                     )
+        ta.pynisher_logger = unittest.mock.Mock()
+        run_info = RunInfo(config=config, cutoff=3000, instance=None,
+                           instance_specific=None, seed=1, capped=False)
+
+        for budget in [0.0, 50.0]:
+            # Simple intensification always returns budget = 0
+            # Other intensifications return a non-zero value
+            self.stats.submitted_ta_runs += 1
+            run_info = run_info._replace(budget=budget)
+            run_info_out, _ = ta.run_wrapper(run_info)
+            self.assertEqual(run_info_out.budget, budget)
+
+    def test_eval_forecsating(self):
+        config = unittest.mock.Mock(spec=int)
+        config.config_id = 198
+
+        ta = ExecuteTaFuncWithQueue(backend=BackendMockForecasting(), seed=1,
+                                    stats=self.stats,
+                                    memory_limit=3072,
+                                    multi_objectives=["cost"],
+                                    metric=accuracy,
+                                    cost_for_crash=get_cost_of_crash(accuracy),
+                                    abort_on_first_run_crash=False,
+                                    logger_port=self.logger_port,
+                                    pynisher_context='fork',
+                                    budget_type='runtime',
+                                    )
+
         ta.pynisher_logger = unittest.mock.Mock()
         run_info = RunInfo(config=config, cutoff=3000, instance=None,
                            instance_specific=None, seed=1, capped=False)

@@ -12,7 +12,7 @@ from smac.tae import StatusType
 from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.constants import (
     CLASSIFICATION_TASKS,
-    MULTICLASSMULTIOUTPUT,
+    MULTICLASSMULTIOUTPUT
 )
 from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes
 from autoPyTorch.evaluation.abstract_evaluator import (
@@ -115,6 +115,7 @@ class TrainEvaluator(AbstractEvaluator):
         search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
             An object used to fine tune the hyperparameter search space of the pipeline
     """
+
     def __init__(self, backend: Backend, queue: Queue,
                  metric: autoPyTorchMetric,
                  budget: float,
@@ -231,7 +232,6 @@ class TrainEvaluator(AbstractEvaluator):
             additional_run_info = {}
 
             for i, (train_split, test_split) in enumerate(self.splits):
-
                 pipeline = self.pipelines[i]
                 train_pred, opt_pred, valid_pred, test_pred = self._fit_and_predict(pipeline, i,
                                                                                     train_indices=train_split,
@@ -507,6 +507,6 @@ def eval_train_function(
         logger_port=logger_port,
         all_supported_metrics=all_supported_metrics,
         pipeline_config=pipeline_config,
-        search_space_updates=search_space_updates
+        search_space_updates=search_space_updates,
     )
     evaluator.fit_predict_and_loss()

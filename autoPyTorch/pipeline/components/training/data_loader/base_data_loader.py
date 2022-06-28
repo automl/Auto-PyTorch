@@ -59,7 +59,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
             FitRequirement("Backend", (Backend,), user_defined=True, dataset_property=False),
             FitRequirement("is_small_preprocess", (bool,), user_defined=True, dataset_property=True)])
 
-    def transform(self, X: np.ndarray) -> np.ndarray:
+    def transform(self, X: Dict) -> Dict:
         """The transform function calls the transform function of the
         underlying model and returns the transformed array.
 
@@ -138,7 +138,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
 
         return self
 
-    def get_loader(self, X: np.ndarray, y: Optional[np.ndarray] = None, batch_size: int = np.inf,
+    def get_loader(self, X: np.ndarray, y: Optional[np.ndarray] = None, batch_size: int = np.iinfo(np.int32).max,
                    ) -> torch.utils.data.DataLoader:
         """
         Creates a data loader object from the provided data,

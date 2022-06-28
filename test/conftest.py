@@ -1,3 +1,4 @@
+import datetime
 import logging.handlers
 import os
 import re
@@ -13,17 +14,21 @@ import openml
 
 import pandas as pd
 
+
 import pytest
 
 from scipy import sparse
 
 from sklearn.datasets import fetch_openml, make_classification, make_regression
+from sklearn.utils import check_random_state
 
 import torch
 
 from autoPyTorch.automl_common.common.utils.backend import create
 from autoPyTorch.data.tabular_validator import TabularInputValidator
+from autoPyTorch.data.time_series_forecasting_validator import TimeSeriesForecastingInputValidator
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
+from autoPyTorch.datasets.time_series_dataset import TimeSeriesForecastingDataset
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.pipeline import get_dataset_requirements
 
@@ -461,6 +466,16 @@ def loss_mse():
 
 
 @pytest.fixture
+def loss_mape():
+    dataset_properties = {'task_type': 'time_series_forecasting', 'output_type': 'continuous'}
+    predictions = torch.randn(4)
+    name = 'MAPELoss'
+    targets = torch.randn(4)
+    labels = None
+    return dataset_properties, predictions, name, targets, labels
+
+
+@pytest.fixture
 def loss_details(request):
     return request.getfixturevalue(request.param)
 
@@ -615,3 +630,268 @@ def input_data_featuretest(request):
         return X
     else:
         ValueError("Unsupported indirect fixture {}".format(request.param))
+
+
+# Forecasting tasks
+def get_forecasting_data(request):
+    uni_variant = False
+    with_missing_values = False
+    type_X = 'pd'
+    with_series_id = False
+    if request == 'uni_variant_wo_missing':
+        uni_variant = True
+    elif request == 'uni_variant_w_missing':
+        uni_variant = True
+        with_missing_values = True
+    elif request == 'multi_variant_wo_missing':
+        with_missing_values = False
+    elif request == 'multi_variant_w_missing':
+        with_missing_values = True
+
+    generator = check_random_state(0)
+    n_seq = 10
+    base_length = 50
+    targets = []
+
+    start_times = []
+    # the first character indicates the type of the feature:
+    # n: numerical, c: categorical, s: static
+    # for categorical features, the following character indicate how the feature is stored:
+    # s: stored as string; n: stored as
+    if type_X == 'pd':
+        if 'only_cat' in request:
+            feature_columns = ['cs2_10', 'cn4_5']
+        elif 'only_num' in request:
+            feature_columns = ['n1', 'n3', 'n5']
+        else:
+            feature_columns = ['n1', 'cs2_10', 'n3', 'cn4_5', 'n5']
+    else:
+        if 'only_cat' in request:
+            feature_columns = ['cn2_5', 'cn4_5']
+        elif 'only_num' in request:
+            feature_columns = ['n1', 'n3', 'n5']
+        else:
+            feature_columns = ['n1', 'cn2_5', 'n3', 'cn4_5', 'n5']
+
+    def generate_forecasting_features(feature_type, length):
+        feature_type_content = list(feature_type)
+        if feature_type_content[0] == 'n':
+            # numerical features
+            return generator.rand(length)
+        elif feature_type_content[0] == 'c':
+            num_class = int(feature_type.split("_")[-1])
+            if feature_type_content[1] == 's':
+                return generator.choice([f'value_{feature_id}' for feature_id in range(num_class)],
+                                        size=length, replace=True)
+            elif feature_type_content[1] == 'n':
+                return generator.choice(list(range(num_class)), size=length, replace=True)
+            else:
+                raise NotImplementedError
+        else:
+            raise NotImplementedError
+
+    features = []
+    for i in range(n_seq):
+        new_seq = np.arange(i * 1000, base_length + i * 1010).astype(np.float)
+        series_length = base_length + i * 10
+
+        targets.append(np.arange(i * 1000, series_length + i * 1000))
+        if not uni_variant:
+            if type_X == 'np':
+                feature = np.asarray([generate_forecasting_features(col, series_length) for col in feature_columns])
+            elif type_X == 'pd':
+                feature = {col: generate_forecasting_features(col, series_length) for col in feature_columns}
+                if with_series_id:
+                    feature["series_id"] = [i] * series_length
+                feature = pd.DataFrame(
+                    feature
+                )
+
+                for col in feature.columns:
+                    if col.startswith("n"):
+                        feature[col] = feature[col].astype('float')
+                    elif col.startswith("cs"):
+                        feature[col] = feature[col].astype('category')
+                    elif col.startswith("cn"):
+                        feature[col] = feature[col].astype('int')
+            else:
+                raise NotImplementedError
+            features.append(feature)
+
+        if with_missing_values:
+            new_seq[5] = np.NAN
+            new_seq[-5] = np.NAN
+
+        start_time = datetime.datetime.strptime(f'190{i // 5}-01-01 00-00-00', '%Y-%m-%d %H-%M-%S')
+        start_times.append(start_time)
+    input_validator = TimeSeriesForecastingInputValidator(is_classification=False)
+    features = features if len(features) > 0 else None
+    return features, targets, input_validator.fit(features, targets, start_times=start_times)
+
+
+def get_forecasting_datamangaer(X, y, validator, with_y_test=True, forecast_horizon=3, freq='1D'):
+    if X is not None:
+        X_test = []
+        for x in X:
+            if hasattr(x, 'iloc'):
+                X_test.append(x.iloc[-forecast_horizon:].copy())
+            else:
+                X_test.append(x[-forecast_horizon:].copy())
+        known_future_features = tuple(X[0].columns) if isinstance(X[0], pd.DataFrame) else \
+            np.arange(X[0].shape[-1]).tolist()
+    else:
+        X_test = None
+        known_future_features = None
+
+    if with_y_test:
+        y_test = []
+        for y_seq in y:
+            if hasattr(y_seq, 'iloc'):
+                y_test.append(y_seq.iloc[-forecast_horizon:].copy() + 1)
+            else:
+                y_test.append(y_seq[-forecast_horizon:].copy() + 1)
+    else:
+        y_test = None
+    datamanager = TimeSeriesForecastingDataset(
+        X=X, Y=y,
+        X_test=X_test,
+        Y_test=y_test,
+        validator=validator,
+        freq=freq,
+        n_prediction_steps=forecast_horizon,
+        known_future_features=known_future_features
+    )
+    return datamanager
+
+
+def get_forecasting_fit_dictionary(datamanager, backend, forecasting_budgets='epochs'):
+    info = datamanager.get_required_dataset_info()
+
+    dataset_properties = datamanager.get_dataset_properties(get_dataset_requirements(info))
+
+    fit_dictionary = {
+        'X_train': datamanager.train_tensors[0],
+        'y_train': datamanager.train_tensors[1],
+        'dataset_properties': dataset_properties,
+        # Training configuration
+        'num_run': 1,
+        'working_dir': './tmp/example_ensemble_1',  # Hopefully generated by backend
+        'device': 'cpu',
+        'torch_num_threads': 1,
+        'early_stopping': 1,
+        'use_tensorboard_logger': False,
+        'use_pynisher': False,
+        'metrics_during_training': False,
+        'seed': 1,
+        'budget_type': 'epochs',
+        'epochs': 1,
+        'split_id': 0,
+        'backend': backend,
+        'logger_port': logging.handlers.DEFAULT_TCP_LOGGING_PORT,
+    }
+    if forecasting_budgets == 'epochs':
+        fit_dictionary.update({'forecasting_budgets': 'epochs',
+                               'epochs': 1})
+    elif forecasting_budgets == 'resolution':
+        fit_dictionary.update({'forecasting_budgets': 'resolution',
+                               'sample_interval': 2})
+    elif forecasting_budgets == 'num_sample_per_seq':
+        fit_dictionary.update({'forecasting_budgets': 'num_sample_per_seq',
+                               'fraction_samples_per_seq': 0.5})
+    elif forecasting_budgets == 'num_seq':
+        fit_dictionary.update({'forecasting_budgets': 'num_seq',
+                               'fraction_seq': 0.5})
+    else:
+        raise NotImplementedError
+    backend.save_datamanager(datamanager)
+    return fit_dictionary
+
+
+# Fixtures for forecasting input validators
+@pytest.fixture
+def input_data_forecastingfeaturetest(request):
+    if request.param == 'numpy_nonan':
+        return np.random.uniform(10, size=(100, 10)), None, None
+    elif request.param == 'numpy_with_static':
+        return np.zeros([2, 3], dtype=np.int), None, None
+    elif request.param == 'numpy_with_seq_length':
+        return np.zeros([5, 3], dtype=np.int), None, [2, 3]
+    elif request.param == 'pandas_wo_seriesid':
+        return pd.DataFrame([
+            {'A': 1, 'B': 2},
+            {'A': 3, 'B': 4},
+        ], dtype='category'), None, [2]
+    elif request.param == 'pandas_w_seriesid':
+        return pd.DataFrame([
+            {'A': 1, 'B': 0},
+            {'A': 0, 'B': 1},
+        ], dtype='category'), 'A', [2]
+    elif request.param == 'pandas_only_seriesid':
+        return pd.DataFrame([
+            {'A': 1, 'B': 0},
+            {'A': 0, 'B': 1},
+        ], dtype='category'), ['A', 'B'], [2]
+    elif request.param == 'pandas_without_seriesid':
+        return pd.DataFrame([
+            {'A': 1, 'B': 2},
+            {'A': 3, 'B': 4},
+        ], dtype='category'), None, [2]
+    elif request.param == 'pandas_with_static_features':
+        return pd.DataFrame([
+            {'A': 1, 'B': 2},
+            {'A': 1, 'B': 4},
+        ], dtype='category'), None, [2]
+    elif request.param == 'pandas_multi_seq':
+        return pd.DataFrame([
+            {'A': 1, 'B': 2},
+            {'A': 1, 'B': 4},
+            {'A': 3, 'B': 2},
+            {'A': 2, 'B': 4},
+        ], dtype='category'), None, [2, 2]
+    elif request.param == 'pandas_multi_seq_w_idx':
+        return pd.DataFrame([
+            {'A': 1, 'B': 2},
+            {'A': 1, 'B': 4},
+            {'A': 3, 'B': 2},
+            {'A': 2, 'B': 4},
+        ], dtype='category', index=[0, 0, 1, 1]), None, None
+    elif request.param == 'pandas_with_static_features_multi_series':
+        return pd.DataFrame([
+            {'A': 1, 'B': 2},
+            {'A': 1, 'B': 2},
+            {'A': 2, 'B': 3},
+            {'A': 2, 'B': 3},
+        ], dtype='category'), 'A', None
+    else:
+        ValueError("Unsupported indirect fixture {}".format(request.param))
+
+
+@pytest.fixture(scope="class")
+def get_forecasting_datamanager(request):
+    X, y, validator = get_forecasting_data(request.param)
+    datamanager = get_forecasting_datamangaer(X, y, validator)
+    return datamanager
+
+
+@pytest.fixture
+def forecasting_toy_dataset(request):
+    x, y, _ = get_forecasting_data(request.param)
+    return x, y
+
+
+@pytest.fixture(params=['epochs'])
+def forecasting_budgets(request):
+    return request.param
+
+
+@pytest.fixture
+def fit_dictionary_forecasting(request, forecasting_budgets, backend):
+    X, y, validator = get_forecasting_data(request.param)
+    datamanager = get_forecasting_datamangaer(X, y, validator)
+    return get_forecasting_fit_dictionary(datamanager, backend, forecasting_budgets=forecasting_budgets)
+
+
+# Fixtures for forecasting validators.
+@pytest.fixture
+def input_data_forecasting_featuretest(request):
+    return [input_data_featuretest(request) for _ in range(3)]

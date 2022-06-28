@@ -4,7 +4,11 @@ import pathlib
 import pickle
 import tempfile
 import unittest
-from test.test_api.utils import dummy_do_dummy_prediction, dummy_eval_train_function
+from test.test_api.utils import (
+    dummy_do_dummy_prediction,
+    dummy_eval_train_function,
+    dummy_forecasting_eval_train_function
+)
 
 import ConfigSpace as CS
 from ConfigSpace.configuration_space import Configuration
@@ -25,6 +29,7 @@ from smac.runhistory.runhistory import RunHistory, RunInfo, RunValue
 
 from autoPyTorch.api.tabular_classification import TabularClassificationTask
 from autoPyTorch.api.tabular_regression import TabularRegressionTask
+from autoPyTorch.api.time_series_forecasting import TimeSeriesForecastingTask
 from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
@@ -43,7 +48,7 @@ HOLDOUT_NUM_SPLITS = 1
 
 # Test
 # ====
-@unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_train_function',
+@unittest.mock.patch('autoPyTorch.evaluation.tae.eval_train_function',
                      new=dummy_eval_train_function)
 @pytest.mark.parametrize('openml_id', (40981, ))
 @pytest.mark.parametrize('resampling_strategy,resampling_strategy_args',
@@ -220,7 +225,7 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
 
 
 @pytest.mark.parametrize('openml_name', ("boston", ))
-@unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_train_function',
+@unittest.mock.patch('autoPyTorch.evaluation.tae.eval_train_function',
                      new=dummy_eval_train_function)
 @pytest.mark.parametrize('resampling_strategy,resampling_strategy_args',
                          ((HoldoutValTypes.holdout_validation, None),
@@ -405,6 +410,181 @@ def test_tabular_regression(openml_name, resampling_strategy, backend, resamplin
     assert 'Estimator' in representation
 
 
+@pytest.mark.parametrize('forecasting_toy_dataset', ['uni_variant_wo_missing'], indirect=True)
+@unittest.mock.patch('autoPyTorch.evaluation.tae.forecasting_eval_train_function',
+                     new=dummy_forecasting_eval_train_function)
+@pytest.mark.parametrize('resampling_strategy,resampling_strategy_args',
+                         ((HoldoutValTypes.time_series_hold_out_validation, None),
+                          (CrossValTypes.time_series_cross_validation, {'num_splits': CV_NUM_SPLITS}),
+                          ))
+def test_time_series_forecasting(forecasting_toy_dataset, resampling_strategy, backend, resampling_strategy_args):
+    forecast_horizon = 3
+    freq = '1Y'
+    X, Y = forecasting_toy_dataset
+
+    if X is not None:
+        X_train = []
+        X_test = []
+        for x in X:
+            if hasattr(x, 'iloc'):
+                X_train.append(x.iloc[:-forecast_horizon].copy())
+                X_test.append(x.iloc[-forecast_horizon:].copy())
+            else:
+                X_train.append(x[:-forecast_horizon].copy())
+                X_test.append(x[-forecast_horizon:].copy())
+        known_future_features = tuple(X[0].columns) if isinstance(X[0], pd.DataFrame) else \
+            np.arange(X[0].shape[-1]).tolist()
+    else:
+        X_train = None
+        X_test = None
+        known_future_features = None
+
+    y_train = []
+    y_test = []
+
+    for y in Y:
+        if hasattr(y, 'iloc'):
+            y_train.append(y.iloc[:-forecast_horizon].copy())
+            y_test.append(y.iloc[-forecast_horizon:].copy())
+        else:
+            y_train.append(y[:-forecast_horizon].copy())
+            y_test.append(y[-forecast_horizon:].copy())
+
+    # Search for a good configuration
+    # patch.mock  is not applied to partial func. We only test lightweight FFNN networks
+    estimator = TimeSeriesForecastingTask(
+        backend=backend,
+        resampling_strategy=resampling_strategy,
+        resampling_strategy_args=resampling_strategy_args,
+        ensemble_size=2,
+        seed=42,
+    )
+
+    with unittest.mock.patch.object(estimator, '_do_dummy_prediction', new=dummy_do_dummy_prediction):
+        estimator.search(
+            X_train=X_train,
+            y_train=y_train,
+            X_test=X_test,
+            y_test=y_test,
+            memory_limit=None,
+            optimize_metric='mean_MSE_forecasting',
+            n_prediction_steps=forecast_horizon,
+            freq=freq,
+            total_walltime_limit=30,
+            func_eval_time_limit_secs=10,
+            known_future_features=known_future_features,
+        )
+
+    # Internal dataset has expected settings
+    assert estimator.dataset.task_type == 'time_series_forecasting'
+    expected_num_splits = HOLDOUT_NUM_SPLITS if resampling_strategy == HoldoutValTypes.time_series_hold_out_validation \
+        else CV_NUM_SPLITS
+    assert estimator.resampling_strategy == resampling_strategy
+    assert estimator.dataset.resampling_strategy == resampling_strategy
+
+    assert len(estimator.dataset.splits) == expected_num_splits
+
+    # Check for the created files
+    tmp_dir = estimator._backend.temporary_directory
+    loaded_datamanager = estimator._backend.load_datamanager()
+    assert len(loaded_datamanager.train_tensors) == len(estimator.dataset.train_tensors)
+
+    expected_files = [
+        'smac3-output/run_42/configspace.json',
+        'smac3-output/run_42/runhistory.json',
+        'smac3-output/run_42/scenario.txt',
+        'smac3-output/run_42/stats.json',
+        'smac3-output/run_42/train_insts.txt',
+        'smac3-output/run_42/trajectory.json',
+        '.autoPyTorch/datamanager.pkl',
+        '.autoPyTorch/ensemble_read_preds.pkl',
+        '.autoPyTorch/start_time_42',
+        '.autoPyTorch/ensemble_history.json',
+        '.autoPyTorch/ensemble_read_losses.pkl',
+        '.autoPyTorch/true_targets_ensemble.npy',
+    ]
+    for expected_file in expected_files:
+        assert os.path.exists(os.path.join(tmp_dir, expected_file)), expected_file
+
+    # Check that smac was able to find proper models
+    succesful_runs = [run_value.status for run_value in estimator.run_history.data.values(
+    ) if 'SUCCESS' in str(run_value.status)]
+    assert len(succesful_runs) >= 1, [(k, v) for k, v in estimator.run_history.data.items()]
+
+    # Search for an existing run key in disc. A individual model might have
+    # a timeout and hence was not written to disc
+    successful_num_run = None
+    SUCCESS = False
+    for i, (run_key, value) in enumerate(estimator.run_history.data.items()):
+        if 'SUCCESS' in str(value.status):
+            run_key_model_run_dir = estimator._backend.get_numrun_directory(
+                estimator.seed, run_key.config_id + 1, run_key.budget)
+            successful_num_run = run_key.config_id + 1
+            if os.path.exists(run_key_model_run_dir):
+                # Runkey config id is different from the num_run
+                # more specifically num_run = config_id + 1(dummy)
+                SUCCESS = True
+                break
+
+    assert SUCCESS, f"Successful run was not properly saved for num_run: {successful_num_run}"
+
+    if resampling_strategy == HoldoutValTypes.time_series_hold_out_validation:
+        model_file = os.path.join(run_key_model_run_dir,
+                                  f"{estimator.seed}.{successful_num_run}.{run_key.budget}.model")
+        assert os.path.exists(model_file), model_file
+        model = estimator._backend.load_model_by_seed_and_id_and_budget(
+            estimator.seed, successful_num_run, run_key.budget)
+    elif resampling_strategy == CrossValTypes.time_series_cross_validation:
+        model_file = os.path.join(
+            run_key_model_run_dir,
+            f"{estimator.seed}.{successful_num_run}.{run_key.budget}.cv_model"
+        )
+        assert os.path.exists(model_file), model_file
+        model = estimator._backend.load_cv_model_by_seed_and_id_and_budget(
+            estimator.seed, successful_num_run, run_key.budget)
+        assert isinstance(model, VotingRegressor)
+        assert len(model.estimators_) == CV_NUM_SPLITS
+    else:
+        pytest.fail(resampling_strategy)
+
+    # Make sure that predictions on the test data are printed and make sense
+    test_prediction = os.path.join(run_key_model_run_dir,
+                                   estimator._backend.get_prediction_filename(
+                                       'test', estimator.seed, successful_num_run,
+                                       run_key.budget))
+    assert os.path.exists(test_prediction), test_prediction
+    assert np.shape(np.load(test_prediction, allow_pickle=True))[0] == forecast_horizon * np.shape(y_test)[0]
+
+    # Also, for ensemble builder, the OOF predictions should be there and match
+    # the Ground truth that is also physically printed to disk
+    ensemble_prediction = os.path.join(run_key_model_run_dir,
+                                       estimator._backend.get_prediction_filename(
+                                           'ensemble',
+                                           estimator.seed, successful_num_run,
+                                           run_key.budget))
+    assert os.path.exists(ensemble_prediction), ensemble_prediction
+    assert np.shape(np.load(ensemble_prediction, allow_pickle=True))[0] == np.shape(
+        estimator._backend.load_targets_ensemble()
+    )[0]
+
+    # Ensemble Builder produced an ensemble
+    estimator.ensemble_ is not None
+
+    # There should be a weight for each element of the ensemble
+    assert len(estimator.ensemble_.identifiers_) == len(estimator.ensemble_.weights_)
+
+    X_test = backend.load_datamanager().generate_test_seqs()
+
+    y_pred = estimator.predict(X_test)
+
+    assert np.shape(y_pred) == np.shape(y_test)
+
+    # Test refit on dummy data
+    estimator.refit(dataset=backend.load_datamanager())
+    # Make sure that a configuration space is stored in the estimator
+    assert isinstance(estimator.get_search_space(), CS.ConfigurationSpace)
+
+
 @pytest.mark.parametrize('openml_id', (
     1590,  # Adult to test NaN in categorical columns
 ))
@@ -497,7 +677,7 @@ def test_do_dummy_prediction(dask_client, fit_dictionary_tabular):
     del estimator
 
 
-@unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_train_function',
+@unittest.mock.patch('autoPyTorch.evaluation.tae.eval_train_function',
                      new=dummy_eval_train_function)
 @pytest.mark.parametrize('openml_id', (40981, ))
 def test_portfolio_selection(openml_id, backend, n_samples):
@@ -539,7 +719,7 @@ def test_portfolio_selection(openml_id, backend, n_samples):
     assert any(successful_config in portfolio_configs for successful_config in successful_configs)
 
 
-@unittest.mock.patch('autoPyTorch.evaluation.train_evaluator.eval_train_function',
+@unittest.mock.patch('autoPyTorch.evaluation.tae.eval_train_function',
                      new=dummy_eval_train_function)
 @pytest.mark.parametrize('openml_id', (40981, ))
 def test_portfolio_selection_failure(openml_id, backend, n_samples):

@@ -317,12 +317,10 @@ class TestNetworkBackbone:
     def test_all_backbones_available(self):
         backbone_choice = NetworkBackboneChoice(dataset_properties={})
 
-        assert len(backbone_choice.get_components().keys()) == 8
+        assert len(backbone_choice.get_components().keys()) == 6
 
     @pytest.mark.parametrize('task_type_input_shape', [(constants.IMAGE_CLASSIFICATION, (3, 64, 64)),
                                                        (constants.IMAGE_REGRESSION, (3, 64, 64)),
-                                                       (constants.TIMESERIES_CLASSIFICATION, (32, 6)),
-                                                       (constants.TIMESERIES_REGRESSION, (32, 6)),
                                                        (constants.TABULAR_CLASSIFICATION, (100,)),
                                                        (constants.TABULAR_REGRESSION, (100,))])
     def test_dummy_forward_backward_pass(self, task_type_input_shape):
@@ -369,8 +367,7 @@ class TestNetworkBackbone:
 
     def test_every_backbone_is_valid(self):
         backbone_choice = NetworkBackboneChoice(dataset_properties={})
-
-        assert len(backbone_choice.get_components().keys()) == 8
+        assert len(backbone_choice.get_components().keys()) == 6
 
         for name, backbone in backbone_choice.get_components().items():
             config = backbone.get_hyperparameter_search_space().sample_configuration()
@@ -401,6 +398,9 @@ class TestNetworkBackbone:
         """
         network_backbone_choice = NetworkBackboneChoice(dataset_properties={})
         for task_type in constants.TASK_TYPES:
+            if task_type in constants.FORECASTING_TASKS:
+                # Forecasting task has individual backbones
+                continue
             dataset_properties = {"task_type": constants.TASK_TYPES_TO_STRING[task_type]}
             cs = network_backbone_choice.get_hyperparameter_search_space(dataset_properties)
 
@@ -506,8 +506,6 @@ class TestNetworkHead:
 
     @pytest.mark.parametrize('task_type_input_output_shape', [(constants.IMAGE_CLASSIFICATION, (3, 64, 64), (5,)),
                                                               (constants.IMAGE_REGRESSION, (3, 64, 64), (1,)),
-                                                              (constants.TIMESERIES_CLASSIFICATION, (32, 6), (5,)),
-                                                              (constants.TIMESERIES_REGRESSION, (32, 6), (1,)),
                                                               (constants.TABULAR_CLASSIFICATION, (100,), (5,)),
                                                               (constants.TABULAR_REGRESSION, (100,), (1,))])
     def test_dummy_forward_backward_pass(self, task_type_input_output_shape):

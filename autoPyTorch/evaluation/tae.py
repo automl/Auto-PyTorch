@@ -23,12 +23,18 @@ from smac.tae import StatusType, TAEAbortException
 from smac.tae.execute_func import AbstractTAFunc
 
 from autoPyTorch.automl_common.common.utils.backend import Backend
+from autoPyTorch.constants import (
+    FORECASTING_BUDGET_TYPE,
+    STRING_TO_TASK_TYPES,
+    TIMESERIES_FORECASTING,
+)
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     HoldoutValTypes,
     NoResamplingStrategyTypes
 )
 from autoPyTorch.evaluation.test_evaluator import eval_test_function
+from autoPyTorch.evaluation.time_series_forecasting_train_evaluator import forecasting_eval_train_function
 from autoPyTorch.evaluation.train_evaluator import eval_train_function
 from autoPyTorch.evaluation.utils import (
     DisableFileOutputParameters,
@@ -127,7 +133,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         ta: Optional[Callable] = None,
         logger_port: int = None,
         all_supported_metrics: bool = True,
-        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
     ):
 
         self.backend = backend
@@ -145,12 +151,19 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         self.resampling_strategy = dm.resampling_strategy
         self.resampling_strategy_args = dm.resampling_strategy_args
 
-        if isinstance(self.resampling_strategy, (HoldoutValTypes, CrossValTypes)):
-            eval_function = eval_train_function
-            self.output_y_hat_optimization = output_y_hat_optimization
-        elif isinstance(self.resampling_strategy, NoResamplingStrategyTypes):
-            eval_function = eval_test_function
-            self.output_y_hat_optimization = False
+        if STRING_TO_TASK_TYPES.get(dm.task_type, -1) == TIMESERIES_FORECASTING:
+            eval_function: Callable = forecasting_eval_train_function
+            if isinstance(self.resampling_strategy, (HoldoutValTypes, CrossValTypes)):
+                self.output_y_hat_optimization = output_y_hat_optimization
+            elif isinstance(self.resampling_strategy, NoResamplingStrategyTypes):
+                self.output_y_hat_optimization = False
+        else:
+            if isinstance(self.resampling_strategy, (HoldoutValTypes, CrossValTypes)):
+                eval_function = eval_train_function
+                self.output_y_hat_optimization = output_y_hat_optimization
+            elif isinstance(self.resampling_strategy, NoResamplingStrategyTypes):
+                eval_function = eval_test_function
+                self.output_y_hat_optimization = False
 
         self.worst_possible_result = cost_for_crash
 
@@ -203,11 +216,15 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         self.search_space_updates = search_space_updates
 
     def _check_and_get_default_budget(self) -> float:
-        budget_type_choices = ('epochs', 'runtime')
+        budget_type_choices_tabular = ('epochs', 'runtime')
         budget_choices = {
             budget_type: float(self.pipeline_config.get(budget_type, np.inf))
-            for budget_type in budget_type_choices
+            for budget_type in budget_type_choices_tabular
         }
+
+        budget_choices_forecasting = {budget_type: 1.0 for budget_type in FORECASTING_BUDGET_TYPE}
+        budget_choices.update(budget_choices_forecasting)
+        budget_type_choices = budget_type_choices_tabular + FORECASTING_BUDGET_TYPE
 
         # budget is defined by epochs by default
         budget_type = str(self.pipeline_config.get('budget_type', 'epochs'))

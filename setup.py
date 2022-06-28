@@ -48,6 +48,11 @@ setuptools.setup(
     install_requires=requirements,
     include_package_data=True,
     extras_require={
+        "forecasting": [
+            "gluonts",
+            "sktime",
+            "pytorch-forecasting",
+        ],
         "test": [
             "matplotlib",
             "pytest",
@@ -58,6 +63,7 @@ setuptools.setup(
             "pre-commit",
             "pytest-cov",
             'pytest-forked',
+            'pytest-subtests',
             "codecov",
             "pep8",
             "mypy",
