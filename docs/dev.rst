@@ -92,7 +92,7 @@ After the training (fitting a pipeline), we use pickle to save it
 to disk as stated `here <https://scikit-learn.org/stable/modules/model_persistence.html>`_.
 
 **Auto-PyTorch Time Series Forecasting** currently only allows Dummy pipelines and PyTorch neural networks. Traditional machine learning pipelines
-will be introduced in the future iteration.
+will be introduced in a future iteration.
 
 Optimization of pipeline
 ------------------------
