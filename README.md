@@ -151,7 +151,7 @@ forecasting_horizon = 3
 y_train = [targets[: -forecasting_horizon]]
 y_test = [targets[-forecasting_horizon:]]
 
-# same for features. For uni-variant models, X_train, X_test can be omitted
+# same for features. For uni-variant models, X_train, X_test can be omitted and set as None
 X_train = [features[: -forecasting_horizon]]
 # Here x_test indicates the 'known future features': they are the features known previously, features that are unknown
 # could be replaced with NAN or zeros (which will not be used by our networks). If no feature is known beforehand,
