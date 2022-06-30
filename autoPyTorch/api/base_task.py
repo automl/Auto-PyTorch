@@ -120,8 +120,8 @@ def get_search_updates(categorical_indicator: List[bool]):
         The search space updates like setting different hps to different values or ranges.
     """
 
-    has_cat_features = any(categorical_indicator)
-    has_numerical_features = not all(categorical_indicator)
+    # has_cat_features = any(categorical_indicator)
+    # has_numerical_features = not all(categorical_indicator)
 
     search_space_updates = HyperparameterSearchSpaceUpdates()
 
@@ -1167,6 +1167,7 @@ class BaseTask(ABC):
         # Save start time to backend
         self._backend.save_start_time(str(self.seed))
 
+        # TODO: Here??
         self._backend.save_datamanager(dataset)
 
         # Print debug information to log
@@ -1287,7 +1288,7 @@ class BaseTask(ABC):
         if time_left_for_smac <= 0:
             self._logger.warning(" Not starting SMAC because there is no time left")
         else:
-
+            print("Start SMAC", time.time())
             _proc_smac = AutoMLSMBO(
                 config_space=self.search_space,
                 dataset_name=str(dataset.dataset_name),

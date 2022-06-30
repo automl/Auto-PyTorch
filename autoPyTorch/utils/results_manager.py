@@ -683,4 +683,10 @@ class ResultsManager:
         sio.write(f"\tNumber of target algorithms that exceeded the memory "
                   f"limit: {num_memout}\n")
 
+        print("\n" * 2)
+        RED = '\033[31m'
+        END = '\033[0m'
+        is_memout = search_results.status_types[0] == StatusType.MEMOUT
+        print(f"{RED}{'Memory Error' if is_memout else 'OK'}{END}")
+        print("\n" * 2)
         return sio.getvalue()

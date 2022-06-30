@@ -1,3 +1,4 @@
+import gc
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 import numpy as np
@@ -234,6 +235,8 @@ class TabularClassificationTask(BaseTask):
             resampling_strategy_args=resampling_strategy_args,
             dataset_name=dataset_name
         )
+        del X_train, y_train, X_test, y_test
+        gc.collect()
 
         return dataset, input_validator
 

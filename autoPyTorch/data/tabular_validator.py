@@ -54,7 +54,7 @@ class TabularInputValidator(BaseInputValidator):
         seed: int = 42,
     ):
         self.dataset_compression = dataset_compression
-        self._adaptive_memory_allocation = adaptive_memory_allocation
+        self.adaptive_memory_allocation = adaptive_memory_allocation
         self._reduced_dtype: Optional[DatasetDTypeContainerType] = None
         self.is_classification = is_classification
         self.logger_port = logger_port
@@ -109,7 +109,7 @@ class TabularInputValidator(BaseInputValidator):
                 y=y,
                 is_classification=self.is_classification,
                 random_state=self.seed,
-                adaptive_memory_allocation=self._adaptive_memory_allocation,
+                adaptive_memory_allocation=self.adaptive_memory_allocation,
                 **self.dataset_compression  # type: ignore [arg-type]
             )
             self._reduced_dtype = dict(X.dtypes) if is_dataframe else X.dtype

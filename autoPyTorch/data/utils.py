@@ -1,4 +1,5 @@
 # Implementation used from https://github.com/automl/auto-sklearn/blob/development/autosklearn/util/data.py
+import gc
 import warnings
 from typing import (
     Any,
@@ -480,27 +481,43 @@ def compute_adapted_memory_allocation(size_in_mb: int, memory_limit: int) -> int
     the default configuration trained on synthetic numpy array and measure
     how much dataset AutoPyTorch can handle when we fix the column size to 10000.
     We got the following data:
-        memory_limit = 3GB ==> memory_allocation = 40MB
-        memory_limit = 4GB ==> memory_allocation = 200MB
-        memory_limit = 5GB ==> memory_allocation = 360MB
-        memory_limit = 6GB ==> memory_allocation = 520MB
-        memory_limit = 7GB ==> memory_allocation = 680MB
-        memory_limit = 8GB ==> memory_allocation = 840MB (it could actually ran with 920MB)
-        memory_limit = 9GB ==> memory_allocation = 1000MB (it could actually ran with 1.2GB)
+        memory_limit = 3GB ==> memory_allocation = 80MB
+        memory_limit = 4GB ==> memory_allocation = 480MB
+        memory_limit = 5GB ==> memory_allocation = 880MB
+        memory_limit = 6GB ==> memory_allocation = 1280MB
+        memory_limit = 7GB ==> memory_allocation = 1680MB
+        memory_limit = 8GB ==> memory_allocation = 2080MB (it could actually ran with 2480MB)
 
+    Those were calculated by the whole dataset, but we used 75% of those data as a training dataset,
+    so we calibrate it accordingly.
     The induced equation for the adapted_memory_allocation from this result is:
-        memory_allocation = (memory_limit - 3000) / 1000 * 160 + 40
+        memory_allocation = (memory_limit - 3000) / 1000 * 150 + 30
+    But we reduce the slope (150 --> 100) and the intercept (30 --> 15) to make the constraint
+    a bit looser as running successfully is more important.
 
     Note:
         When memory_allocation is float, memory_allocation will be handled as a percentage,
         so we need to handle memory_allocation as an integer, i.e. an absolute data size.
     """
-    memory_allocation = int((memory_limit - 3000) // 1000 * 160 + 40)
-    if memory_allocation <= 0:
+    slope, intercept, mb_calibration, test_ratio = 150, 30, 10 ** 6 / 2 ** 20, 0.75
+    # First, calculate the memory allocation for the ideal case
+    ideal_memory_allocation = int((memory_limit - 3000) / 1000 * slope + intercept)
+    ideal_memory_allocation = int(ideal_memory_allocation * mb_calibration)
+    # Assume the unused data also take up some memory and assume test dataset is 25%.
+    potential_consumption = max(0, size_in_mb / test_ratio - ideal_memory_allocation)
+
+    # Next, calculate the memory allocation considering the potential consumption
+    virtual_memory_limit = memory_limit - potential_consumption
+    virtual_memory_allocation = int((virtual_memory_limit - 3000) / 1000 * slope + intercept)
+    virtual_memory_allocation = int(virtual_memory_allocation * mb_calibration)
+
+    if virtual_memory_allocation <= 0:
         raise ValueError(
-            f"memory_limit ({memory_limit}MB < 3000MB) is too small to run AutoPyTorch."
+            f"memory_limit ({memory_limit}MB) is too small to run AutoPyTorch "
+            f"with the dataset size of {size_in_mb}MB."
         )
-    return min(size_in_mb, memory_allocation)
+    print(ideal_memory_allocation, virtual_memory_allocation)
+    return min(size_in_mb, int(virtual_memory_allocation))
 
 
 def reduce_size_by_subsample(
@@ -605,6 +622,10 @@ def reduce_dataset_size_if_too_large(
     if methods == list(known_methods)[::-1]:
         methods = methods[::-1]  # Always apply from precision!
 
+    if adaptive_memory_allocation:
+        memory_allocation = compute_adapted_memory_allocation(megabytes(X), memory_limit)
+
+    print(X.shape)
     for method in methods:
         if megabytes(X) <= memory_allocation:
             break
@@ -624,4 +645,6 @@ def reduce_dataset_size_if_too_large(
                 y=y, adaptive_memory_allocation=adaptive_memory_allocation
             )
 
+    gc.collect()
+    print(X.shape)
     return X, y

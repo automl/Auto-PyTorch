@@ -1,3 +1,4 @@
+import gc
 from typing import Any, Dict, Optional, Union
 
 import numpy as np
@@ -75,21 +76,24 @@ class TabularDataset(BaseDataset):
         if validator is None:
             raise ValueError("A feature validator is required to build a tabular pipeline")
 
-        X, Y = validator.transform(X, Y)
+        train_tensors = validator.transform(X, Y)
         if X_test is not None:
-            X_test, Y_test = validator.transform(X_test, Y_test)
+            test_tensors = validator.transform(X_test, Y_test)
+
+        del X, Y, X_test, Y_test
+        gc.collect()
         self.categorical_columns = validator.feature_validator.categorical_columns
         self.numerical_columns = validator.feature_validator.numerical_columns
         self.num_features = validator.feature_validator.num_features
         self.categories = validator.feature_validator.categories
 
-        super().__init__(train_tensors=(X, Y), test_tensors=(X_test, Y_test), shuffle=shuffle,
+        super().__init__(train_tensors=train_tensors, test_tensors=test_tensors, shuffle=shuffle,
                          resampling_strategy=resampling_strategy,
                          resampling_strategy_args=resampling_strategy_args,
                          seed=seed, train_transforms=train_transforms,
                          dataset_name=dataset_name,
                          val_transforms=val_transforms)
-        self.issigned = bool(np.any((X.data if self.issparse else X) < 0))
+        self.issigned = bool(np.any((train_tensors[0].data if self.issparse else train_tensors[0]) < 0))
         if self.output_type is not None:
             if STRING_TO_OUTPUT_TYPES[self.output_type] in CLASSIFICATION_OUTPUTS:
                 self.task_type = TASK_TYPES_TO_STRING[TABULAR_CLASSIFICATION]
