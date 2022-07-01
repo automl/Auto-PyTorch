@@ -53,13 +53,6 @@ class TabularColumnTransformer(autoPyTorchTabularPreprocessingComponent):
 
         self.check_requirements(X, y)
 
-        self.logger = get_named_client_logger(
-            name=f"{X['num_run']}_{self.__class__.__name__}_{time.time()}",
-            # Log to a user provided port else to the default logging port
-            port=X['logger_port'
-                   ] if 'logger_port' in X else logging.handlers.DEFAULT_TCP_LOGGING_PORT,
-        )
-
         preprocessors = get_tabular_preprocessers(X)
         column_transformers: List[Tuple[str, BaseEstimator, List[int]]] = []
         if len(preprocessors['numerical']) > 0:
@@ -80,7 +73,7 @@ class TabularColumnTransformer(autoPyTorchTabularPreprocessingComponent):
             column_transformers,
             remainder='passthrough'
         )
-        self.logger.debug(f"Available virtual memory: {psutil.virtual_memory().available/1024/1024}, total virtual memory: {psutil.virtual_memory().total/1024/1024}")
+
         # Where to get the data -- Prioritize X_train if any else
         # get from backend
         if 'X_train' in X:
@@ -94,7 +87,7 @@ class TabularColumnTransformer(autoPyTorchTabularPreprocessingComponent):
             y_train = X['backend'].load_datamanager().train_tensors[1]
 
         self.preprocessor.fit(X_train, y=y_train)
-        self.logger.debug(f"Available virtual memory: {psutil.virtual_memory().available/1024/1024}, total virtual memory: {psutil.virtual_memory().total/1024/1024}")
+
         return self
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:

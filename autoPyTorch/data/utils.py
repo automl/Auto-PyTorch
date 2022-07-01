@@ -501,8 +501,8 @@ def get_approximate_mem_usage_in_mb(
             if n_categories_per_cat_column is None:
                 raise ValueError(err_msg)
             # multiply num categories with the size of the column to capture memory after one hot encoding
-            width += sum(num_cat if num_cat < MIN_CATEGORIES_FOR_EMBEDDING_MAX else 1 for num_cat in n_categories_per_cat_column)
-        size_one_row = width * multiplier
+            n_cols += sum(num_cat if num_cat < MIN_CATEGORIES_FOR_EMBEDDING_MAX else 1 for num_cat in n_categories_per_cat_column)
+        size_one_row = n_cols * multiplier
     else:
         raise ValueError(f"Unrecognised data type of X, expected data type to "
                          f"be in (np.ndarray, spmatrix, pd.DataFrame), but got :{type(arr)}")
