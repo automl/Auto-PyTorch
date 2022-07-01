@@ -495,13 +495,13 @@ def get_approximate_mem_usage_in_mb(
         size_one_row = sum(multipliers)
 
     elif isinstance(arr, (np.ndarray, spmatrix)):
-        width = arr.shape[1] - len(categorical_columns)
-        multiplier = np.zeros(1, dtype=arr.dtype).itemsize
+        n_cols = arr.shape[-1] - len(categorical_columns)
+        multiplier = arr.dtype.itemsize
         if len(categorical_columns) > 0:
             if n_categories_per_cat_column is None:
                 raise ValueError(err_msg)
             # multiply num categories with the size of the column to capture memory after one hot encoding
-            width += sum([num_cat if num_cat < MIN_CATEGORIES_FOR_EMBEDDING_MAX else 1 for num_cat in n_categories_per_cat_column])
+            width += sum(num_cat if num_cat < MIN_CATEGORIES_FOR_EMBEDDING_MAX else 1 for num_cat in n_categories_per_cat_column)
         size_one_row = width * multiplier
     else:
         raise ValueError(f"Unrecognised data type of X, expected data type to "
