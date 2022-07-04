@@ -36,45 +36,45 @@ with AutoPyTorch
 
  .. code-block:: none
 
-    [ERROR] [2022-06-28 10:22:39,723:asyncio.events] 
+    [ERROR] [2022-07-04 16:35:59,000:asyncio.events] 
     Traceback (most recent call last):
-      File "/opt/hostedtoolcache/Python/3.8.12/x64/lib/python3.8/site-packages/distributed/utils.py", line 776, in wrapper
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py", line 776, in wrapper
         return await func(*args, **kwargs)
-      File "/opt/hostedtoolcache/Python/3.8.12/x64/lib/python3.8/site-packages/distributed/client.py", line 1211, in _reconnect
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/client.py", line 1211, in _reconnect
         await self._ensure_connected(timeout=timeout)
-      File "/opt/hostedtoolcache/Python/3.8.12/x64/lib/python3.8/site-packages/distributed/client.py", line 1241, in _ensure_connected
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/client.py", line 1241, in _ensure_connected
         comm = await connect(
-      File "/opt/hostedtoolcache/Python/3.8.12/x64/lib/python3.8/site-packages/distributed/comm/core.py", line 315, in connect
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/comm/core.py", line 315, in connect
         await asyncio.sleep(backoff)
-      File "/opt/hostedtoolcache/Python/3.8.12/x64/lib/python3.8/asyncio/tasks.py", line 659, in sleep
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/asyncio/tasks.py", line 659, in sleep
         return await future
     asyncio.exceptions.CancelledError
-    [ERROR] [2022-06-28 10:22:39,726:asyncio.events] 
+    [ERROR] [2022-07-04 16:35:59,023:asyncio.events] 
     Traceback (most recent call last):
-      File "/opt/hostedtoolcache/Python/3.8.12/x64/lib/python3.8/site-packages/distributed/utils.py", line 776, in wrapper
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py", line 776, in wrapper
         return await func(*args, **kwargs)
-      File "/opt/hostedtoolcache/Python/3.8.12/x64/lib/python3.8/site-packages/distributed/client.py", line 1400, in _handle_report
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/client.py", line 1400, in _handle_report
         await self._reconnect()
-      File "/opt/hostedtoolcache/Python/3.8.12/x64/lib/python3.8/site-packages/distributed/utils.py", line 776, in wrapper
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py", line 776, in wrapper
         return await func(*args, **kwargs)
-      File "/opt/hostedtoolcache/Python/3.8.12/x64/lib/python3.8/site-packages/distributed/client.py", line 1211, in _reconnect
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/client.py", line 1211, in _reconnect
         await self._ensure_connected(timeout=timeout)
-      File "/opt/hostedtoolcache/Python/3.8.12/x64/lib/python3.8/site-packages/distributed/client.py", line 1241, in _ensure_connected
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/client.py", line 1241, in _ensure_connected
         comm = await connect(
-      File "/opt/hostedtoolcache/Python/3.8.12/x64/lib/python3.8/site-packages/distributed/comm/core.py", line 315, in connect
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/comm/core.py", line 315, in connect
         await asyncio.sleep(backoff)
-      File "/opt/hostedtoolcache/Python/3.8.12/x64/lib/python3.8/asyncio/tasks.py", line 659, in sleep
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/asyncio/tasks.py", line 659, in sleep
         return await future
     asyncio.exceptions.CancelledError
-    {'accuracy': 0.8439306358381503}
+    {'accuracy': 0.8728323699421965}
     autoPyTorch results:
-            Dataset name: 7814464c-f6cb-11ec-87fd-b1d4bc580917
+            Dataset name: 9f13320d-fbb6-11ec-88dc-5b301972ecf9
             Optimisation Metric: accuracy
             Best validation score: 0.8713450292397661
-            Number of target algorithm runs: 50
-            Number of successful target algorithm runs: 36
-            Number of crashed target algorithm runs: 12
-            Number of target algorithms that exceeded the time limit: 2
+            Number of target algorithm runs: 42
+            Number of successful target algorithm runs: 32
+            Number of crashed target algorithm runs: 7
+            Number of target algorithms that exceeded the time limit: 3
             Number of target algorithms that exceeded the memory limit: 0
 
 
@@ -151,7 +151,7 @@ with AutoPyTorch
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  40.652 seconds)
+   **Total running time of the script:** ( 5 minutes  33.906 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_parallel_n_jobs.py:
