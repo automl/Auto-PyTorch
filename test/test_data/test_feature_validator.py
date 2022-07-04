@@ -439,6 +439,12 @@ def input_data_feature_feat_types(request):
             {'A': 3, 'B': '4'},
         ], dtype='category')
         return frame, ['categorical', 'categorical', 'numerical']
+    elif request.param == 'pandas_feat_type_error':
+        frame = pd.DataFrame([
+            {'A': 1, 'B': '2'},
+            {'A': 3, 'B': '4'},
+        ], dtype='category')
+        return frame, ['not_categorical', 'numerical']
     else:
         ValueError("Unsupported indirect fixture {}".format(request.param))
 
@@ -500,4 +506,23 @@ def test_feature_validator_get_columns_to_encode_error_length(input_data_feature
     X, feat_types = input_data_feature_feat_types
     validator = TabularFeatureValidator(feat_types=feat_types)
     with pytest.raises(ValueError, match=r"Expected number of `feat_types`: .*"):
-        validator.get_columns_to_encode(X)
+        validator._validate_feat_types(X)
+
+
+@pytest.mark.parametrize(
+    'input_data_feature_feat_types',
+    (
+        'pandas_feat_type_error',
+    ),
+    indirect=True
+)
+def test_feature_validator_get_columns_to_encode_error_feat_type(input_data_feature_feat_types):
+    """
+    Tests the correct error is raised when the length of feat types passed to
+    the validator is not the same as the number of features
+
+    """
+    X, feat_types = input_data_feature_feat_types
+    validator = TabularFeatureValidator(feat_types=feat_types)
+    with pytest.raises(ValueError, match=r"Expected type of features to be in .*"):
+        validator._validate_feat_types(X)

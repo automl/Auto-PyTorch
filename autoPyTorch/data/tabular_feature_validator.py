@@ -390,14 +390,36 @@ class TabularFeatureValidator(BaseFeatureValidator):
         """
         transformed_columns, feat_types = self._get_columns_to_encode(X)
         if self.feat_types is not None:
-            if len(self.feat_types) != len(X.columns):
-                raise ValueError(f"Expected number of `feat_types`: {len(self.feat_types)}"
-                                 f" to be the same as the number of features {len(X.columns)}")
+            self._validate_feat_types(X)
             transformed_columns = [X.columns[i] for i, col in enumerate(self.feat_types)
                                    if col.lower() == 'categorical']
             return transformed_columns, self.feat_types
         else:
             return transformed_columns, feat_types
+
+    def _validate_feat_types(self, X: pd.DataFrame):
+        """
+        Checks if the passed `feat_types` is compatible with what 
+        AutoPyTorch expects, i.e, it should only contain `numerical` 
+        or `categorical`. The case does not matter. 
+
+        Args:
+            X (pd.DataFrame):
+                input features set
+
+        Raises:
+            ValueError:
+                if the number of feat_types is not equal to the number of features
+                if the feature type are not one of "numerical", "categorical"
+
+        """
+        if len(self.feat_types) != len(X.columns):
+            raise ValueError(f"Expected number of `feat_types`: {len(self.feat_types)}"
+                             f" to be the same as the number of features {len(X.columns)}")
+        for feat_type in set(self.feat_types):
+            if feat_type.lower() not in ['numerical', 'categorical']:
+                raise ValueError(f"Expected type of features to be in `['numerical', "
+                                 f"'categorical']`, but got {feat_type}")
 
     def _get_columns_to_encode(
         self,
