@@ -81,9 +81,7 @@ def compute_time_features(start_time: pd.DatetimeIndex,
                               freq=freq)[-time_feature_length:]
     try:
         time_features = np.vstack(
-            [transform(date_info).to_numpy(float)
-             if not isinstance(transform, ConstantTransform) else transform(date_info)
-             for transform in time_feature_transforms]
+            [transform(date_info) for transform in time_feature_transforms]
         ).T
     except OutOfBoundsDatetime:
         # This is only a temporal solution TODO consider how to solve this!
