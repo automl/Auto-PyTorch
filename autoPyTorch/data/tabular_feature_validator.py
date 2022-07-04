@@ -397,11 +397,12 @@ class TabularFeatureValidator(BaseFeatureValidator):
         else:
             return transformed_columns, feat_types
 
-    def _validate_feat_types(self, X: pd.DataFrame):
+    def _validate_feat_types(self, X: pd.DataFrame) -> None:
         """
-        Checks if the passed `feat_types` is compatible with what 
-        AutoPyTorch expects, i.e, it should only contain `numerical` 
-        or `categorical`. The case does not matter. 
+        Checks if the passed `feat_types` is compatible with what
+        AutoPyTorch expects, i.e, it should only contain `numerical`
+        or `categorical` and the number of feature types is equal to
+        the number of features. The case does not matter.
 
         Args:
             X (pd.DataFrame):
@@ -411,8 +412,9 @@ class TabularFeatureValidator(BaseFeatureValidator):
             ValueError:
                 if the number of feat_types is not equal to the number of features
                 if the feature type are not one of "numerical", "categorical"
-
         """
+        assert self.feat_types is not None  # mypy check
+
         if len(self.feat_types) != len(X.columns):
             raise ValueError(f"Expected number of `feat_types`: {len(self.feat_types)}"
                              f" to be the same as the number of features {len(X.columns)}")
