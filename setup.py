@@ -49,7 +49,7 @@ setuptools.setup(
     include_package_data=True,
     extras_require={
         "forecasting": [
-            "gluonts",
+            "gluonts>=0.10.0",
             "sktime",
             "pytorch-forecasting",
         ],
