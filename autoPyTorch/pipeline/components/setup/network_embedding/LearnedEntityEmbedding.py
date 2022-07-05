@@ -1,4 +1,3 @@
-from math import ceil
 from typing import Any, Dict, List, Optional, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -18,11 +17,25 @@ from autoPyTorch.pipeline.components.setup.network_embedding.base_network_embedd
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
-def get_num_output_dimensions(config, num_categs_per_feature):
-    """ Returns list of embedding sizes for each categorical variable.
+def get_num_output_dimensions(config: Dict[str, Any], num_categs_per_feature: List[int]) -> List[int]:
+    """
+        Returns list of embedding sizes for each categorical variable.
         Selects this adaptively based on training_datset.
         Note: Assumes there is at least one embed feature.
+
+    Args:
+        config (Dict[str, Any]): 
+            contains the hyperparameters required to calculate the `num_output_dimensions`
+        num_categs_per_feature (List[int]):
+            list containing number of categories for each feature that is to be embedded,
+            0 if the column is not an embed column
+
+    Returns:
+        List[int]:
+            list containing the output embedding size for each column,
+            1 if the column is not an embed column
     """
+
     max_embedding_dim = config['max_embedding_dim']
     embed_exponent = config['embed_exponent']
     size_factor = config['embedding_size_factor']
@@ -65,12 +78,10 @@ class _LearnedEntityEmbedding(nn.Module):
         # before passing it through the model
         concat_seq = []
 
-        x_pointer = 0
         layer_pointer = 0
         for x_pointer, embed in enumerate(self.embed_features):
             current_feature_slice = x[:, x_pointer]
             if not embed:
-                x_pointer += 1
                 concat_seq.append(current_feature_slice.view(-1, 1))
                 continue
             current_feature_slice = current_feature_slice.to(torch.int)
@@ -115,7 +126,7 @@ class LearnedEntityEmbedding(NetworkEmbeddingComponent):
                                                                                    value_range=(100,),
                                                                                    default_value=100),
         embedding_size_factor: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="embedding_size_factor",
-                                                                                     value_range=(1.0, 0.5, 1.5, 0.7, 0.6, 0.8, 0.9, 1.1, 1.2, 1.3, 1.4),
+                                                                                     value_range=(0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5),
                                                                                      default_value=1,
                                                                                      ),
     ) -> ConfigurationSpace:
