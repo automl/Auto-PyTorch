@@ -20,6 +20,9 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.Tabular
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.column_splitting.ColumnSplitter import (
     ColumnSplitter
 )
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.column_splitting.ColumnSplitter import (
+    ColumnSplitter
+)
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding import (
     EncoderChoice
 )
