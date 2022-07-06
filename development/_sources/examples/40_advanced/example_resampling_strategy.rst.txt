@@ -139,7 +139,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fd54edfdd30>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fdf7d6a9880>
 
 
 
@@ -171,21 +171,21 @@ Print the final ensemble performance
 
  .. code-block:: none
 
-    {'accuracy': 0.8554913294797688}
-    |    | Preprocessing                                                                                    | Estimator                                                       |   Weight |
-    |---:|:-------------------------------------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-    |  0 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,NoScaler,LinearSVC Preprocessor       | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.28 |
-    |  1 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.28 |
-    |  2 | SimpleImputer,Variance Threshold,NoCoalescer,NoEncoder,StandardScaler,SPC                        | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.24 |
-    |  3 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.18 |
-    |  4 | None                                                                                             | KNNLearner                                                      |     0.02 |
+    {'accuracy': 0.861271676300578}
+    |    | Preprocessing                                                                              | Estimator                                                    |   Weight |
+    |---:|:-------------------------------------------------------------------------------------------|:-------------------------------------------------------------|---------:|
+    |  0 | None                                                                                       | CBLearner                                                    |     0.46 |
+    |  1 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,NoScaler,LinearSVC Preprocessor | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.42 |
+    |  2 | None                                                                                       | SVMLearner                                                   |     0.08 |
+    |  3 | None                                                                                       | ETLearner                                                    |     0.02 |
+    |  4 | None                                                                                       | KNNLearner                                                   |     0.02 |
     autoPyTorch results:
-            Dataset name: 52478eb5-fbb8-11ec-88dc-5b301972ecf9
+            Dataset name: 5ec62a40-fd12-11ec-880e-1ffee406ffa6
             Optimisation Metric: accuracy
-            Best validation score: 0.8713450292397661
-            Number of target algorithm runs: 19
-            Number of successful target algorithm runs: 15
-            Number of crashed target algorithm runs: 3
+            Best validation score: 0.8654970760233918
+            Number of target algorithm runs: 18
+            Number of successful target algorithm runs: 13
+            Number of crashed target algorithm runs: 4
             Number of target algorithms that exceeded the time limit: 1
             Number of target algorithms that exceeded the memory limit: 0
 
@@ -250,7 +250,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fd55f3e40d0>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fdf7d6a9310>
 
 
 
@@ -282,22 +282,18 @@ Print the final ensemble performance
 
  .. code-block:: none
 
-    {'accuracy': 0.8728323699421965}
-    |    | Preprocessing                                                                                  | Estimator                                                       |   Weight |
-    |---:|:-----------------------------------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-    |  0 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,NoScaler,LinearSVC Preprocessor     | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.56 |
-    |  1 | None                                                                                           | TabularTraditionalModel                                         |     0.16 |
-    |  2 | None                                                                                           | TabularTraditionalModel                                         |     0.12 |
-    |  3 | None                                                                                           | TabularTraditionalModel                                         |     0.08 |
-    |  4 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,QuantileTransformer,TruncSVD        | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.04 |
-    |  5 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,MinMaxScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+    {'accuracy': 0.884393063583815}
+    |    | Preprocessing                                                                              | Estimator                                                    |   Weight |
+    |---:|:-------------------------------------------------------------------------------------------|:-------------------------------------------------------------|---------:|
+    |  0 | None                                                                                       | TabularTraditionalModel                                      |     0.94 |
+    |  1 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,NoScaler,LinearSVC Preprocessor | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
     autoPyTorch results:
-            Dataset name: b5992400-fbb8-11ec-88dc-5b301972ecf9
+            Dataset name: c649e79b-fd12-11ec-880e-1ffee406ffa6
             Optimisation Metric: accuracy
-            Best validation score: 0.8626733083495604
-            Number of target algorithm runs: 14
+            Best validation score: 0.8742452475491833
+            Number of target algorithm runs: 13
             Number of successful target algorithm runs: 10
-            Number of crashed target algorithm runs: 3
+            Number of crashed target algorithm runs: 2
             Number of target algorithms that exceeded the time limit: 1
             Number of target algorithms that exceeded the memory limit: 0
 
@@ -364,7 +360,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fd54e6763a0>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fdf76f6e100>
 
 
 
@@ -395,22 +391,23 @@ Print the final ensemble performance
 
  .. code-block:: none
 
-    {'accuracy': 0.8670520231213873}
-    |    | Preprocessing                                                                                    | Estimator                                                       |   Weight |
-    |---:|:-------------------------------------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-    |  0 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,NoScaler,LinearSVC Preprocessor       | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.62 |
-    |  1 | None                                                                                             | RFLearner                                                       |     0.14 |
-    |  2 | None                                                                                             | KNNLearner                                                      |     0.12 |
-    |  3 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
-    |  4 | None                                                                                             | SVMLearner                                                      |     0.04 |
-    |  5 | None                                                                                             | LGBMLearner                                                     |     0.02 |
+    {'accuracy': 0.861271676300578}
+    |    | Preprocessing                                                                                  | Estimator                                                       |   Weight |
+    |---:|:-----------------------------------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
+    |  0 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,NoScaler,LinearSVC Preprocessor     | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.28 |
+    |  1 | None                                                                                           | LGBMLearner                                                     |     0.26 |
+    |  2 | None                                                                                           | CBLearner                                                       |     0.2  |
+    |  3 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,QuantileTransformer,TruncSVD        | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.12 |
+    |  4 | None                                                                                           | RFLearner                                                       |     0.06 |
+    |  5 | None                                                                                           | KNNLearner                                                      |     0.06 |
+    |  6 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,MinMaxScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
     autoPyTorch results:
-            Dataset name: 21f3caff-fbb9-11ec-88dc-5b301972ecf9
+            Dataset name: 3508f02e-fd13-11ec-880e-1ffee406ffa6
             Optimisation Metric: accuracy
-            Best validation score: 0.8362573099415205
-            Number of target algorithm runs: 17
+            Best validation score: 0.847953216374269
+            Number of target algorithm runs: 18
             Number of successful target algorithm runs: 13
-            Number of crashed target algorithm runs: 3
+            Number of crashed target algorithm runs: 4
             Number of target algorithms that exceeded the time limit: 1
             Number of target algorithms that exceeded the memory limit: 0
 
@@ -421,7 +418,7 @@ Print the final ensemble performance
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 8 minutes  40.664 seconds)
+   **Total running time of the script:** ( 9 minutes  1.616 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_resampling_strategy.py:

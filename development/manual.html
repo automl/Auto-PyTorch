@@ -137,6 +137,7 @@ We expand the support to image processing tasks in the future.</p>
 <ul class="simple">
 <li><p><a class="reference external" href="examples/20_basics/example_tabular_classification.html">Classification</a></p></li>
 <li><p><a class="reference external" href="examples/20_basics/example_tabular_regression.html">Regression</a></p></li>
+<li><p><a class="reference external" href="examples/20_basic/example_time_series_forecasting.html">Forecasting</a></p></li>
 <li><p><a class="reference external" href="examples/40_advanced/example_custom_configuration_space.html">Customizing the search space</a></p></li>
 <li><p><a class="reference external" href="examples/40_advanced/example_resampling_strategy.html">Changing the resampling strategy</a></p></li>
 <li><p><a class="reference external" href="examples/40_advanced/example_visualization.html">Visualizing the results</a></p></li>
@@ -144,15 +145,27 @@ We expand the support to image processing tasks in the future.</p>
 </section>
 <section id="data-validation">
 <h2>Data validation<a class="headerlink" href="#data-validation" title="Permalink to this heading">¶</a></h2>
-<p>For tabular tasks, <em>Auto-PyTorch</em> uses a feature and target validator on the input feature set and target set respectively.</p>
+<p>For <strong>tabular tasks</strong>, <em>Auto-PyTorch</em> uses a feature and target validator on the input feature set and target set respectively.</p>
 <p>The feature validator checks whether the data is supported by <em>Auto-PyTorch</em> or not. Additionally, a sklearn column transformer
 is also used which imputes and ordinally encodes the categorical columns of the dataset. This ensures
 that no unseen category is found while fitting the data.</p>
 <p>The target validator applies a label encoder on the target column.</p>
+<p>For <strong>time series forecasting tasks</strong>, besides the functions described above, time series forecasting validators will also
+check the information specify for time series forecasting tasks: it checks</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>The index of the series that each data point belongs to</p></li>
+<li><p>if the dataset is uni-variant (only targets information is contained in the datasets)</p></li>
+<li><p>the sample frequency of the datasets</p></li>
+<li><p>the static features in the dataset, i.e., features that contain only one value within each series</p></li>
+</ul>
+</div></blockquote>
+<p>Time Series forecasting validator then transforms the features and targets into a <a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html">pd.DataFrame</a>
+whose index is applied to identify the series that the time step belongs to.</p>
 </section>
 <section id="data-preprocessing">
 <h2>Data Preprocessing<a class="headerlink" href="#data-preprocessing" title="Permalink to this heading">¶</a></h2>
-<p>The tabular preprocessing pipeline in <em>Auto-PyTorch</em> consists of</p>
+<p>The <strong>tabular preprocessing pipeline</strong> in <em>Auto-PyTorch</em> consists of</p>
 <ol class="arabic simple">
 <li><p><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/tabular_preprocessing/imputation">Imputation</a></p></li>
 <li><dl class="simple">
@@ -175,6 +188,43 @@ that no unseen category is found while fitting the data.</p>
 created which includes a categorical pipeline and a numerical pipeline. These pipelines are made up of the
 relevant preprocessors chosen in the previous steps. The column transformer is compatible with <a class="reference external" href="https://pytorch.org/vision/stable/transforms.html">torchvision transforms</a>
 and is therefore passed to the DataLoader.</p>
+<p><strong>time series forecasting pipeline</strong> has two sorts of setup:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Uni-variant model only requires target transformations. They include <a href="#id2"><span class="problematic" id="id3">*</span></a>1:</dt><dd><ol class="arabic simple">
+<li><dl class="simple">
+<dt><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/time_series_preprocessing/imputation/">Target Imputation</a></dt><dd><p>Choice of <cite>linear</cite>, <cite>nearest</cite>, <cite>constant_zero</cite>, <cite>bfill</cite> and <cite>ffill</cite></p>
+</dd>
+</dl>
+</li>
+</ol>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Multi-variant model contains target transformations (see above) and feature transformation. They include</dt><dd><ol class="arabic simple">
+<li><dl class="simple">
+<dt><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/time_series_preprocessing/imputation">Imputation</a></dt><dd><p>Choice of <cite>linear</cite>, <cite>nearest</cite>, <cite>constant_zero</cite>, <cite>bfill</cite> and <cite>ffill</cite></p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/time_series_preprocessing/scaling">Scaling</a></dt><dd><p>Choice of <cite>standard</cite>, <cite>min_max</cite>, <cite>max_abs</cite>, <cite>mean_abs</cite>, or no transformation <a href="#id6"><span class="problematic" id="id7">*</span></a>2</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/time_series_preprocessing/encoding">Encoding</a></dt><dd><p>Choice of <cite>OneHotEncoder</cite> or no encoding.</p>
+</dd>
+</dl>
+</li>
+</ol>
+</dd>
+</dl>
+</li>
+</ul>
+<p><a href="#id9"><span class="problematic" id="id10">*</span></a>1 Target scaling is considered as part of <a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/setup">setup</a> and the transform is done within each batch iteration</p>
+<p><a href="#id11"><span class="problematic" id="id12">*</span></a>2 Scaling is transformed within each series</p>
 </section>
 <section id="resource-allocation">
 <h2>Resource Allocation<a class="headerlink" href="#resource-allocation" title="Permalink to this heading">¶</a></h2>

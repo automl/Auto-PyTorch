@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>autoPyTorch.pipeline.time_series_forecasting &#8212; AutoPyTorch 0.1.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/bootstrap-sphinx.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-binder.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-dataframe.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-rendered-html.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../../../_static/js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript" src="../../../_static/js/jquery-fix.js"></script>
+<script type="text/javascript" src="../../../_static/bootstrap-3.4.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../../../_static/bootstrap-sphinx.js"></script>
+
+  </head><body>
+  
+  <a href="https://github.com/automl/Auto-PyTorch"
+     class="visible-desktop hidden-xs"><img
+    id="gh-banner"
+    style="position: absolute; top: 50px; right: 0; border: 0;"
+    src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png"
+    alt="Fork me on GitHub"></a>
+  <script>
+    // Adjust banner height.
+    $(function () {
+      var navHeight = $(".navbar .container").css("height");
+      $("#gh-banner").css("top", navHeight);
+    });
+  </script>
+
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../../../index.html">
+          Auto-PyTorch</a>
+        <span class="navbar-text navbar-version pull-left"><b>0.1.1</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="../../../index.html">Start</a></li>
+                <li><a href="../../../releases.html">Releases</a></li>
+                <li><a href="../../../installation.html">Installation</a></li>
+                <li><a href="../../../manual.html">Manual</a></li>
+                <li><a href="../../../examples/index.html">Examples</a></li>
+                <li><a href="../../../api.html">API</a></li>
+                <li><a href="../../../dev.html">Dev</a></li>
+                <li><a href="../../../extending.html">Extending</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../../../index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../../../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-3">
+        <div id="sidebar" class="bs-sidenav" role="complementary">
+        </div>
+      </div>
+    <div class="body col-md-9 content" role="main">
+      
+  <h1>Source code for autoPyTorch.pipeline.time_series_forecasting</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">ConfigSpace.configuration_space</span> <span class="kn">import</span> <span class="n">Configuration</span><span class="p">,</span> <span class="n">ConfigurationSpace</span>
+<span class="kn">from</span> <span class="nn">ConfigSpace.forbidden</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ForbiddenAndConjunction</span><span class="p">,</span>
+    <span class="n">ForbiddenEqualsClause</span><span class="p">,</span>
+    <span class="n">ForbiddenInClause</span>
+<span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">sklearn.base</span> <span class="kn">import</span> <span class="n">RegressorMixin</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+
+<span class="kn">from</span> <span class="nn">autoPyTorch.constants</span> <span class="kn">import</span> <span class="n">STRING_TO_TASK_TYPES</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.datasets.base_dataset</span> <span class="kn">import</span> <span class="n">BaseDatasetPropertiesType</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.datasets.time_series_dataset</span> <span class="kn">import</span> <span class="n">TimeSeriesSequence</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.base_pipeline</span> <span class="kn">import</span> <span class="n">BasePipeline</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.base_choice</span> <span class="kn">import</span> <span class="n">autoPyTorchChoice</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.base_component</span> <span class="kn">import</span> <span class="n">autoPyTorchComponent</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.TimeSeriesTransformer</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TimeSeriesFeatureTransformer</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.encoding</span> <span class="kn">import</span> <span class="n">TimeSeriesEncoderChoice</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.imputation.TimeSeriesImputer</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TimeSeriesFeatureImputer</span><span class="p">,</span>
+    <span class="n">TimeSeriesTargetImputer</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.scaling.base_scaler</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseScaler</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.setup.early_preprocessor.TimeSeriesEarlyPreProcessing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TimeSeriesEarlyPreprocessing</span><span class="p">,</span>
+    <span class="n">TimeSeriesTargetEarlyPreprocessing</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.setup.forecasting_target_scaling.base_target_scaler</span> <span class="kn">import</span> <span class="n">BaseTargetScaler</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.setup.forecasting_training_loss</span> <span class="kn">import</span> <span class="n">ForecastingLossChoices</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.setup.lr_scheduler</span> <span class="kn">import</span> <span class="n">SchedulerChoice</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.setup.network.forecasting_network</span> <span class="kn">import</span> <span class="n">ForecastingNetworkComponent</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.setup.network_backbone.forecasting_backbone</span> <span class="kn">import</span> <span class="n">ForecastingNetworkChoice</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.setup.network_embedding</span> <span class="kn">import</span> <span class="n">NetworkEmbeddingChoice</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head.forecasting_head</span> <span class="kn">import</span> <span class="n">ForecastingHead</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.setup.network_initializer</span> <span class="kn">import</span> <span class="n">NetworkInitializerChoice</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.setup.optimizer</span> <span class="kn">import</span> <span class="n">OptimizerChoice</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.training.data_loader.time_series_forecasting_data_loader</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TimeSeriesForecastingDataLoader</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.training.trainer.forecasting_trainer</span> <span class="kn">import</span> <span class="n">ForecastingTrainerChoice</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.utils.hyperparameter_search_space_update</span> <span class="kn">import</span> <span class="n">HyperparameterSearchSpaceUpdates</span>
+
+
+<div class="viewcode-block" id="TimeSeriesForecastingPipeline"><a class="viewcode-back" href="../../../api.html#autoPyTorch.pipeline.time_series_forecasting.TimeSeriesForecastingPipeline">[docs]</a><span class="k">class</span> <span class="nc">TimeSeriesForecastingPipeline</span><span class="p">(</span><span class="n">RegressorMixin</span><span class="p">,</span> <span class="n">BasePipeline</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This class is a proof of concept to integrate AutoPyTorch Components</span>
+
+<span class="sd">    It implements a pipeline, which includes as steps:</span>
+
+<span class="sd">        -&gt;One preprocessing step</span>
+<span class="sd">        -&gt;One neural network</span>
+
+<span class="sd">    Contrary to the sklearn API it is not possible to enumerate the</span>
+<span class="sd">    possible parameters in the __init__ function because we only know the</span>
+<span class="sd">    available regressors at runtime. For this reason the user must</span>
+<span class="sd">    specifiy the parameters by passing an instance of</span>
+<span class="sd">    ConfigSpace.configuration_space.Configuration.</span>
+
+
+<span class="sd">    Args:</span>
+<span class="sd">        config (Configuration):</span>
+<span class="sd">            The configuration to evaluate.</span>
+<span class="sd">        random_state (Optional[RandomState):</span>
+<span class="sd">            random_state is the random number generator</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Configuration</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">steps</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">autoPyTorchComponent</span><span class="p">,</span> <span class="n">autoPyTorchChoice</span><span class="p">]]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">dataset_properties</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">BaseDatasetPropertiesType</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">include</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">exclude</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">random_state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">init_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">search_space_updates</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">HyperparameterSearchSpaceUpdates</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="p">):</span>
+        <span class="n">BasePipeline</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                              <span class="n">config</span><span class="p">,</span> <span class="n">steps</span><span class="p">,</span> <span class="n">dataset_properties</span><span class="p">,</span> <span class="n">include</span><span class="p">,</span> <span class="n">exclude</span><span class="p">,</span>
+                              <span class="n">random_state</span><span class="p">,</span> <span class="n">init_params</span><span class="p">,</span> <span class="n">search_space_updates</span><span class="p">)</span>
+
+        <span class="c1"># Because a pipeline is passed to a worker, we need to honor the random seed</span>
+        <span class="c1"># in this context. A tabular regression pipeline will implement a torch</span>
+        <span class="c1"># model, so we comply with https://pytorch.org/docs/stable/notes/randomness.html</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="o">.</span><span class="n">get_state</span><span class="p">()[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+
+<div class="viewcode-block" id="TimeSeriesForecastingPipeline.score"><a class="viewcode-back" href="../../../api.html#autoPyTorch.pipeline.time_series_forecasting.TimeSeriesForecastingPipeline.score">[docs]</a>    <span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">TimeSeriesSequence</span><span class="p">]],</span>
+              <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">score_kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Scores the fitted estimator on (X, y)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            X (List[Union[np.ndarray, pd.DataFrame, TimeSeriesSequence]]):</span>
+<span class="sd">                input to the pipeline, from which to guess targets</span>
+<span class="sd">            batch_size (Optional[int]):</span>
+<span class="sd">                batch_size controls whether the pipeline will be called on small chunks of the data.</span>
+<span class="sd">                 Useful when calling the predict method on the whole array X results in a MemoryError.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            np.ndarray:</span>
+<span class="sd">                coefficient of determination R^2 of the prediction</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.components.training.metrics.utils</span> <span class="kn">import</span> <span class="p">(</span>
+            <span class="n">calculate_score</span><span class="p">,</span> <span class="n">get_metrics</span><span class="p">)</span>
+        <span class="n">metrics</span> <span class="o">=</span> <span class="n">get_metrics</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset_properties</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;mean_MAPE_forecasting&#39;</span><span class="p">])</span>
+        <span class="n">y_pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>  <span class="c1"># type: ignore[arg-types]</span>
+        <span class="n">r2</span> <span class="o">=</span> <span class="n">calculate_score</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">task_type</span><span class="o">=</span><span class="n">STRING_TO_TASK_TYPES</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset_properties</span><span class="p">[</span><span class="s1">&#39;task_type&#39;</span><span class="p">])],</span>
+                             <span class="n">metrics</span><span class="o">=</span><span class="n">metrics</span><span class="p">,</span> <span class="o">**</span><span class="n">score_kwargs</span><span class="p">)[</span><span class="s1">&#39;mean_MAPE_forecasting&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">r2</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_hyperparameter_search_space</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                         <span class="n">dataset_properties</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+                                         <span class="n">include</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                                         <span class="n">exclude</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                                         <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ConfigurationSpace</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Create the hyperparameter configuration space.</span>
+
+<span class="sd">        For the given steps, and the Choices within that steps,</span>
+<span class="sd">        this procedure returns a configuration space object to</span>
+<span class="sd">        explore.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            include (Optional[Dict[str, Any]]):</span>
+<span class="sd">                what hyper-parameter configurations to honor when creating the configuration space</span>
+<span class="sd">            exclude (Optional[Dict[str, Any]]):</span>
+<span class="sd">                what hyper-parameter configurations to remove from the configuration space</span>
+<span class="sd">            dataset_properties (Optional[Dict[str, Union[str, int]]]):</span>
+<span class="sd">                Characteristics of the dataset to guide the pipeline choices of components</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            cs (Configuration):</span>
+<span class="sd">                The configuration space describing the TimeSeriesRegressionPipeline.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cs</span> <span class="o">=</span> <span class="n">ConfigurationSpace</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset_properties</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;The given dataset_properties argument contains an illegal value.&#39;</span>
+                          <span class="s1">&#39;Proceeding with the default value&#39;</span><span class="p">)</span>
+            <span class="n">dataset_properties</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="s1">&#39;target_type&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dataset_properties</span><span class="p">:</span>
+            <span class="n">dataset_properties</span><span class="p">[</span><span class="s1">&#39;target_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;time_series_forecasting&#39;</span>
+        <span class="k">if</span> <span class="n">dataset_properties</span><span class="p">[</span><span class="s1">&#39;target_type&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;time_series_forecasting&#39;</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Time series forecasting is being used, however the target_type&#39;</span>
+                          <span class="s1">&#39;is not given as &quot;time_series_forecasting&quot;. Overriding it.&#39;</span><span class="p">)</span>
+            <span class="n">dataset_properties</span><span class="p">[</span><span class="s1">&#39;target_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;time_series_forecasting&#39;</span>
+        <span class="c1"># get the base search space given this</span>
+        <span class="c1"># dataset properties. Then overwrite with custom</span>
+        <span class="c1"># regression requirements</span>
+        <span class="n">cs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_base_search_space</span><span class="p">(</span>
+            <span class="n">cs</span><span class="o">=</span><span class="n">cs</span><span class="p">,</span> <span class="n">dataset_properties</span><span class="o">=</span><span class="n">dataset_properties</span><span class="p">,</span>
+            <span class="n">exclude</span><span class="o">=</span><span class="n">exclude</span><span class="p">,</span> <span class="n">include</span><span class="o">=</span><span class="n">include</span><span class="p">,</span> <span class="n">pipeline</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">)</span>
+
+        <span class="c1"># Here we add custom code, like this with this</span>
+        <span class="c1"># is not a valid configuration</span>
+        <span class="c1"># Learned Entity Embedding is only valid when encoder is one hot encoder</span>
+        <span class="k">if</span> <span class="s1">&#39;network_embedding&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">named_steps</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">embeddings</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">get_hyperparameter</span><span class="p">(</span><span class="s1">&#39;network_embedding:__choice__&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">choices</span>
+            <span class="k">if</span> <span class="s1">&#39;LearnedEntityEmbedding&#39;</span> <span class="ow">in</span> <span class="n">embeddings</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">&#39;feature_encoding&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">named_steps</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">feature_encodings</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">get_hyperparameter</span><span class="p">(</span><span class="s1">&#39;feature_encoding:__choice__&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">choices</span>
+                    <span class="n">default</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">get_hyperparameter</span><span class="p">(</span><span class="s1">&#39;network_embedding:__choice__&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">default_value</span>
+                    <span class="n">possible_default_embeddings</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">embeddings</span><span class="p">))</span>
+                    <span class="k">del</span> <span class="n">possible_default_embeddings</span><span class="p">[</span><span class="n">possible_default_embeddings</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">default</span><span class="p">)]</span>
+
+                    <span class="k">for</span> <span class="n">encoding</span> <span class="ow">in</span> <span class="n">feature_encodings</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">encoding</span> <span class="o">==</span> <span class="s1">&#39;OneHotEncoder&#39;</span><span class="p">:</span>
+                            <span class="k">continue</span>
+                        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                            <span class="k">try</span><span class="p">:</span>
+                                <span class="n">cs</span><span class="o">.</span><span class="n">add_forbidden_clause</span><span class="p">(</span><span class="n">ForbiddenAndConjunction</span><span class="p">(</span>
+                                    <span class="n">ForbiddenEqualsClause</span><span class="p">(</span><span class="n">cs</span><span class="o">.</span><span class="n">get_hyperparameter</span><span class="p">(</span>
+                                        <span class="s1">&#39;network_embedding:__choice__&#39;</span><span class="p">),</span> <span class="s1">&#39;LearnedEntityEmbedding&#39;</span><span class="p">),</span>
+                                    <span class="n">ForbiddenEqualsClause</span><span class="p">(</span>
+                                        <span class="n">cs</span><span class="o">.</span><span class="n">get_hyperparameter</span><span class="p">(</span><span class="s1">&#39;feature_encoding:__choice__&#39;</span><span class="p">),</span> <span class="n">encoding</span>
+                                    <span class="p">)))</span>
+                                <span class="k">break</span>
+                            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                                <span class="c1"># change the default and try again</span>
+                                <span class="k">try</span><span class="p">:</span>
+                                    <span class="n">default</span> <span class="o">=</span> <span class="n">possible_default_embeddings</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+                                <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot find a legal default configuration&quot;</span><span class="p">)</span>
+                                <span class="n">cs</span><span class="o">.</span><span class="n">get_hyperparameter</span><span class="p">(</span><span class="s1">&#39;network_embedding:__choice__&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">default_value</span> <span class="o">=</span> <span class="n">default</span>
+
+                <span class="k">if</span> <span class="s1">&#39;network_backbone:flat_encoder:__choice__&#39;</span> <span class="ow">in</span> <span class="n">cs</span><span class="p">:</span>
+                    <span class="n">hp_flat_encoder</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">get_hyperparameter</span><span class="p">(</span><span class="s1">&#39;network_backbone:flat_encoder:__choice__&#39;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="s1">&#39;NBEATSEncoder&#39;</span> <span class="ow">in</span> <span class="n">hp_flat_encoder</span><span class="o">.</span><span class="n">choices</span><span class="p">:</span>
+                        <span class="n">cs</span><span class="o">.</span><span class="n">add_forbidden_clause</span><span class="p">(</span><span class="n">ForbiddenAndConjunction</span><span class="p">(</span>
+                            <span class="n">ForbiddenEqualsClause</span><span class="p">(</span><span class="n">hp_flat_encoder</span><span class="p">,</span> <span class="s1">&#39;NBEATSEncoder&#39;</span><span class="p">),</span>
+                            <span class="n">ForbiddenEqualsClause</span><span class="p">(</span><span class="n">cs</span><span class="o">.</span><span class="n">get_hyperparameter</span><span class="p">(</span>
+                                <span class="s1">&#39;network_embedding:__choice__&#39;</span><span class="p">),</span> <span class="s1">&#39;LearnedEntityEmbedding&#39;</span><span class="p">))</span>
+                        <span class="p">)</span>
+
+        <span class="c1"># dist_cls and auto_regressive are only activate if the network outputs distribution</span>
+        <span class="k">if</span> <span class="s1">&#39;loss&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">named_steps</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;network_backbone&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">named_steps</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">hp_loss</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">get_hyperparameter</span><span class="p">(</span><span class="s1">&#39;loss:__choice__&#39;</span><span class="p">)</span>
+
+            <span class="n">ar_forbidden</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="n">hp_deepAR</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">hp_name</span> <span class="ow">in</span> <span class="n">cs</span><span class="o">.</span><span class="n">get_hyperparameter_names</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">hp_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;network_backbone:&#39;</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">hp_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;:auto_regressive&#39;</span><span class="p">):</span>
+                        <span class="n">hp_deepAR</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cs</span><span class="o">.</span><span class="n">get_hyperparameter</span><span class="p">(</span><span class="n">hp_name</span><span class="p">))</span>
+
+            <span class="c1"># DeepAR</span>
+            <span class="n">forbidden_losses_all</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">losses_non_ar</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">loss</span> <span class="ow">in</span> <span class="n">hp_loss</span><span class="o">.</span><span class="n">choices</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">loss</span> <span class="o">!=</span> <span class="s2">&quot;DistributionLoss&quot;</span><span class="p">:</span>
+                    <span class="n">losses_non_ar</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">losses_non_ar</span><span class="p">:</span>
+                <span class="n">forbidden_hp_regression_loss</span> <span class="o">=</span> <span class="n">ForbiddenInClause</span><span class="p">(</span><span class="n">hp_loss</span><span class="p">,</span> <span class="n">losses_non_ar</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">hp_ar</span> <span class="ow">in</span> <span class="n">hp_deepAR</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="kc">True</span> <span class="ow">in</span> <span class="n">hp_ar</span><span class="o">.</span><span class="n">choices</span><span class="p">:</span>
+                        <span class="n">forbidden_hp_dist</span> <span class="o">=</span> <span class="n">ForbiddenEqualsClause</span><span class="p">(</span><span class="n">hp_ar</span><span class="p">,</span> <span class="n">ar_forbidden</span><span class="p">)</span>
+                        <span class="n">forbidden_hp_dist</span> <span class="o">=</span> <span class="n">ForbiddenAndConjunction</span><span class="p">(</span><span class="n">forbidden_hp_dist</span><span class="p">,</span> <span class="n">forbidden_hp_regression_loss</span><span class="p">)</span>
+                        <span class="n">forbidden_losses_all</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">forbidden_hp_dist</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="s2">&quot;network_backbone:seq_encoder:decoder_auto_regressive&quot;</span> <span class="ow">in</span> <span class="n">cs</span><span class="p">:</span>
+                <span class="n">decoder_auto_regressive</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">get_hyperparameter</span><span class="p">(</span><span class="s2">&quot;network_backbone:seq_encoder:decoder_auto_regressive&quot;</span><span class="p">)</span>
+                <span class="n">forecast_strategy</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">get_hyperparameter</span><span class="p">(</span><span class="s2">&quot;loss:DistributionLoss:forecast_strategy&quot;</span><span class="p">)</span>
+                <span class="n">use_tf</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">get_hyperparameter</span><span class="p">(</span><span class="s2">&quot;network_backbone:seq_encoder:use_temporal_fusion&quot;</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="kc">True</span> <span class="ow">in</span> <span class="n">decoder_auto_regressive</span><span class="o">.</span><span class="n">choices</span> <span class="ow">and</span>\
+                        <span class="s1">&#39;sample&#39;</span> <span class="ow">in</span> <span class="n">forecast_strategy</span><span class="o">.</span><span class="n">choices</span> <span class="ow">and</span> <span class="kc">True</span> <span class="ow">in</span> <span class="n">use_tf</span><span class="o">.</span><span class="n">choices</span><span class="p">:</span>
+                    <span class="n">cs</span><span class="o">.</span><span class="n">add_forbidden_clause</span><span class="p">(</span>
+                        <span class="n">ForbiddenAndConjunction</span><span class="p">(</span>
+                            <span class="n">ForbiddenEqualsClause</span><span class="p">(</span><span class="n">decoder_auto_regressive</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+                            <span class="n">ForbiddenEqualsClause</span><span class="p">(</span><span class="n">forecast_strategy</span><span class="p">,</span> <span class="s1">&#39;sample&#39;</span><span class="p">),</span>
+                            <span class="n">ForbiddenEqualsClause</span><span class="p">(</span><span class="n">use_tf</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+
+            <span class="k">if</span> <span class="s1">&#39;network_backbone:flat_encoder:__choice__&#39;</span> <span class="ow">in</span> <span class="n">cs</span><span class="p">:</span>
+                <span class="n">network_flat_encoder_hp</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">get_hyperparameter</span><span class="p">(</span><span class="s1">&#39;network_backbone:flat_encoder:__choice__&#39;</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="s1">&#39;MLPEncoder&#39;</span> <span class="ow">in</span> <span class="n">network_flat_encoder_hp</span><span class="o">.</span><span class="n">choices</span><span class="p">:</span>
+                    <span class="n">forbidden</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;MLPEncoder&#39;</span><span class="p">]</span>
+                    <span class="n">forbidden_deepAREncoder</span> <span class="o">=</span> <span class="p">[</span>
+                        <span class="n">forbid</span> <span class="k">for</span> <span class="n">forbid</span> <span class="ow">in</span> <span class="n">forbidden</span> <span class="k">if</span> <span class="n">forbid</span> <span class="ow">in</span> <span class="n">network_flat_encoder_hp</span><span class="o">.</span><span class="n">choices</span>
+                    <span class="p">]</span>
+                    <span class="k">for</span> <span class="n">hp_ar</span> <span class="ow">in</span> <span class="n">hp_deepAR</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="kc">True</span> <span class="ow">in</span> <span class="n">hp_ar</span><span class="o">.</span><span class="n">choices</span><span class="p">:</span>
+                            <span class="n">forbidden_hp_ar</span> <span class="o">=</span> <span class="n">ForbiddenEqualsClause</span><span class="p">(</span><span class="n">hp_ar</span><span class="p">,</span> <span class="n">ar_forbidden</span><span class="p">)</span>
+                            <span class="n">forbidden_hp_mlpencoder</span> <span class="o">=</span> <span class="n">ForbiddenInClause</span><span class="p">(</span><span class="n">network_flat_encoder_hp</span><span class="p">,</span>
+                                                                        <span class="n">forbidden_deepAREncoder</span><span class="p">)</span>
+                            <span class="n">forbidden_hp_ar_mlp</span> <span class="o">=</span> <span class="n">ForbiddenAndConjunction</span><span class="p">(</span><span class="n">forbidden_hp_ar</span><span class="p">,</span> <span class="n">forbidden_hp_mlpencoder</span><span class="p">)</span>
+                            <span class="n">forbidden_losses_all</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">forbidden_hp_ar_mlp</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="s1">&#39;loss:DistributionLoss:forecast_strategy&#39;</span> <span class="ow">in</span> <span class="n">cs</span><span class="p">:</span>
+                <span class="n">forecast_strategy</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">get_hyperparameter</span><span class="p">(</span><span class="s1">&#39;loss:DistributionLoss:forecast_strategy&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s1">&#39;mean&#39;</span> <span class="ow">in</span> <span class="n">forecast_strategy</span><span class="o">.</span><span class="n">choices</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">hp_ar</span> <span class="ow">in</span> <span class="n">hp_deepAR</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="kc">True</span> <span class="ow">in</span> <span class="n">hp_ar</span><span class="o">.</span><span class="n">choices</span><span class="p">:</span>
+
+                            <span class="n">forbidden_hp_ar</span> <span class="o">=</span> <span class="n">ForbiddenEqualsClause</span><span class="p">(</span><span class="n">hp_ar</span><span class="p">,</span> <span class="n">ar_forbidden</span><span class="p">)</span>
+                            <span class="n">forbidden_hp_forecast_strategy</span> <span class="o">=</span> <span class="n">ForbiddenEqualsClause</span><span class="p">(</span><span class="n">forecast_strategy</span><span class="p">,</span> <span class="s1">&#39;mean&#39;</span><span class="p">)</span>
+                            <span class="n">forbidden_hp_ar_forecast_strategy</span> <span class="o">=</span> <span class="n">ForbiddenAndConjunction</span><span class="p">(</span><span class="n">forbidden_hp_ar</span><span class="p">,</span>
+                                                                                        <span class="n">forbidden_hp_forecast_strategy</span><span class="p">)</span>
+                            <span class="n">forbidden_losses_all</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">forbidden_hp_ar_forecast_strategy</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">forbidden_losses_all</span><span class="p">:</span>
+                <span class="n">cs</span><span class="o">.</span><span class="n">add_forbidden_clauses</span><span class="p">(</span><span class="n">forbidden_losses_all</span><span class="p">)</span>
+
+            <span class="c1"># NBEATS</span>
+            <span class="n">network_encoder_hp</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">get_hyperparameter</span><span class="p">(</span><span class="s2">&quot;network_backbone:__choice__&quot;</span><span class="p">)</span>
+            <span class="n">forbidden_NBEATS</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">encoder_non_flat</span> <span class="o">=</span> <span class="p">[</span><span class="n">choice</span> <span class="k">for</span> <span class="n">choice</span> <span class="ow">in</span> <span class="n">network_encoder_hp</span><span class="o">.</span><span class="n">choices</span> <span class="k">if</span> <span class="n">choice</span> <span class="o">!=</span> <span class="s1">&#39;flat_encoder&#39;</span><span class="p">]</span>
+            <span class="n">loss_non_regression</span> <span class="o">=</span> <span class="p">[</span><span class="n">choice</span> <span class="k">for</span> <span class="n">choice</span> <span class="ow">in</span> <span class="n">hp_loss</span><span class="o">.</span><span class="n">choices</span> <span class="k">if</span> <span class="n">choice</span> <span class="o">!=</span> <span class="s1">&#39;RegressionLoss&#39;</span><span class="p">]</span>
+            <span class="n">data_loader_backcast</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">get_hyperparameter</span><span class="p">(</span><span class="s1">&#39;data_loader:backcast&#39;</span><span class="p">)</span>
+
+            <span class="n">forbidden_encoder_non_flat</span> <span class="o">=</span> <span class="n">ForbiddenInClause</span><span class="p">(</span><span class="n">network_encoder_hp</span><span class="p">,</span> <span class="n">encoder_non_flat</span><span class="p">)</span>
+            <span class="n">forbidden_loss_non_regression</span> <span class="o">=</span> <span class="n">ForbiddenInClause</span><span class="p">(</span><span class="n">hp_loss</span><span class="p">,</span> <span class="n">loss_non_regression</span><span class="p">)</span>
+            <span class="n">forbidden_backcast</span> <span class="o">=</span> <span class="n">ForbiddenEqualsClause</span><span class="p">(</span><span class="n">data_loader_backcast</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="s1">&#39;network_backbone:flat_encoder:__choice__&#39;</span> <span class="ow">in</span> <span class="n">cs</span><span class="p">:</span>
+                <span class="n">hp_flat_encoder</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">get_hyperparameter</span><span class="p">(</span><span class="s2">&quot;network_backbone:flat_encoder:__choice__&quot;</span><span class="p">)</span>
+
+                <span class="c1"># Ensure that NBEATS encoder only works with NBEATS decoder</span>
+                <span class="k">if</span> <span class="s1">&#39;NBEATSEncoder&#39;</span> <span class="ow">in</span> <span class="n">hp_flat_encoder</span><span class="o">.</span><span class="n">choices</span><span class="p">:</span>
+                    <span class="n">forbidden_NBEATS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ForbiddenAndConjunction</span><span class="p">(</span>
+                        <span class="n">ForbiddenEqualsClause</span><span class="p">(</span><span class="n">hp_flat_encoder</span><span class="p">,</span> <span class="s1">&#39;NBEATSEncoder&#39;</span><span class="p">),</span>
+                        <span class="n">forbidden_loss_non_regression</span><span class="p">)</span>
+                    <span class="p">)</span>
+                    <span class="n">transform_time_features</span> <span class="o">=</span> <span class="s2">&quot;data_loader:transform_time_features&quot;</span>
+                    <span class="k">if</span> <span class="n">transform_time_features</span> <span class="ow">in</span> <span class="n">cs</span><span class="p">:</span>
+                        <span class="n">hp_ttf</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">get_hyperparameter</span><span class="p">(</span><span class="n">transform_time_features</span><span class="p">)</span>
+                        <span class="n">forbidden_NBEATS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ForbiddenAndConjunction</span><span class="p">(</span>
+                            <span class="n">ForbiddenEqualsClause</span><span class="p">(</span><span class="n">hp_flat_encoder</span><span class="p">,</span> <span class="s1">&#39;NBEATSEncoder&#39;</span><span class="p">),</span>
+                            <span class="n">ForbiddenEqualsClause</span><span class="p">(</span><span class="n">hp_ttf</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
+                        <span class="p">)</span>
+
+            <span class="n">forbidden_NBEATS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ForbiddenAndConjunction</span><span class="p">(</span>
+                <span class="n">forbidden_backcast</span><span class="p">,</span>
+                <span class="n">forbidden_encoder_non_flat</span>
+            <span class="p">))</span>
+
+            <span class="n">cs</span><span class="o">.</span><span class="n">add_forbidden_clauses</span><span class="p">(</span><span class="n">forbidden_NBEATS</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">configuration_space</span> <span class="o">=</span> <span class="n">cs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataset_properties</span> <span class="o">=</span> <span class="n">dataset_properties</span>
+        <span class="k">return</span> <span class="n">cs</span>
+
+    <span class="k">def</span> <span class="nf">_get_pipeline_steps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset_properties</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">autoPyTorchChoice</span><span class="p">]]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Defines what steps a pipeline should follow.</span>
+<span class="sd">        The step itself has choices given via autoPyTorchChoice.</span>
+<span class="sd">        One key difference between Forecasting pipeline and others is that we put &quot;data_loader&quot;</span>
+<span class="sd">        before &quot;network_backbone&quot; such that</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[Tuple[str, autoPyTorchChoice]]:</span>
+<span class="sd">                list of steps sequentially exercised by the pipeline.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">steps</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># type: List[Tuple[str, autoPyTorchChoice]]</span>
+
+        <span class="n">default_dataset_properties</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">BaseDatasetPropertiesType</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;target_type&#39;</span><span class="p">:</span> <span class="s1">&#39;time_series_prediction&#39;</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">dataset_properties</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">default_dataset_properties</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dataset_properties</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">default_dataset_properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;uni_variant&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="n">steps</span><span class="o">.</span><span class="n">extend</span><span class="p">([(</span><span class="s2">&quot;impute&quot;</span><span class="p">,</span> <span class="n">TimeSeriesFeatureImputer</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+                          <span class="p">(</span><span class="s2">&quot;scaler&quot;</span><span class="p">,</span> <span class="n">BaseScaler</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+                          <span class="p">(</span><span class="s1">&#39;feature_encoding&#39;</span><span class="p">,</span> <span class="n">TimeSeriesEncoderChoice</span><span class="p">(</span><span class="n">default_dataset_properties</span><span class="p">,</span>
+                                                                       <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+                          <span class="p">(</span><span class="s2">&quot;time_series_transformer&quot;</span><span class="p">,</span> <span class="n">TimeSeriesFeatureTransformer</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+                          <span class="p">(</span><span class="s2">&quot;preprocessing&quot;</span><span class="p">,</span> <span class="n">TimeSeriesEarlyPreprocessing</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+                          <span class="p">])</span>
+
+        <span class="n">steps</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span>
+            <span class="p">(</span><span class="s2">&quot;target_imputer&quot;</span><span class="p">,</span> <span class="n">TimeSeriesTargetImputer</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">&quot;target_preprocessing&quot;</span><span class="p">,</span> <span class="n">TimeSeriesTargetEarlyPreprocessing</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s1">&#39;loss&#39;</span><span class="p">,</span> <span class="n">ForecastingLossChoices</span><span class="p">(</span><span class="n">default_dataset_properties</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">&quot;target_scaler&quot;</span><span class="p">,</span> <span class="n">BaseTargetScaler</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">&quot;data_loader&quot;</span><span class="p">,</span> <span class="n">TimeSeriesForecastingDataLoader</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">&quot;network_embedding&quot;</span><span class="p">,</span> <span class="n">NetworkEmbeddingChoice</span><span class="p">(</span><span class="n">default_dataset_properties</span><span class="p">,</span>
+                                                         <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">&quot;network_backbone&quot;</span><span class="p">,</span> <span class="n">ForecastingNetworkChoice</span><span class="p">(</span><span class="n">dataset_properties</span><span class="o">=</span><span class="n">default_dataset_properties</span><span class="p">,</span>
+                                                          <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">&quot;network_head&quot;</span><span class="p">,</span> <span class="n">ForecastingHead</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">&quot;network&quot;</span><span class="p">,</span> <span class="n">ForecastingNetworkComponent</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">&quot;network_init&quot;</span><span class="p">,</span> <span class="n">NetworkInitializerChoice</span><span class="p">(</span><span class="n">default_dataset_properties</span><span class="p">,</span>
+                                                      <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">&quot;optimizer&quot;</span><span class="p">,</span> <span class="n">OptimizerChoice</span><span class="p">(</span><span class="n">default_dataset_properties</span><span class="p">,</span>
+                                          <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">&quot;lr_scheduler&quot;</span><span class="p">,</span> <span class="n">SchedulerChoice</span><span class="p">(</span><span class="n">default_dataset_properties</span><span class="p">,</span>
+                                             <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s2">&quot;trainer&quot;</span><span class="p">,</span> <span class="n">ForecastingTrainerChoice</span><span class="p">(</span><span class="n">default_dataset_properties</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)),</span>
+        <span class="p">])</span>
+        <span class="k">return</span> <span class="n">steps</span>
+
+<div class="viewcode-block" id="TimeSeriesForecastingPipeline.get_pipeline_representation"><a class="viewcode-back" href="../../../api.html#autoPyTorch.pipeline.time_series_forecasting.TimeSeriesForecastingPipeline.get_pipeline_representation">[docs]</a>    <span class="k">def</span> <span class="nf">get_pipeline_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a representation of the pipeline, so that it can be</span>
+<span class="sd">        consumed and formatted by the API.</span>
+
+<span class="sd">        It should be a representation that follows:</span>
+<span class="sd">        [{&#39;PreProcessing&#39;: &lt;&gt;, &#39;Estimator&#39;: &lt;&gt;}]</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict: contains the pipeline representation in a short format</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">preprocessing</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">estimator</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">skip_steps</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;data_loader&#39;</span><span class="p">,</span> <span class="s1">&#39;trainer&#39;</span><span class="p">,</span> <span class="s1">&#39;lr_scheduler&#39;</span><span class="p">,</span> <span class="s1">&#39;optimizer&#39;</span><span class="p">,</span> <span class="s1">&#39;network_init&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;preprocessing&#39;</span><span class="p">,</span> <span class="s1">&#39;time_series_transformer&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">step_name</span><span class="p">,</span> <span class="n">step_component</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">step_name</span> <span class="ow">in</span> <span class="n">skip_steps</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">properties</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">step_component</span><span class="p">,</span> <span class="n">autoPyTorchChoice</span><span class="p">)</span> <span class="ow">and</span> <span class="n">step_component</span><span class="o">.</span><span class="n">choice</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">properties</span> <span class="o">=</span> <span class="n">step_component</span><span class="o">.</span><span class="n">choice</span><span class="o">.</span><span class="n">get_properties</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">step_component</span><span class="p">,</span> <span class="n">autoPyTorchComponent</span><span class="p">):</span>
+                <span class="n">properties</span> <span class="o">=</span> <span class="n">step_component</span><span class="o">.</span><span class="n">get_properties</span><span class="p">()</span>
+            <span class="k">if</span> <span class="s1">&#39;shortname&#39;</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">&#39;network&#39;</span> <span class="ow">in</span> <span class="n">step_name</span><span class="p">:</span>
+                    <span class="n">estimator</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">properties</span><span class="p">[</span><span class="s1">&#39;shortname&#39;</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">preprocessing</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">properties</span><span class="p">[</span><span class="s1">&#39;shortname&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;Preprocessing&#39;</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">preprocessing</span><span class="p">),</span>
+            <span class="s1">&#39;Estimator&#39;</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">estimator</span><span class="p">),</span>
+        <span class="p">}</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_estimator_hyperparameter_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the name of the current estimator.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: name of the pipeline type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;time_series_forecasting&quot;</span>
+
+<div class="viewcode-block" id="TimeSeriesForecastingPipeline.predict"><a class="viewcode-back" href="../../../api.html#autoPyTorch.pipeline.time_series_forecasting.TimeSeriesForecastingPipeline.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                <span class="n">X</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">TimeSeriesSequence</span><span class="p">]],</span>  <span class="c1"># type: ignore[override]</span>
+                <span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Predict the output using the selected model.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            X (List[Union[np.ndarray, pd.DataFrame, TimeSeriesSequence]]):</span>
+<span class="sd">                input data to predict</span>
+<span class="sd">            batch_size (Optional[int]):</span>
+<span class="sd">                batch_size controls whether the pipeline will be called on small chunks of the data.</span>
+<span class="sd">                Useful when calling the predict method on the whole array X results in a MemoryError.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            np.ndarray:</span>
+<span class="sd">                the predicted values given input X</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Pre-process X</span>
+        <span class="k">if</span> <span class="n">batch_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Batch size not provided. &quot;</span>
+                          <span class="s2">&quot;Will use 1000 instead&quot;</span><span class="p">)</span>
+            <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">1000</span>
+
+        <span class="n">loader</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">named_steps</span><span class="p">[</span><span class="s1">&#39;data_loader&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_loader</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">named_steps</span><span class="p">[</span><span class="s1">&#39;network&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">loader</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c1"># https://github.com/pytorch/fairseq/blob/50a671f78d0c8de0392f924180db72ac9b41b801/fairseq/trainer.py#L283</span>
+            <span class="k">if</span> <span class="s1">&#39;out of memory&#39;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">batch_size</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">e</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;| WARNING: ran out of memory, retrying batch&#39;</span><span class="p">)</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">empty_cache</span><span class="p">()</span>
+                <span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span> <span class="o">//</span> <span class="mi">2</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">e</span></div></div>
+</pre></div>
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+      
+    </p>
+    <p>
+        &copy; Copyright 2014-2022, Machine Learning Professorship Freiburg.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.2.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

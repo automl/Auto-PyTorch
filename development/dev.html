@@ -174,10 +174,23 @@ to support torchvision transformation and
 handle column-reordering.
 Note that column-reordering shifts categorical columns to the earlier indices
 and it is activated only if one uses a ColumnTransformer.</p>
+<p>Similar procedures can be found under time series forecasting tasks:</p>
+<ol class="arabic simple">
+<li><p><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/time_series_preprocessing/imputation">Feature Imputation</a></p></li>
+<li><p><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/time_series_preprocessing/scaling">Feature scaling</a></p></li>
+<li><p><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/time_series_preprocessing/encoding">Feature Encoding</a></p></li>
+<li><p><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/time_series_preprocessing">Feature preprocessing</a></p></li>
+<li><p><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/time_series_preprocessing/imputation">Target Imputation</a></p></li>
+<li><p><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/preprocessing/time_series_preprocessing">Target Preprocessing</a></p></li>
+<li><p><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/setup/forecasting_target_scaling">Target Scaling</a></p></li>
+<li><p><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/setup">Loss Types</a></p></li>
+<li><p><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/setup">Algorithm setup</a></p></li>
+<li><p><a class="reference external" href="https://github.com/automl/Auto-PyTorch/tree/development/autoPyTorch/pipeline/components/training">Training</a></p></li>
+</ol>
 </section>
 <section id="training-of-individual-models">
 <h3>Training of individual models<a class="headerlink" href="#training-of-individual-models" title="Permalink to this heading">¶</a></h3>
-<p>Auto-PyTorch can fit 3 types of pipelines:</p>
+<p><strong>Auto-PyTorch Tabular</strong> can fit 3 types of pipelines:</p>
 <ol class="arabic simple">
 <li><p>Dummy pipeline: Use sklearn.dummy to construct an estimator that predicts using simple rules such as most frequent class</p></li>
 <li><p>Traditional machine learning pipelines: Use LightGBM, CatBoost, RandomForest, ExtraTrees, K-Nearest-Neighbors, and SupportVectorMachines</p></li>
@@ -190,6 +203,8 @@ like learning rate scheduler, optimizers,
 and data loaders required to perform the neural architecture search.</p>
 <p>After the training (fitting a pipeline), we use pickle to save it
 to disk as stated <a class="reference external" href="https://scikit-learn.org/stable/modules/model_persistence.html">here</a>.</p>
+<p><strong>Auto-PyTorch Time Series Forecasting</strong> currently only allows Dummy pipelines and PyTorch neural networks. Traditional machine learning pipelines
+will be introduced in a future iteration.</p>
 </section>
 <section id="optimization-of-pipeline">
 <h3>Optimization of pipeline<a class="headerlink" href="#optimization-of-pipeline" title="Permalink to this heading">¶</a></h3>

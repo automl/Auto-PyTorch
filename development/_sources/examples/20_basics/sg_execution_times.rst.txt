@@ -5,14 +5,14 @@
 
 Computation times
 =================
-**12:19.813** total execution time for **examples_20_basics** files:
+**12:40.698** total execution time for **examples_20_basics** files:
 
 +----------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_examples_20_basics_example_tabular_regression.py` (``example_tabular_regression.py``)           | 05:37.750 | 0.0 MB |
+| :ref:`sphx_glr_examples_20_basics_example_tabular_regression.py` (``example_tabular_regression.py``)           | 05:56.950 | 0.0 MB |
 +----------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_examples_20_basics_example_tabular_classification.py` (``example_tabular_classification.py``)   | 05:32.046 | 0.0 MB |
+| :ref:`sphx_glr_examples_20_basics_example_tabular_classification.py` (``example_tabular_classification.py``)   | 05:28.680 | 0.0 MB |
 +----------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_examples_20_basics_example_time_series_forecasting.py` (``example_time_series_forecasting.py``) | 01:03.588 | 0.0 MB |
+| :ref:`sphx_glr_examples_20_basics_example_time_series_forecasting.py` (``example_time_series_forecasting.py``) | 01:06.939 | 0.0 MB |
 +----------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_examples_20_basics_example_image_classification.py` (``example_image_classification.py``)       | 00:06.428 | 0.0 MB |
+| :ref:`sphx_glr_examples_20_basics_example_image_classification.py` (``example_image_classification.py``)       | 00:08.129 | 0.0 MB |
 +----------------------------------------------------------------------------------------------------------------+-----------+--------+

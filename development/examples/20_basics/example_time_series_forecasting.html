@@ -147,13 +147,16 @@ Thus, it could be possible that the AutoPyTorch model does not perform as well a
 
 <span class="n">forecasting_horizon</span> <span class="o">=</span> <span class="mi">3</span>
 
-<span class="c1"># each series represent an element in the List</span>
-<span class="c1"># we take the last forecasting_horizon  as test targets. The itme before that as training targets</span>
+<span class="c1"># Dataset optimized by APT-TS can be a list of np.ndarray/ pd.DataFrame where each series represents an element in the</span>
+<span class="c1"># list, or a single pd.DataFrame that records the series</span>
+<span class="c1"># index information: to which series the timestep belongs? This id can be stored as the DataFrame&#39;s index or a separate</span>
+<span class="c1"># column</span>
+<span class="c1"># Within each series, we take the last forecasting_horizon as test targets. The items before that as training targets</span>
 <span class="c1"># Normally the value to be forecasted should follow the training sets</span>
 <span class="n">y_train</span> <span class="o">=</span> <span class="p">[</span><span class="n">targets</span><span class="p">[:</span> <span class="o">-</span><span class="n">forecasting_horizon</span><span class="p">]]</span>
 <span class="n">y_test</span> <span class="o">=</span> <span class="p">[</span><span class="n">targets</span><span class="p">[</span><span class="o">-</span><span class="n">forecasting_horizon</span><span class="p">:]]</span>
 
-<span class="c1"># same for features. For uni-variant models, X_train, X_test can be omitted</span>
+<span class="c1"># same for features. For uni-variant models, X_train, X_test can be omitted and set as None</span>
 <span class="n">X_train</span> <span class="o">=</span> <span class="p">[</span><span class="n">features</span><span class="p">[:</span> <span class="o">-</span><span class="n">forecasting_horizon</span><span class="p">]]</span>
 <span class="c1"># Here x_test indicates the &#39;known future features&#39;: they are the features known previously, features that are unknown</span>
 <span class="c1"># could be replaced with NAN or zeros (which will not be used by our networks). If no feature is known beforehand,</span>
@@ -181,7 +184,7 @@ Thus, it could be possible that the AutoPyTorch model does not perform as well a
     <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="p">,</span>
     <span class="n">optimize_metric</span><span class="o">=</span><span class="s1">&#39;mean_MASE_forecasting&#39;</span><span class="p">,</span>
     <span class="n">n_prediction_steps</span><span class="o">=</span><span class="n">forecasting_horizon</span><span class="p">,</span>
-    <span class="n">memory_limit</span><span class="o">=</span><span class="mi">16</span> <span class="o">*</span> <span class="mi">1024</span><span class="p">,</span>  <span class="c1"># Currently, forecasting models need much more memories than it actually requires</span>
+    <span class="n">memory_limit</span><span class="o">=</span><span class="mi">16</span> <span class="o">*</span> <span class="mi">1024</span><span class="p">,</span>   <span class="c1"># Currently, forecasting models use much more memories</span>
     <span class="n">freq</span><span class="o">=</span><span class="n">freq</span><span class="p">,</span>
     <span class="n">start_times</span><span class="o">=</span><span class="n">start_times</span><span class="p">,</span>
     <span class="n">func_eval_time_limit_secs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
@@ -214,7 +217,7 @@ Thus, it could be possible that the AutoPyTorch model does not perform as well a
 <span class="n">pred</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">test_sets</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 1 minutes  3.588 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 1 minutes  6.939 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-20-basics-example-time-series-forecasting-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/20_basics/example_time_series_forecasting.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo.svg" width="150px" /></a>
