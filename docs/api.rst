@@ -25,6 +25,15 @@ Regression
     :members:
     :inherited-members: search, refit, predict, score
 
+~~~~~~~~~~~~~~
+Time Series Forecasting
+~~~~~~~~~~~~~~
+
+.. autoclass:: autoPyTorch.api.time_series_forecasting.TimeSeriesForecastingTask
+    :members:
+    :inherited-members: search, refit, predict, score
+
+
 
 =========
 Pipelines
@@ -49,6 +58,14 @@ Tabular Regression
 
 .. autoclass:: autoPyTorch.pipeline.traditional_tabular_regression.TraditionalTabularRegressionPipeline
     :members:
+
+~~~~~~~~~~~~~~~~~~
+Time Series Forecasting
+~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: autoPyTorch.pipeline.time_series_forecasting.TimeSeriesForecastingPipeline
+    :members:
+
 
 =================
 Steps in Pipeline

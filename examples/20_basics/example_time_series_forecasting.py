@@ -25,13 +25,16 @@ targets, features = load_longley()
 
 forecasting_horizon = 3
 
-# each series represent an element in the List
-# we take the last forecasting_horizon  as test targets. The itme before that as training targets
+# Dataset optimized by APT-TS can be a list of np.ndarray/ pd.DataFrame where each series represents an element in the
+# list, or a single pd.DataFrame that records the series
+# index information: to which series the timestep belongs? This id can be stored as the DataFrame's index or a separate
+# column
+# Within each series, we take the last forecasting_horizon as test targets. The items before that as training targets
 # Normally the value to be forecasted should follow the training sets
 y_train = [targets[: -forecasting_horizon]]
 y_test = [targets[-forecasting_horizon:]]
 
-# same for features. For uni-variant models, X_train, X_test can be omitted
+# same for features. For uni-variant models, X_train, X_test can be omitted and set as None
 X_train = [features[: -forecasting_horizon]]
 # Here x_test indicates the 'known future features': they are the features known previously, features that are unknown
 # could be replaced with NAN or zeros (which will not be used by our networks). If no feature is known beforehand,
@@ -57,7 +60,7 @@ api.search(
     X_test=X_test,
     optimize_metric='mean_MASE_forecasting',
     n_prediction_steps=forecasting_horizon,
-    memory_limit=16 * 1024,  # Currently, forecasting models need much more memories than it actually requires
+    memory_limit=16 * 1024,   # Currently, forecasting models use much more memories
     freq=freq,
     start_times=start_times,
     func_eval_time_limit_secs=50,

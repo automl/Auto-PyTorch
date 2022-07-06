@@ -5,7 +5,11 @@ import numpy as np
 
 import sklearn.metrics
 
-import sktime.performance_metrics.forecasting as forecasting_metrics
+try:
+    import sktime.performance_metrics.forecasting as forecasting_metrics
+    forecasting_dependencies_installed = True
+except ModuleNotFoundError:
+    forecasting_dependencies_installed = False
 
 from smac.utils.constants import MAXINT
 
@@ -50,6 +54,49 @@ balanced_accuracy = make_metric('balanced_accuracy',
                                 sklearn.metrics.balanced_accuracy_score)
 f1 = make_metric('f1',
                  sklearn.metrics.f1_score)
+
+
+# Score functions that need decision values
+roc_auc = make_metric('roc_auc', sklearn.metrics.roc_auc_score, needs_threshold=True)
+average_precision = make_metric('average_precision',
+                                sklearn.metrics.average_precision_score,
+                                needs_threshold=True)
+precision = make_metric('precision',
+                        sklearn.metrics.precision_score)
+recall = make_metric('recall',
+                     sklearn.metrics.recall_score)
+
+# Score function for probabilistic classification
+log_loss = make_metric('log_loss',
+                       sklearn.metrics.log_loss,
+                       optimum=0,
+                       worst_possible_result=MAXINT,
+                       greater_is_better=False,
+                       needs_proba=True)
+
+REGRESSION_METRICS = dict()
+for scorer in [mean_absolute_error, mean_squared_error, root_mean_squared_error,
+               mean_squared_log_error, median_absolute_error, r2]:
+    REGRESSION_METRICS[scorer.name] = scorer
+
+CLASSIFICATION_METRICS = dict()
+
+for scorer in [accuracy, balanced_accuracy, roc_auc, average_precision,
+               log_loss]:
+    CLASSIFICATION_METRICS[scorer.name] = scorer
+
+for name, metric in [('precision', sklearn.metrics.precision_score),
+                     ('recall', sklearn.metrics.recall_score),
+                     ('f1', sklearn.metrics.f1_score)]:
+    globals()[name] = make_metric(name, metric)
+    CLASSIFICATION_METRICS[name] = globals()[name]
+    for average in ['macro', 'micro', 'samples', 'weighted']:
+        qualified_name = '{0}_{1}'.format(name, average)
+        globals()[qualified_name] = make_metric(qualified_name,
+                                                partial(metric,
+                                                        pos_label=None,
+                                                        average=average))
+        CLASSIFICATION_METRICS[qualified_name] = globals()[qualified_name]
 
 
 # Standard Forecasting Scores
@@ -97,125 +144,87 @@ def compute_mase_coefficient(past_target: Union[List, np.ndarray], sp: int) -> n
                     )
 
 
-mean_MASE_forecasting = make_metric('mean_MASE_forecasting',
-                                    forecasting_metrics.mean_absolute_error,
-                                    optimum=0,
-                                    worst_possible_result=MAXINT,
-                                    greater_is_better=False,
-                                    do_forecasting=True,
-                                    aggregation='mean',
-                                    )
+if forecasting_dependencies_installed:
+    mean_MASE_forecasting = make_metric('mean_MASE_forecasting',
+                                        forecasting_metrics.mean_absolute_error,
+                                        optimum=0,
+                                        worst_possible_result=MAXINT,
+                                        greater_is_better=False,
+                                        do_forecasting=True,
+                                        aggregation='mean',
+                                        )
 
-median_MASE_forecasting = make_metric('median_MASE_forecasting',
-                                      forecasting_metrics.mean_absolute_error,
-                                      optimum=0,
-                                      worst_possible_result=MAXINT,
-                                      greater_is_better=False,
-                                      do_forecasting=True,
-                                      aggregation='median',
-                                      )
+    median_MASE_forecasting = make_metric('median_MASE_forecasting',
+                                          forecasting_metrics.mean_absolute_error,
+                                          optimum=0,
+                                          worst_possible_result=MAXINT,
+                                          greater_is_better=False,
+                                          do_forecasting=True,
+                                          aggregation='median',
+                                          )
 
-MASE_LOSSES = [mean_MASE_forecasting, median_MASE_forecasting]
+    MASE_LOSSES = [mean_MASE_forecasting, median_MASE_forecasting]
 
-mean_MAE_forecasting = make_metric('mean_MAE_forecasting',
-                                   forecasting_metrics.mean_absolute_error,
-                                   optimum=0,
-                                   worst_possible_result=MAXINT,
-                                   greater_is_better=False,
-                                   do_forecasting=True,
-                                   aggregation='mean',
-                                   )
+    mean_MAE_forecasting = make_metric('mean_MAE_forecasting',
+                                       forecasting_metrics.mean_absolute_error,
+                                       optimum=0,
+                                       worst_possible_result=MAXINT,
+                                       greater_is_better=False,
+                                       do_forecasting=True,
+                                       aggregation='mean',
+                                       )
 
-median_MAE_forecasting = make_metric('median_MAE_forecasting',
-                                     forecasting_metrics.mean_absolute_error,
-                                     optimum=0,
-                                     worst_possible_result=MAXINT,
-                                     greater_is_better=False,
-                                     do_forecasting=True,
-                                     aggregation='median',
-                                     )
+    median_MAE_forecasting = make_metric('median_MAE_forecasting',
+                                         forecasting_metrics.mean_absolute_error,
+                                         optimum=0,
+                                         worst_possible_result=MAXINT,
+                                         greater_is_better=False,
+                                         do_forecasting=True,
+                                         aggregation='median',
+                                         )
 
-mean_MAPE_forecasting = make_metric('mean_MAPE_forecasting',
-                                    forecasting_metrics.mean_absolute_percentage_error,
-                                    optimum=0,
-                                    worst_possible_result=MAXINT,
-                                    greater_is_better=False,
-                                    do_forecasting=True,
-                                    aggregation='mean',
-                                    )
+    mean_MAPE_forecasting = make_metric('mean_MAPE_forecasting',
+                                        forecasting_metrics.mean_absolute_percentage_error,
+                                        optimum=0,
+                                        worst_possible_result=MAXINT,
+                                        greater_is_better=False,
+                                        do_forecasting=True,
+                                        aggregation='mean',
+                                        )
 
-median_MAPE_forecasting = make_metric('median_MAPE_forecasting',
-                                      forecasting_metrics.mean_absolute_percentage_error,
-                                      optimum=0,
-                                      worst_possible_result=MAXINT,
-                                      greater_is_better=False,
-                                      do_forecasting=True,
-                                      aggregation='median',
-                                      )
+    median_MAPE_forecasting = make_metric('median_MAPE_forecasting',
+                                          forecasting_metrics.mean_absolute_percentage_error,
+                                          optimum=0,
+                                          worst_possible_result=MAXINT,
+                                          greater_is_better=False,
+                                          do_forecasting=True,
+                                          aggregation='median',
+                                          )
 
-mean_MSE_forecasting = make_metric('mean_MSE_forecasting',
-                                   forecasting_metrics.mean_squared_error,
-                                   optimum=0,
-                                   worst_possible_result=MAXINT,
-                                   greater_is_better=False,
-                                   do_forecasting=True,
-                                   aggregation='mean',
-                                   )
+    mean_MSE_forecasting = make_metric('mean_MSE_forecasting',
+                                       forecasting_metrics.mean_squared_error,
+                                       optimum=0,
+                                       worst_possible_result=MAXINT,
+                                       greater_is_better=False,
+                                       do_forecasting=True,
+                                       aggregation='mean',
+                                       )
 
-median_MSE_forecasting = make_metric('median_MSE_forecasting',
-                                     forecasting_metrics.mean_squared_error,
-                                     optimum=0,
-                                     worst_possible_result=MAXINT,
-                                     greater_is_better=False,
-                                     do_forecasting=True,
-                                     aggregation='median',
-                                     )
+    median_MSE_forecasting = make_metric('median_MSE_forecasting',
+                                         forecasting_metrics.mean_squared_error,
+                                         optimum=0,
+                                         worst_possible_result=MAXINT,
+                                         greater_is_better=False,
+                                         do_forecasting=True,
+                                         aggregation='median',
+                                         )
 
-# Score functions that need decision values
-roc_auc = make_metric('roc_auc', sklearn.metrics.roc_auc_score, needs_threshold=True)
-average_precision = make_metric('average_precision',
-                                sklearn.metrics.average_precision_score,
-                                needs_threshold=True)
-precision = make_metric('precision',
-                        sklearn.metrics.precision_score)
-recall = make_metric('recall',
-                     sklearn.metrics.recall_score)
-
-# Score function for probabilistic classification
-log_loss = make_metric('log_loss',
-                       sklearn.metrics.log_loss,
-                       optimum=0,
-                       worst_possible_result=MAXINT,
-                       greater_is_better=False,
-                       needs_proba=True)
-
-REGRESSION_METRICS = dict()
-for scorer in [mean_absolute_error, mean_squared_error, root_mean_squared_error,
-               mean_squared_log_error, median_absolute_error, r2]:
-    REGRESSION_METRICS[scorer.name] = scorer
-
-CLASSIFICATION_METRICS = dict()
-
-for scorer in [accuracy, balanced_accuracy, roc_auc, average_precision,
-               log_loss]:
-    CLASSIFICATION_METRICS[scorer.name] = scorer
-
-FORECASTING_METRICS = dict()
-for scorer in [mean_MASE_forecasting, median_MASE_forecasting,
-               mean_MAE_forecasting, median_MAE_forecasting,
-               mean_MAPE_forecasting, median_MAPE_forecasting,
-               mean_MSE_forecasting, median_MSE_forecasting]:
-    FORECASTING_METRICS[scorer.name] = scorer
-
-for name, metric in [('precision', sklearn.metrics.precision_score),
-                     ('recall', sklearn.metrics.recall_score),
-                     ('f1', sklearn.metrics.f1_score)]:
-    globals()[name] = make_metric(name, metric)
-    CLASSIFICATION_METRICS[name] = globals()[name]
-    for average in ['macro', 'micro', 'samples', 'weighted']:
-        qualified_name = '{0}_{1}'.format(name, average)
-        globals()[qualified_name] = make_metric(qualified_name,
-                                                partial(metric,
-                                                        pos_label=None,
-                                                        average=average))
-        CLASSIFICATION_METRICS[qualified_name] = globals()[qualified_name]
+    FORECASTING_METRICS = dict()
+    for scorer in [mean_MASE_forecasting, median_MASE_forecasting,
+                   mean_MAE_forecasting, median_MAE_forecasting,
+                   mean_MAPE_forecasting, median_MAPE_forecasting,
+                   mean_MSE_forecasting, median_MSE_forecasting]:
+        FORECASTING_METRICS[scorer.name] = scorer
+else:
+    MASE_LOSSES = []
+    FORECASTING_METRICS = dict()

@@ -25,6 +25,12 @@ PyPI Installation
 .. code:: bash
     pip install autoPyTorch
 
+Auto-PyTorch for Time Series Forecasting requires additional dependencies
+
+.. code:: bash
+    pip install autoPyTorch[forecasting]
+
+
 Manual Installation
 -------------------
 
@@ -43,6 +49,16 @@ Manual Installation
     conda install swig
     cat requirements.txt | xargs -n 1 -L 1 pip install
     python setup.py install
+
+Similarly, Auto-PyTorch for time series forecasting requires additional dependencies
+
+.. code:: bash
+    git submodule update --init --recursive
+
+    conda create -n auto-pytorch python=3.8
+    conda activate auto-pytorch
+    conda install swig
+    pip install -e[forecasting]
 
 
 Docker Image

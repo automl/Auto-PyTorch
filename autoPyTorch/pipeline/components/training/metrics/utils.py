@@ -6,6 +6,7 @@ import numpy as np
 from autoPyTorch.constants import (
     CLASSIFICATION_TASKS,
     FORECASTING_TASKS,
+    ForecastingDependenciesNotInstalledMSG,
     REGRESSION_TASKS,
     STRING_TO_TASK_TYPES,
     TASK_TYPES,
@@ -47,6 +48,8 @@ def get_supported_metrics(dataset_properties: Dict[str, Any]) -> Dict[str, autoP
     elif STRING_TO_TASK_TYPES[task_type] in CLASSIFICATION_TASKS:
         return CLASSIFICATION_METRICS
     elif STRING_TO_TASK_TYPES[task_type] in FORECASTING_TASKS:
+        if len(FORECASTING_METRICS) == 0:
+            raise ModuleNotFoundError(ForecastingDependenciesNotInstalledMSG)
         return FORECASTING_METRICS
     else:
         raise NotImplementedError(task_type)
@@ -125,6 +128,8 @@ def calculate_score(
 ) -> Dict[str, float]:
     score_dict = dict()
     if task_type in FORECASTING_TASKS:
+        if len(MASE_LOSSES) == 0:
+            raise ModuleNotFoundError(ForecastingDependenciesNotInstalledMSG)
         cprediction = sanitize_array(prediction)
         for metric_ in metrics:
             if metric_ in MASE_LOSSES and 'mase_coefficient' in score_kwargs:

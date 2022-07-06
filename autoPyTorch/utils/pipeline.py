@@ -6,6 +6,7 @@ from ConfigSpace.configuration_space import ConfigurationSpace
 from autoPyTorch.constants import (
     CLASSIFICATION_TASKS,
     FORECASTING_TASKS,
+    ForecastingDependenciesNotInstalledMSG,
     IMAGE_TASKS,
     REGRESSION_TASKS,
     STRING_TO_TASK_TYPES,
@@ -14,7 +15,11 @@ from autoPyTorch.constants import (
 from autoPyTorch.pipeline.image_classification import ImageClassificationPipeline
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 from autoPyTorch.pipeline.tabular_regression import TabularRegressionPipeline
-from autoPyTorch.pipeline.time_series_forecasting import TimeSeriesForecastingPipeline
+try:
+    from autoPyTorch.pipeline.time_series_forecasting import TimeSeriesForecastingPipeline
+    forecasting_dependencies_installed = True
+except ModuleNotFoundError:
+    forecasting_dependencies_installed = False
 from autoPyTorch.utils.common import FitRequirement
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
@@ -73,6 +78,8 @@ def get_dataset_requirements(info: Dict[str, Any],
                                                         search_space_updates=search_space_updates
                                                         )
     else:
+        if not forecasting_dependencies_installed:
+            raise ModuleNotFoundError(ForecastingDependenciesNotInstalledMSG)
         return _get_forecasting_dataset_requirements(info,
                                                      include if include is not None else {},
                                                      exclude if exclude is not None else {},
@@ -129,6 +136,8 @@ def _get_forecasting_dataset_requirements(info: Dict[str, Any],
     task_type = STRING_TO_TASK_TYPES[info['task_type']]
 
     if task_type in FORECASTING_TASKS:
+        if not forecasting_dependencies_installed:
+            raise ModuleNotFoundError(ForecastingDependenciesNotInstalledMSG)
         return TimeSeriesForecastingPipeline(
             dataset_properties=info,
             include=include,

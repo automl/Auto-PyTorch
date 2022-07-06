@@ -25,6 +25,7 @@ from smac.tae.execute_func import AbstractTAFunc
 from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.constants import (
     FORECASTING_BUDGET_TYPE,
+    ForecastingDependenciesNotInstalledMSG,
     STRING_TO_TASK_TYPES,
     TIMESERIES_FORECASTING,
 )
@@ -34,7 +35,11 @@ from autoPyTorch.datasets.resampling_strategy import (
     NoResamplingStrategyTypes
 )
 from autoPyTorch.evaluation.test_evaluator import eval_test_function
-from autoPyTorch.evaluation.time_series_forecasting_train_evaluator import forecasting_eval_train_function
+try:
+    from autoPyTorch.evaluation.time_series_forecasting_train_evaluator import forecasting_eval_train_function
+    forecasting_dependencies_installed = True
+except ModuleNotFoundError:
+    forecasting_dependencies_installed = False
 from autoPyTorch.evaluation.train_evaluator import eval_train_function
 from autoPyTorch.evaluation.utils import (
     DisableFileOutputParameters,
@@ -152,6 +157,8 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         self.resampling_strategy_args = dm.resampling_strategy_args
 
         if STRING_TO_TASK_TYPES.get(dm.task_type, -1) == TIMESERIES_FORECASTING:
+            if not forecasting_dependencies_installed:
+                raise ModuleNotFoundError(ForecastingDependenciesNotInstalledMSG)
             eval_function: Callable = forecasting_eval_train_function
             if isinstance(self.resampling_strategy, (HoldoutValTypes, CrossValTypes)):
                 self.output_y_hat_optimization = output_y_hat_optimization

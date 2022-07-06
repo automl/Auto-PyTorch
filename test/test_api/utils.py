@@ -6,11 +6,11 @@ from autoPyTorch.constants import FORECASTING_TASKS, REGRESSION_TASKS
 from autoPyTorch.evaluation.abstract_evaluator import (
     DummyClassificationPipeline,
     DummyRegressionPipeline,
-    DummyTimeSeriesForecastingPipeline,
     fit_and_suppress_warnings
 )
 from autoPyTorch.evaluation.time_series_forecasting_train_evaluator import TimeSeriesForecastingTrainEvaluator
 from autoPyTorch.evaluation.train_evaluator import TrainEvaluator
+from autoPyTorch.evaluation.utils_extra import DummyTimeSeriesForecastingPipeline
 from autoPyTorch.pipeline.traditional_tabular_classification import TraditionalTabularClassificationPipeline
 
 
