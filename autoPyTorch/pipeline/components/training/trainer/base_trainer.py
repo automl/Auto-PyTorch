@@ -44,6 +44,11 @@ class BudgetTracker(object):
 
         It also allows to define a 'epoch_or_time' budget type, which means,
         the first of them both which is exhausted, is honored
+        Args:
+            budget_type (str): Type of budget to be used when fitting the pipeline.
+                Possible values are 'epochs', 'runtime', or 'epoch_or_time'
+            max_epochs (Optional[int], default=None): Maximum number of epochs to train the pipeline for
+            max_runtime (Optional[int], default=None): Maximum number of seconds to train the pipeline for
         """
         self.start_time = time.time()
         self.budget_type = budget_type
@@ -51,7 +56,16 @@ class BudgetTracker(object):
         self.max_runtime = max_runtime
 
     def is_max_epoch_reached(self, epoch: int) -> bool:
+        """
+        For budget type 'epoch' or 'epoch_or_time' return True if the maximum
+            number of epochs is reached.
+        Args:
+            epoch (int): the current epoch
 
+        Returns:
+            True if the current epoch is larger than the maximum epochs, False otherwise.
+            Additionally, returns False if the run is without this constrain.
+        """
         # Make None a method to run without this constrain
         if self.max_epochs is None:
             return False
@@ -60,6 +74,13 @@ class BudgetTracker(object):
         return False
 
     def is_max_time_reached(self) -> bool:
+        """
+        For budget type 'runtime' or 'epoch_or_time' return True if the maximum
+            runtime is reached.
+        Returns:
+            True if the maximum runtime is reached, False otherwise.
+            Additionally, returns False if the run is without this constrain.
+        """
         # Make None a method to run without this constrain
         if self.max_runtime is None:
             return False
@@ -75,7 +96,7 @@ class RunSummary(object):
         total_parameter_count: float,
         trainable_parameter_count: float,
         optimize_metric: Optional[str] = None,
-    ):
+    ) -> None:
         """
         A useful object to track performance per epoch.
 
@@ -83,6 +104,11 @@ class RunSummary(object):
         debug, but for research purposes (Like understanding overfit).
 
         It does so by tracking a metric/loss at the end of each epoch.
+
+        Args:
+            total_parameter_count (float): the total number of parameters of the model
+            trainable_parameter_count (float): only the parameters being optimized
+            optimize_metric (Optional[str], default=None): name of the metric that is used to evaluate a pipeline.
         """
         self.performance_tracker: Dict[str, Dict] = {
             'start_time': {},
@@ -118,8 +144,20 @@ class RunSummary(object):
                         test_loss: Optional[float] = None,
                         ) -> None:
         """
-        Tracks performance information about the run, useful for
-        plotting individual runs
+        Tracks performance information about the run, useful for plotting individual runs.
+        Args:
+            epoch (int): the current epoch
+            start_time (float): timestamp at the beginning of current epoch
+            end_time (float): timestamp when gathering the information
+            train_loss (float): the training loss
+            train_metrics (Dict[str, float]): training scores for each desired metric
+            val_metrics (Dict[str, float]): validation scores for each desired metric
+            test_metrics (Dict[str, float]): test scores for each desired metric
+            val_loss (Optional[float], default=None): the validation loss
+            test_loss (Optional[float], default=None): the test loss
+
+        Returns:
+            None.
         """
         self.performance_tracker['train_loss'][epoch] = train_loss
         self.performance_tracker['val_loss'][epoch] = val_loss
@@ -131,6 +169,15 @@ class RunSummary(object):
         self.performance_tracker['test_metrics'][epoch] = test_metrics
 
     def get_best_epoch(self, split_type: str = 'val') -> int:
+        """
+        Get the epoch with the best metric.
+        Args:
+            split_type (str, default=val): Which split's metric to consider.
+                Possible values are 'train' or 'val
+
+        Returns:
+            int
+        """
         # If we compute for optimization, prefer the performance
         # metric to the loss
         if self.optimize_metric is not None:
@@ -152,6 +199,12 @@ class RunSummary(object):
             )) + 1  # Epochs start at 1
 
     def get_last_epoch(self) -> int:
+        """
+        Get the last epoch.
+
+        Returns:
+            int
+        """
         if 'train_loss' not in self.performance_tracker:
             return 0
         else:
@@ -217,8 +270,14 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         se_lastk (int, default=3): Number of snapshots of the network to maintain
         use_lookahead_optimizer (bool, default=True): whether to use lookahead
             optimizer
-        random_state:
-        **lookahead_config:
+        random_state (Optional[np.random.RandomState]): Object that contains a seed and allows
+            for reproducible results
+        swa_model (Optional[torch.nn.Module], default=None): Averaged model used for Stochastic Weight Averaging
+        model_snapshots (Optional[List[torch.nn.Module]], default=None): List of model snapshots in case
+            snapshot ensemble is used
+        **lookahead_config (Any): keyword arguments for the lookahead optimizer including
+            la_steps (int): number of lookahead steps
+            la_alpha (float): linear interpolation factor. 1.0 recovers the inner optimizer.
     """
     def __init__(self, weighted_loss: int = 0,
                  use_stochastic_weight_averaging: bool = True,
@@ -328,15 +387,20 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
     def on_epoch_start(self, X: Dict[str, Any], epoch: int) -> None:
         """
-        Optional place holder for AutoPytorch Extensions.
+        Optional placeholder for AutoPytorch Extensions.
+        A user can define what happens on every epoch start or every epoch end.
 
-        An user can define what happens on every epoch start or every epoch end.
+        Args:
+            X (Dict[str, Any]): Dictionary with fitted parameters. It is a message passing
+                mechanism, in which during a transform, a components adds relevant information
+                so that further stages can be properly fitted
+            epoch (int): the current epoch
         """
         pass
 
     def _swa_update(self) -> None:
         """
-        perform swa model update
+        Perform Stochastic Weight Averaging model update
         """
         if self.swa_model is None:
             raise ValueError("SWA model cannot be none when stochastic weight averaging is enabled")
@@ -365,9 +429,15 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
     def on_epoch_end(self, X: Dict[str, Any], epoch: int) -> bool:
         """
-        Optional place holder for AutoPytorch Extensions.
-        An user can define what happens on every epoch start or every epoch end.
-        If returns True, the training is stopped
+        Optional placeholder for AutoPytorch Extensions.
+        A user can define what happens on every epoch start or every epoch end.
+        If returns True, the training is stopped.
+
+        Args:
+            X (Dict[str, Any]): Dictionary with fitted parameters. It is a message passing
+                mechanism, in which during a transform, a components adds relevant information
+                so that further stages can be properly fitted
+            epoch (int): the current epoch
 
         """
         if X['is_cyclic_scheduler']:
@@ -415,7 +485,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         Args:
             train_loader (torch.utils.data.DataLoader): generator of features/label
             epoch (int): The current epoch used solely for tracking purposes
-
+            writer (Optional[SummaryWriter]): Object to keep track of the training loss in
+                an event file
         Returns:
             float: training loss
             Dict[str, float]: scores for each desired metric
@@ -506,7 +577,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         Args:
             test_loader (torch.utils.data.DataLoader): generator of features/label
             epoch (int): the current epoch for tracking purposes
-
+            writer (Optional[SummaryWriter]): Object to keep track of the test loss
+                in an event file
         Returns:
             float: test loss
             Dict[str, float]: scores for each desired metric
