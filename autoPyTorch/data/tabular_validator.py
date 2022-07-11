@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 import logging
-from typing import Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -41,18 +41,24 @@ class TabularInputValidator(BaseInputValidator):
         dataset_compression (Optional[DatasetCompressionSpec]):
             specifications for dataset compression. For more info check
             documentation for `BaseTask.get_dataset`.
+        feat_types (List[str]):
+                Description about the feature types of the columns.
+                Accepts `numerical` for integers, float data and `categorical`
+                for categories, strings and bool
     """
     def __init__(
         self,
         is_classification: bool = False,
         logger_port: Optional[int] = None,
         dataset_compression: Optional[DatasetCompressionSpec] = None,
+        feat_types: Optional[List[str]] = None,
         seed: int = 42,
     ):
         self.dataset_compression = dataset_compression
         self._reduced_dtype: Optional[DatasetDTypeContainerType] = None
         self.is_classification = is_classification
         self.logger_port = logger_port
+        self.feat_types = feat_types
         self.seed = seed
         if self.logger_port is not None:
             self.logger: Union[logging.Logger, PicklableClientLogger] = get_named_client_logger(
@@ -63,7 +69,8 @@ class TabularInputValidator(BaseInputValidator):
             self.logger = logging.getLogger('Validation')
 
         self.feature_validator = TabularFeatureValidator(
-            logger=self.logger)
+            logger=self.logger,
+            feat_types=self.feat_types)
         self.target_validator = TabularTargetValidator(
             is_classification=self.is_classification,
             logger=self.logger

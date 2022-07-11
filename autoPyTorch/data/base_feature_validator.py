@@ -35,7 +35,7 @@ class BaseFeatureValidator(BaseEstimator):
         logger: Optional[Union[PicklableClientLogger, logging.Logger]] = None,
     ):
         # Register types to detect unsupported data format changes
-        self.feat_type: Optional[List[str]] = None
+        self.feat_types: Optional[List[str]] = None
         self.data_type: Optional[type] = None
         self.dtypes: List[str] = []
         self.column_order: List[str] = []

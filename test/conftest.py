@@ -59,6 +59,10 @@ def callattr_ahead_of_alltests(request):
         4871,    # sensory
         4857,    # boston
         3916,    # kc1
+        2295,    # cholesterol
+        3916,    # kc1-binary
+        293554,  # reuters
+        294846   # rf1
     ]
 
     # Populate the cache

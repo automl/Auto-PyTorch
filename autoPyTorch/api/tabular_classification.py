@@ -168,6 +168,7 @@ class TabularClassificationTask(BaseTask):
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         dataset_name: Optional[str] = None,
         dataset_compression: Optional[DatasetCompressionSpec] = None,
+        **kwargs: Any,
     ) -> Tuple[TabularDataset, TabularInputValidator]:
         """
         Returns an object of `TabularDataset` and an object of
@@ -194,6 +195,9 @@ class TabularClassificationTask(BaseTask):
             dataset_compression (Optional[DatasetCompressionSpec]):
                 specifications for dataset compression. For more info check
                 documentation for `BaseTask.get_dataset`.
+            kwargs (Any):
+                Currently for tabular tasks, expect `feat_types: (Optional[List[str]]` which
+                specifies whether a feature is 'numerical' or 'categorical'.
 
         Returns:
             TabularDataset:
@@ -206,12 +210,14 @@ class TabularClassificationTask(BaseTask):
         resampling_strategy_args = resampling_strategy_args if resampling_strategy_args is not None else \
             self.resampling_strategy_args
 
+        feat_types = kwargs.pop('feat_types', None)
         # Create a validator object to make sure that the data provided by
         # the user matches the autopytorch requirements
         input_validator = TabularInputValidator(
             is_classification=True,
             logger_port=self._logger_port,
-            dataset_compression=dataset_compression
+            dataset_compression=dataset_compression,
+            feat_types=feat_types
         )
 
         # Fit a input validator to check the provided data
@@ -238,6 +244,7 @@ class TabularClassificationTask(BaseTask):
         X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
         y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
         dataset_name: Optional[str] = None,
+        feat_types: Optional[List[str]] = None,
         budget_type: str = 'epochs',
         min_budget: int = 5,
         max_budget: int = 50,
@@ -266,6 +273,10 @@ class TabularClassificationTask(BaseTask):
                 A pair of features (X_train) and targets (y_train) used to fit a
                 pipeline. Additionally, a holdout of this pairs (X_test, y_test) can
                 be provided to track the generalization performance of each stage.
+            feat_types (Optional[List[str]]):
+                Description about the feature types of the columns.
+                Accepts `numerical` for integers, float data and `categorical`
+                for categories, strings and bool. Defaults to None.
             optimize_metric (str):
                 name of the metric that is used to evaluate a pipeline.
             budget_type (str):
@@ -433,7 +444,8 @@ class TabularClassificationTask(BaseTask):
             resampling_strategy=self.resampling_strategy,
             resampling_strategy_args=self.resampling_strategy_args,
             dataset_name=dataset_name,
-            dataset_compression=self._dataset_compression)
+            dataset_compression=self._dataset_compression,
+            feat_types=feat_types)
 
         return self._search(
             dataset=self.dataset,

@@ -77,6 +77,7 @@ setuptools.setup(
             "jupyter",
             "notebook",
             "seaborn",
+            "openml"
         ],
         "docs": ["sphinx", "sphinx-gallery", "sphinx_bootstrap_theme", "numpydoc"],
     },
