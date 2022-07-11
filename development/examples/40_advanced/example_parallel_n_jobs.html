@@ -125,9 +125,9 @@ to download the full example code or to run this example in your browser via Bin
 <p>The following example shows how to fit a sample classification model parallely on 2 cores
 with AutoPyTorch</p>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>[ERROR] [2022-07-06 09:52:41,203:asyncio.events]
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>[ERROR] [2022-07-11 12:00:18,890:asyncio.events]
 Traceback (most recent call last):
-  File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py&quot;, line 776, in wrapper
+  File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py&quot;, line 778, in wrapper
     return await func(*args, **kwargs)
   File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/client.py&quot;, line 1211, in _reconnect
     await self._ensure_connected(timeout=timeout)
@@ -138,13 +138,13 @@ Traceback (most recent call last):
   File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/asyncio/tasks.py&quot;, line 659, in sleep
     return await future
 asyncio.exceptions.CancelledError
-[ERROR] [2022-07-06 09:52:41,206:asyncio.events]
+[ERROR] [2022-07-11 12:00:18,893:asyncio.events]
 Traceback (most recent call last):
-  File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py&quot;, line 776, in wrapper
+  File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py&quot;, line 778, in wrapper
     return await func(*args, **kwargs)
   File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/client.py&quot;, line 1400, in _handle_report
     await self._reconnect()
-  File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py&quot;, line 776, in wrapper
+  File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py&quot;, line 778, in wrapper
     return await func(*args, **kwargs)
   File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/client.py&quot;, line 1211, in _reconnect
     await self._ensure_connected(timeout=timeout)
@@ -155,15 +155,15 @@ Traceback (most recent call last):
   File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/asyncio/tasks.py&quot;, line 659, in sleep
     return await future
 asyncio.exceptions.CancelledError
-{&#39;accuracy&#39;: 0.8497109826589595}
+{&#39;accuracy&#39;: 0.8728323699421965}
 autoPyTorch results:
-        Dataset name: 9ba6a06a-fd10-11ec-880e-1ffee406ffa6
+        Dataset name: 3bbe1d22-0110-11ed-883c-4b9360237cc1
         Optimisation Metric: accuracy
         Best validation score: 0.8713450292397661
-        Number of target algorithm runs: 36
-        Number of successful target algorithm runs: 29
+        Number of target algorithm runs: 38
+        Number of successful target algorithm runs: 30
         Number of crashed target algorithm runs: 5
-        Number of target algorithms that exceeded the time limit: 2
+        Number of target algorithms that exceeded the time limit: 3
         Number of target algorithms that exceeded the memory limit: 0
 </pre></div>
 </div>
@@ -231,7 +231,7 @@ autoPyTorch results:
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">sprint_statistics</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  42.564 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  50.601 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-parallel-n-jobs-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_parallel_n_jobs.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>

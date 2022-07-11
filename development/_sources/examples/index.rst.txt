@@ -178,6 +178,27 @@ Advanced examples for using *Auto-PyTorch* on tabular datasets.
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="The following example shows how to pass feature typesfor datasets which are in  numpy format (a...">
+
+.. only:: html
+
+ .. figure:: /examples/40_advanced/images/thumb/sphx_glr_example_pass_feature_types_thumb.png
+     :alt: Tabular Classification with user passed feature types
+
+     :ref:`sphx_glr_examples_40_advanced_example_pass_feature_types.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/40_advanced/example_pass_feature_types
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="The following example shows how to fit a sample classification model parallely on 2 cores with ...">
 
 .. only:: html

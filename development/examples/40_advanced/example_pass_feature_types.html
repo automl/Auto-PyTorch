@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>Tabular Classification &#8212; AutoPyTorch 0.1.1 documentation</title>
+    <title>Tabular Classification with user passed feature types &#8212; AutoPyTorch 0.1.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/bootstrap-sphinx.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css" />
@@ -108,7 +108,7 @@
   <div class="row">
       <div class="col-md-3">
         <div id="sidebar" class="bs-sidenav" role="complementary"><ul>
-<li><a class="reference internal" href="#">Tabular Classification</a><ul>
+<li><a class="reference internal" href="#">Tabular Classification with user passed feature types</a><ul>
 <li><a class="reference internal" href="#data-loading">Data Loading</a></li>
 <li><a class="reference internal" href="#build-and-fit-a-classifier">Build and fit a classifier</a></li>
 <li><a class="reference internal" href="#search-for-an-ensemble-of-machine-learning-algorithms">Search for an ensemble of machine learning algorithms</a></li>
@@ -123,13 +123,20 @@
       
   <div class="sphx-glr-download-link-note admonition note">
 <p class="admonition-title">Note</p>
-<p>Click <a class="reference internal" href="#sphx-glr-download-examples-20-basics-example-tabular-classification-py"><span class="std std-ref">here</span></a>
+<p>Click <a class="reference internal" href="#sphx-glr-download-examples-40-advanced-example-pass-feature-types-py"><span class="std std-ref">here</span></a>
 to download the full example code or to run this example in your browser via Binder</p>
 </div>
-<section class="sphx-glr-example-title" id="tabular-classification">
-<span id="sphx-glr-examples-20-basics-example-tabular-classification-py"></span><h1>Tabular Classification<a class="headerlink" href="#tabular-classification" title="Permalink to this heading">¶</a></h1>
-<p>The following example shows how to fit a sample classification model
-with AutoPyTorch</p>
+<section class="sphx-glr-example-title" id="tabular-classification-with-user-passed-feature-types">
+<span id="sphx-glr-examples-40-advanced-example-pass-feature-types-py"></span><h1>Tabular Classification with user passed feature types<a class="headerlink" href="#tabular-classification-with-user-passed-feature-types" title="Permalink to this heading">¶</a></h1>
+<p>The following example shows how to pass feature typesfor datasets which are in
+numpy format (also works for dataframes and lists) fit a sample classification
+model with AutoPyTorch.</p>
+<p>AutoPyTorch relies on column dtypes for intepreting the feature types. But they
+can be misinterpreted for example, when dataset is passed as a numpy array, all
+the data is interpreted as numerical if it’s dtype is int or float. However, the
+categorical values could have been encoded as integers.</p>
+<p>Passing feature types helps AutoPyTorch interpreting them correctly as well as
+validates the dataset by checking the dtype of the columns for any incompatibilities.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">tempfile</span> <span class="k">as</span> <span class="nn">tmp</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
@@ -142,7 +149,7 @@ with AutoPyTorch</p>
 <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">UserWarning</span><span class="p">)</span>
 <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">FutureWarning</span><span class="p">)</span>
 
-<span class="kn">import</span> <span class="nn">sklearn.datasets</span>
+<span class="kn">import</span> <span class="nn">openml</span>
 <span class="kn">import</span> <span class="nn">sklearn.model_selection</span>
 
 <span class="kn">from</span> <span class="nn">autoPyTorch.api.tabular_classification</span> <span class="kn">import</span> <span class="n">TabularClassificationTask</span>
@@ -150,12 +157,21 @@ with AutoPyTorch</p>
 </div>
 <section id="data-loading">
 <h2>Data Loading<a class="headerlink" href="#data-loading" title="Permalink to this heading">¶</a></h2>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">fetch_openml</span><span class="p">(</span><span class="n">data_id</span><span class="o">=</span><span class="mi">40981</span><span class="p">,</span> <span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">task</span> <span class="o">=</span> <span class="n">openml</span><span class="o">.</span><span class="n">tasks</span><span class="o">.</span><span class="n">get_task</span><span class="p">(</span><span class="n">task_id</span><span class="o">=</span><span class="mi">146821</span><span class="p">)</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">get_dataset</span><span class="p">()</span>
+<span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">categorical_indicator</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span>
+    <span class="n">dataset_format</span><span class="o">=</span><span class="s1">&#39;array&#39;</span><span class="p">,</span>
+    <span class="n">target</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">default_target_attribute</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">model_selection</span><span class="o">.</span><span class="n">train_test_split</span><span class="p">(</span>
     <span class="n">X</span><span class="p">,</span>
     <span class="n">y</span><span class="p">,</span>
     <span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
 <span class="p">)</span>
+
+<span class="n">feat_types</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;numerical&quot;</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">indicator</span> <span class="k">else</span> <span class="s2">&quot;categorical&quot;</span> <span class="k">for</span> <span class="n">indicator</span> <span class="ow">in</span> <span class="n">categorical_indicator</span><span class="p">]</span>
+
+<span class="c1">#</span>
 </pre></div>
 </div>
 </section>
@@ -182,13 +198,15 @@ with AutoPyTorch</p>
     <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
     <span class="n">dataset_name</span><span class="o">=</span><span class="s1">&#39;Australian&#39;</span><span class="p">,</span>
     <span class="n">optimize_metric</span><span class="o">=</span><span class="s1">&#39;accuracy&#39;</span><span class="p">,</span>
-    <span class="n">total_walltime_limit</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>
-    <span class="n">func_eval_time_limit_secs</span><span class="o">=</span><span class="mi">50</span>
+    <span class="n">total_walltime_limit</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">func_eval_time_limit_secs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+    <span class="n">feat_types</span><span class="o">=</span><span class="n">feat_types</span><span class="p">,</span>
+    <span class="n">enable_traditional_pipeline</span><span class="o">=</span><span class="kc">False</span>
 <span class="p">)</span>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fbc0d1b40d0&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fbc0633aa30&gt;
 </pre></div>
 </div>
 </section>
@@ -205,35 +223,33 @@ with AutoPyTorch</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.8728323699421965}
-|    | Preprocessing                                                                              | Estimator                                                    |   Weight |
-|---:|:-------------------------------------------------------------------------------------------|:-------------------------------------------------------------|---------:|
-|  0 | None                                                                                       | CBLearner                                                    |     0.5  |
-|  1 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,MinMaxScaler,FastICA            | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential    |     0.22 |
-|  2 | SimpleImputer,Variance Threshold,MinorityCoalescer,OneHotEncoder,PowerTransformer,Nystroem | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.14 |
-|  3 | SimpleImputer,Variance Threshold,NoCoalescer,NoEncoder,StandardScaler,PCA                  | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential    |     0.12 |
-|  4 | None                                                                                       | RFLearner                                                    |     0.02 |
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.9467592592592593}
+|    | Preprocessing                                                                                | Estimator                                                       |   Weight |
+|---:|:---------------------------------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
+|  0 | SimpleImputer,Variance Threshold,MinorityCoalescer,NoEncoder,NoScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential       |     0.7  |
+|  1 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,NoScaler,NoFeaturePreprocessing   | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.18 |
+|  2 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,NoScaler,NoFeaturePreprocessing   | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
 autoPyTorch results:
         Dataset name: Australian
         Optimisation Metric: accuracy
-        Best validation score: 0.8713450292397661
-        Number of target algorithm runs: 22
-        Number of successful target algorithm runs: 21
+        Best validation score: 0.9088785046728972
+        Number of target algorithm runs: 7
+        Number of successful target algorithm runs: 7
         Number of crashed target algorithm runs: 0
-        Number of target algorithms that exceeded the time limit: 1
+        Number of target algorithms that exceeded the time limit: 0
         Number of target algorithms that exceeded the memory limit: 0
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  37.923 seconds)</p>
-<div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-20-basics-example-tabular-classification-py">
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 1 minutes  54.126 seconds)</p>
+<div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-pass-feature-types-py">
 <div class="binder-badge docutils container">
-<a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/20_basics/example_tabular_classification.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo.svg" width="150px" /></a>
+<a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_pass_feature_types.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>
 </div>
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
-<p><a class="reference download internal" download="" href="../../_downloads/eaf3a203570ee37a60e53304131a24a3/example_tabular_classification.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">example_tabular_classification.py</span></code></a></p>
+<p><a class="reference download internal" download="" href="../../_downloads/b94e5326627884f180b75cfade993f09/example_pass_feature_types.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">example_pass_feature_types.py</span></code></a></p>
 </div>
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
-<p><a class="reference download internal" download="" href="../../_downloads/6ee656697d20c490e1d49bdbfb69d108/example_tabular_classification.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">example_tabular_classification.ipynb</span></code></a></p>
+<p><a class="reference download internal" download="" href="../../_downloads/f12b80fbfb7d358449eeb84e7ac56173/example_pass_feature_types.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">example_pass_feature_types.ipynb</span></code></a></p>
 </div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
@@ -253,7 +269,7 @@ autoPyTorch results:
         <br/>
         
 <div id="sourcelink">
-  <a href="../../_sources/examples/20_basics/example_tabular_classification.rst.txt"
+  <a href="../../_sources/examples/40_advanced/example_pass_feature_types.rst.txt"
      rel="nofollow">Source</a>
 </div>
       

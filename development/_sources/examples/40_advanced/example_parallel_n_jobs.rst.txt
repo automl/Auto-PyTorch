@@ -36,9 +36,9 @@ with AutoPyTorch
 
  .. code-block:: none
 
-    [ERROR] [2022-07-06 09:52:41,203:asyncio.events] 
+    [ERROR] [2022-07-11 12:00:18,890:asyncio.events] 
     Traceback (most recent call last):
-      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py", line 776, in wrapper
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py", line 778, in wrapper
         return await func(*args, **kwargs)
       File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/client.py", line 1211, in _reconnect
         await self._ensure_connected(timeout=timeout)
@@ -49,13 +49,13 @@ with AutoPyTorch
       File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/asyncio/tasks.py", line 659, in sleep
         return await future
     asyncio.exceptions.CancelledError
-    [ERROR] [2022-07-06 09:52:41,206:asyncio.events] 
+    [ERROR] [2022-07-11 12:00:18,893:asyncio.events] 
     Traceback (most recent call last):
-      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py", line 776, in wrapper
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py", line 778, in wrapper
         return await func(*args, **kwargs)
       File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/client.py", line 1400, in _handle_report
         await self._reconnect()
-      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py", line 776, in wrapper
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py", line 778, in wrapper
         return await func(*args, **kwargs)
       File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/client.py", line 1211, in _reconnect
         await self._ensure_connected(timeout=timeout)
@@ -66,15 +66,15 @@ with AutoPyTorch
       File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/asyncio/tasks.py", line 659, in sleep
         return await future
     asyncio.exceptions.CancelledError
-    {'accuracy': 0.8497109826589595}
+    {'accuracy': 0.8728323699421965}
     autoPyTorch results:
-            Dataset name: 9ba6a06a-fd10-11ec-880e-1ffee406ffa6
+            Dataset name: 3bbe1d22-0110-11ed-883c-4b9360237cc1
             Optimisation Metric: accuracy
             Best validation score: 0.8713450292397661
-            Number of target algorithm runs: 36
-            Number of successful target algorithm runs: 29
+            Number of target algorithm runs: 38
+            Number of successful target algorithm runs: 30
             Number of crashed target algorithm runs: 5
-            Number of target algorithms that exceeded the time limit: 2
+            Number of target algorithms that exceeded the time limit: 3
             Number of target algorithms that exceeded the memory limit: 0
 
 
@@ -151,7 +151,7 @@ with AutoPyTorch
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  42.564 seconds)
+   **Total running time of the script:** ( 5 minutes  50.601 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_parallel_n_jobs.py:
