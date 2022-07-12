@@ -9,6 +9,8 @@ from ConfigSpace.hyperparameters import (
     UniformIntegerHyperparameter,
 )
 
+from flaky import flaky
+
 import numpy as np
 
 import pytest
@@ -59,6 +61,7 @@ class TestTabularClassification:
             elif isinstance(hyperparameter, CategoricalHyperparameter):
                 assert update.value_range == hyperparameter.choices
 
+    @flaky(max_runs=3)
     def test_pipeline_fit(self, fit_dictionary_tabular, exclude):
         """This test makes sure that the pipeline is able to fit
         given random combinations of hyperparameters across the pipeline"""
