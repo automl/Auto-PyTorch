@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>Tabular Classification with different resampling strategy &#8212; AutoPyTorch 0.1.1 documentation</title>
+    <title>Tabular Classification with different resampling strategy &#8212; AutoPyTorch 0.2 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/bootstrap-sphinx.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css" />
@@ -56,7 +56,7 @@
         </button>
         <a class="navbar-brand" href="../../index.html">
           Auto-PyTorch</a>
-        <span class="navbar-text navbar-version pull-left"><b>0.1.1</b></span>
+        <span class="navbar-text navbar-version pull-left"><b>0.2</b></span>
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -206,7 +206,7 @@ a 67% train size split.</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fbc06061e50&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f755501adf0&gt;
 </pre></div>
 </div>
 </section>
@@ -223,24 +223,22 @@ a 67% train size split.</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.8728323699421965}
-|    | Preprocessing                                                                              | Estimator                                                    |   Weight |
-|---:|:-------------------------------------------------------------------------------------------|:-------------------------------------------------------------|---------:|
-|  0 | None                                                                                       | RFLearner                                                    |     0.34 |
-|  1 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,NoScaler,LinearSVC Preprocessor | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.28 |
-|  2 | None                                                                                       | ETLearner                                                    |     0.16 |
-|  3 | None                                                                                       | LGBMLearner                                                  |     0.08 |
-|  4 | None                                                                                       | SVMLearner                                                   |     0.06 |
-|  5 | None                                                                                       | KNNLearner                                                   |     0.06 |
-|  6 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,QuantileTransformer,TruncSVD    | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.8554913294797688}
+|    | Preprocessing                                                                                    | Estimator                                                       |   Weight |
+|---:|:-------------------------------------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
+|  0 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,NoScaler,LinearSVC Preprocessor       | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.28 |
+|  1 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.28 |
+|  2 | SimpleImputer,Variance Threshold,NoCoalescer,NoEncoder,StandardScaler,SPC                        | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.24 |
+|  3 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.18 |
+|  4 | None                                                                                             | KNNLearner                                                      |     0.02 |
 autoPyTorch results:
-        Dataset name: fc20b9c9-0111-11ed-883c-4b9360237cc1
+        Dataset name: 799558f3-01e1-11ed-881e-fb671a47a91f
         Optimisation Metric: accuracy
-        Best validation score: 0.8596491228070176
-        Number of target algorithm runs: 17
-        Number of successful target algorithm runs: 12
+        Best validation score: 0.8713450292397661
+        Number of target algorithm runs: 20
+        Number of successful target algorithm runs: 16
         Number of crashed target algorithm runs: 4
-        Number of target algorithms that exceeded the time limit: 1
+        Number of target algorithms that exceeded the time limit: 0
         Number of target algorithms that exceeded the memory limit: 0
 </pre></div>
 </div>
@@ -271,7 +269,7 @@ autoPyTorch results:
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fbbfcecebe0&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f755cce8790&gt;
 </pre></div>
 </div>
 </section>
@@ -288,23 +286,22 @@ autoPyTorch results:
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.861271676300578}
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.8728323699421965}
 |    | Preprocessing                                                                                  | Estimator                                                       |   Weight |
 |---:|:-----------------------------------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-|  0 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,NoScaler,LinearSVC Preprocessor     | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.36 |
-|  1 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,MinMaxScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.22 |
-|  2 | None                                                                                           | TabularTraditionalModel                                         |     0.18 |
-|  3 | None                                                                                           | TabularTraditionalModel                                         |     0.16 |
-|  4 | None                                                                                           | TabularTraditionalModel                                         |     0.04 |
-|  5 | None                                                                                           | TabularTraditionalModel                                         |     0.02 |
-|  6 | None                                                                                           | TabularTraditionalModel                                         |     0.02 |
+|  0 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,NoScaler,LinearSVC Preprocessor     | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.56 |
+|  1 | None                                                                                           | TabularTraditionalModel                                         |     0.16 |
+|  2 | None                                                                                           | TabularTraditionalModel                                         |     0.12 |
+|  3 | None                                                                                           | TabularTraditionalModel                                         |     0.08 |
+|  4 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,QuantileTransformer,TruncSVD        | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.04 |
+|  5 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,MinMaxScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
 autoPyTorch results:
-        Dataset name: 61d804f1-0112-11ed-883c-4b9360237cc1
+        Dataset name: def16a0e-01e1-11ed-881e-fb671a47a91f
         Optimisation Metric: accuracy
         Best validation score: 0.8626733083495604
-        Number of target algorithm runs: 12
-        Number of successful target algorithm runs: 9
-        Number of crashed target algorithm runs: 2
+        Number of target algorithm runs: 16
+        Number of successful target algorithm runs: 11
+        Number of crashed target algorithm runs: 4
         Number of target algorithms that exceeded the time limit: 1
         Number of target algorithms that exceeded the memory limit: 0
 </pre></div>
@@ -339,7 +336,7 @@ autoPyTorch results:
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fbbf4fbd670&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f7555509eb0&gt;
 </pre></div>
 </div>
 </section>
@@ -357,29 +354,27 @@ autoPyTorch results:
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.8554913294797688}
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.8670520231213873}
 |    | Preprocessing                                                                                    | Estimator                                                       |   Weight |
 |---:|:-------------------------------------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-|  0 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,NoScaler,LinearSVC Preprocessor       | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.6  |
-|  1 | None                                                                                             | RFLearner                                                       |     0.12 |
-|  2 | None                                                                                             | SVMLearner                                                      |     0.08 |
-|  3 | None                                                                                             | KNNLearner                                                      |     0.06 |
-|  4 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
-|  5 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,QuantileTransformer,TruncSVD          | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.04 |
-|  6 | None                                                                                             | LGBMLearner                                                     |     0.02 |
-|  7 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,MinMaxScaler,NoFeaturePreprocessing   | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+|  0 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,NoScaler,LinearSVC Preprocessor       | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.62 |
+|  1 | None                                                                                             | RFLearner                                                       |     0.14 |
+|  2 | None                                                                                             | KNNLearner                                                      |     0.12 |
+|  3 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
+|  4 | None                                                                                             | SVMLearner                                                      |     0.04 |
+|  5 | None                                                                                             | LGBMLearner                                                     |     0.02 |
 autoPyTorch results:
-        Dataset name: cd8ac498-0112-11ed-883c-4b9360237cc1
+        Dataset name: 4fcdd77e-01e2-11ed-881e-fb671a47a91f
         Optimisation Metric: accuracy
         Best validation score: 0.8362573099415205
-        Number of target algorithm runs: 17
-        Number of successful target algorithm runs: 12
-        Number of crashed target algorithm runs: 4
-        Number of target algorithms that exceeded the time limit: 1
+        Number of target algorithm runs: 18
+        Number of successful target algorithm runs: 13
+        Number of crashed target algorithm runs: 3
+        Number of target algorithms that exceeded the time limit: 2
         Number of target algorithms that exceeded the memory limit: 0
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 8 minutes  46.765 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 8 minutes  54.126 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-resampling-strategy-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_resampling_strategy.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>

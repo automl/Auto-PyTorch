@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>Image Classification &#8212; AutoPyTorch 0.1.1 documentation</title>
+    <title>Image Classification &#8212; AutoPyTorch 0.2 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/bootstrap-sphinx.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css" />
@@ -56,7 +56,7 @@
         </button>
         <a class="navbar-brand" href="../../index.html">
           Auto-PyTorch</a>
-        <span class="navbar-text navbar-version pull-left"><b>0.1.1</b></span>
+        <span class="navbar-text navbar-version pull-left"><b>0.2</b></span>
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -127,52 +127,41 @@ to download the full example code or to run this example in your browser via Bin
 Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz to ../datasets/FashionMNIST/raw/train-images-idx3-ubyte.gz
 
   0%|          | 0/26421880 [00:00&lt;?, ?it/s]
-  0%|          | 32768/26421880 [00:00&lt;01:35, 276551.04it/s]
-  0%|          | 65536/26421880 [00:00&lt;01:36, 274252.45it/s]
-  0%|          | 131072/26421880 [00:00&lt;01:06, 398018.29it/s]
-  1%|          | 229376/26421880 [00:00&lt;00:46, 563657.99it/s]
-  2%|1         | 491520/26421880 [00:00&lt;00:22, 1146568.90it/s]
-  4%|3         | 950272/26421880 [00:00&lt;00:12, 2054823.20it/s]
-  7%|7         | 1933312/26421880 [00:00&lt;00:06, 4056927.04it/s]
- 15%|#4        | 3833856/26421880 [00:00&lt;00:02, 7798796.56it/s]
- 26%|##6       | 6914048/26421880 [00:01&lt;00:01, 13359064.14it/s]
- 38%|###7      | 9994240/26421880 [00:01&lt;00:00, 17136968.74it/s]
- 49%|####9     | 13008896/26421880 [00:01&lt;00:00, 19545525.16it/s]
- 60%|#####9    | 15794176/26421880 [00:01&lt;00:00, 20620932.40it/s]
- 72%|#######1  | 18907136/26421880 [00:01&lt;00:00, 22189265.69it/s]
- 83%|########2 | 21889024/26421880 [00:01&lt;00:00, 23006907.81it/s]
- 94%|#########4| 24936448/26421880 [00:01&lt;00:00, 23700501.05it/s]
-100%|##########| 26421880/26421880 [00:01&lt;00:00, 14562278.05it/s]
+  0%|          | 65536/26421880 [00:00&lt;01:10, 374644.14it/s]
+  1%|          | 163840/26421880 [00:00&lt;00:41, 631006.64it/s]
+  2%|1         | 425984/26421880 [00:00&lt;00:22, 1140468.14it/s]
+  5%|4         | 1310720/26421880 [00:00&lt;00:07, 3470288.06it/s]
+ 13%|#3        | 3473408/26421880 [00:00&lt;00:03, 7608945.79it/s]
+ 31%|###1      | 8290304/26421880 [00:00&lt;00:00, 18277293.49it/s]
+ 47%|####7     | 12419072/26421880 [00:00&lt;00:00, 21138658.10it/s]
+ 66%|######5   | 17399808/26421880 [00:01&lt;00:00, 28063442.88it/s]
+ 82%|########1 | 21561344/26421880 [00:01&lt;00:00, 27247015.88it/s]
+100%|##########| 26421880/26421880 [00:01&lt;00:00, 19940201.20it/s]
 Extracting ../datasets/FashionMNIST/raw/train-images-idx3-ubyte.gz to ../datasets/FashionMNIST/raw
 
 Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-labels-idx1-ubyte.gz
 Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-labels-idx1-ubyte.gz to ../datasets/FashionMNIST/raw/train-labels-idx1-ubyte.gz
 
   0%|          | 0/29515 [00:00&lt;?, ?it/s]
-100%|##########| 29515/29515 [00:00&lt;00:00, 247105.44it/s]
-100%|##########| 29515/29515 [00:00&lt;00:00, 246232.04it/s]
+100%|##########| 29515/29515 [00:00&lt;00:00, 333885.02it/s]
 Extracting ../datasets/FashionMNIST/raw/train-labels-idx1-ubyte.gz to ../datasets/FashionMNIST/raw
 
 Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz
 Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz to ../datasets/FashionMNIST/raw/t10k-images-idx3-ubyte.gz
 
   0%|          | 0/4422102 [00:00&lt;?, ?it/s]
-  1%|          | 32768/4422102 [00:00&lt;00:15, 280761.55it/s]
-  1%|1         | 65536/4422102 [00:00&lt;00:15, 279573.63it/s]
-  3%|2         | 131072/4422102 [00:00&lt;00:10, 406717.53it/s]
-  5%|5         | 229376/4422102 [00:00&lt;00:07, 576701.46it/s]
- 10%|#         | 458752/4422102 [00:00&lt;00:03, 1073172.74it/s]
- 21%|##1       | 950272/4422102 [00:00&lt;00:01, 2129593.91it/s]
- 42%|####2     | 1867776/4422102 [00:00&lt;00:00, 3987323.65it/s]
- 85%|########5 | 3768320/4422102 [00:00&lt;00:00, 7867297.96it/s]
-100%|##########| 4422102/4422102 [00:00&lt;00:00, 4687471.44it/s]
+  1%|1         | 65536/4422102 [00:00&lt;00:11, 376169.94it/s]
+  5%|5         | 229376/4422102 [00:00&lt;00:05, 709739.76it/s]
+ 20%|##        | 884736/4422102 [00:00&lt;00:01, 2110100.56it/s]
+ 72%|#######1  | 3178496/4422102 [00:00&lt;00:00, 7798515.95it/s]
+100%|##########| 4422102/4422102 [00:00&lt;00:00, 6345915.96it/s]
 Extracting ../datasets/FashionMNIST/raw/t10k-images-idx3-ubyte.gz to ../datasets/FashionMNIST/raw
 
 Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labels-idx1-ubyte.gz
 Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labels-idx1-ubyte.gz to ../datasets/FashionMNIST/raw/t10k-labels-idx1-ubyte.gz
 
   0%|          | 0/5148 [00:00&lt;?, ?it/s]
-100%|##########| 5148/5148 [00:00&lt;00:00, 27471090.32it/s]
+100%|##########| 5148/5148 [00:00&lt;00:00, 42254945.19it/s]
 Extracting ../datasets/FashionMNIST/raw/t10k-labels-idx1-ubyte.gz to ../datasets/FashionMNIST/raw
 
 Pipeline CS:
@@ -207,13 +196,16 @@ Configuration space object:
 Pipeline Random Config:
  ________________________________________
 Configuration(values={
-  &#39;image_augmenter:GaussianBlur:use_augmenter&#39;: False,
-  &#39;image_augmenter:GaussianNoise:sigma_offset&#39;: 1.5287652017846955,
+  &#39;image_augmenter:GaussianBlur:sigma_min&#39;: 0.5986757047003219,
+  &#39;image_augmenter:GaussianBlur:sigma_offset&#39;: 1.6405649910315916,
+  &#39;image_augmenter:GaussianBlur:use_augmenter&#39;: True,
+  &#39;image_augmenter:GaussianNoise:sigma_offset&#39;: 2.8469479270927325,
   &#39;image_augmenter:GaussianNoise:use_augmenter&#39;: True,
   &#39;image_augmenter:RandomAffine:use_augmenter&#39;: False,
-  &#39;image_augmenter:RandomCutout:use_augmenter&#39;: False,
-  &#39;image_augmenter:Resize:use_augmenter&#39;: False,
-  &#39;image_augmenter:ZeroPadAndCrop:percent&#39;: 0.04280204975898094,
+  &#39;image_augmenter:RandomCutout:p&#39;: 0.9357778536297661,
+  &#39;image_augmenter:RandomCutout:use_augmenter&#39;: True,
+  &#39;image_augmenter:Resize:use_augmenter&#39;: True,
+  &#39;image_augmenter:ZeroPadAndCrop:percent&#39;: 0.013520874232656022,
   &#39;normalizer:__choice__&#39;: &#39;NoNormalizer&#39;,
 })
 
@@ -287,7 +279,7 @@ ________________________________________
 <span class="nb">print</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  6.569 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  4.898 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-20-basics-example-image-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/20_basics/example_image_classification.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo.svg" width="150px" /></a>
