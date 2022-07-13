@@ -11,7 +11,7 @@ on:
     branches:
       - master
       - development
-      - add_docker-publish
+      - fixes_docker
   workflow_dispatch:
 
 jobs:
