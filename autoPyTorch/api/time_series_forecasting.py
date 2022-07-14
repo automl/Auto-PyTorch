@@ -28,6 +28,7 @@ from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterS
 class TimeSeriesForecastingTask(BaseTask):
     """
     Time Series Forecasting API to the pipelines.
+
     Args:
         seed (int):
             seed to be used for reproducibility.
@@ -253,6 +254,7 @@ class TimeSeriesForecastingTask(BaseTask):
             Y=y_train,
             X_test=X_test,
             Y_test=y_test,
+            dataset_name=dataset_name,
             freq=freq,
             start_times=start_times,
             series_idx=series_idx,
@@ -399,7 +401,25 @@ class TimeSeriesForecastingTask(BaseTask):
                 for each pipeline and results will be available via cv_results
             precision (int), (default=32): Numeric precision used when loading
                 ensemble data. Can be either '16', '32' or '64'.
-            disable_file_output (Union[bool, List]):
+            disable_file_output (Optional[List[Union[str, DisableFileOutputParameters]]]):
+                Used as a list to pass more fine-grained
+                information on what to save. Must be a member of `DisableFileOutputParameters`.
+                Allowed elements in the list are:
+
+                + `y_optimization`:
+                    do not save the predictions for the optimization set,
+                    which would later on be used to build an ensemble. Note that SMAC
+                    optimizes a metric evaluated on the optimization set.
+                + `pipeline`:
+                    do not save any individual pipeline files
+                + `pipelines`:
+                    In case of cross validation, disables saving the joint model of the
+                    pipelines fit on each fold.
+                + `y_test`:
+                    do not save the predictions for the test set.
+                + `all`:
+                    do not save any of the above.
+                For more information check `autoPyTorch.evaluation.utils.DisableFileOutputParameters`.
             load_models (bool), (default=True): Whether to load the
                 models after fitting AutoPyTorch.
             suggested_init_models: Optional[List[str]]
