@@ -150,7 +150,7 @@ Search for an ensemble of machine learning algorithms
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 1 minutes  3.199 seconds)
+   **Total running time of the script:** ( 1 minutes  6.152 seconds)
 
 
 .. _sphx_glr_download_examples_20_basics_example_time_series_forecasting.py:

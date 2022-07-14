@@ -188,7 +188,7 @@ with AutoPyTorch</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f2407c75af0&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f83c94a1970&gt;
 </pre></div>
 </div>
 </section>
@@ -205,26 +205,26 @@ with AutoPyTorch</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.8670520231213873}
-|    | Preprocessing                                                                         | Estimator                                                       |   Weight |
-|---:|:--------------------------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-|  0 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,MinMaxScaler,FastICA       | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential       |     0.56 |
-|  1 | SimpleImputer,Variance Threshold,MinorityCoalescer,OneHotEncoder,Normalizer,KernelPCA | embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.38 |
-|  2 | SimpleImputer,Variance Threshold,NoCoalescer,NoEncoder,StandardScaler,PCA             | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential       |     0.02 |
-|  3 | None                                                                                  | CBLearner                                                       |     0.02 |
-|  4 | None                                                                                  | SVMLearner                                                      |     0.02 |
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.8728323699421965}
+|    | Preprocessing                                                                              | Estimator                                                    |   Weight |
+|---:|:-------------------------------------------------------------------------------------------|:-------------------------------------------------------------|---------:|
+|  0 | None                                                                                       | CBLearner                                                    |     0.5  |
+|  1 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,MinMaxScaler,FastICA            | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential    |     0.22 |
+|  2 | SimpleImputer,Variance Threshold,MinorityCoalescer,OneHotEncoder,PowerTransformer,Nystroem | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.14 |
+|  3 | SimpleImputer,Variance Threshold,NoCoalescer,NoEncoder,StandardScaler,PCA                  | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential    |     0.12 |
+|  4 | None                                                                                       | RFLearner                                                    |     0.02 |
 autoPyTorch results:
         Dataset name: Australian
         Optimisation Metric: accuracy
         Best validation score: 0.8713450292397661
-        Number of target algorithm runs: 27
-        Number of successful target algorithm runs: 26
+        Number of target algorithm runs: 23
+        Number of successful target algorithm runs: 22
         Number of crashed target algorithm runs: 0
         Number of target algorithms that exceeded the time limit: 1
         Number of target algorithms that exceeded the memory limit: 0
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  24.577 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  27.372 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-20-basics-example-tabular-classification-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/20_basics/example_tabular_classification.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo.svg" width="150px" /></a>
