@@ -152,14 +152,12 @@ that no unseen category is found while fitting the data.</p>
 <p>The target validator applies a label encoder on the target column.</p>
 <p>For <strong>time series forecasting tasks</strong>, besides the functions described above, time series forecasting validators will also
 check the information specify for time series forecasting tasks: it checks</p>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li><p>The index of the series that each data point belongs to</p></li>
-<li><p>if the dataset is uni-variant (only targets information is contained in the datasets)</p></li>
-<li><p>the sample frequency of the datasets</p></li>
-<li><p>the static features in the dataset, i.e., features that contain only one value within each series</p></li>
+<li><p>If the dataset is uni-variant (only targets information is contained in the datasets)</p></li>
+<li><p>The sample frequency of the datasets</p></li>
+<li><p>The static features in the dataset, i.e., features that contain only one value within each series</p></li>
 </ul>
-</div></blockquote>
 <p>Time Series forecasting validator then transforms the features and targets into a <a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html">pd.DataFrame</a>
 whose index is applied to identify the series that the time step belongs to.</p>
 </section>

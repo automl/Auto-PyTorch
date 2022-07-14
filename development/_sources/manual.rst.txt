@@ -35,10 +35,11 @@ The target validator applies a label encoder on the target column.
 
 For **time series forecasting tasks**, besides the functions described above, time series forecasting validators will also
 check the information specify for time series forecasting tasks: it checks
-    * The index of the series that each data point belongs to
-    * if the dataset is uni-variant (only targets information is contained in the datasets)
-    * the sample frequency of the datasets
-    * the static features in the dataset, i.e., features that contain only one value within each series
+
+* The index of the series that each data point belongs to
+* If the dataset is uni-variant (only targets information is contained in the datasets)
+* The sample frequency of the datasets
+* The static features in the dataset, i.e., features that contain only one value within each series
 
 Time Series forecasting validator then transforms the features and targets into a `pd.DataFrame <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html>`_
 whose index is applied to identify the series that the time step belongs to.
