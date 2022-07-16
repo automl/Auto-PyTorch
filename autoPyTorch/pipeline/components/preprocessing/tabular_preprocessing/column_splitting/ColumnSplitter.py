@@ -7,7 +7,7 @@ from ConfigSpace.hyperparameters import (
 
 import numpy as np
 
-
+from autoPyTorch.constants import MIN_CATEGORIES_FOR_EMBEDDING_MAX
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.base_tabular_preprocessing import \
     autoPyTorchTabularPreprocessingComponent
@@ -72,7 +72,7 @@ class ColumnSplitter(autoPyTorchTabularPreprocessingComponent):
         dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         min_categories_for_embedding: HyperparameterSearchSpace = HyperparameterSearchSpace(
             hyperparameter="min_categories_for_embedding",
-            value_range=(3, 7),
+            value_range=(3, MIN_CATEGORIES_FOR_EMBEDDING_MAX),
             default_value=3,
             log=True),
     ) -> ConfigurationSpace:

@@ -111,23 +111,6 @@ def _pipeline_predict(pipeline: BasePipeline,
     return prediction
 
 
-def get_search_updates(categorical_indicator: List[bool]) -> HyperparameterSearchSpaceUpdates:
-    """
-    These updates mimic the autopytorch tabular paper.
-    Returns:
-    ________
-    search_space_updates - HyperparameterSearchSpaceUpdates
-        The search space updates like setting different hps to different values or ranges.
-    """
-
-    # has_cat_features = any(categorical_indicator)
-    # has_numerical_features = not all(categorical_indicator)
-
-    search_space_updates = HyperparameterSearchSpaceUpdates()
-
-    return search_space_updates
-
-
 class BaseTask(ABC):
     """
     Base class for the tasks that serve as API to the pipelines.
@@ -200,7 +183,6 @@ class BaseTask(ABC):
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
         task_type: Optional[str] = None,
-        categorical_indicator: Optional[List[bool]] = None
     ) -> None:
 
         if isinstance(resampling_strategy, NoResamplingStrategyTypes) and ensemble_size != 0:

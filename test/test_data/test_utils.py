@@ -25,7 +25,7 @@ from autoPyTorch.constants import (
 from autoPyTorch.data.utils import (
     default_dataset_compression_arg,
     get_dataset_compression_mapping,
-    megabytes,
+    get_raw_memory_usage,
     reduce_dataset_size_if_too_large,
     reduce_precision,
     subsample,
@@ -45,13 +45,14 @@ def test_reduce_dataset_if_too_large(openmlid, as_frame, n_samples):
         X.copy(),
         y=y.copy(),
         is_classification=True,
+        categorical_columns=[],
         random_state=1,
-        memory_allocation=0.001)
+        memory_allocation=0.01)
 
     assert X_converted.shape[0] < X.shape[0]
     assert y_converted.shape[0] < y.shape[0]
 
-    assert megabytes(X_converted) < megabytes(X)
+    assert get_raw_memory_usage(X_converted) < get_raw_memory_usage(X)
 
 
 @pytest.mark.parametrize("X", [np.asarray([[1, 1, 1]] * 30)])
@@ -211,8 +212,18 @@ def test_unsupported_errors():
         ['a', 'b', 'c', 'a', 'b', 'c'],
         ['a', 'b', 'd', 'r', 'b', 'c']])
     with pytest.raises(ValueError, match=r'X.dtype = .*'):
-        reduce_dataset_size_if_too_large(X, is_classification=True, random_state=1, memory_allocation=0)
+        reduce_dataset_size_if_too_large(
+            X,
+            is_classification=True,
+            categorical_columns=[],
+            random_state=1,
+            memory_allocation=0)
 
     X = [[1, 2], [2, 3]]
     with pytest.raises(ValueError, match=r'Unrecognised data type of X, expected data type to be in .*'):
-        reduce_dataset_size_if_too_large(X, is_classification=True, random_state=1, memory_allocation=0)
+        reduce_dataset_size_if_too_large(
+            X,
+            is_classification=True,
+            categorical_columns=[],
+            random_state=1,
+            memory_allocation=0)

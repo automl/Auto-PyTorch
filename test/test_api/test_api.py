@@ -500,10 +500,10 @@ def test_do_dummy_prediction(dask_client, fit_dictionary_tabular):
     del estimator
 
 
-@pytest.skip("Fix with new portfolio PR")
 @unittest.mock.patch('autoPyTorch.evaluation.tae.eval_train_function',
                      new=dummy_eval_train_function)
 @pytest.mark.parametrize('openml_id', (40981, ))
+@pytest.mark.skip(reason="Fix with new portfolio PR")
 def test_portfolio_selection(openml_id, backend, n_samples):
 
     # Get the data and check that contents of data-manager make sense
@@ -543,7 +543,7 @@ def test_portfolio_selection(openml_id, backend, n_samples):
     assert any(successful_config in portfolio_configs for successful_config in successful_configs)
 
 
-@pytest.skip("Fix with new portfolio PR")
+@pytest.mark.skip(reason="Fix with new portfolio PR")
 @unittest.mock.patch('autoPyTorch.evaluation.tae.eval_train_function',
                      new=dummy_eval_train_function)
 @pytest.mark.parametrize('openml_id', (40981, ))
