@@ -1,7 +1,6 @@
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
-import psutil
 
 from sklearn.base import BaseEstimator
 from sklearn.compose import ColumnTransformer
