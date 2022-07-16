@@ -111,6 +111,8 @@ class TabularInputValidator(BaseInputValidator):
                 y=y,
                 is_classification=self.is_classification,
                 random_state=self.seed,
+                categorical_columns=self.feature_validator.categorical_columns,
+                n_categories_per_cat_column=self.feature_validator.num_categories_per_col,
                 **self.dataset_compression  # type: ignore [arg-type]
             )
             self._reduced_dtype = dict(X.dtypes) if is_dataframe else X.dtype

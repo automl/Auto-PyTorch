@@ -24,7 +24,8 @@ class OneHotEncoder(BaseEncoder):
             # It is safer to have the OHE produce a 0 array than to crash a good configuration
             categories='auto',
             sparse=False,
-            handle_unknown='ignore')
+            handle_unknown='ignore',
+            dtype=np.float32)
         return self
 
     @staticmethod
