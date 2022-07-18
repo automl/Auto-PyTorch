@@ -51,20 +51,21 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
     It implements a pipeline, which includes the following as steps:
 
     1. `imputer`
-    2. `encoder`
-    3. `scaler`
-    4. `feature_preprocessor`
-    5. `tabular_transformer`
-    6. `preprocessing`
-    7. `network_embedding`
-    8. `network_backbone`
-    9. `network_head`
-    10. `network`
-    11. `network_init`
-    12. `optimizer`
-    13. `lr_scheduler`
-    14. `data_loader`
-    15. `trainer`
+    2. `column_splitter
+    3. `encoder`
+    4. `scaler`
+    5. `feature_preprocessor`
+    6. `tabular_transformer`
+    7. `preprocessing`
+    8. `network_embedding`
+    9. `network_backbone`
+    10. `network_head`
+    11. `network`
+    12. `network_init`
+    13. `optimizer`
+    14. `lr_scheduler`
+    15. `data_loader`
+    16. `trainer`
 
     Contrary to the sklearn API it is not possible to enumerate the
     possible parameters in the __init__ function because we only know the
