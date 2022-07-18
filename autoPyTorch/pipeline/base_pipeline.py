@@ -412,12 +412,26 @@ class BasePipeline(Pipeline):
                 # check if component is not present in include
                 if include is not None and update.node_name in include.keys():
                     if split_hyperparameter[0] not in include[update.node_name]:
-                        raise ValueError("Not found {} in include".format(split_hyperparameter[0]))
+                        hp_in_component = False
+                        # If the node contains subcomponent that is also an instance of autoPyTorchChoice,
+                        # We need to ensure that include is properly passed to it subcomponent
+                        for include_component in include[update.node_name]:
+                            if include_component.startswith(split_hyperparameter[0]):
+                                hp_in_component = True
+                                break
+                        if not hp_in_component:
+                            raise ValueError("Not found {} in include".format(split_hyperparameter[0]))
 
                 # check if component is present in exclude
                 if exclude is not None and update.node_name in exclude.keys():
                     if split_hyperparameter[0] in exclude[update.node_name]:
-                        raise ValueError("Found {} in exclude".format(split_hyperparameter[0]))
+                        hp_in_component = False
+                        for exclude_component in exclude[update.node_name]:
+                            if exclude_component.startswith(split_hyperparameter[0]):
+                                hp_in_component = True
+                                break
+                        if not hp_in_component:
+                            raise ValueError("Found {} in exclude".format(split_hyperparameter[0]))
 
                 components = node.get_components()
                 # if hyperparameter is __choice__, check if
@@ -440,10 +454,23 @@ class BasePipeline(Pipeline):
                 # needs to be updated is in components of the
                 # choice module
                 elif split_hyperparameter[0] not in components.keys():
-                    raise ValueError("Unknown hyperparameter for choice {}. "
-                                     "Expected update hyperparameter "
-                                     "to be in {} got {}".format(node.__class__.__name__,
-                                                                 components.keys(), split_hyperparameter[0]))
+                    hp_in_component = False
+                    if hasattr(node, 'additional_components') and node.additional_components:
+                        # This is designed for forecasting network encoder:
+                        # forecasting network backbone is composed of two parts: encoder and decoder whereas the type
+                        # of the decoder is determined by the encoder. However, the type of decoder cannot be any part
+                        # of encoder's choice. To allow the user to update the hyperparameter search space for decoder
+                        # network, we consider decoder as "additional_components" and check if the update can be applied
+                        # to node.additional_components
+                        for component_func in node.additional_components:
+                            if split_hyperparameter[0] in component_func().keys():
+                                hp_in_component = True
+                                break
+                    if not hp_in_component:
+                        raise ValueError("Unknown hyperparameter for choice {}. "
+                                         "Expected update hyperparameter "
+                                         "to be in {} got {}".format(node.__class__.__name__,
+                                                                     components.keys(), split_hyperparameter[0]))
                 else:
                     # check if hyperparameter is in the search space of the component
                     component = components[split_hyperparameter[0]]

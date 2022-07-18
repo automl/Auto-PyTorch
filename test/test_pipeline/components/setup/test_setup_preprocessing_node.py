@@ -23,7 +23,7 @@ class TabularPreprocessingTest(unittest.TestCase):
         dataset = mock.MagicMock()
         dataset.__len__.return_value = 1
         datamanager = mock.MagicMock()
-        datamanager.get_dataset_for_training.return_value = (dataset, dataset)
+        datamanager.get_dataset.return_value = (dataset, dataset)
         datamanager.train_tensors = (np.random.random((10, 15)), np.random.random(10))
         datamanager.test_tensors = None
         self.backend.load_datamanager.return_value = datamanager

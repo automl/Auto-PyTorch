@@ -21,7 +21,7 @@ with open("requirements.txt", "r") as f:
 # noinspection PyInterpreter
 setuptools.setup(
     name="autoPyTorch",
-    version="0.1.1",
+    version="0.2",
     author="AutoML Freiburg",
     author_email="eddiebergmanhs@gmail.com",
     description=("Auto-PyTorch searches neural architectures using smac"),
@@ -32,6 +32,7 @@ setuptools.setup(
     keywords="machine learning algorithm configuration hyperparameter"
              "optimization tuning neural architecture deep learning",
     packages=setuptools.find_packages(),
+    package_data={"autoPyTorch": ['py.typed']},
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Topic :: Utilities",
@@ -47,6 +48,11 @@ setuptools.setup(
     install_requires=requirements,
     include_package_data=True,
     extras_require={
+        "forecasting": [
+            "gluonts>=0.10.0",
+            "sktime",
+            "pytorch-forecasting",
+        ],
         "test": [
             "matplotlib",
             "pytest",
@@ -57,6 +63,7 @@ setuptools.setup(
             "pre-commit",
             "pytest-cov",
             'pytest-forked',
+            'pytest-subtests',
             "codecov",
             "pep8",
             "mypy",
@@ -70,6 +77,7 @@ setuptools.setup(
             "jupyter",
             "notebook",
             "seaborn",
+            "openml"
         ],
         "docs": ["sphinx", "sphinx-gallery", "sphinx_bootstrap_theme", "numpydoc"],
     },

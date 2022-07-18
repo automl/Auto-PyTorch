@@ -126,7 +126,7 @@ def input_data_targettest(request):
         'sparse_csc_nonan',
         'sparse_csr_nonan',
         'sparse_lil_nonan',
-        'openml_204',
+        'openml_204',  # openml cholesterol dataset
     ),
     indirect=True
 )
@@ -150,17 +150,17 @@ def test_targetvalidator_supported_types_noclassification(input_data_targettest)
     assert validator.encoder is None
 
     if hasattr(input_data_targettest, "iloc"):
-        np.testing.assert_array_equal(
+        assert np.allclose(
             np.ravel(input_data_targettest.to_numpy()),
             np.ravel(transformed_y)
         )
     elif sparse.issparse(input_data_targettest):
-        np.testing.assert_array_equal(
+        assert np.allclose(
             np.ravel(input_data_targettest.todense()),
             np.ravel(transformed_y.todense())
         )
     else:
-        np.testing.assert_array_equal(
+        assert np.allclose(
             np.ravel(np.array(input_data_targettest)),
             np.ravel(transformed_y)
         )
@@ -182,7 +182,7 @@ def test_targetvalidator_supported_types_noclassification(input_data_targettest)
         'sparse_csc_nonan',
         'sparse_csr_nonan',
         'sparse_lil_nonan',
-        'openml_2',
+        'openml_2',  # anneal dataset
     ),
     indirect=True
 )
@@ -246,7 +246,7 @@ def test_targetvalidator_supported_types_classification(input_data_targettest):
         'pandas_binary',
         'numpy_binary',
         'list_binary',
-        'openml_1066',
+        'openml_1066',  # kc1-binary dataset
     ),
     indirect=True
 )
@@ -266,7 +266,7 @@ def test_targetvalidator_binary(input_data_targettest):
         'pandas_multiclass',
         'numpy_multiclass',
         'list_multiclass',
-        'openml_54',
+        'openml_54',  # vehicle dataset
     ),
     indirect=True
 )
@@ -285,7 +285,7 @@ def test_targetvalidator_multiclass(input_data_targettest):
         'pandas_multilabel',
         'numpy_multilabel',
         'list_multilabel',
-        'openml_40594',
+        'openml_40594',  # reuters dataset
     ),
     indirect=True
 )
@@ -305,7 +305,7 @@ def test_targetvalidator_multilabel(input_data_targettest):
         'pandas_continuous',
         'numpy_continuous',
         'list_continuous',
-        'openml_531',
+        'openml_531',  # boston dataset
     ),
     indirect=True
 )
@@ -324,7 +324,7 @@ def test_targetvalidator_continuous(input_data_targettest):
         'pandas_continuous-multioutput',
         'numpy_continuous-multioutput',
         'list_continuous-multioutput',
-        'openml_41483',
+        'openml_41483',  # rf1 dataset
     ),
     indirect=True
 )

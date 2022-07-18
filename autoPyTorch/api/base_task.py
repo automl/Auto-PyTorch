@@ -11,7 +11,7 @@ import time
 import typing
 import unittest.mock
 import warnings
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
@@ -21,28 +21,40 @@ import dask.distributed
 
 import joblib
 
+import matplotlib.pyplot as plt
+
 import numpy as np
 
 import pandas as pd
 
-from smac.runhistory.runhistory import DataOrigin, RunHistory
+from smac.runhistory.runhistory import DataOrigin, RunHistory, RunInfo, RunValue
 from smac.stats.stats import Stats
 from smac.tae import StatusType
 
-from autoPyTorch.api.results_manager import ResultsManager, SearchResults
+from autoPyTorch import metrics
 from autoPyTorch.automl_common.common.utils.backend import Backend, create
 from autoPyTorch.constants import (
+    FORECASTING_BUDGET_TYPE,
+    FORECASTING_TASKS,
     REGRESSION_TASKS,
     STRING_TO_OUTPUT_TYPES,
     STRING_TO_TASK_TYPES,
+    TIMESERIES_FORECASTING,
 )
 from autoPyTorch.data.base_validator import BaseInputValidator
+from autoPyTorch.data.utils import DatasetCompressionSpec
 from autoPyTorch.datasets.base_dataset import BaseDataset, BaseDatasetPropertiesType
-from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes
+from autoPyTorch.datasets.resampling_strategy import (
+    CrossValTypes,
+    HoldoutValTypes,
+    NoResamplingStrategyTypes,
+    ResamplingStrategies,
+)
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.ensemble.singlebest_ensemble import SingleBest
 from autoPyTorch.evaluation.abstract_evaluator import fit_and_suppress_warnings
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
+from autoPyTorch.evaluation.utils import DisableFileOutputParameters
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner import get_available_traditional_learners
@@ -58,6 +70,8 @@ from autoPyTorch.utils.logging_ import (
 )
 from autoPyTorch.utils.parallel import preload_modules
 from autoPyTorch.utils.pipeline import get_configuration_space, get_dataset_requirements
+from autoPyTorch.utils.results_manager import MetricResults, ResultsManager, SearchResults
+from autoPyTorch.utils.results_visualizer import ColorLabelSettings, PlotSettingParams, ResultsVisualizer
 from autoPyTorch.utils.single_thread_client import SingleThreadedClient
 from autoPyTorch.utils.stopwatch import StopWatch
 
@@ -66,7 +80,8 @@ def _pipeline_predict(pipeline: BasePipeline,
                       X: Union[np.ndarray, pd.DataFrame],
                       batch_size: int,
                       logger: PicklableClientLogger,
-                      task: int) -> np.ndarray:
+                      task: int,
+                      task_type: str = "") -> np.ndarray:
     @typing.no_type_check
     def send_warnings_to_log(
             message, category, filename, lineno, file=None, line=None):
@@ -76,7 +91,7 @@ def _pipeline_predict(pipeline: BasePipeline,
     X_ = X.copy()
     with warnings.catch_warnings():
         warnings.showwarning = send_warnings_to_log
-        if task in REGRESSION_TASKS:
+        if task in REGRESSION_TASKS or task in FORECASTING_TASKS:
             # Voting regressor does not support batch size
             prediction = pipeline.predict(X_)
         else:
@@ -90,17 +105,17 @@ def _pipeline_predict(pipeline: BasePipeline,
                     prediction,
                     np.sum(prediction, axis=1)
                 ))
-
-    if len(prediction.shape) < 1 or len(X_.shape) < 1 or \
-            X_.shape[0] < 1 or prediction.shape[0] != X_.shape[0]:
-        logger.warning(
-            "Prediction shape for model %s is %s while X_.shape is %s",
-            pipeline, str(prediction.shape), str(X_.shape)
-        )
+    if STRING_TO_TASK_TYPES.get(task_type, -1) != TIMESERIES_FORECASTING:
+        if len(prediction.shape) < 1 or len(X_.shape) < 1 or \
+                X_.shape[0] < 1 or prediction.shape[0] != X_.shape[0]:
+            logger.warning(
+                "Prediction shape for model %s is %s while X_.shape is %s",
+                pipeline, str(prediction.shape), str(X_.shape)
+            )
     return prediction
 
 
-class BaseTask:
+class BaseTask(ABC):
     """
     Base class for the tasks that serve as API to the pipelines.
 
@@ -130,13 +145,23 @@ class BaseTask:
         delete_tmp_folder_after_terminate (bool):
             Determines whether to delete the temporary directory,
             when finished
-        include_components (Optional[Dict]):
-            If None, all possible components are used.
-            Otherwise specifies set of components to use.
-        exclude_components (Optional[Dict]):
-            If None, all possible components are used.
-            Otherwise specifies set of components not to use.
-            Incompatible with include components
+        include_components (Optional[Dict[str, Any]]):
+            Dictionary containing components to include. Key is the node
+            name and Value is an Iterable of the names of the components
+            to include. Only these components will be present in the
+            search space.
+        exclude_components (Optional[Dict[str, Any]]):
+            Dictionary containing components to exclude. Key is the node
+            name and Value is an Iterable of the names of the components
+            to exclude. All except these components will be present in
+            the search space.
+        resampling_strategy resampling_strategy (RESAMPLING_STRATEGIES),
+                (default=HoldoutValTypes.holdout_validation):
+                strategy to split the training data.
+        resampling_strategy_args (Optional[Dict[str, Any]]): arguments
+            required for the chosen resampling strategy. If None, uses
+            the default values provided in DEFAULT_RESAMPLING_PARAMETERS
+            in ```datasets/resampling_strategy.py```.
         search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
             Search space updates that can be used to modify the search
             space of particular components or choice modules of the pipeline
@@ -155,14 +180,18 @@ class BaseTask:
         output_directory: Optional[str] = None,
         delete_tmp_folder_after_terminate: bool = True,
         delete_output_folder_after_terminate: bool = True,
-        include_components: Optional[Dict] = None,
-        exclude_components: Optional[Dict] = None,
+        include_components: Optional[Dict[str, Any]] = None,
+        exclude_components: Optional[Dict[str, Any]] = None,
         backend: Optional[Backend] = None,
-        resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
+        resampling_strategy: ResamplingStrategies = HoldoutValTypes.holdout_validation,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
         task_type: Optional[str] = None
     ) -> None:
+
+        if isinstance(resampling_strategy, NoResamplingStrategyTypes) and ensemble_size != 0:
+            raise ValueError("`NoResamplingStrategy` cannot be used for ensemble construction")
+
         self.seed = seed
         self.n_jobs = n_jobs
         self.n_threads = n_threads
@@ -193,6 +222,8 @@ class BaseTask:
         self.search_space: Optional[ConfigurationSpace] = None
         self._dataset_requirements: Optional[List[FitRequirement]] = None
         self._metric: Optional[autoPyTorchMetric] = None
+        self._metrics_kwargs: Dict = {}
+
         self._scoring_functions: Optional[List[autoPyTorchMetric]] = None
         self._logger: Optional[PicklableClientLogger] = None
         self.dataset_name: Optional[str] = None
@@ -219,7 +250,7 @@ class BaseTask:
         if self.n_jobs == 1:
             self._multiprocessing_context = 'fork'
 
-        self.InputValidator: Optional[BaseInputValidator] = None
+        self.input_validator: Optional[BaseInputValidator] = None
 
         self.search_space_updates = search_space_updates
         if search_space_updates is not None:
@@ -229,18 +260,176 @@ class BaseTask:
                                  " HyperparameterSearchSpaceUpdates got {}".format(type(self.search_space_updates)))
 
     @abstractmethod
-    def build_pipeline(self, dataset_properties: Dict[str, Any]) -> BasePipeline:
+    def build_pipeline(
+        self,
+        dataset_properties: Dict[str, BaseDatasetPropertiesType],
+        include_components: Optional[Dict[str, Any]] = None,
+        exclude_components: Optional[Dict[str, Any]] = None,
+        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None
+    ) -> BasePipeline:
         """
         Build pipeline according to current task
         and for the passed dataset properties
 
         Args:
-            dataset_properties (Dict[str,Any])
+            dataset_properties (Dict[str, Any]):
+                Characteristics of the dataset to guide the pipeline
+                choices of components
+            include_components (Optional[Dict[str, Any]]):
+                Dictionary containing components to include. Key is the node
+                name and Value is an Iterable of the names of the components
+                to include. Only these components will be present in the
+                search space.
+            exclude_components (Optional[Dict[str, Any]]):
+                Dictionary containing components to exclude. Key is the node
+                name and Value is an Iterable of the names of the components
+                to exclude. All except these components will be present in
+                the search space.
+            search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
+                Search space updates that can be used to modify the search
+                space of particular components or choice modules of the pipeline
 
         Returns:
+            BasePipeline
 
         """
+        raise NotImplementedError("Function called on BaseTask, this can only be called by "
+                                  "specific task which is a child of the BaseTask")
+
+    @abstractmethod
+    def _get_dataset_input_validator(
+        self,
+        X_train: Union[List, pd.DataFrame, np.ndarray],
+        y_train: Union[List, pd.DataFrame, np.ndarray],
+        X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        resampling_strategy: Optional[ResamplingStrategies] = None,
+        resampling_strategy_args: Optional[Dict[str, Any]] = None,
+        dataset_name: Optional[str] = None,
+        dataset_compression: Optional[DatasetCompressionSpec] = None,
+        **kwargs: Any
+    ) -> Tuple[BaseDataset, BaseInputValidator]:
+        """
+        Returns an object of a child class of `BaseDataset` and
+        an object of a child class of `BaseInputValidator` according
+        to the current task.
+
+        Args:
+            X_train (Union[List, pd.DataFrame, np.ndarray]):
+                Training feature set.
+            y_train (Union[List, pd.DataFrame, np.ndarray]):
+                Training target set.
+            X_test (Optional[Union[List, pd.DataFrame, np.ndarray]]):
+                Testing feature set
+            y_test (Optional[Union[List, pd.DataFrame, np.ndarray]]):
+                Testing target set
+            resampling_strategy (Optional[RESAMPLING_STRATEGIES]):
+                Strategy to split the training data. if None, uses
+                HoldoutValTypes.holdout_validation.
+            resampling_strategy_args (Optional[Dict[str, Any]]):
+                arguments required for the chosen resampling strategy. If None, uses
+                the default values provided in DEFAULT_RESAMPLING_PARAMETERS
+                in ```datasets/resampling_strategy.py```.
+            dataset_name (Optional[str]):
+                name of the dataset, used as experiment name.
+            dataset_compression (Optional[DatasetCompressionSpec]):
+                specifications for dataset compression. For more info check
+                documentation for `BaseTask.get_dataset`.
+
+        Returns:
+            BaseDataset:
+                the dataset object
+            BaseInputValidator:
+                fitted input validator
+        """
         raise NotImplementedError
+
+    def get_dataset(
+        self,
+        X_train: Union[List, pd.DataFrame, np.ndarray],
+        y_train: Union[List, pd.DataFrame, np.ndarray],
+        X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        resampling_strategy: Optional[ResamplingStrategies] = None,
+        resampling_strategy_args: Optional[Dict[str, Any]] = None,
+        dataset_name: Optional[str] = None,
+        dataset_compression: Optional[DatasetCompressionSpec] = None,
+        **kwargs: Any
+    ) -> BaseDataset:
+        """
+        Returns an object of a child class of `BaseDataset` according to the current task.
+
+        Args:
+            X_train (Union[List, pd.DataFrame, np.ndarray]):
+                Training feature set.
+            y_train (Union[List, pd.DataFrame, np.ndarray]):
+                Training target set.
+            X_test (Optional[Union[List, pd.DataFrame, np.ndarray]]):
+                Testing feature set
+            y_test (Optional[Union[List, pd.DataFrame, np.ndarray]]):
+                Testing target set
+            resampling_strategy (Optional[RESAMPLING_STRATEGIES]):
+                Strategy to split the training data. if None, uses
+                HoldoutValTypes.holdout_validation.
+            resampling_strategy_args (Optional[Dict[str, Any]]):
+                arguments required for the chosen resampling strategy. If None, uses
+                the default values provided in DEFAULT_RESAMPLING_PARAMETERS
+                in ```datasets/resampling_strategy.py```.
+            dataset_name (Optional[str]):
+                name of the dataset, used as experiment name.
+            dataset_compression (Optional[DatasetCompressionSpec]):
+                We compress datasets so that they fit into some predefined amount of memory.
+                **NOTE**
+
+                You can also pass your own configuration with the same keys and choosing
+                from the available ``"methods"``.
+                The available options are described here:
+                **memory_allocation**
+                    Absolute memory in MB, e.g. 10MB is ``"memory_allocation": 10``.
+                    The memory used by the dataset is checked after each reduction method is
+                    performed. If the dataset fits into the allocated memory, any further methods
+                    listed in ``"methods"`` will not be performed.
+                    It can be either float or int.
+
+                **methods**
+                    We currently provide the following methods for reducing the dataset size.
+                    These can be provided in a list and are performed in the order as given.
+                    *   ``"precision"`` -
+                        We reduce floating point precision as follows:
+                            *   ``np.float128 -> np.float64``
+                            *   ``np.float96 -> np.float64``
+                            *   ``np.float64 -> np.float32``
+                            *   pandas dataframes are reduced using the downcast option of `pd.to_numeric`
+                                to the lowest possible precision.
+                    *   ``subsample`` -
+                        We subsample data such that it **fits directly into
+                        the memory allocation** ``memory_allocation * memory_limit``.
+                        Therefore, this should likely be the last method listed in
+                        ``"methods"``.
+                        Subsampling takes into account classification labels and stratifies
+                        accordingly. We guarantee that at least one occurrence of each
+                        label is included in the sampled set.
+            kwargs (Any):
+                can be used to pass task specific dataset arguments. Currently supports
+                passing `feat_types` for tabular tasks which specifies whether a feature is
+                'numerical' or 'categorical'.
+
+        Returns:
+            BaseDataset:
+                the dataset object
+        """
+        dataset, _ = self._get_dataset_input_validator(
+            X_train=X_train,
+            y_train=y_train,
+            X_test=X_test,
+            y_test=y_test,
+            resampling_strategy=resampling_strategy,
+            resampling_strategy_args=resampling_strategy_args,
+            dataset_name=dataset_name,
+            dataset_compression=dataset_compression,
+            **kwargs)
+
+        return dataset
 
     @property
     def run_history(self) -> RunHistory:
@@ -553,14 +742,15 @@ class BaseTask:
             backend=self._backend,
             seed=self.seed,
             metric=self._metric,
+            multi_objectives=["cost"],
             logger_port=self._logger_port,
             cost_for_crash=get_cost_of_crash(self._metric),
             abort_on_first_run_crash=False,
             initial_num_run=num_run,
             stats=stats,
             memory_limit=memory_limit,
-            disable_file_output=True if len(self._disable_file_output) > 0 else False,
-            all_supported_metrics=self._all_supported_metrics
+            disable_file_output=self._disable_file_output,
+            all_supported_metrics=self._all_supported_metrics,
         )
 
         status, _, _, additional_info = ta.run(num_run, cutoff=self._time_for_task)
@@ -636,6 +826,7 @@ class BaseTask:
                     pynisher_context=self._multiprocessing_context,
                     backend=self._backend,
                     seed=self.seed,
+                    multi_objectives=["cost"],
                     metric=self._metric,
                     logger_port=self._logger_port,
                     cost_for_crash=get_cost_of_crash(self._metric),
@@ -643,8 +834,8 @@ class BaseTask:
                     initial_num_run=self._backend.get_next_num_run(),
                     stats=stats,
                     memory_limit=memory_limit,
-                    disable_file_output=True if len(self._disable_file_output) > 0 else False,
-                    all_supported_metrics=self._all_supported_metrics
+                    disable_file_output=self._disable_file_output,
+                    all_supported_metrics=self._all_supported_metrics,
                 )
                 dask_futures.append([
                     classifier,
@@ -728,8 +919,8 @@ class BaseTask:
         optimize_metric: str,
         dataset: BaseDataset,
         budget_type: str = 'epochs',
-        min_budget: int = 5,
-        max_budget: int = 50,
+        min_budget: Union[int, float] = 5,
+        max_budget: Union[int, float] = 50,
         total_walltime_limit: int = 100,
         func_eval_time_limit_secs: Optional[int] = None,
         enable_traditional_pipeline: bool = True,
@@ -739,10 +930,11 @@ class BaseTask:
         tae_func: Optional[Callable] = None,
         all_supported_metrics: bool = True,
         precision: int = 32,
-        disable_file_output: List = [],
+        disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
         load_models: bool = True,
         portfolio_selection: Optional[str] = None,
-        dask_client: Optional[dask.distributed.Client] = None
+        dask_client: Optional[dask.distributed.Client] = None,
+        **kwargs: Any
     ) -> 'BaseTask':
         """
         Search for the best pipeline configuration for the given dataset.
@@ -840,10 +1032,10 @@ class BaseTask:
             precision (int: default=32):
                 Numeric precision used when loading ensemble data.
                 Can be either '16', '32' or '64'.
-            disable_file_output (Union[bool, List]):
-                If True, disable model and prediction output.
-                Can also be used as a list to pass more fine-grained
-                information on what to save. Allowed elements in the list are:
+            disable_file_output (Optional[List[Union[str, DisableFileOutputParameters]]]):
+                Used as a list to pass more fine-grained
+                information on what to save. Must be a member of `DisableFileOutputParameters`.
+                Allowed elements in the list are:
 
                 + `y_optimization`:
                     do not save the predictions for the optimization set,
@@ -856,6 +1048,9 @@ class BaseTask:
                     pipelines fit on each fold.
                 + `y_test`:
                     do not save the predictions for the test set.
+                + `all`:
+                    do not save any of the above.
+                For more information check `autoPyTorch.evaluation.utils.DisableFileOutputParameters`.
             load_models (bool: default=True):
                 Whether to load the models after fitting AutoPyTorch.
             portfolio_selection (Optional[str]):
@@ -867,7 +1062,14 @@ class BaseTask:
                 Additionally, the keyword 'greedy' is supported,
                 which would use the default portfolio from
                 `AutoPyTorch Tabular <https://arxiv.org/abs/2006.13799>`_
-
+            kwargs: Any
+                additional arguments that are customed by some specific task.
+                For instance, forecasting tasks require:
+                    min_num_test_instances (int):  minimal number of instances used to initialize a proxy validation set
+                    suggested_init_models (List[str]):  A set of initial models suggested by the users. Their
+                        hyperparameters are determined by the default configurations
+                    custom_init_setting_path (str): The path to the initial hyperparameter configurations set by
+                    the users
         Returns:
             self
 
@@ -897,7 +1099,14 @@ class BaseTask:
         self._backend.setup_logger(port=self._logger_port)
 
         self._all_supported_metrics = all_supported_metrics
-        self._disable_file_output = disable_file_output
+        self._disable_file_output = disable_file_output if disable_file_output is not None else []
+        if (
+            DisableFileOutputParameters.y_optimization in self._disable_file_output
+            and self.ensemble_size > 1
+        ):
+            self._logger.warning(f"No ensemble will be created when {DisableFileOutputParameters.y_optimization}"
+                                 f" is in disable_file_output")
+
         self._memory_limit = memory_limit
         self._time_for_task = total_walltime_limit
         # Save start time to backend
@@ -922,7 +1131,10 @@ class BaseTask:
         self.search_space = self.get_search_space(dataset)
 
         # Incorporate budget to pipeline config
-        if budget_type not in ('epochs', 'runtime'):
+        if budget_type not in ('epochs', 'runtime') and (
+                budget_type in FORECASTING_BUDGET_TYPE
+                and STRING_TO_TASK_TYPES[self.task_type] != TIMESERIES_FORECASTING
+        ):
             raise ValueError("Budget type must be one ('epochs', 'runtime')"
                              f" yet {budget_type} was provided")
         self.pipeline_options['budget_type'] = budget_type
@@ -1028,6 +1240,7 @@ class BaseTask:
                 precision=precision,
                 logger_port=self._logger_port,
                 pynisher_context=self._multiprocessing_context,
+                metrics_kwargs=self._metrics_kwargs,
             )
             self._stopwatch.stop_task(ensemble_task_name)
 
@@ -1041,7 +1254,6 @@ class BaseTask:
         if time_left_for_smac <= 0:
             self._logger.warning(" Not starting SMAC because there is no time left")
         else:
-
             _proc_smac = AutoMLSMBO(
                 config_space=self.search_space,
                 dataset_name=str(dataset.dataset_name),
@@ -1071,6 +1283,8 @@ class BaseTask:
                 search_space_updates=self.search_space_updates,
                 portfolio_selection=portfolio_selection,
                 pynisher_context=self._multiprocessing_context,
+                task_type=self.task_type,
+                **kwargs,
             )
             try:
                 run_history, self._results_manager.trajectory, budget_type = \
@@ -1135,12 +1349,19 @@ class BaseTask:
         dataset: BaseDataset,
         split_id: int = 0
     ) -> Dict[str, Any]:
-        X_test = dataset.test_tensors[0].copy() if dataset.test_tensors is not None else None
-        y_test = dataset.test_tensors[1].copy() if dataset.test_tensors is not None else None
+        if dataset.test_tensors is not None:
+            X_test = dataset.test_tensors[0].copy() if dataset.test_tensors[0] is not None else None
+            y_test = dataset.test_tensors[1].copy() if dataset.test_tensors[1] is not None else None
+        else:
+            X_test = None
+            y_test = None
+
+        X_train = dataset.train_tensors[0].copy() if dataset.train_tensors[0] is not None else None
+        y_train = dataset.train_tensors[1].copy()
         X: Dict[str, Any] = dict({'dataset_properties': dataset_properties,
                                   'backend': self._backend,
-                                  'X_train': dataset.train_tensors[0].copy(),
-                                  'y_train': dataset.train_tensors[1].copy(),
+                                  'X_train': X_train,
+                                  'y_train': y_train,
                                   'X_test': X_test,
                                   'y_test': y_test,
                                   'train_indices': dataset.splits[split_id][0],
@@ -1148,6 +1369,10 @@ class BaseTask:
                                   'split_id': split_id,
                                   'num_run': self._backend.get_next_num_run(),
                                   })
+        if STRING_TO_TASK_TYPES[self.task_type] == TIMESERIES_FORECASTING:
+            warnings.warn("Currently Time Series Forecasting tasks do not allow computing metrics "
+                          "during training. It will be automatically set as False")
+            self.pipeline_options["metrics_during_training"] = False
         X.update(self.pipeline_options)
         return X
 
@@ -1210,7 +1435,7 @@ class BaseTask:
             # could alleviate the problem in algorithms that depend on
             # the ordering of the data.
             X = self._get_fit_dictionary(
-                dataset_properties=dataset_properties,
+                dataset_properties=copy.copy(dataset_properties),
                 dataset=dataset,
                 split_id=split_id)
             fit_and_suppress_warnings(self._logger, model, X, y=None)
@@ -1219,10 +1444,30 @@ class BaseTask:
 
         return self
 
-    def fit(self,
-            dataset: BaseDataset,
-            pipeline_config: Optional[Configuration] = None,
-            split_id: int = 0) -> BasePipeline:
+    def fit_pipeline(
+        self,
+        configuration: Configuration,
+        *,
+        dataset: Optional[BaseDataset] = None,
+        X_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        y_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        dataset_name: Optional[str] = None,
+        resampling_strategy: Optional[Union[HoldoutValTypes, CrossValTypes, NoResamplingStrategyTypes]] = None,
+        resampling_strategy_args: Optional[Dict[str, Any]] = None,
+        run_time_limit_secs: int = 60,
+        memory_limit: Optional[int] = None,
+        eval_metric: Optional[str] = None,
+        all_supported_metrics: bool = False,
+        budget_type: Optional[str] = None,
+        include_components: Optional[Dict[str, Any]] = None,
+        exclude_components: Optional[Dict[str, Any]] = None,
+        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
+        budget: Optional[float] = None,
+        pipeline_options: Optional[Dict] = None,
+        disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
+    ) -> Tuple[Optional[BasePipeline], RunInfo, RunValue, BaseDataset]:
         """
         Fit a pipeline on the given task for the budget.
         A pipeline configuration can be specified if None,
@@ -1233,24 +1478,130 @@ class BaseTask:
         methods.
 
         Args:
-            dataset (Dataset):
-                The argument that will provide the dataset splits. It can either
-                be a dictionary with the splits, or the dataset object which can
-                generate the splits based on different restrictions.
-            split_id (int: default=0):
-                split id to fit on.
-            pipeline_config (Optional[Configuration]):
-                configuration to fit the pipeline with. If None,
-                uses default
+            configuration (Configuration):
+                configuration to fit the pipeline with.
+            dataset (BaseDataset):
+                An object of the appropriate child class of `BaseDataset`,
+                that will be used to fit the pipeline
+            X_train, y_train, X_test, y_test: Union[np.ndarray, List, pd.DataFrame]
+                A pair of features (X_train) and targets (y_train) used to fit a
+                pipeline. Additionally, a holdout of this pairs (X_test, y_test) can
+                be provided to track the generalization performance of each stage.
+            dataset_name (Optional[str]):
+                Name of the dataset, if None, random value is used.
+            resampling_strategy (Optional[RESAMPLING_STRATEGIES]):
+                Strategy to split the training data. if None, uses
+                HoldoutValTypes.holdout_validation.
+            resampling_strategy_args (Optional[Dict[str, Any]]):
+                Arguments required for the chosen resampling strategy. If None, uses
+                the default values provided in DEFAULT_RESAMPLING_PARAMETERS
+                in ```datasets/resampling_strategy.py```.
+            dataset_name (Optional[str]):
+                name of the dataset, used as experiment name.
+            run_time_limit_secs (int: default=60):
+                Time limit for a single call to the machine learning model.
+                Model fitting will be terminated if the machine learning algorithm
+                runs over the time limit. Set this value high enough so that
+                typical machine learning algorithms can be fit on the training
+                data.
+            memory_limit (Optional[int]):
+                Memory limit in MB for the machine learning algorithm. autopytorch
+                will stop fitting the machine learning algorithm if it tries
+                to allocate more than memory_limit MB. If None is provided,
+                no memory limit is set. In case of multi-processing, memory_limit
+                will be per job. This memory limit also applies to the ensemble
+                creation process.
+            eval_metric (Optional[str]):
+                Name of the metric that is used to evaluate a pipeline.
+            all_supported_metrics (bool: default=True):
+                if True, all metrics supporting current task will be calculated
+                for each pipeline and results will be available via cv_results
+            budget_type (str):
+                Type of budget to be used when fitting the pipeline.
+                It can be one of:
+
+                + `epochs`: The training of each pipeline will be terminated after
+                    a number of epochs have passed. This number of epochs is determined by the
+                    budget argument of this method.
+                + `runtime`: The training of each pipeline will be terminated after
+                    a number of seconds have passed. This number of seconds is determined by the
+                    budget argument of this method. The overall fitting time of a pipeline is
+                    controlled by func_eval_time_limit_secs. 'runtime' only controls the allocated
+                    time to train a pipeline, but it does not consider the overall time it takes
+                    to create a pipeline (data loading and preprocessing, other i/o operations, etc.).
+            include_components (Optional[Dict[str, Any]]):
+                Dictionary containing components to include. Key is the node
+                name and Value is an Iterable of the names of the components
+                to include. Only these components will be present in the
+                search space.
+            exclude_components (Optional[Dict[str, Any]]):
+                Dictionary containing components to exclude. Key is the node
+                name and Value is an Iterable of the names of the components
+                to exclude. All except these components will be present in
+                the search space.
+            search_space_updates(Optional[HyperparameterSearchSpaceUpdates]):
+                Updates to be made to the hyperparameter search space of the pipeline
+            budget (Optional[float]):
+                Budget to fit a single run of the pipeline. If not
+                provided, uses the default in the pipeline config
+            pipeline_options (Optional[Dict]):
+                Valid config options include "device",
+                "torch_num_threads", "early_stopping", "use_tensorboard_logger",
+                "metrics_during_training"
+            disable_file_output (Optional[List[Union[str, DisableFileOutputParameters]]]):
+                Used as a list to pass more fine-grained
+                information on what to save. Must be a member of `DisableFileOutputParameters`.
+                Allowed elements in the list are:
+
+                + `y_optimization`:
+                    do not save the predictions for the optimization set,
+                    which would later on be used to build an ensemble. Note that SMAC
+                    optimizes a metric evaluated on the optimization set.
+                + `pipeline`:
+                    do not save any individual pipeline files
+                + `pipelines`:
+                    In case of cross validation, disables saving the joint model of the
+                    pipelines fit on each fold.
+                + `y_test`:
+                    do not save the predictions for the test set.
+                + `all`:
+                    do not save any of the above.
+                For more information check `autoPyTorch.evaluation.utils.DisableFileOutputParameters`.
 
         Returns:
-            BasePipeline:
+            (BasePipeline):
                 fitted pipeline
+            (RunInfo):
+                Run information
+            (RunValue):
+                Result of fitting the pipeline
+            (BaseDataset):
+                Dataset created from the given tensors
         """
-        self.dataset_name = dataset.dataset_name
 
-        if self._logger is None:
-            self._logger = self._get_logger(str(self.dataset_name))
+        if dataset is None:
+            if (
+                X_train is not None
+                and y_train is not None
+            ):
+                raise ValueError("No dataset provided, must provide X_train, y_train tensors")
+            dataset = self.get_dataset(X_train=X_train,
+                                       y_train=y_train,
+                                       X_test=X_test,
+                                       y_test=y_test,
+                                       resampling_strategy=resampling_strategy,
+                                       resampling_strategy_args=resampling_strategy_args,
+                                       dataset_name=dataset_name
+                                       )
+
+        # dataset_name is created inside the constructor of BaseDataset
+        # we expect it to be not None. This is for mypy
+        assert dataset.dataset_name is not None
+
+        # TAE expects each configuration to have a config_id.
+        # For fitting a pipeline as it is not part of the
+        # search process, it makes sense to set it to 0
+        configuration.__setattr__('config_id', 0)
 
         # get dataset properties
         dataset_requirements = get_dataset_requirements(
@@ -1261,21 +1612,116 @@ class BaseTask:
         dataset_properties = dataset.get_dataset_properties(dataset_requirements)
         self._backend.save_datamanager(dataset)
 
-        # build pipeline
-        pipeline = self.build_pipeline(dataset_properties)
-        if pipeline_config is not None:
-            pipeline.set_hyperparameters(pipeline_config)
+        if self._logger is None:
+            self._logger = self._get_logger(dataset.dataset_name)
 
-        # initialise fit dictionary
-        X = self._get_fit_dictionary(
-            dataset_properties=dataset_properties,
-            dataset=dataset,
-            split_id=split_id)
+        include_components = self.include_components if include_components is None else include_components
+        exclude_components = self.exclude_components if exclude_components is None else exclude_components
+        search_space_updates = self.search_space_updates if search_space_updates is None else search_space_updates
 
-        fit_and_suppress_warnings(self._logger, pipeline, X, y=None)
+        scenario_mock = unittest.mock.Mock()
+        scenario_mock.wallclock_limit = run_time_limit_secs
+        # This stats object is a hack - maybe the SMAC stats object should
+        # already be generated here!
+        stats = Stats(scenario_mock)
+
+        if memory_limit is None and getattr(self, '_memory_limit', None) is not None:
+            memory_limit = self._memory_limit
+
+        metric = get_metrics(dataset_properties=dataset_properties,
+                             names=[eval_metric] if eval_metric is not None else None,
+                             all_supported_metrics=False).pop()
+
+        pipeline_options = self.pipeline_options.copy().update(pipeline_options) if pipeline_options is not None \
+            else self.pipeline_options.copy()
+
+        assert pipeline_options is not None
+
+        if budget_type is not None:
+            pipeline_options.update({'budget_type': budget_type})
+        else:
+            budget_type = pipeline_options['budget_type']
+
+        budget = budget if budget is not None else pipeline_options[budget_type]
+
+        if disable_file_output is None:
+            disable_file_output = getattr(self, '_disable_file_output', [])
+
+        stats.start_timing()
+
+        tae = ExecuteTaFuncWithQueue(
+            backend=self._backend,
+            seed=self.seed,
+            metric=metric,
+            multi_objectives=["cost"],
+            logger_port=self._logger_port,
+            cost_for_crash=get_cost_of_crash(metric),
+            abort_on_first_run_crash=False,
+            initial_num_run=self._backend.get_next_num_run(),
+            stats=stats,
+            memory_limit=memory_limit,
+            disable_file_output=disable_file_output,
+            all_supported_metrics=all_supported_metrics,
+            budget_type=budget_type,
+            include=include_components,
+            exclude=exclude_components,
+            search_space_updates=search_space_updates,
+            pipeline_config=pipeline_options,
+            pynisher_context=self._multiprocessing_context,
+        )
+
+        run_info, run_value = tae.run_wrapper(
+            RunInfo(config=configuration,
+                    budget=budget,
+                    seed=self.seed,
+                    cutoff=run_time_limit_secs,
+                    capped=False,
+                    instance_specific=None,
+                    instance=None)
+        )
+
+        fitted_pipeline = self._get_fitted_pipeline(
+            dataset_name=dataset.dataset_name,
+            pipeline_idx=run_info.config.config_id + tae.initial_num_run,
+            run_info=run_info,
+            run_value=run_value,
+            disable_file_output=disable_file_output
+        )
 
         self._clean_logger()
-        return pipeline
+
+        return fitted_pipeline, run_info, run_value, dataset
+
+    def _get_fitted_pipeline(
+        self,
+        dataset_name: str,
+        pipeline_idx: int,
+        run_info: RunInfo,
+        run_value: RunValue,
+        disable_file_output: List[Union[str, DisableFileOutputParameters]]
+    ) -> Optional[BasePipeline]:
+
+        if self._logger is None:
+            self._logger = self._get_logger(str(dataset_name))
+
+        if run_value.status != StatusType.SUCCESS:
+            warnings.warn(f"Fitting pipeline failed with status: {run_value.status}"
+                          f", additional_info: {run_value.additional_info}")
+            return None
+        elif any(disable_file_output for c in ['all', 'pipeline']):
+            self._logger.warning("File output is disabled. No pipeline can returned")
+            return None
+
+        if self.resampling_strategy in CrossValTypes:
+            load_function = self._backend.load_cv_model_by_seed_and_id_and_budget
+        else:
+            load_function = self._backend.load_model_by_seed_and_id_and_budget
+
+        return load_function(  # type: ignore[no-any-return]
+            seed=self.seed,
+            idx=pipeline_idx,
+            budget=float(run_info.budget),
+        )
 
     def predict(
         self,
@@ -1306,14 +1752,15 @@ class BaseTask:
         # Mypy assert
         assert self.ensemble_ is not None, "Load models should error out if no ensemble"
 
-        if isinstance(self.resampling_strategy, HoldoutValTypes):
+        if isinstance(self.resampling_strategy, (HoldoutValTypes, NoResamplingStrategyTypes)):
             models = self.models_
         elif isinstance(self.resampling_strategy, CrossValTypes):
             models = self.cv_models_
 
         all_predictions = joblib.Parallel(n_jobs=n_jobs)(
             joblib.delayed(_pipeline_predict)(
-                models[identifier], X_test, batch_size, self._logger, STRING_TO_TASK_TYPES[self.task_type]
+                models[identifier], X_test, batch_size, self._logger, STRING_TO_TASK_TYPES[self.task_type],
+                self.task_type
             )
             for identifier in self.ensemble_.get_selected_model_identifiers()
         )
@@ -1478,4 +1925,60 @@ class BaseTask:
             dataset_name=self.dataset_name,
             scoring_functions=self._scoring_functions,
             metric=self._metric
+        )
+
+    def plot_perf_over_time(
+        self,
+        metric_name: str,
+        ax: Optional[plt.Axes] = None,
+        plot_setting_params: PlotSettingParams = PlotSettingParams(),
+        color_label_settings: ColorLabelSettings = ColorLabelSettings(),
+        *args: Any,
+        **kwargs: Any
+    ) -> None:
+        """
+        Visualize the performance over time using matplotlib.
+        The plot related arguments are based on matplotlib.
+        Please refer to the matplotlib documentation for more details.
+
+        Args:
+            metric_name (str):
+                The name of metric to visualize.
+                The names are available in
+                    * autoPyTorch.metrics.CLASSIFICATION_METRICS
+                    * autoPyTorch.metrics.REGRESSION_METRICS
+            ax (Optional[plt.Axes]):
+                axis to plot (subplots of matplotlib).
+                If None, it will be created automatically.
+            plot_setting_params (PlotSettingParams):
+                Parameters for the plot.
+            color_label_settings (ColorLabelSettings):
+                The settings of a pair of color and label for each plot.
+            args, kwargs (Any):
+                Arguments for the ax.plot.
+
+        Note:
+            You might need to run `export DISPLAY=:0.0` if you are using non-GUI based environment.
+        """
+
+        if not hasattr(metrics, metric_name):
+            raise ValueError(
+                f'metric_name must be in {list(metrics.CLASSIFICATION_METRICS.keys())} '
+                f'or {list(metrics.REGRESSION_METRICS.keys())}, but got {metric_name}'
+            )
+        if len(self.ensemble_performance_history) == 0:
+            raise RuntimeError('Visualization is available only after ensembles are evaluated.')
+
+        results = MetricResults(
+            metric=getattr(metrics, metric_name),
+            run_history=self.run_history,
+            ensemble_performance_history=self.ensemble_performance_history
+        )
+
+        colors, labels = color_label_settings.extract_dicts(results)
+
+        ResultsVisualizer().plot_perf_over_time(  # type: ignore
+            results=results, plot_setting_params=plot_setting_params,
+            colors=colors, labels=labels, ax=ax,
+            *args, **kwargs
         )

@@ -12,11 +12,14 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
-
-from autoPyTorch.constants import REGRESSION_TASKS
+from autoPyTorch.constants import FORECASTING_TASKS, REGRESSION_TASKS
 from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
-from autoPyTorch.pipeline.components.training.metrics.metrics import CLASSIFICATION_METRICS, REGRESSION_METRICS
+from autoPyTorch.pipeline.components.training.metrics.metrics import (
+    CLASSIFICATION_METRICS,
+    FORECASTING_METRICS,
+    REGRESSION_METRICS,
+)
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
 from autoPyTorch.utils.implementations import get_loss_weight_strategy
 
@@ -119,25 +122,29 @@ class RunSummary(object):
         self.performance_tracker['val_metrics'][epoch] = val_metrics
         self.performance_tracker['test_metrics'][epoch] = test_metrics
 
-    def get_best_epoch(self, loss_type: str = 'val_loss') -> int:
-        # If we compute validation scores, prefer the performance
+    def get_best_epoch(self, split_type: str = 'val') -> int:
+        # If we compute for optimization, prefer the performance
         # metric to the loss
         if self.optimize_metric is not None:
-            scorer = CLASSIFICATION_METRICS[
-                self.optimize_metric
-            ] if self.optimize_metric in CLASSIFICATION_METRICS else REGRESSION_METRICS[
-                self.optimize_metric
-            ]
+            metrics_type = f"{split_type}_metrics"
+            if self.optimize_metric in CLASSIFICATION_METRICS:
+                scorer = CLASSIFICATION_METRICS[self.optimize_metric]
+            elif self.optimize_metric in REGRESSION_METRICS:
+                scorer = REGRESSION_METRICS[self.optimize_metric]
+            elif self.optimize_metric in FORECASTING_METRICS:
+                scorer = FORECASTING_METRICS[self.optimize_metric]
+            else:
+                raise NotImplementedError(f"Unsupported optimizer metric: {self.optimize_metric}")
+
             # Some metrics maximize, other minimize!
             opt_func = np.argmax if scorer._sign > 0 else np.argmin
             return int(opt_func(
-                [self.performance_tracker['val_metrics'][e][self.optimize_metric]
-                 for e in range(1, len(self.performance_tracker['val_metrics']) + 1)]
+                [metrics[self.optimize_metric] for metrics in self.performance_tracker[metrics_type].values()]
             )) + 1  # Epochs start at 1
         else:
+            loss_type = f"{split_type}_loss"
             return int(np.argmin(
-                [self.performance_tracker[loss_type][e]
-                 for e in range(1, len(self.performance_tracker[loss_type]) + 1)],
+                list(self.performance_tracker[loss_type].values()),
             )) + 1  # Epochs start at 1
 
     def get_last_epoch(self) -> int:
@@ -179,6 +186,16 @@ class RunSummary(object):
         string += '=' * 40
         return string
 
+    def is_empty(self) -> bool:
+        """
+        Checks if the object is empty or not
+
+        Returns:
+            bool
+        """
+        # if train_loss is empty, we can be sure that RunSummary is empty.
+        return not bool(self.performance_tracker['train_loss'])
+
 
 class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
@@ -205,7 +222,8 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         scheduler: _LRScheduler,
         task_type: int,
         labels: Union[np.ndarray, torch.Tensor, pd.DataFrame],
-        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.batch
+        step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.batch,
+        **kwargs: Dict
     ) -> None:
 
         # Save the device to be used
@@ -277,7 +295,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
     def train_epoch(self, train_loader: torch.utils.data.DataLoader, epoch: int,
                     writer: Optional[SummaryWriter],
-                    ) -> Tuple[float, Dict[str, float]]:
+                    ) -> Tuple[Optional[float], Dict[str, float]]:
         """
         Train the model for a single epoch.
 
@@ -302,9 +320,10 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
             loss, outputs = self.train_step(data, targets)
 
-            # save for metric evaluation
-            outputs_data.append(outputs.detach().cpu())
-            targets_data.append(targets.detach().cpu())
+            if self.metrics_during_training:
+                # save for metric evaluation
+                outputs_data.append(outputs.detach().cpu())
+                targets_data.append(targets.detach().cpu())
 
             batch_size = data.size(0)
             loss_sum += loss * batch_size
@@ -317,6 +336,9 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                     epoch * len(train_loader) + step,
                 )
 
+        if N == 0:
+            return None, {}
+
         self._scheduler_step(step_interval=StepIntervalUnit.epoch, loss=loss_sum / N)
 
         if self.metrics_during_training:
@@ -325,7 +347,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
             return loss_sum / N, {}
 
     def cast_targets(self, targets: torch.Tensor) -> torch.Tensor:
-        if self.task_type in REGRESSION_TASKS:
+        if self.task_type in (REGRESSION_TASKS + FORECASTING_TASKS):
             targets = targets.float().to(self.device)
             # make sure that targets will have same shape as outputs (really important for mse loss for example)
             if targets.ndim == 1:

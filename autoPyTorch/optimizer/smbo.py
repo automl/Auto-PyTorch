@@ -10,6 +10,7 @@ import dask.distributed
 
 from smac.facade.smac_ac_facade import SMAC4AC
 from smac.intensification.hyperband import Hyperband
+from smac.intensification.intensification import Intensifier
 from smac.runhistory.runhistory import RunHistory
 from smac.runhistory.runhistory2epm import RunHistory2EPM4LogCost
 from smac.scenario.scenario import Scenario
@@ -18,15 +19,21 @@ from smac.tae.serial_runner import SerialRunner
 from smac.utils.io.traj_logging import TrajEntry
 
 from autoPyTorch.automl_common.common.utils.backend import Backend
+from autoPyTorch.constants import (
+    FORECASTING_BUDGET_TYPE,
+    STRING_TO_TASK_TYPES,
+    TIMESERIES_FORECASTING
+)
 from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import (
     CrossValTypes,
     DEFAULT_RESAMPLING_PARAMETERS,
     HoldoutValTypes,
+    NoResamplingStrategyTypes
 )
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
-from autoPyTorch.optimizer.utils import read_return_initial_configurations
+from autoPyTorch.optimizer.utils import read_forecasting_init_configurations, read_return_initial_configurations
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 from autoPyTorch.utils.logging_ import get_named_client_logger
@@ -39,8 +46,8 @@ def get_smac_object(
     ta: Callable,
     ta_kwargs: Dict[str, Any],
     n_jobs: int,
-    initial_budget: int,
-    max_budget: int,
+    initial_budget: Union[int, float],
+    max_budget: Union[int, float],
     dask_client: Optional[dask.distributed.Client],
     initial_configurations: Optional[List[Configuration]] = None,
 ) -> SMAC4AC:
@@ -55,17 +62,27 @@ def get_smac_object(
         ta (Callable): the function to be intensifier by smac
         ta_kwargs (Dict[str, Any]): Arguments to the above ta
         n_jobs (int): Amount of cores to use for this task
+        initial_budget (int): the minimal budget to be allocated to the target algorithm
+        max_budget (int): the max budget to be allocated to the target algorithm
         dask_client (dask.distributed.Client): User provided scheduler
         initial_configurations (List[Configuration]): List of initial
             configurations which smac will run before starting the search process
 
     Returns:
-        (SMAC4AC): sequential model algorithm configuration object
+        (SMAC4HPO): sequential model algorithm configuration object
 
     """
-    intensifier = Hyperband
+    if initial_budget == max_budget:
+        # This allows vanilla BO optimization
+        intensifier = Intensifier
+        intensifier_kwargs: Dict[str, Any] = {'deterministic': True, }
 
+    else:
+        intensifier = Hyperband
+        intensifier_kwargs = {'initial_budget': initial_budget, 'max_budget': max_budget,
+                              'eta': 3, 'min_chall': 1, 'instance_order': 'shuffle_once'}
     rh2EPM = RunHistory2EPM4LogCost
+
     return SMAC4AC(
         scenario=Scenario(scenario_dict),
         rng=seed,
@@ -73,17 +90,16 @@ def get_smac_object(
         tae_runner=ta,
         tae_runner_kwargs=ta_kwargs,
         initial_configurations=initial_configurations,
+        initial_design=None,
         run_id=seed,
         intensifier=intensifier,
-        intensifier_kwargs={'initial_budget': initial_budget, 'max_budget': max_budget,
-                            'eta': 3, 'min_chall': 1, 'instance_order': 'shuffle_once'},
+        intensifier_kwargs=intensifier_kwargs,
         dask_client=dask_client,
         n_jobs=n_jobs,
     )
 
 
 class AutoMLSMBO(object):
-
     def __init__(self,
                  config_space: ConfigSpace.ConfigurationSpace,
                  dataset_name: str,
@@ -98,7 +114,9 @@ class AutoMLSMBO(object):
                  pipeline_config: Dict[str, Any],
                  start_num_run: int = 1,
                  seed: int = 1,
-                 resampling_strategy: Union[HoldoutValTypes, CrossValTypes] = HoldoutValTypes.holdout_validation,
+                 resampling_strategy: Union[HoldoutValTypes,
+                                            CrossValTypes,
+                                            NoResamplingStrategyTypes] = HoldoutValTypes.holdout_validation,
                  resampling_strategy_args: Optional[Dict[str, Any]] = None,
                  include: Optional[Dict[str, Any]] = None,
                  exclude: Optional[Dict[str, Any]] = None,
@@ -111,8 +129,10 @@ class AutoMLSMBO(object):
                  search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
                  portfolio_selection: Optional[str] = None,
                  pynisher_context: str = 'spawn',
-                 min_budget: int = 5,
-                 max_budget: int = 50,
+                 min_budget: Union[int, float] = 5,
+                 max_budget: Union[int, float] = 50,
+                 task_type: str = "",
+                 **kwargs: Dict[str, Any]
                  ):
         """
         Interface to SMAC. This method calls the SMAC optimize method, and allows
@@ -187,13 +207,23 @@ class AutoMLSMBO(object):
                 max_budget states the maximum resource allocation a pipeline is going to
                 be ran. For example, if the budget_type is epochs, and max_budget=50,
                 then the pipeline training will be terminated after 50 epochs.
+            task_type (str):
+                task type. Forecasting tasks require special process
+            kwargs (Any):
+                additional arguments that are customed by some specific task.
+                For instance, forecasting tasks require:
+                    min_num_test_instances (int):  minimal number of instances used to initialize a proxy validation set
+                    suggested_init_models (List[str]):  A set of initial models suggested by the users. Their
+                        hyperparameters are determined by the default configurations
+                    custom_init_setting_path (str): The path to the initial hyperparameter configurations set by
+                    the users
+
         """
         super(AutoMLSMBO, self).__init__()
         # data related
         self.dataset_name = dataset_name
-        self.datamanager: Optional[BaseDataset] = None
         self.metric = metric
-        self.task: Optional[str] = None
+
         self.backend = backend
         self.all_supported_metrics = all_supported_metrics
 
@@ -232,6 +262,8 @@ class AutoMLSMBO(object):
 
         self.search_space_updates = search_space_updates
 
+        self.task_type = task_type
+
         if logger_port is None:
             self.logger_port = logging.handlers.DEFAULT_TCP_LOGGING_PORT
         else:
@@ -241,26 +273,25 @@ class AutoMLSMBO(object):
                                               port=self.logger_port)
         self.logger.info("initialised {}".format(self.__class__.__name__))
 
-        self.initial_configurations: Optional[List[Configuration]] = None
-        if portfolio_selection is not None:
-            self.initial_configurations = read_return_initial_configurations(config_space=config_space,
-                                                                             portfolio_selection=portfolio_selection)
+        initial_configurations = []
 
-    def reset_data_manager(self) -> None:
-        if self.datamanager is not None:
-            del self.datamanager
-        self.datamanager = self.backend.load_datamanager()
+        if STRING_TO_TASK_TYPES.get(self.task_type, -1) == TIMESERIES_FORECASTING:
+            initial_configurations = self.get_init_configs_for_forecasting(config_space, kwargs)
+            # proxy-validation sets
+            self.min_num_test_instances: Optional[int] = kwargs.get('min_num_test_instances',  # type:ignore[assignment]
+                                                                    None)
+        else:
+            if portfolio_selection is not None:
+                initial_configurations = read_return_initial_configurations(config_space=config_space,
+                                                                            portfolio_selection=portfolio_selection)
 
-        if self.datamanager is not None and self.datamanager.task_type is not None:
-            self.task = self.datamanager.task_type
+        self.initial_configurations = initial_configurations if len(initial_configurations) > 0 else None
 
     def run_smbo(self, func: Optional[Callable] = None
                  ) -> Tuple[RunHistory, List[TrajEntry], str]:
 
         self.watcher.start_task('SMBO')
         self.logger.info("Started run of SMBO")
-        # == first things first: load the datamanager
-        self.reset_data_manager()
 
         # == Initialize non-SMBO stuff
         # first create a scenario
@@ -345,6 +376,15 @@ class AutoMLSMBO(object):
                     )
             scenario_dict.update(self.smac_scenario_args)
 
+        budget_type = self.pipeline_config['budget_type']
+        if budget_type in FORECASTING_BUDGET_TYPE:
+            if STRING_TO_TASK_TYPES.get(self.task_type, -1) != TIMESERIES_FORECASTING:
+                raise ValueError('Forecasting Budget type is only available for forecasting task!')
+            if self.min_budget > 1. or self.max_budget > 1.:
+                self.min_budget = float(self.min_budget) / float(self.max_budget)
+                self.max_budget = 1.0
+            ta_kwargs['min_num_test_instances'] = self.min_num_test_instances
+
         if self.get_smac_object_callback is not None:
             smac = self.get_smac_object_callback(scenario_dict=scenario_dict,
                                                  seed=seed,
@@ -385,3 +425,23 @@ class AutoMLSMBO(object):
             raise NotImplementedError(type(smac.solver.tae_runner))
 
         return self.runhistory, self.trajectory, self._budget_type
+
+    def get_init_configs_for_forecasting(self, config_space: ConfigSpace, kwargs: Dict) -> List[Configuration]:
+        """get initial configurations for forecasting tasks"""
+        suggested_init_models: Optional[List[str]] = kwargs.get('suggested_init_models',  # type:ignore[assignment]
+                                                                None)
+        custom_init_setting_path: Optional[str] = kwargs.get('custom_init_setting_path',  # type:ignore[assignment]
+                                                             None)
+        # if suggested_init_models is an empty list, and  custom_init_setting_path is not provided, we
+        # do not provide any initial configurations
+        if suggested_init_models is None or suggested_init_models or custom_init_setting_path is not None:
+            datamanager: BaseDataset = self.backend.load_datamanager()
+            dataset_properties = datamanager.get_dataset_properties([])
+            initial_configurations = read_forecasting_init_configurations(
+                config_space=config_space,
+                suggested_init_models=suggested_init_models,
+                custom_init_setting_path=custom_init_setting_path,
+                dataset_properties=dataset_properties
+            )
+            return initial_configurations
+        return []

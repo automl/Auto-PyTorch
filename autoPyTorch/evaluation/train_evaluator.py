@@ -12,17 +12,19 @@ from smac.tae import StatusType
 from autoPyTorch.automl_common.common.utils.backend import Backend
 from autoPyTorch.constants import (
     CLASSIFICATION_TASKS,
-    MULTICLASSMULTIOUTPUT,
+    MULTICLASSMULTIOUTPUT
 )
+from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes
 from autoPyTorch.evaluation.abstract_evaluator import (
     AbstractEvaluator,
     fit_and_suppress_warnings
 )
+from autoPyTorch.evaluation.utils import DisableFileOutputParameters
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.utils.common import dict_repr, subsampler
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
 
-__all__ = ['TrainEvaluator', 'eval_function']
+__all__ = ['TrainEvaluator', 'eval_train_function']
 
 
 def _get_y_array(y: np.ndarray, task_type: int) -> np.ndarray:
@@ -39,7 +41,9 @@ class TrainEvaluator(AbstractEvaluator):
     A pipeline implementing the provided configuration is fitted
     using the datamanager object retrieved from disc, via the backend.
     After the pipeline is fitted, it is save to disc and the performance estimate
-    is communicated to the main process via a Queue.
+    is communicated to the main process via a Queue. It is only compatible
+    with `CrossValTypes`, `HoldoutValTypes`, i.e, when the training data
+    is split and the validation set is used for SMBO optimisation.
 
     Attributes:
         backend (Backend):
@@ -79,10 +83,25 @@ class TrainEvaluator(AbstractEvaluator):
             An optional dictionary to include components of the pipeline steps.
         exclude (Optional[Dict[str, Any]]):
             An optional dictionary to exclude components of the pipeline steps.
-        disable_file_output (Union[bool, List[str]]):
-            By default, the model, it's predictions and other metadata is stored on disk
-            for each finished configuration. This argument allows the user to skip
-            saving certain file type, for example the model, from being written to disk.
+        disable_file_output (Optional[List[Union[str, DisableFileOutputParameters]]]):
+            Used as a list to pass more fine-grained
+            information on what to save. Must be a member of `DisableFileOutputParameters`.
+            Allowed elements in the list are:
+
+            + `y_optimization`:
+                do not save the predictions for the optimization set,
+                which would later on be used to build an ensemble. Note that SMAC
+                optimizes a metric evaluated on the optimization set.
+            + `pipeline`:
+                do not save any individual pipeline files
+            + `pipelines`:
+                In case of cross validation, disables saving the joint model of the
+                pipelines fit on each fold.
+            + `y_test`:
+                do not save the predictions for the test set.
+            + `all`:
+                do not save any of the above.
+            For more information check `autoPyTorch.evaluation.utils.DisableFileOutputParameters`.
         init_params (Optional[Dict[str, Any]]):
             Optional argument that is passed to each pipeline step. It is the equivalent of
             kwargs for the pipeline steps.
@@ -96,6 +115,7 @@ class TrainEvaluator(AbstractEvaluator):
         search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
             An object used to fine tune the hyperparameter search space of the pipeline
     """
+
     def __init__(self, backend: Backend, queue: Queue,
                  metric: autoPyTorchMetric,
                  budget: float,
@@ -107,7 +127,7 @@ class TrainEvaluator(AbstractEvaluator):
                  num_run: Optional[int] = None,
                  include: Optional[Dict[str, Any]] = None,
                  exclude: Optional[Dict[str, Any]] = None,
-                 disable_file_output: Union[bool, List] = False,
+                 disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
                  init_params: Optional[Dict[str, Any]] = None,
                  logger_port: Optional[int] = None,
                  keep_models: Optional[bool] = None,
@@ -133,9 +153,12 @@ class TrainEvaluator(AbstractEvaluator):
             search_space_updates=search_space_updates
         )
 
-        self.splits = self.datamanager.splits
-        if self.splits is None:
-            raise AttributeError("Must have called create_splits on {}".format(self.datamanager.__class__.__name__))
+        if not isinstance(self.resampling_strategy, (CrossValTypes, HoldoutValTypes)):
+            raise ValueError(
+                f'resampling_strategy for TrainEvaluator must be in '
+                f'(CrossValTypes, HoldoutValTypes), but got {self.resampling_strategy}'
+            )
+
         self.num_folds: int = len(self.splits)
         self.Y_targets: List[Optional[np.ndarray]] = [None] * self.num_folds
         self.Y_train_targets: np.ndarray = np.ones(self.y_train.shape) * np.NaN
@@ -209,7 +232,6 @@ class TrainEvaluator(AbstractEvaluator):
             additional_run_info = {}
 
             for i, (train_split, test_split) in enumerate(self.splits):
-
                 pipeline = self.pipelines[i]
                 train_pred, opt_pred, valid_pred, test_pred = self._fit_and_predict(pipeline, i,
                                                                                     train_indices=train_split,
@@ -254,10 +276,15 @@ class TrainEvaluator(AbstractEvaluator):
 
             # train_losses is a list of dicts. It is
             # computed using the target metric (self.metric).
-            train_loss = np.average([train_losses[i][str(self.metric)]
-                                     for i in range(self.num_folds)],
-                                    weights=train_fold_weights,
-                                    )
+            train_loss = {}
+            for metric in train_losses[0].keys():
+                train_loss[metric] = np.average(
+                    [
+                        train_losses[i][metric]
+                        for i in range(self.num_folds)
+                    ],
+                    weights=train_fold_weights
+                )
 
             opt_loss = {}
             # self.logger.debug("OPT LOSSES: {}".format(opt_losses if opt_losses is not None else None))
@@ -381,25 +408,25 @@ class TrainEvaluator(AbstractEvaluator):
 
 
 # create closure for evaluating an algorithm
-def eval_function(
-        backend: Backend,
-        queue: Queue,
-        metric: autoPyTorchMetric,
-        budget: float,
-        config: Optional[Configuration],
-        seed: int,
-        output_y_hat_optimization: bool,
-        num_run: int,
-        include: Optional[Dict[str, Any]],
-        exclude: Optional[Dict[str, Any]],
-        disable_file_output: Union[bool, List],
-        pipeline_config: Optional[Dict[str, Any]] = None,
-        budget_type: str = None,
-        init_params: Optional[Dict[str, Any]] = None,
-        logger_port: Optional[int] = None,
-        all_supported_metrics: bool = True,
-        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
-        instance: str = None,
+def eval_train_function(
+    backend: Backend,
+    queue: Queue,
+    metric: autoPyTorchMetric,
+    budget: float,
+    config: Optional[Configuration],
+    seed: int,
+    output_y_hat_optimization: bool,
+    num_run: int,
+    include: Optional[Dict[str, Any]],
+    exclude: Optional[Dict[str, Any]],
+    disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
+    pipeline_config: Optional[Dict[str, Any]] = None,
+    budget_type: str = None,
+    init_params: Optional[Dict[str, Any]] = None,
+    logger_port: Optional[int] = None,
+    all_supported_metrics: bool = True,
+    search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
+    instance: str = None,
 ) -> None:
     """
     This closure allows the communication between the ExecuteTaFuncWithQueue and the
@@ -480,6 +507,6 @@ def eval_function(
         logger_port=logger_port,
         all_supported_metrics=all_supported_metrics,
         pipeline_config=pipeline_config,
-        search_space_updates=search_space_updates
+        search_space_updates=search_space_updates,
     )
     evaluator.fit_predict_and_loss()

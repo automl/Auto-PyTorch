@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, Union
 
 import numpy as np
 
@@ -11,7 +11,7 @@ class autoPyTorchMetric(object, metaclass=ABCMeta):
 
     def __init__(self,
                  name: str,
-                 score_func: Callable[..., float],
+                 score_func: Callable[..., Union[float, np.ndarray]],
                  optimum: float,
                  worst_possible_result: float,
                  sign: float,
@@ -26,7 +26,7 @@ class autoPyTorchMetric(object, metaclass=ABCMeta):
     def __call__(self,
                  y_true: np.ndarray,
                  y_pred: np.ndarray,
-                 sample_weight: Optional[List[float]] = None
+                 sample_weight: Optional[List[float]] = None,
                  ) -> float:
         raise NotImplementedError()
 
@@ -35,6 +35,20 @@ class autoPyTorchMetric(object, metaclass=ABCMeta):
 
     def __repr__(self) -> str:
         return self.name
+
+
+# This is a mixin for computing time series forecasting losses, the  parameters are defined by:
+# https://www.sktime.org/en/stable/api_reference/performance_metrics.html
+# TODO considering adding more arguments to this function to allow advanced loss functions, e.g. asymmetric_error
+class ForecastingMetricMixin:
+    def __call__(self,
+                 y_true: np.ndarray,
+                 y_pred: np.ndarray,
+                 sp: int,
+                 n_prediction_steps: int,
+                 horizon_weight: Optional[List[float]] = None
+                 ) -> float:
+        raise NotImplementedError()
 
 
 class _PredictMetric(autoPyTorchMetric):
@@ -176,6 +190,89 @@ class _ThresholdMetric(autoPyTorchMetric):
             return self._sign * self._metric_func(y_true, y_pred, **self._kwargs)
 
 
+class _ForecastingMetric(ForecastingMetricMixin, autoPyTorchMetric):
+    def __call__(  # type: ignore[override]
+            self,
+            y_true: np.ndarray,
+            y_pred: np.ndarray,
+            sp: int,
+            n_prediction_steps: int,
+            horizon_weight: Optional[List[float]] = None,
+            sample_weight: Optional[List[float]] = None,
+            **kwarg: Any,
+    ) -> float:
+        """
+        Evaluate time series forecasting losses given input data
+        The description is nearly the same as the one defined under
+        https://www.sktime.org/en/stable/api_reference/performance_metrics.html
+
+        Args:
+        y_true (np.ndarray):
+             array-like ([n_seq x n_prediction_steps, n_output]). Ground truth (correct) target values.
+        y_pred (np.ndarray):
+            array-like ([n_seq x n_prediction_steps, n_output]). Forecasted values.
+        sp (int):
+            Seasonal periodicity of training data.
+        horizon_weight (Optional[List[float]]):
+            Forecast horizon weights.
+        sample_weight (Optional[List[float]]):
+            weights w.r.t. each sample
+
+        Returns
+        -------
+            score (float):
+                Score function applied to prediction of estimator on X.
+        """
+
+        agg = self._kwargs['aggregation']
+
+        if not len(y_pred) == len(y_true):
+            raise ValueError(f"The length of y_true, y_pred and y_train must equal, however, they are "
+                             f"{len(y_pred)} and {len(y_true)} respectively")
+
+        # we want to compute loss w.r.t. each sequence, so the first dimension needs to be n_prediction_steps
+
+        n_outputs = y_true.shape[-1]
+
+        if sample_weight is not None:
+            if n_outputs != len(sample_weight):
+                raise ValueError(("There must be equally many custom weights "
+                                  "(%d) as outputs (%d).") %
+                                 (len(sample_weight), n_outputs))
+
+        # shape is [n_prediction_steps, n_sequence, n_outputs]
+        y_true = np.transpose(y_true.reshape((-1, n_prediction_steps, n_outputs)),
+                              (1, 0, 2))
+        y_pred = np.transpose(y_pred.reshape((-1, n_prediction_steps, n_outputs)),
+                              (1, 0, 2))
+
+        # shape is [n_prediction_steps, n_sequence * n_outputs]
+        y_true = y_true.reshape((n_prediction_steps, -1))
+        y_pred = y_pred.reshape((n_prediction_steps, -1))
+        # TODO consider weights for each individual prediction, i.e., we could mask the unobserved values
+        losses_all: np.ndarray = self._metric_func(y_true=y_true,
+                                                   y_pred=y_pred,
+                                                   sp=sp,
+                                                   horizon_weight=horizon_weight,
+                                                   multioutput='raw_values',
+                                                   **self._kwargs)
+
+        losses_all = losses_all.reshape([-1, n_outputs])
+
+        # multi output aggregation
+        if sample_weight is not None:
+            losses_all = np.sum(losses_all * sample_weight, axis=-1)
+        else:
+            losses_all = np.mean(losses_all, -1)
+
+        if agg == 'mean':
+            return float(self._sign * np.mean(losses_all))
+        elif agg == 'median':
+            return float(self._sign * np.median(losses_all))
+        else:
+            raise NotImplementedError(f'Unsupported aggregation type {agg}')
+
+
 def make_metric(
     name: str,
     score_func: Callable,
@@ -184,6 +281,7 @@ def make_metric(
     greater_is_better: bool = True,
     needs_proba: bool = False,
     needs_threshold: bool = False,
+    do_forecasting: bool = False,
     **kwargs: Any
 ) -> autoPyTorchMetric:
     """
@@ -223,5 +321,7 @@ def make_metric(
         return _ProbaMetric(name, score_func, optimum, worst_possible_result, sign, kwargs)
     elif needs_threshold:
         return _ThresholdMetric(name, score_func, optimum, worst_possible_result, sign, kwargs)
+    elif do_forecasting:
+        return _ForecastingMetric(name, score_func, optimum, worst_possible_result, sign, kwargs)
     else:
         return _PredictMetric(name, score_func, optimum, worst_possible_result, sign, kwargs)

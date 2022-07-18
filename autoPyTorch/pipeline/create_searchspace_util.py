@@ -47,7 +47,7 @@ def get_match_array(
     matches_dimensions = [len(choices) for choices in node_i_choices]
     # Start by allowing every combination of nodes. Go through all
     # combinations/pipelines and erase the illegal ones
-    matches = np.ones(matches_dimensions, dtype=int)
+    matches = np.ones(matches_dimensions, dtype=np.int32)
 
     # TODO: Check if we need this, like are there combinations from the
     # pipeline we should dynamically avoid?

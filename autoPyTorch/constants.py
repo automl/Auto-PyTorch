@@ -2,31 +2,30 @@ TABULAR_CLASSIFICATION = 1
 IMAGE_CLASSIFICATION = 2
 TABULAR_REGRESSION = 3
 IMAGE_REGRESSION = 4
-TIMESERIES_CLASSIFICATION = 5
-TIMESERIES_REGRESSION = 6
+TIMESERIES_FORECASTING = 5
 
-REGRESSION_TASKS = [TABULAR_REGRESSION, IMAGE_REGRESSION, TIMESERIES_REGRESSION]
-CLASSIFICATION_TASKS = [TABULAR_CLASSIFICATION, IMAGE_CLASSIFICATION, TIMESERIES_CLASSIFICATION]
+REGRESSION_TASKS = [TABULAR_REGRESSION, IMAGE_REGRESSION]
+CLASSIFICATION_TASKS = [TABULAR_CLASSIFICATION, IMAGE_CLASSIFICATION]
+FORECASTING_TASKS = [TIMESERIES_FORECASTING]  # TODO extend FORECASTING TASKS to Classification and regression tasks
 
 TABULAR_TASKS = [TABULAR_CLASSIFICATION, TABULAR_REGRESSION]
 IMAGE_TASKS = [IMAGE_CLASSIFICATION, IMAGE_REGRESSION]
-TASK_TYPES = REGRESSION_TASKS + CLASSIFICATION_TASKS
+TIMESERIES_TASKS = [TIMESERIES_FORECASTING]
+TASK_TYPES = REGRESSION_TASKS + CLASSIFICATION_TASKS + FORECASTING_TASKS
 
 TASK_TYPES_TO_STRING = \
     {TABULAR_CLASSIFICATION: 'tabular_classification',
      IMAGE_CLASSIFICATION: 'image_classification',
      TABULAR_REGRESSION: 'tabular_regression',
      IMAGE_REGRESSION: 'image_regression',
-     TIMESERIES_CLASSIFICATION: 'time_series_classification',
-     TIMESERIES_REGRESSION: 'time_series_regression'}
+     TIMESERIES_FORECASTING: 'time_series_forecasting'}
 
 STRING_TO_TASK_TYPES = \
     {'tabular_classification': TABULAR_CLASSIFICATION,
      'image_classification': IMAGE_CLASSIFICATION,
      'tabular_regression': TABULAR_REGRESSION,
      'image_regression': IMAGE_REGRESSION,
-     'time_series_classification': TIMESERIES_CLASSIFICATION,
-     'time_series_regression': TIMESERIES_REGRESSION}
+     'time_series_forecasting': TIMESERIES_FORECASTING}
 
 # Output types have been defined as in scikit-learn type_of_target
 # (https://scikit-learn.org/stable/modules/generated/sklearn.utils.multiclass.type_of_target.html)
@@ -54,3 +53,28 @@ STRING_TO_OUTPUT_TYPES = \
 
 CLASSIFICATION_OUTPUTS = [BINARY, MULTICLASS, MULTICLASSMULTIOUTPUT]
 REGRESSION_OUTPUTS = [CONTINUOUS, CONTINUOUSMULTIOUTPUT]
+
+ForecastingDependenciesNotInstalledMSG = "Additional dependencies must be installed to work with time series " \
+                                         "forecasting tasks! Please run \n pip install autoPyTorch[forecasting] \n to "\
+                                         "install the corresponding dependencies!"
+
+
+# The constant values for time series forecasting comes from
+# https://github.com/rakshitha123/TSForecasting/blob/master/experiments/deep_learning_experiments.py
+# seasonality map, maps a frequency value to a number
+FORECASTING_BUDGET_TYPE = ('resolution', 'num_seq', 'num_sample_per_seq')
+
+SEASONALITY_MAP = {
+    "1min": [1440, 10080, 525960],
+    "10min": [144, 1008, 52596],
+    "30min": [48, 336, 17532],
+    "1H": [24, 168, 8766],
+    "1D": 7,
+    "1W": 365.25 / 7,
+    "1M": 12,
+    "1Q": 4,
+    "1Y": 1
+}
+
+# To avoid that we get a sequence that is too long to be fed to a network
+MAX_WINDOW_SIZE_BASE = 500

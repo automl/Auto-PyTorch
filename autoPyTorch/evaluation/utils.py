@@ -8,6 +8,9 @@ from sklearn.ensemble import VotingRegressor
 
 from smac.runhistory.runhistory import RunValue
 
+from autoPyTorch.utils.common import autoPyTorchEnum
+
+
 __all__ = [
     'read_queue',
     'convert_multioutput_multiclass_to_multilabel',
@@ -102,3 +105,40 @@ class VotingRegressorWrapper(VotingRegressor):
             predictions.append(pred.ravel())
 
         return np.asarray(predictions).T
+
+
+class DisableFileOutputParameters(autoPyTorchEnum):
+    """
+    Contains literals that can be passed in to `disable_file_output` list.
+    These include:
+
+    + `y_optimization`:
+        do not save the predictions for the optimization set,
+        which would later on be used to build an ensemble. Note that SMAC
+        optimizes a metric evaluated on the optimization set.
+    + `pipeline`:
+        do not save any individual pipeline files
+    + `pipelines`:
+        In case of cross validation, disables saving the joint model of the
+        pipelines fit on each fold.
+    + `y_test`:
+        do not save the predictions for the test set.
+    + `all`:
+        do not save any of the above.
+    """
+    pipeline = 'pipeline'
+    pipelines = 'pipelines'
+    y_optimization = 'y_optimization'
+    y_test = 'y_test'
+    all = 'all'
+
+    @classmethod
+    def check_compatibility(
+        cls,
+        disable_file_output: List[Union[str, 'DisableFileOutputParameters']]
+    ) -> None:
+        for item in disable_file_output:
+            if item not in cls.__members__ and not isinstance(item, cls):
+                raise ValueError(f"Expected {item} to be in the members ("
+                                 f"{list(cls.__members__.keys())}) of {cls.__name__}"
+                                 f" or as string value of a member.")

@@ -21,12 +21,16 @@ from autoPyTorch.datasets.resampling_strategy import (
     DEFAULT_RESAMPLING_PARAMETERS,
     HoldOutFunc,
     HoldOutFuncs,
-    HoldoutValTypes
+    HoldoutValTypes,
+    NoResamplingFunc,
+    NoResamplingFuncs,
+    NoResamplingStrategyTypes,
+    ResamplingStrategies
 )
-from autoPyTorch.utils.common import FitRequirement
+from autoPyTorch.utils.common import FitRequirement, ispandas
 
 BaseDatasetInputType = Union[Tuple[np.ndarray, np.ndarray], Dataset]
-BaseDatasetPropertiesType = Union[int, float, str, List, bool]
+BaseDatasetPropertiesType = Union[int, float, str, List, bool, Tuple]
 
 
 def check_valid_data(data: Any) -> None:
@@ -43,6 +47,36 @@ def type_check(train_tensors: BaseDatasetInputType,
     if val_tensors is not None:
         for i in range(len(val_tensors)):
             check_valid_data(val_tensors[i])
+
+
+def _get_output_properties(train_tensors: BaseDatasetInputType) -> Tuple[int, str]:
+    """
+    Return the dimension of output given a target_labels and output_type.
+
+    Args:
+        train_tensors (BaseDatasetInputType):
+            Training data.
+
+    Returns:
+        output_dim (int):
+            The dimension of outputs.
+        output_type (str):
+            The output type according to sklearn specification.
+    """
+    if isinstance(train_tensors, Dataset):
+        target_labels = np.array([sample[-1] for sample in train_tensors])
+    else:
+        target_labels = np.array(train_tensors[1])
+
+    output_type: str = type_of_target(target_labels)
+    if STRING_TO_OUTPUT_TYPES[output_type] in CLASSIFICATION_OUTPUTS:
+        output_dim = len(np.unique(target_labels))
+    elif target_labels.ndim > 1:
+        output_dim = target_labels.shape[-1]
+    else:
+        output_dim = 1
+
+    return output_dim, output_type
 
 
 class TransformSubset(Subset):
@@ -78,7 +112,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         dataset_name: Optional[str] = None,
         val_tensors: Optional[BaseDatasetInputType] = None,
         test_tensors: Optional[BaseDatasetInputType] = None,
-        resampling_strategy: Union[CrossValTypes, HoldoutValTypes] = HoldoutValTypes.holdout_validation,
+        resampling_strategy: ResamplingStrategies = HoldoutValTypes.holdout_validation,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         shuffle: Optional[bool] = True,
         seed: Optional[int] = 42,
@@ -95,8 +129,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
                 validation data
             test_tensors (An optional tuple of objects that have a __len__ and a __getitem__ attribute):
                 test data
-            resampling_strategy (Union[CrossValTypes, HoldoutValTypes]),
-                (default=HoldoutValTypes.holdout_validation):
+            resampling_strategy (RESAMPLING_STRATEGIES: default=HoldoutValTypes.holdout_validation):
                 strategy to split the training data.
             resampling_strategy_args (Optional[Dict[str, Any]]): arguments
                 required for the chosen resampling strategy. If None, uses
@@ -109,16 +142,18 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             val_transforms (Optional[torchvision.transforms.Compose]):
                 Additional Transforms to be applied to the validation/test data
         """
-        self.dataset_name = dataset_name
 
-        if self.dataset_name is None:
+        if dataset_name is None:
             self.dataset_name = str(uuid.uuid1(clock_seq=os.getpid()))
+        else:
+            self.dataset_name = dataset_name
 
         if not hasattr(train_tensors[0], 'shape'):
             type_check(train_tensors, val_tensors)
         self.train_tensors, self.val_tensors, self.test_tensors = train_tensors, val_tensors, test_tensors
         self.cross_validators: Dict[str, CrossValFunc] = {}
         self.holdout_validators: Dict[str, HoldOutFunc] = {}
+        self.no_resampling_validators: Dict[str, NoResamplingFunc] = {}
         self.random_state = np.random.RandomState(seed=seed)
         self.shuffle = shuffle
         self.resampling_strategy = resampling_strategy
@@ -127,15 +162,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.issparse: bool = issparse(self.train_tensors[0])
         self.input_shape: Tuple[int] = self.train_tensors[0].shape[1:]
         if len(self.train_tensors) == 2 and self.train_tensors[1] is not None:
-            self.output_type: str = type_of_target(self.train_tensors[1])
-
-            if (
-                self.output_type in STRING_TO_OUTPUT_TYPES
-                and STRING_TO_OUTPUT_TYPES[self.output_type] in CLASSIFICATION_OUTPUTS
-            ):
-                self.output_shape = len(np.unique(self.train_tensors[1]))
-            else:
-                self.output_shape = self.train_tensors[1].shape[-1] if self.train_tensors[1].ndim > 1 else 1
+            self.output_shape, self.output_type = _get_output_properties(self.train_tensors)
 
         # TODO: Look for a criteria to define small enough to preprocess
         self.is_small_preprocess = True
@@ -143,6 +170,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         # Make sure cross validation splits are created once
         self.cross_validators = CrossValFuncs.get_cross_validators(*CrossValTypes)
         self.holdout_validators = HoldOutFuncs.get_holdout_validators(*HoldoutValTypes)
+        self.no_resampling_validators = NoResamplingFuncs.get_no_resampling_validators(*NoResamplingStrategyTypes)
+
         self.splits = self.get_splits_from_resampling_strategy()
 
         # We also need to be able to transform the data, be it for pre-processing
@@ -191,7 +220,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             A transformed single point prediction
         """
 
-        X = self.train_tensors[0].iloc[[index]] if hasattr(self.train_tensors[0], 'loc') \
+        X = self.train_tensors[0].iloc[[index]] if ispandas(self.train_tensors[0]) \
             else self.train_tensors[0][index]
 
         if self.train_transform is not None and train:
@@ -210,7 +239,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
     def _get_indices(self) -> np.ndarray:
         return self.random_state.permutation(len(self)) if self.shuffle else np.arange(len(self))
 
-    def get_splits_from_resampling_strategy(self) -> List[Tuple[List[int], List[int]]]:
+    def get_splits_from_resampling_strategy(self) -> List[Tuple[List[int], Optional[List[int]]]]:
         """
         Creates a set of splits based on a resampling strategy provided
 
@@ -241,6 +270,9 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
                     num_splits=cast(int, num_splits),
                 )
             )
+        elif isinstance(self.resampling_strategy, NoResamplingStrategyTypes):
+            splits.append((self.no_resampling_validators[self.resampling_strategy.name](self.random_state,
+                                                                                        self._get_indices()), None))
         else:
             raise ValueError(f"Unsupported resampling strategy={self.resampling_strategy}")
         return splits
@@ -312,7 +344,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             self.random_state, val_share, self._get_indices(), **kwargs)
         return train, val
 
-    def get_dataset_for_training(self, split_id: int) -> Tuple[Dataset, Dataset]:
+    def get_dataset(self, split_id: int, train: bool) -> Dataset:
         """
         The above split methods employ the Subset to internally subsample the whole dataset.
 
@@ -320,14 +352,21 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         to provide training data to fit a pipeline
 
         Args:
-            split (int): The desired subset of the dataset to split and use
+            split_id (int): which split id to get from the splits
+            train (bool): whether the dataset is required for training or evaluating.
 
         Returns:
             Dataset: the reduced dataset to be used for testing
         """
         # Subset creates a dataset. Splits is a (train_indices, test_indices) tuple
-        return (TransformSubset(self, self.splits[split_id][0], train=True),
-                TransformSubset(self, self.splits[split_id][1], train=False))
+        if split_id >= len(self.splits):  # old version: split_id > len(self.splits)
+            raise IndexError(f"self.splits index out of range, got split_id={split_id}"
+                             f" (>= num_splits={len(self.splits)})")
+        indices = self.splits[split_id][int(not train)]  # 0: for training, 1: for evaluation
+        if indices is None:
+            raise ValueError("Specified fold (or subset) does not exist")
+
+        return TransformSubset(self, indices, train=train)
 
     def replace_data(self, X_train: BaseDatasetInputType,
                      X_test: Optional[BaseDatasetInputType]) -> 'BaseDataset':

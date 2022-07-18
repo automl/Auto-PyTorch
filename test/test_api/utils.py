@@ -2,13 +2,15 @@ import os
 
 from smac.runhistory.runhistory import DataOrigin, RunHistory, RunKey, RunValue, StatusType
 
-from autoPyTorch.constants import REGRESSION_TASKS
+from autoPyTorch.constants import FORECASTING_TASKS, REGRESSION_TASKS
 from autoPyTorch.evaluation.abstract_evaluator import (
     DummyClassificationPipeline,
     DummyRegressionPipeline,
     fit_and_suppress_warnings
 )
+from autoPyTorch.evaluation.time_series_forecasting_train_evaluator import TimeSeriesForecastingTrainEvaluator
 from autoPyTorch.evaluation.train_evaluator import TrainEvaluator
+from autoPyTorch.evaluation.utils_extra import DummyTimeSeriesForecastingPipeline
 from autoPyTorch.pipeline.traditional_tabular_classification import TraditionalTabularClassificationPipeline
 
 
@@ -33,8 +35,9 @@ class DummyTrainEvaluator(TrainEvaluator):
                          test_indices,
                          add_pipeline_to_self
                          ):
-
-        if self.task_type in REGRESSION_TASKS:
+        if self.task_type in FORECASTING_TASKS:
+            pipeline = DummyTimeSeriesForecastingPipeline(config=1)
+        elif self.task_type in REGRESSION_TASKS:
             pipeline = DummyRegressionPipeline(config=1)
         else:
             pipeline = DummyClassificationPipeline(config=1)
@@ -68,8 +71,18 @@ class DummyTrainEvaluator(TrainEvaluator):
         return Y_train_pred, Y_opt_pred, Y_valid_pred, Y_test_pred
 
 
+class DummyForecastingEvaluator(TimeSeriesForecastingTrainEvaluator):
+    def _fit_and_predict(self, pipeline, fold: int, train_indices,
+                         test_indices,
+                         add_pipeline_to_self
+                         ):
+        return DummyTrainEvaluator._fit_and_predict(self,
+                                                    pipeline, fold, train_indices, test_indices,
+                                                    add_pipeline_to_self)
+
+
 # create closure for evaluating an algorithm
-def dummy_eval_function(
+def dummy_eval_train_function(
         backend,
         queue,
         metric,
@@ -106,7 +119,54 @@ def dummy_eval_function(
         logger_port=logger_port,
         all_supported_metrics=all_supported_metrics,
         pipeline_config=pipeline_config,
-        search_space_updates=search_space_updates
+        search_space_updates=search_space_updates,
+    )
+    evaluator.fit_predict_and_loss()
+
+
+# create closure for evaluating an algorithm
+def dummy_forecasting_eval_train_function(
+        backend,
+        queue,
+        metric,
+        budget: float,
+        config,
+        seed: int,
+        output_y_hat_optimization: bool,
+        num_run: int,
+        include,
+        exclude,
+        disable_file_output,
+        pipeline_config=None,
+        budget_type=None,
+        init_params=None,
+        logger_port=None,
+        all_supported_metrics=True,
+        search_space_updates=None,
+        instance: str = None,
+        max_budget=1.0,
+        min_num_test_instances=None
+) -> None:
+    evaluator = DummyForecastingEvaluator(
+        backend=backend,
+        queue=queue,
+        metric=metric,
+        configuration=config,
+        seed=seed,
+        num_run=num_run,
+        output_y_hat_optimization=output_y_hat_optimization,
+        include=include,
+        exclude=exclude,
+        disable_file_output=disable_file_output,
+        init_params=init_params,
+        budget=budget,
+        budget_type=budget_type,
+        logger_port=logger_port,
+        all_supported_metrics=all_supported_metrics,
+        pipeline_config=pipeline_config,
+        search_space_updates=search_space_updates,
+        max_budget=max_budget,
+        min_num_test_instances=min_num_test_instances,
     )
     evaluator.fit_predict_and_loss()
 

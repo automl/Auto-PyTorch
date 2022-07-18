@@ -66,9 +66,21 @@ class ScalerChoice(autoPyTorchChoice):
             raise ValueError("no scalers found, please add a scaler")
 
         if default is None:
-            defaults = ['StandardScaler', 'Normalizer', 'MinMaxScaler', 'NoScaler']
+            defaults = [
+                'StandardScaler',
+                'Normalizer',
+                'MinMaxScaler',
+                'PowerTransformer',
+                'QuantileTransformer',
+                'RobustScaler',
+                'NoScaler'
+            ]
             for default_ in defaults:
                 if default_ in available_scalers:
+                    if include is not None and default_ not in include:
+                        continue
+                    if exclude is not None and default_ in exclude:
+                        continue
                     default = default_
                     break
 

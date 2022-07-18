@@ -59,7 +59,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
             FitRequirement("Backend", (Backend,), user_defined=True, dataset_property=False),
             FitRequirement("is_small_preprocess", (bool,), user_defined=True, dataset_property=True)])
 
-    def transform(self, X: np.ndarray) -> np.ndarray:
+    def transform(self, X: Dict) -> Dict:
         """The transform function calls the transform function of the
         underlying model and returns the transformed array.
 
@@ -106,7 +106,8 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
             # This parameter indicates that the data has been pre-processed for speed
             # Overwrite the datamanager with the pre-processes data
             datamanager.replace_data(X['X_train'], X['X_test'] if 'X_test' in X else None)
-        train_dataset, val_dataset = datamanager.get_dataset_for_training(split_id=X['split_id'])
+
+        train_dataset = datamanager.get_dataset(split_id=X['split_id'], train=True)
 
         self.train_data_loader = torch.utils.data.DataLoader(
             train_dataset,
@@ -118,15 +119,17 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
             collate_fn=custom_collate_fn,
         )
 
-        self.val_data_loader = torch.utils.data.DataLoader(
-            val_dataset,
-            batch_size=min(self.batch_size, len(val_dataset)),
-            shuffle=False,
-            num_workers=X.get('num_workers', 0),
-            pin_memory=X.get('pin_memory', True),
-            drop_last=X.get('drop_last', False),
-            collate_fn=custom_collate_fn,
-        )
+        if X.get('val_indices', None) is not None:
+            val_dataset = datamanager.get_dataset(split_id=X['split_id'], train=False)
+            self.val_data_loader = torch.utils.data.DataLoader(
+                val_dataset,
+                batch_size=min(self.batch_size, len(val_dataset)),
+                shuffle=False,
+                num_workers=X.get('num_workers', 0),
+                pin_memory=X.get('pin_memory', True),
+                drop_last=X.get('drop_last', True),
+                collate_fn=custom_collate_fn,
+            )
 
         if X.get('X_test', None) is not None:
             self.test_data_loader = self.get_loader(X=X['X_test'],
@@ -135,7 +138,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
 
         return self
 
-    def get_loader(self, X: np.ndarray, y: Optional[np.ndarray] = None, batch_size: int = np.inf,
+    def get_loader(self, X: np.ndarray, y: Optional[np.ndarray] = None, batch_size: int = np.iinfo(np.int32).max,
                    ) -> torch.utils.data.DataLoader:
         """
         Creates a data loader object from the provided data,
@@ -184,7 +187,6 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
         Returns:
             torch.utils.data.DataLoader: A validation data loader
         """
-        assert self.val_data_loader is not None, "No val data loader fitted"
         return self.val_data_loader
 
     def get_test_data_loader(self) -> torch.utils.data.DataLoader:

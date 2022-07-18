@@ -2,6 +2,9 @@ import numpy as np
 
 import pytest
 
+from autoPyTorch.data.tabular_validator import TabularInputValidator
+from autoPyTorch.datasets.base_dataset import TransformSubset
+from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes
 from autoPyTorch.datasets.tabular_dataset import TabularDataset
 from autoPyTorch.utils.pipeline import get_dataset_requirements
 
@@ -46,3 +49,34 @@ def test_get_dataset_properties(backend, fit_dictionary_tabular):
 def test_not_supported():
     with pytest.raises(ValueError, match=r".*A feature validator is required to build.*"):
         TabularDataset(np.ones(10), np.ones(10))
+
+
+@pytest.mark.parametrize('resampling_strategy',
+                         (HoldoutValTypes.holdout_validation,
+                          CrossValTypes.k_fold_cross_validation,
+                          NoResamplingStrategyTypes.no_resampling
+                          ))
+def test_get_dataset(resampling_strategy, n_samples):
+    """
+    Checks the functionality of get_dataset function of the TabularDataset
+    gives an error when trying to get training and validation subset
+    """
+    X = np.zeros(shape=(n_samples, 4))
+    Y = np.ones(n_samples)
+    validator = TabularInputValidator(is_classification=True)
+    validator.fit(X, Y)
+    dataset = TabularDataset(
+        resampling_strategy=resampling_strategy,
+        X=X,
+        Y=Y,
+        validator=validator
+    )
+    transform_subset = dataset.get_dataset(split_id=0, train=True)
+    assert isinstance(transform_subset, TransformSubset)
+
+    if isinstance(resampling_strategy, NoResamplingStrategyTypes):
+        with pytest.raises(ValueError):
+            dataset.get_dataset(split_id=0, train=False)
+    else:
+        transform_subset = dataset.get_dataset(split_id=0, train=False)
+        assert isinstance(transform_subset, TransformSubset)

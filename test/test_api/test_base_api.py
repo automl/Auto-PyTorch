@@ -12,6 +12,7 @@ from smac.tae.serial_runner import SerialRunner
 
 from autoPyTorch.api.base_task import BaseTask, _pipeline_predict
 from autoPyTorch.constants import TABULAR_CLASSIFICATION, TABULAR_REGRESSION
+from autoPyTorch.datasets.resampling_strategy import NoResamplingStrategyTypes
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 
 
@@ -20,6 +21,7 @@ from autoPyTorch.pipeline.tabular_classification import TabularClassificationPip
 # ====
 @pytest.mark.parametrize("fit_dictionary_tabular", ['classification_categorical_only'], indirect=True)
 def test_nonsupported_arguments(fit_dictionary_tabular):
+    BaseTask.__abstractmethods__ = set()
     with pytest.raises(ValueError, match=r".*Expected search space updates to be of instance.*"):
         api = BaseTask(search_space_updates='None')
 
@@ -82,6 +84,7 @@ def test_pipeline_predict_function():
 
 @pytest.mark.parametrize("fit_dictionary_tabular", ['classification_categorical_only'], indirect=True)
 def test_show_models(fit_dictionary_tabular):
+    BaseTask.__abstractmethods__ = set()
     api = BaseTask()
     api.ensemble_ = MagicMock()
     api.models_ = [TabularClassificationPipeline(dataset_properties=fit_dictionary_tabular['dataset_properties'])]
@@ -94,6 +97,7 @@ def test_show_models(fit_dictionary_tabular):
 
 def test_set_pipeline_config():
     # checks if we can correctly change the pipeline options
+    BaseTask.__abstractmethods__ = set()
     estimator = BaseTask()
     pipeline_options = {"device": "cuda",
                         "budget_type": "epochs",
@@ -110,6 +114,7 @@ def test_set_pipeline_config():
         (3, 50, 'runtime', {'budget_type': 'runtime', 'runtime': 50}),
     ])
 def test_pipeline_get_budget(fit_dictionary_tabular, min_budget, max_budget, budget_type, expected):
+    BaseTask.__abstractmethods__ = set()
     estimator = BaseTask(task_type='tabular_classification', ensemble_size=0)
 
     # Fixture pipeline config
@@ -135,6 +140,63 @@ def test_pipeline_get_budget(fit_dictionary_tabular, min_budget, max_budget, bud
                           min_budget=min_budget, max_budget=max_budget, budget_type=budget_type,
                           enable_traditional_pipeline=False,
                           total_walltime_limit=20, func_eval_time_limit_secs=10,
+                          load_models=False)
+        assert list(smac_mock.call_args)[1]['ta_kwargs']['pipeline_config'] == default_pipeline_config
+        assert list(smac_mock.call_args)[1]['max_budget'] == max_budget
+        assert list(smac_mock.call_args)[1]['initial_budget'] == min_budget
+
+
+def test_no_resampling_error(backend):
+    """
+    Checks if an error is raised when trying to construct ensemble
+    using `NoResamplingStrategy`.
+    """
+    BaseTask.__abstractmethods__ = set()
+
+    with pytest.raises(ValueError, match=r"`NoResamplingStrategy` cannot be used for ensemble construction"):
+        BaseTask(
+            backend=backend,
+            resampling_strategy=NoResamplingStrategyTypes.no_resampling,
+            seed=42,
+            ensemble_size=1
+        )
+
+
+@pytest.mark.parametrize("fit_dictionary_forecasting", ['uni_variant_wo_missing'], indirect=True)
+@pytest.mark.parametrize(
+    "min_budget,max_budget,budget_type,expected", [
+        (5, 75, 'epochs', {'budget_type': 'epochs', 'epochs': 75}),
+        (0.01, 1.0, 'resolution', {'budget_type': 'resolution', 'resolution': 1.0}),
+        (0.01, 1.0, 'num_seq', {'budget_type': 'num_seq', 'num_seq': 1.0}),
+        (0.01, 1.0, 'num_sample_per_seq', {'budget_type': 'num_sample_per_seq', 'num_sample_per_seq': 1.0}),
+    ])
+def test_pipeline_get_budget_forecasting(fit_dictionary_forecasting, min_budget, max_budget, budget_type, expected):
+    BaseTask.__abstractmethods__ = set()
+    estimator = BaseTask(task_type='time_series_forecasting', ensemble_size=0)
+    # Fixture pipeline config
+    default_pipeline_config = {
+        'device': 'cpu', 'budget_type': 'epochs', 'epochs': 50, 'runtime': 3600,
+        'torch_num_threads': 1, 'early_stopping': 20, 'use_tensorboard_logger': False,
+        'metrics_during_training': True, 'optimize_metric': 'mean_MASE_forecasting'
+    }
+    default_pipeline_config.update(expected)
+
+    # Create pre-requisites
+    dataset = fit_dictionary_forecasting['backend'].load_datamanager()
+    pipeline_fit = unittest.mock.Mock()
+
+    smac = unittest.mock.Mock()
+    smac.solver.runhistory = RunHistory()
+    smac.solver.intensifier.traj_logger.trajectory = []
+    smac.solver.tae_runner = unittest.mock.Mock(spec=SerialRunner)
+    smac.solver.tae_runner.budget_type = 'epochs'
+    with unittest.mock.patch('autoPyTorch.optimizer.smbo.get_smac_object') as smac_mock:
+        smac_mock.return_value = smac
+        estimator._search(optimize_metric='mean_MASE_forecasting', dataset=dataset, tae_func=pipeline_fit,
+                          min_budget=min_budget, max_budget=max_budget, budget_type=budget_type,
+                          enable_traditional_pipeline=False,
+                          total_walltime_limit=20, func_eval_time_limit_secs=10,
+                          memory_limit=8192,
                           load_models=False)
         assert list(smac_mock.call_args)[1]['ta_kwargs']['pipeline_config'] == default_pipeline_config
         assert list(smac_mock.call_args)[1]['max_budget'] == max_budget

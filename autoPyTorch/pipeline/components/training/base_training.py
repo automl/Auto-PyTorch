@@ -12,15 +12,15 @@ class autoPyTorchTrainingComponent(autoPyTorchComponent):
     def __init__(self, random_state: Optional[np.random.RandomState] = None) -> None:
         super(autoPyTorchTrainingComponent, self).__init__(random_state=random_state)
 
-    def transform(self, X: np.ndarray) -> np.ndarray:
+    def transform(self, X: Dict) -> Dict:
         """The transform function calls the transform function of the
         underlying model and returns the transformed array.
 
         Args:
-            X (np.ndarray): input features
+            X (Dict): input features
 
         Returns:
-            np.ndarray: Transformed features
+            Dict: Transformed features
         """
         raise NotImplementedError()
 

@@ -1,11 +1,9 @@
 import os
 from collections import OrderedDict
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import ConfigSpace.hyperparameters as CSH
 from ConfigSpace.configuration_space import ConfigurationSpace
-
-import numpy as np
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
@@ -149,12 +147,7 @@ class NetworkBackboneChoice(autoPyTorchChoice):
             raise ValueError("No backbone found")
 
         if default is None:
-            defaults = [
-                'ShapedMLPBackbone',
-                'MLPBackbone',
-                'ConvNetImageBackbone',
-                'InceptionTimeBackbone',
-            ]
+            defaults = self._defaults_network
             for default_ in defaults:
                 if default_ in available_backbones:
                     default = default_
@@ -192,6 +185,14 @@ class NetworkBackboneChoice(autoPyTorchChoice):
         self.dataset_properties_ = dataset_properties
         return cs
 
-    def transform(self, X: np.ndarray) -> np.ndarray:
+    @property
+    def _defaults_network(self) -> List[str]:
+        return [
+            'ShapedMLPBackbone',
+            'MLPBackbone',
+            'ConvNetImageBackbone',
+        ]
+
+    def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         assert self.choice is not None, "Cannot call transform before the object is initialized"
-        return self.choice.transform(X)
+        return self.choice.transform(X)  # type: ignore[no-any-return]
