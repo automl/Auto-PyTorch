@@ -36,7 +36,7 @@ with AutoPyTorch
 
  .. code-block:: none
 
-    [ERROR] [2022-07-18 18:46:09,144:asyncio.events] 
+    [ERROR] [2022-07-18 19:01:43,603:asyncio.events] 
     Traceback (most recent call last):
       File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py", line 778, in wrapper
         return await func(*args, **kwargs)
@@ -49,7 +49,7 @@ with AutoPyTorch
       File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/asyncio/tasks.py", line 659, in sleep
         return await future
     asyncio.exceptions.CancelledError
-    [ERROR] [2022-07-18 18:46:09,180:asyncio.events] 
+    [ERROR] [2022-07-18 19:01:43,621:asyncio.events] 
     Traceback (most recent call last):
       File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py", line 778, in wrapper
         return await func(*args, **kwargs)
@@ -68,12 +68,12 @@ with AutoPyTorch
     asyncio.exceptions.CancelledError
     {'accuracy': 0.8554913294797688}
     autoPyTorch results:
-            Dataset name: 25b4a6ac-06c9-11ed-8826-dfb0b3a7ad11
+            Dataset name: 4f31bb19-06cb-11ed-8954-4fe262bfd01b
             Optimisation Metric: accuracy
             Best validation score: 0.8713450292397661
-            Number of target algorithm runs: 44
-            Number of successful target algorithm runs: 38
-            Number of crashed target algorithm runs: 4
+            Number of target algorithm runs: 46
+            Number of successful target algorithm runs: 37
+            Number of crashed target algorithm runs: 7
             Number of target algorithms that exceeded the time limit: 2
             Number of target algorithms that exceeded the memory limit: 0
 
@@ -151,7 +151,7 @@ with AutoPyTorch
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  26.951 seconds)
+   **Total running time of the script:** ( 5 minutes  32.428 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_parallel_n_jobs.py:
