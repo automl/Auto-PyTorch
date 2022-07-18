@@ -185,7 +185,7 @@ with AutoPyTorch using the greedy portfolio</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f83c9332790&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fc5101c0ee0&gt;
 </pre></div>
 </div>
 </section>
@@ -205,28 +205,28 @@ with AutoPyTorch using the greedy portfolio</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.8786127167630058}
 |    | Preprocessing                                                                                    | Estimator                                                          |   Weight |
 |---:|:-------------------------------------------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
-|  0 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,NoScaler,KernelPCA                    | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.48 |
-|  1 | None                                                                                             | CBLearner                                                          |     0.16 |
-|  2 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,MinMaxScaler,FastICA                  | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.12 |
-|  3 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
-|  4 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
-|  5 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
-|  6 | None                                                                                             | ETLearner                                                          |     0.04 |
-|  7 | None                                                                                             | RFLearner                                                          |     0.02 |
-|  8 | None                                                                                             | KNNLearner                                                         |     0.02 |
-|  9 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+|  0 | SimpleImputer,Variance Threshold,MinorityCoalescer,OneHotEncoder,MinMaxScaler,PolynomialFeatures | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.32 |
+|  1 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,NoScaler,KernelPCA                    | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.16 |
+|  2 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.14 |
+|  3 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,MinMaxScaler,FastICA                  | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.12 |
+|  4 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.08 |
+|  5 | None                                                                                             | CBLearner                                                          |     0.06 |
+|  6 | None                                                                                             | ETLearner                                                          |     0.06 |
+|  7 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+|  8 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+|  9 | None                                                                                             | RFLearner                                                          |     0.02 |
 autoPyTorch results:
-        Dataset name: 796c85a4-0377-11ed-8828-9bcdcaaf1ae6
+        Dataset name: af66b157-06c7-11ed-8826-dfb0b3a7ad11
         Optimisation Metric: accuracy
-        Best validation score: 0.8771929824561403
-        Number of target algorithm runs: 23
-        Number of successful target algorithm runs: 21
+        Best validation score: 0.8830409356725146
+        Number of target algorithm runs: 26
+        Number of successful target algorithm runs: 24
         Number of crashed target algorithm runs: 0
         Number of target algorithms that exceeded the time limit: 2
         Number of target algorithms that exceeded the memory limit: 0
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  21.984 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  16.074 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-run-with-portfolio-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_run_with_portfolio.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>

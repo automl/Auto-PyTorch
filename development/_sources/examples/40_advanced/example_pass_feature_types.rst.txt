@@ -153,7 +153,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f83c83d3070>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fc5093b1df0>
 
 
 
@@ -184,18 +184,18 @@ Print the final ensemble performance
 
  .. code-block:: none
 
-    {'accuracy': 0.9467592592592593}
+    {'accuracy': 0.9490740740740741}
     |    | Preprocessing                                                                                | Estimator                                                       |   Weight |
     |---:|:---------------------------------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-    |  0 | SimpleImputer,Variance Threshold,MinorityCoalescer,NoEncoder,NoScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential       |     0.7  |
-    |  1 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,NoScaler,NoFeaturePreprocessing   | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.18 |
+    |  0 | SimpleImputer,Variance Threshold,MinorityCoalescer,NoEncoder,NoScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential       |     0.74 |
+    |  1 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,NoScaler,NoFeaturePreprocessing   | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.14 |
     |  2 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,NoScaler,NoFeaturePreprocessing   | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
     autoPyTorch results:
             Dataset name: Australian
             Optimisation Metric: accuracy
-            Best validation score: 0.9088785046728972
-            Number of target algorithm runs: 7
-            Number of successful target algorithm runs: 7
+            Best validation score: 0.9135514018691588
+            Number of target algorithm runs: 8
+            Number of successful target algorithm runs: 8
             Number of crashed target algorithm runs: 0
             Number of target algorithms that exceeded the time limit: 0
             Number of target algorithms that exceeded the memory limit: 0
@@ -207,7 +207,7 @@ Print the final ensemble performance
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 1 minutes  48.797 seconds)
+   **Total running time of the script:** ( 2 minutes  56.040 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_pass_feature_types.py:

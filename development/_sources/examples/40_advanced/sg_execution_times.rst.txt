@@ -5,22 +5,22 @@
 
 Computation times
 =================
-**34:52.532** total execution time for **examples_40_advanced** files:
+**34:49.514** total execution time for **examples_40_advanced** files:
 
 +------------------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_examples_40_advanced_example_resampling_strategy.py` (``example_resampling_strategy.py``)               | 08:57.141 | 0.0 MB |
+| :ref:`sphx_glr_examples_40_advanced_example_resampling_strategy.py` (``example_resampling_strategy.py``)               | 08:44.032 | 0.0 MB |
 +------------------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_examples_40_advanced_example_parallel_n_jobs.py` (``example_parallel_n_jobs.py``)                       | 05:49.003 | 0.0 MB |
+| :ref:`sphx_glr_examples_40_advanced_example_custom_configuration_space.py` (``example_custom_configuration_space.py``) | 05:47.777 | 0.0 MB |
 +------------------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_examples_40_advanced_example_custom_configuration_space.py` (``example_custom_configuration_space.py``) | 05:39.400 | 0.0 MB |
+| :ref:`sphx_glr_examples_40_advanced_example_parallel_n_jobs.py` (``example_parallel_n_jobs.py``)                       | 05:26.951 | 0.0 MB |
 +------------------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_examples_40_advanced_example_run_with_portfolio.py` (``example_run_with_portfolio.py``)                 | 05:21.984 | 0.0 MB |
+| :ref:`sphx_glr_examples_40_advanced_example_run_with_portfolio.py` (``example_run_with_portfolio.py``)                 | 05:16.074 | 0.0 MB |
 +------------------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_examples_40_advanced_example_visualization.py` (``example_visualization.py``)                           | 03:51.269 | 0.0 MB |
+| :ref:`sphx_glr_examples_40_advanced_example_visualization.py` (``example_visualization.py``)                           | 03:41.365 | 0.0 MB |
 +------------------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_examples_40_advanced_example_plot_over_time.py` (``example_plot_over_time.py``)                         | 02:22.121 | 0.0 MB |
+| :ref:`sphx_glr_examples_40_advanced_example_pass_feature_types.py` (``example_pass_feature_types.py``)                 | 02:56.040 | 0.0 MB |
 +------------------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_examples_40_advanced_example_pass_feature_types.py` (``example_pass_feature_types.py``)                 | 01:48.797 | 0.0 MB |
+| :ref:`sphx_glr_examples_40_advanced_example_plot_over_time.py` (``example_plot_over_time.py``)                         | 02:14.981 | 0.0 MB |
 +------------------------------------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_examples_40_advanced_example_single_configuration.py` (``example_single_configuration.py``)             | 01:02.817 | 0.0 MB |
+| :ref:`sphx_glr_examples_40_advanced_example_single_configuration.py` (``example_single_configuration.py``)             | 00:42.295 | 0.0 MB |
 +------------------------------------------------------------------------------------------------------------------------+-----------+--------+

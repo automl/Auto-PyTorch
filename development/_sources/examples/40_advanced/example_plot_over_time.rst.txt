@@ -89,9 +89,9 @@ Task Definition
 
  .. code-block:: none
 
-    [1 0 1 1 0 1 1 0 0 1 0 1 0 0 0 1 1 1 1 1 1 0 0 1 1 1 1 1 1 1 1 0 0 1 0 0 1
-     0 1 1 1 1 1 1 1 0 0 1 0 0 1 0 0 0 1 1 0 0 0 0 1 0 1 0 0 1 0 0 1 0 0 0 0 0
-     1 1 1 1 1 1 1 1 0 1 0 0 0 1 1 0 1 0 0 0 1 0 1 1 0 1]
+    [0 0 0 1 1 1 1 1 0 1 1 1 1 0 0 0 1 1 0 1 1 1 0 1 0 1 1 1 1 0 0 1 0 0 0 0 1
+     1 0 1 0 1 0 1 1 0 0 1 0 1 0 1 1 0 1 0 0 0 1 1 1 1 1 0 1 0 1 0 1 0 1 1 0 1
+     0 1 1 1 1 1 1 0 1 1 1 0 0 1 1 0 1 0 1 1 0 1 1 0 1 0]
 
 
 
@@ -120,8 +120,13 @@ API Instantiation and Searching
 
  .. code-block:: none
 
+    [WARNING] [2022-07-18 18:37:06,873:smac.runhistory.runhistory2epm.RunHistory2EPM4LogCost] Got cost of smaller/equal to 0. Replace by 0.000010 since we use log cost.
+    [WARNING] [2022-07-18 18:37:14,591:smac.runhistory.runhistory2epm.RunHistory2EPM4LogCost] Got cost of smaller/equal to 0. Replace by 0.000010 since we use log cost.
+    [WARNING] [2022-07-18 18:37:16,131:smac.runhistory.runhistory2epm.RunHistory2EPM4LogCost] Got cost of smaller/equal to 0. Replace by 0.000010 since we use log cost.
+    [WARNING] [2022-07-18 18:37:30,723:smac.runhistory.runhistory2epm.RunHistory2EPM4LogCost] Got cost of smaller/equal to 0. Replace by 0.000010 since we use log cost.
+    [WARNING] [2022-07-18 18:37:40,778:smac.runhistory.runhistory2epm.RunHistory2EPM4LogCost] Got cost of smaller/equal to 0. Replace by 0.000010 since we use log cost.
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f83c24106d0>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fc5099d5f70>
 
 
 
@@ -186,7 +191,7 @@ _, ax = plt.subplots()  <=== You can feed it to post-process the figure.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 2 minutes  22.121 seconds)
+   **Total running time of the script:** ( 2 minutes  14.981 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_plot_over_time.py:

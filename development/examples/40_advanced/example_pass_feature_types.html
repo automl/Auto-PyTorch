@@ -206,7 +206,7 @@ validates the dataset by checking the dtype of the columns for any incompatibili
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f83c83d3070&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fc5093b1df0&gt;
 </pre></div>
 </div>
 </section>
@@ -223,24 +223,24 @@ validates the dataset by checking the dtype of the columns for any incompatibili
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.9467592592592593}
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.9490740740740741}
 |    | Preprocessing                                                                                | Estimator                                                       |   Weight |
 |---:|:---------------------------------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-|  0 | SimpleImputer,Variance Threshold,MinorityCoalescer,NoEncoder,NoScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential       |     0.7  |
-|  1 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,NoScaler,NoFeaturePreprocessing   | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.18 |
+|  0 | SimpleImputer,Variance Threshold,MinorityCoalescer,NoEncoder,NoScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential       |     0.74 |
+|  1 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,NoScaler,NoFeaturePreprocessing   | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential       |     0.14 |
 |  2 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,NoScaler,NoFeaturePreprocessing   | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
 autoPyTorch results:
         Dataset name: Australian
         Optimisation Metric: accuracy
-        Best validation score: 0.9088785046728972
-        Number of target algorithm runs: 7
-        Number of successful target algorithm runs: 7
+        Best validation score: 0.9135514018691588
+        Number of target algorithm runs: 8
+        Number of successful target algorithm runs: 8
         Number of crashed target algorithm runs: 0
         Number of target algorithms that exceeded the time limit: 0
         Number of target algorithms that exceeded the memory limit: 0
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 1 minutes  48.797 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 2 minutes  56.040 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-pass-feature-types-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_pass_feature_types.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>
