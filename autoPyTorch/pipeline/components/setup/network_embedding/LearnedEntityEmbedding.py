@@ -23,8 +23,7 @@ class _LearnedEntityEmbedding(nn.Module):
         """
         Args:
             config (Dict[str, Any]): The configuration sampled by the hyperparameter optimizer
-            num_input_features (np.ndarray): column wise information of number of output columns after transformation
-                for each categorical column and 0 for numerical columns
+            num_categories_per_col (np.ndarray): number of categories per categorical columns that will be embedded
             num_features_excl_embed (int): number of features in X excluding the features that need to be embedded
         """
         super().__init__()

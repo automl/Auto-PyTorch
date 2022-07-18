@@ -300,8 +300,7 @@ class BasePipeline(Pipeline):
     def _add_forbidden_conditions(self, cs: ConfigurationSpace) -> ConfigurationSpace:
         """
         Add forbidden conditions to ensure valid configurations.
-        Currently, Learned Entity Embedding is only valid when encoder is one hot encoder
-        and CyclicLR is disabled when using stochastic weight averaging and snapshot
+        Currently, CyclicLR is disabled when using stochastic weight averaging and snapshot
         ensembling.
 
         Args:
