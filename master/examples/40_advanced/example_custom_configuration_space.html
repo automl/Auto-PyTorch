@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>Tabular Classification with Custom Configuration Space &#8212; AutoPyTorch 0.1.1 documentation</title>
+    <title>Tabular Classification with Custom Configuration Space &#8212; AutoPyTorch 0.2 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/bootstrap-sphinx.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css" />
@@ -15,6 +15,7 @@
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -22,10 +23,10 @@
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<script type="text/javascript" src="../../_static/js/jquery-1.12.4.min.js "></script>
-<script type="text/javascript" src="../../_static/js/jquery-fix.js "></script>
-<script type="text/javascript" src="../../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
-<script type="text/javascript" src="../../_static/bootstrap-sphinx.js "></script>
+<script type="text/javascript" src="../../_static/js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript" src="../../_static/js/jquery-fix.js"></script>
+<script type="text/javascript" src="../../_static/bootstrap-3.4.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../../_static/bootstrap-sphinx.js"></script>
 
   </head><body>
   
@@ -55,7 +56,7 @@
         </button>
         <a class="navbar-brand" href="../../index.html">
           Auto-PyTorch</a>
-        <span class="navbar-text navbar-version pull-left"><b>0.1.1</b></span>
+        <span class="navbar-text navbar-version pull-left"><b>0.2</b></span>
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -129,7 +130,7 @@
 to download the full example code or to run this example in your browser via Binder</p>
 </div>
 <section class="sphx-glr-example-title" id="tabular-classification-with-custom-configuration-space">
-<span id="sphx-glr-examples-40-advanced-example-custom-configuration-space-py"></span><h1>Tabular Classification with Custom Configuration Space<a class="headerlink" href="#tabular-classification-with-custom-configuration-space" title="Permalink to this headline">¶</a></h1>
+<span id="sphx-glr-examples-40-advanced-example-custom-configuration-space-py"></span><h1>Tabular Classification with Custom Configuration Space<a class="headerlink" href="#tabular-classification-with-custom-configuration-space" title="Permalink to this heading">¶</a></h1>
 <p>The following example shows how adjust the configuration space of
 the search. Currently, there are two changes that can be made to the space:-</p>
 <ol class="arabic simple">
@@ -197,7 +198,7 @@ the search space.</p>
 </pre></div>
 </div>
 <section id="data-loading">
-<h2>Data Loading<a class="headerlink" href="#data-loading" title="Permalink to this headline">¶</a></h2>
+<h2>Data Loading<a class="headerlink" href="#data-loading" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">fetch_openml</span><span class="p">(</span><span class="n">data_id</span><span class="o">=</span><span class="mi">40981</span><span class="p">,</span> <span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">model_selection</span><span class="o">.</span><span class="n">train_test_split</span><span class="p">(</span>
     <span class="n">X</span><span class="p">,</span>
@@ -208,7 +209,7 @@ the search space.</p>
 </div>
 </section>
 <section id="build-and-fit-a-classifier-with-include-components">
-<h2>Build and fit a classifier with include components<a class="headerlink" href="#build-and-fit-a-classifier-with-include-components" title="Permalink to this headline">¶</a></h2>
+<h2>Build and fit a classifier with include components<a class="headerlink" href="#build-and-fit-a-classifier-with-include-components" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">api</span> <span class="o">=</span> <span class="n">TabularClassificationTask</span><span class="p">(</span>
     <span class="n">search_space_updates</span><span class="o">=</span><span class="n">get_search_space_updates</span><span class="p">(),</span>
     <span class="n">include_components</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;network_backbone&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;MLPBackbone&#39;</span><span class="p">,</span> <span class="s1">&#39;ResNetBackbone&#39;</span><span class="p">],</span>
@@ -218,7 +219,7 @@ the search space.</p>
 </div>
 </section>
 <section id="search-for-an-ensemble-of-machine-learning-algorithms">
-<h2>Search for an ensemble of machine learning algorithms<a class="headerlink" href="#search-for-an-ensemble-of-machine-learning-algorithms" title="Permalink to this headline">¶</a></h2>
+<h2>Search for an ensemble of machine learning algorithms<a class="headerlink" href="#search-for-an-ensemble-of-machine-learning-algorithms" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">api</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
     <span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
     <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
@@ -231,12 +232,12 @@ the search space.</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fa59ddd7520&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f11a0b150d0&gt;
 </pre></div>
 </div>
 </section>
 <section id="print-the-final-ensemble-performance">
-<h2>Print the final ensemble performance<a class="headerlink" href="#print-the-final-ensemble-performance" title="Permalink to this headline">¶</a></h2>
+<h2>Print the final ensemble performance<a class="headerlink" href="#print-the-final-ensemble-performance" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">y_pred</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
 <span class="n">score</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
@@ -247,31 +248,34 @@ the search space.</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.8786127167630058}
-|    | Preprocessing                                                     | Estimator                                                 |   Weight |
-|---:|:------------------------------------------------------------------|:----------------------------------------------------------|---------:|
-|  0 | None                                                              | LGBMLearner                                               |     0.38 |
-|  1 | None                                                              | RFLearner                                                 |     0.22 |
-|  2 | None                                                              | ETLearner                                                 |     0.14 |
-|  3 | None                                                              | SVMLearner                                                |     0.12 |
-|  4 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
-|  5 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
-|  6 | None                                                              | KNNLearner                                                |     0.02 |
-|  7 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.8497109826589595}
+|    | Preprocessing                                                                                    | Estimator                                                 |   Weight |
+|---:|:-------------------------------------------------------------------------------------------------|:----------------------------------------------------------|---------:|
+|  0 | None                                                                                             | LGBMLearner                                               |     0.24 |
+|  1 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,NoScaler,NoFeaturePreprocessing       | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.18 |
+|  2 | None                                                                                             | RFLearner                                                 |     0.16 |
+|  3 | None                                                                                             | ETLearner                                                 |     0.12 |
+|  4 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.1  |
+|  5 | None                                                                                             | KNNLearner                                                |     0.06 |
+|  6 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,LinearSVC Preprocessor | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+|  7 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
+|  8 | SimpleImputer,Variance Threshold,MinorityCoalescer,OneHotEncoder,NoScaler,PCA                    | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+|  9 | None                                                                                             | SVMLearner                                                |     0.02 |
+| 10 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
 autoPyTorch results:
-        Dataset name: cc174591-4c73-11ec-8755-6f4552dca699
+        Dataset name: cc059838-0689-11ed-882e-b1ae9262a945
         Optimisation Metric: accuracy
         Best validation score: 0.8596491228070176
         Number of target algorithm runs: 18
-        Number of successful target algorithm runs: 10
-        Number of crashed target algorithm runs: 6
-        Number of target algorithms that exceeded the time limit: 2
+        Number of successful target algorithm runs: 14
+        Number of crashed target algorithm runs: 3
+        Number of target algorithms that exceeded the time limit: 1
         Number of target algorithms that exceeded the memory limit: 0
 </pre></div>
 </div>
 </section>
 <section id="build-and-fit-a-classifier-with-exclude-components">
-<h2>Build and fit a classifier with exclude components<a class="headerlink" href="#build-and-fit-a-classifier-with-exclude-components" title="Permalink to this headline">¶</a></h2>
+<h2>Build and fit a classifier with exclude components<a class="headerlink" href="#build-and-fit-a-classifier-with-exclude-components" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">api</span> <span class="o">=</span> <span class="n">TabularClassificationTask</span><span class="p">(</span>
     <span class="n">search_space_updates</span><span class="o">=</span><span class="n">get_search_space_updates</span><span class="p">(),</span>
     <span class="n">exclude_components</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;network_backbone&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;MLPBackbone&#39;</span><span class="p">],</span>
@@ -281,7 +285,7 @@ autoPyTorch results:
 </div>
 </section>
 <section id="id1">
-<h2>Search for an ensemble of machine learning algorithms<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<h2>Search for an ensemble of machine learning algorithms<a class="headerlink" href="#id1" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">api</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
     <span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span>
     <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span>
@@ -294,12 +298,12 @@ autoPyTorch results:
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fa504f70580&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f11a015a4f0&gt;
 </pre></div>
 </div>
 </section>
 <section id="id2">
-<h2>Print the final ensemble performance<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<h2>Print the final ensemble performance<a class="headerlink" href="#id2" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">y_pred</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
 <span class="n">score</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
@@ -310,29 +314,25 @@ autoPyTorch results:
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.8786127167630058}
-|    | Preprocessing                                                 | Estimator                                                       |   Weight |
-|---:|:--------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-|  0 | None                                                          | LGBMLearner                                                     |     0.32 |
-|  1 | None                                                          | RFLearner                                                       |     0.2  |
-|  2 | None                                                          | ETLearner                                                       |     0.2  |
-|  3 | None                                                          | SVMLearner                                                      |     0.1  |
-|  4 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.08 |
-|  5 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.06 |
-|  6 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-|  7 | SimpleImputer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.861271676300578}
+|    | Preprocessing                                                                             | Estimator                                                       |   Weight |
+|---:|:------------------------------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
+|  0 | SimpleImputer,Variance Threshold,MinorityCoalescer,NoEncoder,QuantileTransformer,Nystroem | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.76 |
+|  1 | None                                                                                      | ETLearner                                                       |     0.1  |
+|  2 | None                                                                                      | RFLearner                                                       |     0.08 |
+|  3 | SimpleImputer,Variance Threshold,MinorityCoalescer,NoEncoder,QuantileTransformer,Nystroem | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
 autoPyTorch results:
-        Dataset name: 2f630f57-4c74-11ec-8755-6f4552dca699
+        Dataset name: 37f0de0f-068a-11ed-882e-b1ae9262a945
         Optimisation Metric: accuracy
-        Best validation score: 0.8596491228070176
-        Number of target algorithm runs: 26
-        Number of successful target algorithm runs: 14
-        Number of crashed target algorithm runs: 11
-        Number of target algorithms that exceeded the time limit: 1
+        Best validation score: 0.8713450292397661
+        Number of target algorithm runs: 16
+        Number of successful target algorithm runs: 12
+        Number of crashed target algorithm runs: 2
+        Number of target algorithms that exceeded the time limit: 2
         Number of target algorithms that exceeded the memory limit: 0
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  32.930 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  57.892 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-custom-configuration-space-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_custom_configuration_space.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>
@@ -367,8 +367,8 @@ autoPyTorch results:
       
     </p>
     <p>
-        &copy; Copyright 2014-2021, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.0.<br/>
+        &copy; Copyright 2014-2022, Machine Learning Professorship Freiburg.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.2.<br/>
     </p>
   </div>
 </footer>

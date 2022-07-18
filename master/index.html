@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>Auto-PyTorch &#8212; AutoPyTorch 0.1.1 documentation</title>
+    <title>Auto-PyTorch &#8212; AutoPyTorch 0.2 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css" />
     <link rel="stylesheet" type="text/css" href="_static/sg_gallery.css" />
@@ -15,6 +15,7 @@
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -22,10 +23,10 @@
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<script type="text/javascript" src="_static/js/jquery-1.12.4.min.js "></script>
-<script type="text/javascript" src="_static/js/jquery-fix.js "></script>
-<script type="text/javascript" src="_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
-<script type="text/javascript" src="_static/bootstrap-sphinx.js "></script>
+<script type="text/javascript" src="_static/js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript" src="_static/js/jquery-fix.js"></script>
+<script type="text/javascript" src="_static/bootstrap-3.4.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
 
   </head><body>
   
@@ -55,7 +56,7 @@
         </button>
         <a class="navbar-brand" href="#">
           Auto-PyTorch</a>
-        <span class="navbar-text navbar-version pull-left"><b>0.1.1</b></span>
+        <span class="navbar-text navbar-version pull-left"><b>0.2</b></span>
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -122,7 +123,7 @@
     <div class="body col-md-9 content" role="main">
       
   <section id="auto-pytorch">
-<h1>Auto-PyTorch<a class="headerlink" href="#auto-pytorch" title="Permalink to this headline">¶</a></h1>
+<h1>Auto-PyTorch<a class="headerlink" href="#auto-pytorch" title="Permalink to this heading">¶</a></h1>
 <p><em>Auto-PyTorch</em> is an automated machine learning toolkit based on PyTorch:</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">autoPyTorch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="bp">cls</span> <span class="o">=</span> <span class="n">autoPyTorch</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">tabular_classification</span><span class="o">.</span><span class="n">TabularClassificationTask</span><span class="p">()</span>
@@ -137,10 +138,10 @@ Learn more about <em>Auto-PyTorch</em> by reading our paper
 <a class="reference external" href="https://arxiv.org/abs/2006.13799">Auto-PyTorch Tabular: Multi-Fidelity MetaLearning for Efficient and Robust AutoDL</a>
 .</p>
 <section id="example">
-<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this heading">¶</a></h2>
 </section>
 <section id="manual">
-<h2>Manual<a class="headerlink" href="#manual" title="Permalink to this headline">¶</a></h2>
+<h2>Manual<a class="headerlink" href="#manual" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="installation.html#installation"><span class="std std-ref">Installation</span></a></p></li>
 <li><p><a class="reference internal" href="manual.html#manual"><span class="std std-ref">Manual</span></a></p></li>
@@ -150,12 +151,12 @@ Learn more about <em>Auto-PyTorch</em> by reading our paper
 </ul>
 </section>
 <section id="license">
-<h2>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h2>
+<h2>License<a class="headerlink" href="#license" title="Permalink to this heading">¶</a></h2>
 <p><em>Auto-PyTorch</em> is licensed the same way as <em>scikit-learn</em>,
 namely the 3-clause BSD license.</p>
 </section>
 <section id="citing-auto-pytorch">
-<h2>Citing Auto-PyTorch<a class="headerlink" href="#citing-auto-pytorch" title="Permalink to this headline">¶</a></h2>
+<h2>Citing Auto-PyTorch<a class="headerlink" href="#citing-auto-pytorch" title="Permalink to this heading">¶</a></h2>
 <p>If you use <em>Auto-PyTorch</em> in a scientific publication, we would appreciate a
 reference to the following paper:</p>
 <blockquote>
@@ -172,7 +173,7 @@ reference to the following paper:</p>
 </div></blockquote>
 </section>
 <section id="contributing">
-<h2>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h2>
+<h2>Contributing<a class="headerlink" href="#contributing" title="Permalink to this heading">¶</a></h2>
 <p>We appreciate all contribution to <em>Auto-PyTorch</em>, from bug reports and
 documentation to new features. If you want to contribute to the code, you can
 pick an issue from the <a class="reference external" href="https://github.com/automl/Auto-PyTorch/issues">issue tracker</a>
@@ -208,8 +209,8 @@ still passing.</p>
       
     </p>
     <p>
-        &copy; Copyright 2014-2021, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.0.<br/>
+        &copy; Copyright 2014-2022, Machine Learning Professorship Freiburg.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.2.<br/>
     </p>
   </div>
 </footer>

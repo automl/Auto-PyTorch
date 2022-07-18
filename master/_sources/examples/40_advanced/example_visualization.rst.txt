@@ -135,7 +135,7 @@ Build and fit a classifier
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fa5057e0ca0>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f1190793970>
 
 
 
@@ -171,7 +171,7 @@ One can also save the model for future inference
 Plotting the model performance
 ==============================
 
-.. GENERATED FROM PYTHON SOURCE LINES 97-167
+.. GENERATED FROM PYTHON SOURCE LINES 97-152
 
 .. code-block:: default
 
@@ -231,39 +231,12 @@ Plotting the model performance
     )
     plt.show()
 
-    # We then can understand the importance of each input feature using
-    # a permutation importance analysis. This is done as a proof of concept, to
-    # showcase that we can leverage of scikit-learn API.
-    result = permutation_importance(estimator, X_train, y_train, n_repeats=5,
-                                    scoring='accuracy',
-                                    random_state=seed)
-    sorted_idx = result.importances_mean.argsort()
-
-    fig, ax = plt.subplots()
-    ax.boxplot(result.importances[sorted_idx].T,
-               vert=False, labels=X_test.columns[sorted_idx])
-    ax.set_title("Permutation Importances (Train set)")
-    fig.tight_layout()
-    plt.show()
 
 
-
-.. rst-class:: sphx-glr-horizontal
-
-
-    *
-
-      .. image-sg:: /examples/40_advanced/images/sphx_glr_example_visualization_001.png
-         :alt: Auto-PyTorch accuracy over time
-         :srcset: /examples/40_advanced/images/sphx_glr_example_visualization_001.png
-         :class: sphx-glr-multi-img
-
-    *
-
-      .. image-sg:: /examples/40_advanced/images/sphx_glr_example_visualization_002.png
-         :alt: Permutation Importances (Train set)
-         :srcset: /examples/40_advanced/images/sphx_glr_example_visualization_002.png
-         :class: sphx-glr-multi-img
+.. image-sg:: /examples/40_advanced/images/sphx_glr_example_visualization_001.png
+   :alt: Auto-PyTorch accuracy over time
+   :srcset: /examples/40_advanced/images/sphx_glr_example_visualization_001.png
+   :class: sphx-glr-single-img
 
 
 
@@ -272,7 +245,7 @@ Plotting the model performance
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 3 minutes  51.676 seconds)
+   **Total running time of the script:** ( 3 minutes  49.417 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_visualization.py:

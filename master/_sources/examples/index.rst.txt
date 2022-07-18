@@ -94,6 +94,27 @@ Basic examples for using *Auto-PyTorch* on tabular datasets
    :hidden:
 
    /examples/20_basics/example_image_classification
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="The following example shows how to fit a sample forecasting model with AutoPyTorch. This is onl...">
+
+.. only:: html
+
+ .. figure:: /examples/20_basics/images/thumb/sphx_glr_example_time_series_forecasting_thumb.png
+     :alt: Time Series Forecasting
+
+     :ref:`sphx_glr_examples_20_basics_example_time_series_forecasting.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/20_basics/example_time_series_forecasting
 .. raw:: html
 
     <div class="sphx-glr-clear"></div>
@@ -136,6 +157,48 @@ Advanced examples for using *Auto-PyTorch* on tabular datasets.
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="Auto-Pytorch uses SMAC to fit individual machine learning algorithms and then ensembles them to...">
+
+.. only:: html
+
+ .. figure:: /examples/40_advanced/images/thumb/sphx_glr_example_plot_over_time_thumb.png
+     :alt: Plot the Performance over Time
+
+     :ref:`sphx_glr_examples_40_advanced_example_plot_over_time.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/40_advanced/example_plot_over_time
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="The following example shows how to pass feature typesfor datasets which are in  numpy format (a...">
+
+.. only:: html
+
+ .. figure:: /examples/40_advanced/images/thumb/sphx_glr_example_pass_feature_types_thumb.png
+     :alt: Tabular Classification with user passed feature types
+
+     :ref:`sphx_glr_examples_40_advanced_example_pass_feature_types.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/40_advanced/example_pass_feature_types
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="The following example shows how to fit a sample classification model parallely on 2 cores with ...">
 
 .. only:: html
@@ -154,6 +217,27 @@ Advanced examples for using *Auto-PyTorch* on tabular datasets.
    :hidden:
 
    /examples/40_advanced/example_parallel_n_jobs
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Fit a single configuration">
+
+.. only:: html
+
+ .. figure:: /examples/40_advanced/images/thumb/sphx_glr_example_single_configuration_thumb.png
+     :alt: Fit a single configuration
+
+     :ref:`sphx_glr_examples_40_advanced_example_single_configuration.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/40_advanced/example_single_configuration
 
 .. raw:: html
 

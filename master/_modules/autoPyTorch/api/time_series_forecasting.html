@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>autoPyTorch.api.time_series_forecasting &#8212; AutoPyTorch 0.2 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/bootstrap-sphinx.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-binder.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-dataframe.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-rendered-html.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../../../_static/js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript" src="../../../_static/js/jquery-fix.js"></script>
+<script type="text/javascript" src="../../../_static/bootstrap-3.4.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../../../_static/bootstrap-sphinx.js"></script>
+
+  </head><body>
+  
+  <a href="https://github.com/automl/Auto-PyTorch"
+     class="visible-desktop hidden-xs"><img
+    id="gh-banner"
+    style="position: absolute; top: 50px; right: 0; border: 0;"
+    src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png"
+    alt="Fork me on GitHub"></a>
+  <script>
+    // Adjust banner height.
+    $(function () {
+      var navHeight = $(".navbar .container").css("height");
+      $("#gh-banner").css("top", navHeight);
+    });
+  </script>
+
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../../../index.html">
+          Auto-PyTorch</a>
+        <span class="navbar-text navbar-version pull-left"><b>0.2</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="../../../index.html">Start</a></li>
+                <li><a href="../../../releases.html">Releases</a></li>
+                <li><a href="../../../installation.html">Installation</a></li>
+                <li><a href="../../../manual.html">Manual</a></li>
+                <li><a href="../../../examples/index.html">Examples</a></li>
+                <li><a href="../../../api.html">API</a></li>
+                <li><a href="../../../dev.html">Dev</a></li>
+                <li><a href="../../../extending.html">Extending</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../../../index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../../../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-3">
+        <div id="sidebar" class="bs-sidenav" role="complementary">
+        </div>
+      </div>
+    <div class="body col-md-9 content" role="main">
+      
+  <h1>Source code for autoPyTorch.api.time_series_forecasting</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">autoPyTorch.api.base_task</span> <span class="kn">import</span> <span class="n">BaseTask</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.automl_common.common.utils.backend</span> <span class="kn">import</span> <span class="n">Backend</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.constants</span> <span class="kn">import</span> <span class="n">MAX_WINDOW_SIZE_BASE</span><span class="p">,</span> <span class="n">TASK_TYPES_TO_STRING</span><span class="p">,</span> <span class="n">TIMESERIES_FORECASTING</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.data.time_series_forecasting_validator</span> <span class="kn">import</span> <span class="n">TimeSeriesForecastingInputValidator</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.data.utils</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DatasetCompressionSpec</span><span class="p">,</span>
+    <span class="n">get_dataset_compression_mapping</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.datasets.base_dataset</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseDataset</span><span class="p">,</span>
+    <span class="n">BaseDatasetPropertiesType</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.datasets.resampling_strategy</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">HoldoutValTypes</span><span class="p">,</span>
+    <span class="n">ResamplingStrategies</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.datasets.time_series_dataset</span> <span class="kn">import</span> <span class="n">TimeSeriesForecastingDataset</span><span class="p">,</span> <span class="n">TimeSeriesSequence</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.time_series_forecasting</span> <span class="kn">import</span> <span class="n">TimeSeriesForecastingPipeline</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.utils.hyperparameter_search_space_update</span> <span class="kn">import</span> <span class="n">HyperparameterSearchSpaceUpdates</span>
+
+
+<div class="viewcode-block" id="TimeSeriesForecastingTask"><a class="viewcode-back" href="../../../api.html#autoPyTorch.api.time_series_forecasting.TimeSeriesForecastingTask">[docs]</a><span class="k">class</span> <span class="nc">TimeSeriesForecastingTask</span><span class="p">(</span><span class="n">BaseTask</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Time Series Forecasting API to the pipelines.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        seed (int):</span>
+<span class="sd">            seed to be used for reproducibility.</span>
+<span class="sd">        n_jobs (int), (default=1):</span>
+<span class="sd">            number of consecutive processes to spawn.</span>
+<span class="sd">        logging_config (Optional[Dict]):</span>
+<span class="sd">            specifies configuration for logging, if None, it is loaded from the logging.yaml</span>
+<span class="sd">        ensemble_size (int), (default=50):</span>
+<span class="sd">            Number of models added to the ensemble built by Ensemble selection from libraries of models.</span>
+<span class="sd">            Models are drawn with replacement.</span>
+<span class="sd">        ensemble_nbest (int), (default=50):</span>
+<span class="sd">            only consider the ensemble_nbest models to build the ensemble</span>
+<span class="sd">        max_models_on_disc (int), (default=50):</span>
+<span class="sd">            maximum number of models saved to disc. Also, controls the size of the ensemble as any additional models</span>
+<span class="sd">             will be deleted. Must be greater than or equal to 1.</span>
+<span class="sd">        temporary_directory (str):</span>
+<span class="sd">            folder to store configuration output and log file</span>
+<span class="sd">        output_directory (str):</span>
+<span class="sd">            folder to store predictions for optional test set</span>
+<span class="sd">        delete_tmp_folder_after_terminate (bool):</span>
+<span class="sd">            determines whether to delete the temporary directory, when finished</span>
+<span class="sd">        include_components (Optional[Dict]):</span>
+<span class="sd">            If None, all possible components are used. Otherwise specifies set of components to use.</span>
+<span class="sd">        exclude_components (Optional[Dict]):</span>
+<span class="sd">            If None, all possible components are used. Otherwise specifies set of components not to use.</span>
+<span class="sd">            Incompatible with include components</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">logging_config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">ensemble_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
+        <span class="n">ensemble_nbest</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
+        <span class="n">max_models_on_disc</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
+        <span class="n">temporary_directory</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">output_directory</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">delete_tmp_folder_after_terminate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">delete_output_folder_after_terminate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">include_components</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">exclude_components</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">resampling_strategy</span><span class="p">:</span> <span class="n">ResamplingStrategies</span> <span class="o">=</span> <span class="n">HoldoutValTypes</span><span class="o">.</span><span class="n">time_series_hold_out_validation</span><span class="p">,</span>
+        <span class="n">resampling_strategy_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">backend</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Backend</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">search_space_updates</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">HyperparameterSearchSpaceUpdates</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+            <span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">,</span>
+            <span class="n">logging_config</span><span class="o">=</span><span class="n">logging_config</span><span class="p">,</span>
+            <span class="n">ensemble_size</span><span class="o">=</span><span class="n">ensemble_size</span><span class="p">,</span>
+            <span class="n">ensemble_nbest</span><span class="o">=</span><span class="n">ensemble_nbest</span><span class="p">,</span>
+            <span class="n">max_models_on_disc</span><span class="o">=</span><span class="n">max_models_on_disc</span><span class="p">,</span>
+            <span class="n">temporary_directory</span><span class="o">=</span><span class="n">temporary_directory</span><span class="p">,</span>
+            <span class="n">output_directory</span><span class="o">=</span><span class="n">output_directory</span><span class="p">,</span>
+            <span class="n">delete_tmp_folder_after_terminate</span><span class="o">=</span><span class="n">delete_tmp_folder_after_terminate</span><span class="p">,</span>
+            <span class="n">delete_output_folder_after_terminate</span><span class="o">=</span><span class="n">delete_output_folder_after_terminate</span><span class="p">,</span>
+            <span class="n">include_components</span><span class="o">=</span><span class="n">include_components</span><span class="p">,</span>
+            <span class="n">exclude_components</span><span class="o">=</span><span class="n">exclude_components</span><span class="p">,</span>
+            <span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">,</span>
+            <span class="n">resampling_strategy</span><span class="o">=</span><span class="n">resampling_strategy</span><span class="p">,</span>
+            <span class="n">resampling_strategy_args</span><span class="o">=</span><span class="n">resampling_strategy_args</span><span class="p">,</span>
+            <span class="n">search_space_updates</span><span class="o">=</span><span class="n">search_space_updates</span><span class="p">,</span>
+            <span class="n">task_type</span><span class="o">=</span><span class="n">TASK_TYPES_TO_STRING</span><span class="p">[</span><span class="n">TIMESERIES_FORECASTING</span><span class="p">],</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">customized_window_size</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_space_updates</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">update</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_space_updates</span><span class="o">.</span><span class="n">updates</span><span class="p">:</span>
+                <span class="c1"># user has already specified a window_size range</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="n">update</span><span class="o">.</span><span class="n">node_name</span> <span class="o">==</span> <span class="s2">&quot;data_loader&quot;</span>
+                    <span class="ow">and</span> <span class="n">update</span><span class="o">.</span><span class="n">hyperparameter</span> <span class="o">==</span> <span class="s2">&quot;window_size&quot;</span>
+                <span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">customized_window_size</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">_get_required_dataset_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">BaseDataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">TimeSeriesForecastingDataset</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Dataset is incompatible for the given task,: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">dataset</span><span class="p">))</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">dataset</span><span class="o">.</span><span class="n">get_required_dataset_info</span><span class="p">()</span>
+
+<div class="viewcode-block" id="TimeSeriesForecastingTask.build_pipeline"><a class="viewcode-back" href="../../../api.html#autoPyTorch.api.time_series_forecasting.TimeSeriesForecastingTask.build_pipeline">[docs]</a>    <span class="k">def</span> <span class="nf">build_pipeline</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">dataset_properties</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">BaseDatasetPropertiesType</span><span class="p">],</span>
+        <span class="n">include_components</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">exclude_components</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">search_space_updates</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">HyperparameterSearchSpaceUpdates</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TimeSeriesForecastingPipeline</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build pipeline according to current task</span>
+<span class="sd">        and for the passed dataset properties</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dataset_properties (Dict[str, Any]):</span>
+<span class="sd">                Characteristics of the dataset to guide the pipeline</span>
+<span class="sd">                choices of components</span>
+<span class="sd">            include_components (Optional[Dict[str, Any]]):</span>
+<span class="sd">                Dictionary containing components to include. Key is the node</span>
+<span class="sd">                name and Value is an Iterable of the names of the components</span>
+<span class="sd">                to include. Only these components will be present in the</span>
+<span class="sd">                search space.</span>
+<span class="sd">            exclude_components (Optional[Dict[str, Any]]):</span>
+<span class="sd">                Dictionary containing components to exclude. Key is the node</span>
+<span class="sd">                name and Value is an Iterable of the names of the components</span>
+<span class="sd">                to exclude. All except these components will be present in</span>
+<span class="sd">                the search space.</span>
+<span class="sd">            search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):</span>
+<span class="sd">                Search space updates that can be used to modify the search</span>
+<span class="sd">                space of particular components or choice modules of the pipeline</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            TimeSeriesForecastingPipeline:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">TimeSeriesForecastingPipeline</span><span class="p">(</span>
+            <span class="n">dataset_properties</span><span class="o">=</span><span class="n">dataset_properties</span><span class="p">,</span>
+            <span class="n">include</span><span class="o">=</span><span class="n">include_components</span><span class="p">,</span>
+            <span class="n">exclude</span><span class="o">=</span><span class="n">exclude_components</span><span class="p">,</span>
+            <span class="n">search_space_updates</span><span class="o">=</span><span class="n">search_space_updates</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_dataset_input_validator</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">X_train</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">y_train</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">X_test</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">y_test</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">resampling_strategy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ResamplingStrategies</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">resampling_strategy_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">dataset_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">dataset_compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DatasetCompressionSpec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">freq</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">start_times</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">series_idx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">n_prediction_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">known_future_features</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span> <span class="n">Tuple</span><span class="p">[()]]</span> <span class="o">=</span> <span class="p">(),</span>
+        <span class="o">**</span><span class="n">forecasting_dataset_kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">TimeSeriesForecastingDataset</span><span class="p">,</span> <span class="n">TimeSeriesForecastingInputValidator</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns an object of `TimeSeriesForecastingDataset` and an object of</span>
+<span class="sd">        `TimeSeriesForecastingInputValidator` according to the current task.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            X_train (Union[List, pd.DataFrame, np.ndarray]):</span>
+<span class="sd">                Training feature set.</span>
+<span class="sd">            y_train (Union[List, pd.DataFrame, np.ndarray]):</span>
+<span class="sd">                Training target set.</span>
+<span class="sd">            X_test (Optional[Union[List, pd.DataFrame, np.ndarray]]):</span>
+<span class="sd">                Testing feature set</span>
+<span class="sd">            y_test (Optional[Union[List, pd.DataFrame, np.ndarray]]):</span>
+<span class="sd">                Testing target set</span>
+<span class="sd">            resampling_strategy (Optional[RESAMPLING_STRATEGIES]):</span>
+<span class="sd">                Strategy to split the training data. if None, uses</span>
+<span class="sd">                HoldoutValTypes.holdout_validation.</span>
+<span class="sd">            resampling_strategy_args (Optional[Dict[str, Any]]):</span>
+<span class="sd">                arguments required for the chosen resampling strategy. If None, uses</span>
+<span class="sd">                the default values provided in DEFAULT_RESAMPLING_PARAMETERS</span>
+<span class="sd">                in ```datasets/resampling_strategy.py```.</span>
+<span class="sd">            dataset_name (Optional[str]):</span>
+<span class="sd">                name of the dataset, used as experiment name.</span>
+<span class="sd">            dataset_compression (Optional[DatasetCompressionSpec]):</span>
+<span class="sd">                specifications for dataset compression. For more info check</span>
+<span class="sd">                documentation for `BaseTask.get_dataset`.</span>
+<span class="sd">            freq (Optional[Union[str, int, List[int]]]):</span>
+<span class="sd">                frequency information, it determines the configuration space of the window size, if it is not given,</span>
+<span class="sd">                we will use the default configuration</span>
+<span class="sd">            start_times (Optional[List[pd.DatetimeIndex]]):</span>
+<span class="sd">                starting time of each series when they are sampled. If it is not given, we simply start with a fixed</span>
+<span class="sd">                timestamp.</span>
+<span class="sd">            series_idx (Optional[Union[List[Union[str, int]], str, int]]):</span>
+<span class="sd">                (only works if X is stored as pd.DataFrame). This value is applied to identify to which series the data</span>
+<span class="sd">                belongs if the data is presented as a &quot;chunk&quot; dataframe</span>
+<span class="sd">            n_prediction_steps (int):</span>
+<span class="sd">                The number of steps you want to forecast into the future (forecast horizon)</span>
+<span class="sd">            known_future_features (Optional[Union[Tuple[Union[str, int]], Tuple[()]]]):</span>
+<span class="sd">                future features that are known in advance. For instance, holidays.</span>
+<span class="sd">            forecasting_kwargs (Any)</span>
+<span class="sd">                kwargs for forecasting dataset, for more details, please check</span>
+<span class="sd">                ```datasets/time_series_dataset.py```</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            TimeSeriesForecastingDataset:</span>
+<span class="sd">                the dataset object.</span>
+<span class="sd">            TimeSeriesForecastingInputValidator:</span>
+<span class="sd">                the input validator fitted on the data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">resampling_strategy</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">resampling_strategy</span>
+            <span class="k">if</span> <span class="n">resampling_strategy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">resampling_strategy</span>
+        <span class="p">)</span>
+        <span class="n">resampling_strategy_args</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">resampling_strategy_args</span>
+            <span class="k">if</span> <span class="n">resampling_strategy_args</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">resampling_strategy_args</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Create a validator object to make sure that the data provided by</span>
+        <span class="c1"># the user matches the autopytorch requirements</span>
+        <span class="n">input_validator</span> <span class="o">=</span> <span class="n">TimeSeriesForecastingInputValidator</span><span class="p">(</span>
+            <span class="n">is_classification</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">logger_port</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger_port</span><span class="p">,</span>
+            <span class="n">dataset_compression</span><span class="o">=</span><span class="n">dataset_compression</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Fit an input validator to check the provided data</span>
+        <span class="c1"># Also, an encoder is fit to both train and test data,</span>
+        <span class="c1"># to prevent unseen categories during inference</span>
+        <span class="n">input_validator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+            <span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span>
+            <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span>
+            <span class="n">start_times</span><span class="o">=</span><span class="n">start_times</span><span class="p">,</span>
+            <span class="n">series_idx</span><span class="o">=</span><span class="n">series_idx</span><span class="p">,</span>
+            <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="p">,</span>
+            <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">TimeSeriesForecastingDataset</span><span class="p">(</span>
+            <span class="n">X</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span>
+            <span class="n">Y</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span>
+            <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="p">,</span>
+            <span class="n">Y_test</span><span class="o">=</span><span class="n">y_test</span><span class="p">,</span>
+            <span class="n">dataset_name</span><span class="o">=</span><span class="n">dataset_name</span><span class="p">,</span>
+            <span class="n">freq</span><span class="o">=</span><span class="n">freq</span><span class="p">,</span>
+            <span class="n">start_times</span><span class="o">=</span><span class="n">start_times</span><span class="p">,</span>
+            <span class="n">series_idx</span><span class="o">=</span><span class="n">series_idx</span><span class="p">,</span>
+            <span class="n">validator</span><span class="o">=</span><span class="n">input_validator</span><span class="p">,</span>
+            <span class="n">resampling_strategy</span><span class="o">=</span><span class="n">resampling_strategy</span><span class="p">,</span>
+            <span class="n">resampling_strategy_args</span><span class="o">=</span><span class="n">resampling_strategy_args</span><span class="p">,</span>
+            <span class="n">n_prediction_steps</span><span class="o">=</span><span class="n">n_prediction_steps</span><span class="p">,</span>
+            <span class="n">known_future_features</span><span class="o">=</span><span class="n">known_future_features</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">forecasting_dataset_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">input_validator</span>
+
+<div class="viewcode-block" id="TimeSeriesForecastingTask.search"><a class="viewcode-back" href="../../../api.html#autoPyTorch.api.time_series_forecasting.TimeSeriesForecastingTask.search">[docs]</a>    <span class="k">def</span> <span class="nf">search</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">optimize_metric</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">X_train</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">y_train</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">X_test</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">y_test</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">n_prediction_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">freq</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">start_times</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">series_idx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">dataset_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">budget_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;epochs&quot;</span><span class="p">,</span>
+        <span class="n">min_budget</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="n">max_budget</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
+        <span class="n">total_walltime_limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="n">func_eval_time_limit_secs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">enable_traditional_pipeline</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">memory_limit</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4096</span><span class="p">,</span>
+        <span class="n">smac_scenario_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">get_smac_object_callback</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">all_supported_metrics</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">precision</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
+        <span class="n">disable_file_output</span><span class="p">:</span> <span class="n">List</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">load_models</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">portfolio_selection</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">suggested_init_models</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">custom_init_setting_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">min_num_test_instances</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">dataset_compression</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">forecasting_dataset_kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;BaseTask&quot;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Search for the best pipeline configuration for the given dataset.</span>
+
+<span class="sd">        Fit both optimizes the machine learning models and builds an ensemble out of them.</span>
+<span class="sd">        To disable ensembling, set ensemble_size==0.</span>
+<span class="sd">        using the optimizer.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            optimize_metric (str):</span>
+<span class="sd">                name of the metric that is used to evaluate a pipeline.</span>
+<span class="sd">            X_train: Optional[Union[List, pd.DataFrame]]</span>
+<span class="sd">                A pair of features (X_train) and targets (y_train) used to fit a</span>
+<span class="sd">                pipeline. Additionally, a holdout of this pairs (X_test, y_test) can</span>
+<span class="sd">                be provided to track the generalization performance of each stage.</span>
+<span class="sd">            y_train: Union[List, pd.DataFrame]</span>
+<span class="sd">                training target, must be given</span>
+<span class="sd">            X_test: Optional[Union[List, pd.DataFrame]]</span>
+<span class="sd">                Test Features, Test series need to end at one step before forecasting</span>
+<span class="sd">            y_test: Optional[Union[List, pd.DataFrame]]</span>
+<span class="sd">                Test Targets</span>
+<span class="sd">            n_prediction_steps: int</span>
+<span class="sd">                How many steps in advance we need to predict</span>
+<span class="sd">            freq: Optional[Union[str, int, List[int]]]</span>
+<span class="sd">                frequency information, it determines the configuration space of the window size, if it is not given,</span>
+<span class="sd">                we will use the default configuration</span>
+<span class="sd">            start_times: : List[pd.DatetimeIndex]</span>
+<span class="sd">                A list indicating the start time of each series in the training sets</span>
+<span class="sd">            series_idx: Optional[Union[List[Union[str, int]], str, int]]</span>
+<span class="sd">                variable in X indicating series indices</span>
+<span class="sd">            dataset_name: Optional[str],</span>
+<span class="sd">                dataset name</span>
+<span class="sd">            budget_type (str):</span>
+<span class="sd">                Type of budget to be used when fitting the pipeline.</span>
+<span class="sd">                It can be one of:</span>
+
+<span class="sd">                + `epochs`: The training of each pipeline will be terminated after</span>
+<span class="sd">                    a number of epochs have passed. This number of epochs is determined by the</span>
+<span class="sd">                    budget argument of this method.</span>
+<span class="sd">                + `runtime`: The training of each pipeline will be terminated after</span>
+<span class="sd">                    a number of seconds have passed. This number of seconds is determined by the</span>
+<span class="sd">                    budget argument of this method. The overall fitting time of a pipeline is</span>
+<span class="sd">                    controlled by func_eval_time_limit_secs. &#39;runtime&#39; only controls the allocated</span>
+<span class="sd">                    time to train a pipeline, but it does not consider the overall time it takes</span>
+<span class="sd">                    to create a pipeline (data loading and preprocessing, other i/o operations, etc.).</span>
+<span class="sd">                    budget_type will determine the units of min_budget/max_budget. If budget_type==&#39;epochs&#39;</span>
+<span class="sd">                    is used, min_budget will refer to epochs whereas if budget_type==&#39;runtime&#39; then</span>
+<span class="sd">                    min_budget will refer to seconds.</span>
+<span class="sd">                + &#39;resolution&#39;: The sample resolution of time series, for instance, if a time series sequence is</span>
+<span class="sd">                [0, 1, 2, 3, 4] with resolution 0.5, the sequence fed to the network is [0, 2, 4]</span>
+<span class="sd">            min_budget Union[int, float]:</span>
+<span class="sd">                Auto-PyTorch uses `Hyperband &lt;https://arxiv.org/abs/1603.06560&gt;`_ to</span>
+<span class="sd">                trade-off resources between running many pipelines at min_budget and</span>
+<span class="sd">                running the top performing pipelines on max_budget.</span>
+<span class="sd">                min_budget states the minimum resource allocation a pipeline should have</span>
+<span class="sd">                so that we can compare and quickly discard bad performing models.</span>
+<span class="sd">                For example, if the budget_type is epochs, and min_budget=5, then we will</span>
+<span class="sd">                run every pipeline to a minimum of 5 epochs before performance comparison.</span>
+<span class="sd">            max_budget Union[int, float]:</span>
+<span class="sd">                Auto-PyTorch uses `Hyperband &lt;https://arxiv.org/abs/1603.06560&gt;`_ to</span>
+<span class="sd">                trade-off resources between running many pipelines at min_budget and</span>
+<span class="sd">                running the top performing pipelines on max_budget.</span>
+<span class="sd">                max_budget states the maximum resource allocation a pipeline is going to</span>
+<span class="sd">                be ran. For example, if the budget_type is epochs, and max_budget=50,</span>
+<span class="sd">                then the pipeline training will be terminated after 50 epochs.</span>
+
+<span class="sd">            total_walltime_limit (int), (default=100): Time limit</span>
+<span class="sd">                in seconds for the search of appropriate models.</span>
+<span class="sd">                By increasing this value, autopytorch has a higher</span>
+<span class="sd">                chance of finding better models.</span>
+<span class="sd">            func_eval_time_limit (int), (default=60): Time limit</span>
+<span class="sd">                for a single call to the machine learning model.</span>
+<span class="sd">                Model fitting will be terminated if the machine</span>
+<span class="sd">                learning algorithm runs over the time limit. Set</span>
+<span class="sd">                this value high enough so that typical machine</span>
+<span class="sd">                learning algorithms can be fit on the training</span>
+<span class="sd">                data.</span>
+<span class="sd">            traditional_per_total_budget (float), (default=0.1):</span>
+<span class="sd">                Percent of total walltime to be allocated for</span>
+<span class="sd">                running traditional classifiers.</span>
+<span class="sd">            memory_limit (Optional[int]), (default=4096): Memory</span>
+<span class="sd">                limit in MB for the machine learning algorithm. autopytorch</span>
+<span class="sd">                will stop fitting the machine learning algorithm if it tries</span>
+<span class="sd">                to allocate more than memory_limit MB. If None is provided,</span>
+<span class="sd">                no memory limit is set. In case of multi-processing, memory_limit</span>
+<span class="sd">                will be per job. This memory limit also applies to the ensemble</span>
+<span class="sd">                creation process.</span>
+<span class="sd">            smac_scenario_args (Optional[Dict]): Additional arguments inserted</span>
+<span class="sd">                into the scenario of SMAC. See the</span>
+<span class="sd">                [SMAC documentation] (https://automl.github.io/SMAC3/master/options.html?highlight=scenario#scenario)</span>
+<span class="sd">            get_smac_object_callback (Optional[Callable]): Callback function</span>
+<span class="sd">                to create an object of class</span>
+<span class="sd">                [smac.optimizer.smbo.SMBO](https://automl.github.io/SMAC3/master/apidoc/smac.optimizer.smbo.html).</span>
+<span class="sd">                The function must accept the arguments scenario_dict,</span>
+<span class="sd">                instances, num_params, runhistory, seed and ta. This is</span>
+<span class="sd">                an advanced feature. Use only if you are familiar with</span>
+<span class="sd">                [SMAC](https://automl.github.io/SMAC3/master/index.html).</span>
+<span class="sd">            all_supported_metrics (bool), (default=True): if True, all</span>
+<span class="sd">                metrics supporting current task will be calculated</span>
+<span class="sd">                for each pipeline and results will be available via cv_results</span>
+<span class="sd">            precision (int), (default=32): Numeric precision used when loading</span>
+<span class="sd">                ensemble data. Can be either &#39;16&#39;, &#39;32&#39; or &#39;64&#39;.</span>
+<span class="sd">            disable_file_output (Optional[List[Union[str, DisableFileOutputParameters]]]):</span>
+<span class="sd">                Used as a list to pass more fine-grained</span>
+<span class="sd">                information on what to save. Must be a member of `DisableFileOutputParameters`.</span>
+<span class="sd">                Allowed elements in the list are:</span>
+
+<span class="sd">                + `y_optimization`:</span>
+<span class="sd">                    do not save the predictions for the optimization set,</span>
+<span class="sd">                    which would later on be used to build an ensemble. Note that SMAC</span>
+<span class="sd">                    optimizes a metric evaluated on the optimization set.</span>
+<span class="sd">                + `pipeline`:</span>
+<span class="sd">                    do not save any individual pipeline files</span>
+<span class="sd">                + `pipelines`:</span>
+<span class="sd">                    In case of cross validation, disables saving the joint model of the</span>
+<span class="sd">                    pipelines fit on each fold.</span>
+<span class="sd">                + `y_test`:</span>
+<span class="sd">                    do not save the predictions for the test set.</span>
+<span class="sd">                + `all`:</span>
+<span class="sd">                    do not save any of the above.</span>
+<span class="sd">                For more information check `autoPyTorch.evaluation.utils.DisableFileOutputParameters`.</span>
+<span class="sd">            load_models (bool), (default=True): Whether to load the</span>
+<span class="sd">                models after fitting AutoPyTorch.</span>
+<span class="sd">            suggested_init_models: Optional[List[str]]</span>
+<span class="sd">                suggested initial models with their default configurations setting</span>
+<span class="sd">            custom_init_setting_path: Optional[str]</span>
+<span class="sd">                path to a json file that contains the initial configuration suggested by the users</span>
+<span class="sd">            min_num_test_instances: Optional[int]</span>
+<span class="sd">                if it is set None, then full validation sets will be evaluated in each fidelity. Otherwise, the number</span>
+<span class="sd">                of instances in the test sets should be a value that is at least as great as this value, otherwise, the</span>
+<span class="sd">                number of test instance is proportional to its fidelity</span>
+<span class="sd">            forecasting_dataset_kwargs: Dict[Any]</span>
+<span class="sd">                Forecasting dataset kwargs used to initialize forecasting dataset</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            self</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">memory_limit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dataset_compression</span> <span class="o">=</span> <span class="n">get_dataset_compression_mapping</span><span class="p">(</span>
+                <span class="n">memory_limit</span><span class="p">,</span> <span class="n">dataset_compression</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dataset_compression</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_validator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_dataset_input_validator</span><span class="p">(</span>
+            <span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span>
+            <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span>
+            <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="p">,</span>
+            <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="p">,</span>
+            <span class="n">resampling_strategy</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">resampling_strategy</span><span class="p">,</span>
+            <span class="n">resampling_strategy_args</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">resampling_strategy_args</span><span class="p">,</span>
+            <span class="n">dataset_name</span><span class="o">=</span><span class="n">dataset_name</span><span class="p">,</span>
+            <span class="n">dataset_compression</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dataset_compression</span><span class="p">,</span>
+            <span class="n">freq</span><span class="o">=</span><span class="n">freq</span><span class="p">,</span>
+            <span class="n">start_times</span><span class="o">=</span><span class="n">start_times</span><span class="p">,</span>
+            <span class="n">series_idx</span><span class="o">=</span><span class="n">series_idx</span><span class="p">,</span>
+            <span class="n">n_prediction_steps</span><span class="o">=</span><span class="n">n_prediction_steps</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">forecasting_dataset_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">customized_window_size</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_sliding_window_size</span><span class="p">(</span><span class="n">n_prediction_steps</span><span class="o">=</span><span class="n">n_prediction_steps</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_metrics_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;sp&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">seasonality</span><span class="p">,</span>
+            <span class="s2">&quot;n_prediction_steps&quot;</span><span class="p">:</span> <span class="n">n_prediction_steps</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="n">forecasting_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">suggested_init_models</span><span class="o">=</span><span class="n">suggested_init_models</span><span class="p">,</span>
+            <span class="n">custom_init_setting_path</span><span class="o">=</span><span class="n">custom_init_setting_path</span><span class="p">,</span>
+            <span class="n">min_num_test_instances</span><span class="o">=</span><span class="n">min_num_test_instances</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_search</span><span class="p">(</span>
+            <span class="n">dataset</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
+            <span class="n">optimize_metric</span><span class="o">=</span><span class="n">optimize_metric</span><span class="p">,</span>
+            <span class="n">budget_type</span><span class="o">=</span><span class="n">budget_type</span><span class="p">,</span>
+            <span class="n">min_budget</span><span class="o">=</span><span class="n">min_budget</span><span class="p">,</span>
+            <span class="n">max_budget</span><span class="o">=</span><span class="n">max_budget</span><span class="p">,</span>
+            <span class="n">total_walltime_limit</span><span class="o">=</span><span class="n">total_walltime_limit</span><span class="p">,</span>
+            <span class="n">func_eval_time_limit_secs</span><span class="o">=</span><span class="n">func_eval_time_limit_secs</span><span class="p">,</span>
+            <span class="n">enable_traditional_pipeline</span><span class="o">=</span><span class="n">enable_traditional_pipeline</span><span class="p">,</span>
+            <span class="n">memory_limit</span><span class="o">=</span><span class="n">memory_limit</span><span class="p">,</span>
+            <span class="n">smac_scenario_args</span><span class="o">=</span><span class="n">smac_scenario_args</span><span class="p">,</span>
+            <span class="n">get_smac_object_callback</span><span class="o">=</span><span class="n">get_smac_object_callback</span><span class="p">,</span>
+            <span class="n">all_supported_metrics</span><span class="o">=</span><span class="n">all_supported_metrics</span><span class="p">,</span>
+            <span class="n">precision</span><span class="o">=</span><span class="n">precision</span><span class="p">,</span>
+            <span class="n">disable_file_output</span><span class="o">=</span><span class="n">disable_file_output</span><span class="p">,</span>
+            <span class="n">load_models</span><span class="o">=</span><span class="n">load_models</span><span class="p">,</span>
+            <span class="n">portfolio_selection</span><span class="o">=</span><span class="n">portfolio_selection</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">forecasting_kwargs</span><span class="p">,</span>  <span class="c1"># type: ignore[arg-type]</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="TimeSeriesForecastingTask.predict"><a class="viewcode-back" href="../../../api.html#autoPyTorch.api.time_series_forecasting.TimeSeriesForecastingTask.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">X_test</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">TimeSeriesSequence</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">past_targets</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">future_targets</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">TimeSeriesSequence</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">start_times</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">]</span> <span class="o">=</span> <span class="p">[],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Predict the future varaibles</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            X_test (List[Union[np.ndarray, pd.DataFrame, TimeSeriesSequence]])</span>
+<span class="sd">                if it is a list of TimeSeriesSequence, then it is the series to be forecasted. Otherwise, it is the</span>
+<span class="sd">                known future features</span>
+<span class="sd">            batch_size: Optional[int]</span>
+<span class="sd">                batch size</span>
+<span class="sd">            n_jobs (int):</span>
+<span class="sd">                number of jobs</span>
+<span class="sd">            past_targets (Optional[List[np.ndarray]])</span>
+<span class="sd">                past observed targets, required when X_test is not a list of TimeSeriesSequence</span>
+<span class="sd">            future_targets (Optional[List[Union[np.ndarray, pd.DataFrame, TimeSeriesSequence]]]):</span>
+<span class="sd">                future targets (test sets)</span>
+<span class="sd">            start_times (List[pd.DatetimeIndex]):</span>
+<span class="sd">                starting time of each series when they are sampled. If it is not given, we simply start with a fixed</span>
+<span class="sd">                timestamp.</span>
+
+<span class="sd">        Return:</span>
+<span class="sd">            np.ndarray</span>
+<span class="sd">                predicted value, it needs to be with shape (B, H, N),</span>
+<span class="sd">                B is the number of series, H is forecasting horizon (n_prediction_steps), N is the number of targets</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">X_test</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X_test</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">TimeSeriesSequence</span><span class="p">):</span>
+            <span class="k">assert</span> <span class="n">past_targets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="c1"># Validate and construct TimeSeriesSequence</span>
+            <span class="n">X_test</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">transform_data_into_time_series_sequence</span><span class="p">(</span>
+                <span class="n">X</span><span class="o">=</span><span class="n">X_test</span><span class="p">,</span>
+                <span class="n">Y</span><span class="o">=</span><span class="n">past_targets</span><span class="p">,</span>
+                <span class="n">X_test</span><span class="o">=</span><span class="n">future_targets</span><span class="p">,</span>
+                <span class="n">start_times</span><span class="o">=</span><span class="n">start_times</span><span class="p">,</span>
+                <span class="n">is_test_set</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">flattened_res</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">TimeSeriesForecastingTask</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span>
+            <span class="n">X_test</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">n_jobs</span>
+        <span class="p">)</span>
+        <span class="c1"># forecasting result from each series is stored as an array</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">num_targets</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">forecasting</span> <span class="o">=</span> <span class="n">flattened_res</span><span class="o">.</span><span class="n">reshape</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">n_prediction_steps</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">forecasting</span> <span class="o">=</span> <span class="n">flattened_res</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+                <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">n_prediction_steps</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">num_target</span><span class="p">]</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">normalize_y</span><span class="p">:</span>
+            <span class="n">mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">y_mean</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">n_prediction_steps</span>
+            <span class="p">)</span>
+            <span class="n">std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">y_std</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">n_prediction_steps</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">forecasting</span> <span class="o">*</span> <span class="n">std</span> <span class="o">+</span> <span class="n">mean</span>
+        <span class="k">return</span> <span class="n">forecasting</span></div>
+
+<div class="viewcode-block" id="TimeSeriesForecastingTask.update_sliding_window_size"><a class="viewcode-back" href="../../../api.html#autoPyTorch.api.time_series_forecasting.TimeSeriesForecastingTask.update_sliding_window_size">[docs]</a>    <span class="k">def</span> <span class="nf">update_sliding_window_size</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_prediction_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        the size of the sliding window is heavily dependent on the dataset,</span>
+<span class="sd">        so we only update them when we get the information from the</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            n_prediction_steps (int):</span>
+<span class="sd">                forecast horizon. Sometimes we could also make our base sliding window size based on the</span>
+<span class="sd">                forecast horizon</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">base_window_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">base_window_size</span><span class="p">))</span>
+        <span class="c1"># we don&#39;t want base window size to large, which might cause a too long computation time, in which case</span>
+        <span class="c1"># we will use n_prediction_step instead (which is normally smaller than base_window_size)</span>
+        <span class="k">if</span> <span class="n">base_window_size</span> <span class="o">&gt;</span> <span class="n">MAX_WINDOW_SIZE_BASE</span><span class="p">:</span>
+            <span class="c1"># TODO considering padding to allow larger upper_window_size !!!</span>
+            <span class="k">if</span> <span class="n">n_prediction_steps</span> <span class="o">&gt;</span> <span class="n">MAX_WINDOW_SIZE_BASE</span><span class="p">:</span>
+                <span class="n">base_window_size</span> <span class="o">=</span> <span class="mi">50</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">base_window_size</span> <span class="o">=</span> <span class="n">n_prediction_steps</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_space_updates</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">search_space_updates</span> <span class="o">=</span> <span class="n">HyperparameterSearchSpaceUpdates</span><span class="p">()</span>
+
+        <span class="n">window_size_scales</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_space_updates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">node_name</span><span class="o">=</span><span class="s2">&quot;data_loader&quot;</span><span class="p">,</span>
+            <span class="n">hyperparameter</span><span class="o">=</span><span class="s2">&quot;window_size&quot;</span><span class="p">,</span>
+            <span class="n">value_range</span><span class="o">=</span><span class="p">[</span>
+                <span class="nb">int</span><span class="p">(</span><span class="n">window_size_scales</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">base_window_size</span><span class="p">),</span>
+                <span class="nb">int</span><span class="p">(</span><span class="n">window_size_scales</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">base_window_size</span><span class="p">),</span>
+            <span class="p">],</span>
+            <span class="n">default_value</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="mf">1.25</span> <span class="o">*</span> <span class="n">base_window_size</span><span class="p">)),</span>
+        <span class="p">)</span></div></div>
+</pre></div>
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+      
+    </p>
+    <p>
+        &copy; Copyright 2014-2022, Machine Learning Professorship Freiburg.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.2.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

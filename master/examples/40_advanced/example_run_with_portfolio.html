@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>Tabular Classification with Greedy Portfolio &#8212; AutoPyTorch 0.1.1 documentation</title>
+    <title>Tabular Classification with Greedy Portfolio &#8212; AutoPyTorch 0.2 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/bootstrap-sphinx.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css" />
@@ -15,6 +15,7 @@
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -22,10 +23,10 @@
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<script type="text/javascript" src="../../_static/js/jquery-1.12.4.min.js "></script>
-<script type="text/javascript" src="../../_static/js/jquery-fix.js "></script>
-<script type="text/javascript" src="../../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
-<script type="text/javascript" src="../../_static/bootstrap-sphinx.js "></script>
+<script type="text/javascript" src="../../_static/js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript" src="../../_static/js/jquery-fix.js"></script>
+<script type="text/javascript" src="../../_static/bootstrap-3.4.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../../_static/bootstrap-sphinx.js"></script>
 
   </head><body>
   
@@ -55,7 +56,7 @@
         </button>
         <a class="navbar-brand" href="../../index.html">
           Auto-PyTorch</a>
-        <span class="navbar-text navbar-version pull-left"><b>0.1.1</b></span>
+        <span class="navbar-text navbar-version pull-left"><b>0.2</b></span>
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -126,7 +127,7 @@
 to download the full example code or to run this example in your browser via Binder</p>
 </div>
 <section class="sphx-glr-example-title" id="tabular-classification-with-greedy-portfolio">
-<span id="sphx-glr-examples-40-advanced-example-run-with-portfolio-py"></span><h1>Tabular Classification with Greedy Portfolio<a class="headerlink" href="#tabular-classification-with-greedy-portfolio" title="Permalink to this headline">¶</a></h1>
+<span id="sphx-glr-examples-40-advanced-example-run-with-portfolio-py"></span><h1>Tabular Classification with Greedy Portfolio<a class="headerlink" href="#tabular-classification-with-greedy-portfolio" title="Permalink to this heading">¶</a></h1>
 <p>The following example shows how to fit a sample classification model
 with AutoPyTorch using the greedy portfolio</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
@@ -148,7 +149,7 @@ with AutoPyTorch using the greedy portfolio</p>
 </pre></div>
 </div>
 <section id="data-loading">
-<h2>Data Loading<a class="headerlink" href="#data-loading" title="Permalink to this headline">¶</a></h2>
+<h2>Data Loading<a class="headerlink" href="#data-loading" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">fetch_openml</span><span class="p">(</span><span class="n">data_id</span><span class="o">=</span><span class="mi">40981</span><span class="p">,</span> <span class="n">return_X_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">as_frame</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">model_selection</span><span class="o">.</span><span class="n">train_test_split</span><span class="p">(</span>
     <span class="n">X</span><span class="p">,</span>
@@ -159,7 +160,7 @@ with AutoPyTorch using the greedy portfolio</p>
 </div>
 </section>
 <section id="build-and-fit-a-classifier">
-<h2>Build and fit a classifier<a class="headerlink" href="#build-and-fit-a-classifier" title="Permalink to this headline">¶</a></h2>
+<h2>Build and fit a classifier<a class="headerlink" href="#build-and-fit-a-classifier" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">api</span> <span class="o">=</span> <span class="n">TabularClassificationTask</span><span class="p">(</span>
     <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
 <span class="p">)</span>
@@ -167,7 +168,7 @@ with AutoPyTorch using the greedy portfolio</p>
 </div>
 </section>
 <section id="search-for-an-ensemble-of-machine-learning-algorithms">
-<h2>Search for an ensemble of machine learning algorithms<a class="headerlink" href="#search-for-an-ensemble-of-machine-learning-algorithms" title="Permalink to this headline">¶</a></h2>
+<h2>Search for an ensemble of machine learning algorithms<a class="headerlink" href="#search-for-an-ensemble-of-machine-learning-algorithms" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">api</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
     <span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span>
     <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span>
@@ -184,12 +185,12 @@ with AutoPyTorch using the greedy portfolio</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fa504b116a0&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f11a0c88d60&gt;
 </pre></div>
 </div>
 </section>
 <section id="print-the-final-ensemble-performance">
-<h2>Print the final ensemble performance<a class="headerlink" href="#print-the-final-ensemble-performance" title="Permalink to this headline">¶</a></h2>
+<h2>Print the final ensemble performance<a class="headerlink" href="#print-the-final-ensemble-performance" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">y_pred</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
 <span class="n">score</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
@@ -201,34 +202,28 @@ with AutoPyTorch using the greedy portfolio</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.861271676300578}
-|    | Preprocessing                                                     | Estimator                                                          |   Weight |
-|---:|:------------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
-|  0 | None                                                              | CBLearner                                                          |     0.34 |
-|  1 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.12 |
-|  2 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.1  |
-|  3 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.1  |
-|  4 | None                                                              | RFLearner                                                          |     0.08 |
-|  5 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.08 |
-|  6 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
-|  7 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential    |     0.04 |
-|  8 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-|  9 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-| 10 | SimpleImputer,OneHotEncoder,StandardScaler,PolynomialFeatures     | embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential          |     0.02 |
-| 11 | SimpleImputer,OneHotEncoder,NoScaler,NoFeaturePreprocessing       | embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential       |     0.02 |
-| 12 | None                                                              | ETLearner                                                          |     0.02 |
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.8786127167630058}
+|    | Preprocessing                                                                                    | Estimator                                                          |   Weight |
+|---:|:-------------------------------------------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
+|  0 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,NoScaler,KernelPCA                    | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.42 |
+|  1 | None                                                                                             | CBLearner                                                          |     0.22 |
+|  2 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,MinMaxScaler,FastICA                  | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential          |     0.2  |
+|  3 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
+|  4 | None                                                                                             | RFLearner                                                          |     0.06 |
+|  5 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+|  6 | None                                                                                             | ETLearner                                                          |     0.02 |
 autoPyTorch results:
-        Dataset name: 45bd456c-4c72-11ec-8755-6f4552dca699
+        Dataset name: 91d6412a-0687-11ed-882e-b1ae9262a945
         Optimisation Metric: accuracy
         Best validation score: 0.8771929824561403
-        Number of target algorithm runs: 30
-        Number of successful target algorithm runs: 27
-        Number of crashed target algorithm runs: 3
-        Number of target algorithms that exceeded the time limit: 0
+        Number of target algorithm runs: 24
+        Number of successful target algorithm runs: 21
+        Number of crashed target algorithm runs: 0
+        Number of target algorithms that exceeded the time limit: 3
         Number of target algorithms that exceeded the memory limit: 0
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  22.701 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  20.542 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-run-with-portfolio-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_run_with_portfolio.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>
@@ -263,8 +258,8 @@ autoPyTorch results:
       
     </p>
     <p>
-        &copy; Copyright 2014-2021, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.0.<br/>
+        &copy; Copyright 2014-2022, Machine Learning Professorship Freiburg.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.2.<br/>
     </p>
   </div>
 </footer>

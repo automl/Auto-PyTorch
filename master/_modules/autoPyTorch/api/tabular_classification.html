@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>autoPyTorch.api.tabular_classification &#8212; AutoPyTorch 0.1.1 documentation</title>
+    <title>autoPyTorch.api.tabular_classification &#8212; AutoPyTorch 0.2 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/bootstrap-sphinx.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery.css" />
@@ -14,6 +14,7 @@
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -21,10 +22,10 @@
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<script type="text/javascript" src="../../../_static/js/jquery-1.12.4.min.js "></script>
-<script type="text/javascript" src="../../../_static/js/jquery-fix.js "></script>
-<script type="text/javascript" src="../../../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
-<script type="text/javascript" src="../../../_static/bootstrap-sphinx.js "></script>
+<script type="text/javascript" src="../../../_static/js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript" src="../../../_static/js/jquery-fix.js"></script>
+<script type="text/javascript" src="../../../_static/bootstrap-3.4.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../../../_static/bootstrap-sphinx.js"></script>
 
   </head><body>
   
@@ -54,7 +55,7 @@
         </button>
         <a class="navbar-brand" href="../../../index.html">
           Auto-PyTorch</a>
-        <span class="navbar-text navbar-version pull-left"><b>0.1.1</b></span>
+        <span class="navbar-text navbar-version pull-left"><b>0.2</b></span>
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -111,9 +112,7 @@
     <div class="body col-md-9 content" role="main">
       
   <h1>Source code for autoPyTorch.api.tabular_classification</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">uuid</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
@@ -126,11 +125,17 @@
     <span class="n">TASK_TYPES_TO_STRING</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.data.tabular_validator</span> <span class="kn">import</span> <span class="n">TabularInputValidator</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.data.utils</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DatasetCompressionSpec</span><span class="p">,</span>
+    <span class="n">get_dataset_compression_mapping</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.datasets.base_dataset</span> <span class="kn">import</span> <span class="n">BaseDatasetPropertiesType</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.datasets.resampling_strategy</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">CrossValTypes</span><span class="p">,</span>
     <span class="n">HoldoutValTypes</span><span class="p">,</span>
+    <span class="n">ResamplingStrategies</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.datasets.tabular_dataset</span> <span class="kn">import</span> <span class="n">TabularDataset</span>
+<span class="kn">from</span> <span class="nn">autoPyTorch.evaluation.utils</span> <span class="kn">import</span> <span class="n">DisableFileOutputParameters</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.pipeline.tabular_classification</span> <span class="kn">import</span> <span class="n">TabularClassificationPipeline</span>
 <span class="kn">from</span> <span class="nn">autoPyTorch.utils.hyperparameter_search_space_update</span> <span class="kn">import</span> <span class="n">HyperparameterSearchSpaceUpdates</span>
 
@@ -167,15 +172,25 @@
 <span class="sd">        delete_tmp_folder_after_terminate (bool):</span>
 <span class="sd">            Determines whether to delete the temporary directory,</span>
 <span class="sd">            when finished</span>
-<span class="sd">        include_components (Optional[Dict]):</span>
-<span class="sd">            If None, all possible components are used.</span>
-<span class="sd">            Otherwise specifies set of components to use.</span>
-<span class="sd">        exclude_components (Optional[Dict]):</span>
-<span class="sd">            If None, all possible components are used.</span>
-<span class="sd">            Otherwise specifies set of components not to use.</span>
-<span class="sd">            Incompatible with include components.</span>
+<span class="sd">        include_components (Optional[Dict[str, Any]]):</span>
+<span class="sd">            Dictionary containing components to include. Key is the node</span>
+<span class="sd">            name and Value is an Iterable of the names of the components</span>
+<span class="sd">            to include. Only these components will be present in the</span>
+<span class="sd">            search space.</span>
+<span class="sd">        exclude_components (Optional[Dict[str, Any]]):</span>
+<span class="sd">            Dictionary containing components to exclude. Key is the node</span>
+<span class="sd">            name and Value is an Iterable of the names of the components</span>
+<span class="sd">            to exclude. All except these components will be present in</span>
+<span class="sd">            the search space.</span>
+<span class="sd">        resampling_strategy resampling_strategy (RESAMPLING_STRATEGIES),</span>
+<span class="sd">                (default=HoldoutValTypes.holdout_validation):</span>
+<span class="sd">                strategy to split the training data.</span>
+<span class="sd">        resampling_strategy_args (Optional[Dict[str, Any]]): arguments</span>
+<span class="sd">            required for the chosen resampling strategy. If None, uses</span>
+<span class="sd">            the default values provided in DEFAULT_RESAMPLING_PARAMETERS</span>
+<span class="sd">            in ```datasets/resampling_strategy.py```.</span>
 <span class="sd">        search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):</span>
-<span class="sd">            search space updates that can be used to modify the search</span>
+<span class="sd">            Search space updates that can be used to modify the search</span>
 <span class="sd">            space of particular components or choice modules of the pipeline</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
@@ -191,9 +206,9 @@
         <span class="n">output_directory</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">delete_tmp_folder_after_terminate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">delete_output_folder_after_terminate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="n">include_components</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">exclude_components</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">resampling_strategy</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">CrossValTypes</span><span class="p">,</span> <span class="n">HoldoutValTypes</span><span class="p">]</span> <span class="o">=</span> <span class="n">HoldoutValTypes</span><span class="o">.</span><span class="n">holdout_validation</span><span class="p">,</span>
+        <span class="n">include_components</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">exclude_components</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">resampling_strategy</span><span class="p">:</span> <span class="n">ResamplingStrategies</span> <span class="o">=</span> <span class="n">HoldoutValTypes</span><span class="o">.</span><span class="n">holdout_validation</span><span class="p">,</span>
         <span class="n">resampling_strategy_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">backend</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Backend</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">search_space_updates</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">HyperparameterSearchSpaceUpdates</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
@@ -219,18 +234,121 @@
             <span class="n">task_type</span><span class="o">=</span><span class="n">TASK_TYPES_TO_STRING</span><span class="p">[</span><span class="n">TABULAR_CLASSIFICATION</span><span class="p">],</span>
         <span class="p">)</span>
 
-<div class="viewcode-block" id="TabularClassificationTask.build_pipeline"><a class="viewcode-back" href="../../../api.html#autoPyTorch.api.tabular_classification.TabularClassificationTask.build_pipeline">[docs]</a>    <span class="k">def</span> <span class="nf">build_pipeline</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset_properties</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">TabularClassificationPipeline</span><span class="p">:</span>
+<div class="viewcode-block" id="TabularClassificationTask.build_pipeline"><a class="viewcode-back" href="../../../api.html#autoPyTorch.api.tabular_classification.TabularClassificationTask.build_pipeline">[docs]</a>    <span class="k">def</span> <span class="nf">build_pipeline</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">dataset_properties</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">BaseDatasetPropertiesType</span><span class="p">],</span>
+        <span class="n">include_components</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">exclude_components</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">search_space_updates</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">HyperparameterSearchSpaceUpdates</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TabularClassificationPipeline</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Build pipeline according to current task and for the passed dataset properties</span>
+<span class="sd">        Build pipeline according to current task</span>
+<span class="sd">        and for the passed dataset properties</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            dataset_properties (Dict[str,Any])</span>
+<span class="sd">            dataset_properties (Dict[str, Any]):</span>
+<span class="sd">                Characteristics of the dataset to guide the pipeline</span>
+<span class="sd">                choices of components</span>
+<span class="sd">            include_components (Optional[Dict[str, Any]]):</span>
+<span class="sd">                Dictionary containing components to include. Key is the node</span>
+<span class="sd">                name and Value is an Iterable of the names of the components</span>
+<span class="sd">                to include. Only these components will be present in the</span>
+<span class="sd">                search space.</span>
+<span class="sd">            exclude_components (Optional[Dict[str, Any]]):</span>
+<span class="sd">                Dictionary containing components to exclude. Key is the node</span>
+<span class="sd">                name and Value is an Iterable of the names of the components</span>
+<span class="sd">                to exclude. All except these components will be present in</span>
+<span class="sd">                the search space.</span>
+<span class="sd">            search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):</span>
+<span class="sd">                Search space updates that can be used to modify the search</span>
+<span class="sd">                space of particular components or choice modules of the pipeline</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            TabularClassificationPipeline:</span>
-<span class="sd">                Pipeline compatible with the given dataset properties.</span>
+<span class="sd">            TabularClassificationPipeline</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">TabularClassificationPipeline</span><span class="p">(</span><span class="n">dataset_properties</span><span class="o">=</span><span class="n">dataset_properties</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">TabularClassificationPipeline</span><span class="p">(</span><span class="n">dataset_properties</span><span class="o">=</span><span class="n">dataset_properties</span><span class="p">,</span>
+                                             <span class="n">include</span><span class="o">=</span><span class="n">include_components</span><span class="p">,</span>
+                                             <span class="n">exclude</span><span class="o">=</span><span class="n">exclude_components</span><span class="p">,</span>
+                                             <span class="n">search_space_updates</span><span class="o">=</span><span class="n">search_space_updates</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_dataset_input_validator</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">X_train</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">y_train</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">X_test</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">y_test</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">resampling_strategy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ResamplingStrategies</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">resampling_strategy_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">dataset_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">dataset_compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DatasetCompressionSpec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">TabularDataset</span><span class="p">,</span> <span class="n">TabularInputValidator</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns an object of `TabularDataset` and an object of</span>
+<span class="sd">        `TabularInputValidator` according to the current task.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            X_train (Union[List, pd.DataFrame, np.ndarray]):</span>
+<span class="sd">                Training feature set.</span>
+<span class="sd">            y_train (Union[List, pd.DataFrame, np.ndarray]):</span>
+<span class="sd">                Training target set.</span>
+<span class="sd">            X_test (Optional[Union[List, pd.DataFrame, np.ndarray]]):</span>
+<span class="sd">                Testing feature set</span>
+<span class="sd">            y_test (Optional[Union[List, pd.DataFrame, np.ndarray]]):</span>
+<span class="sd">                Testing target set</span>
+<span class="sd">            resampling_strategy (Optional[RESAMPLING_STRATEGIES]):</span>
+<span class="sd">                Strategy to split the training data. if None, uses</span>
+<span class="sd">                HoldoutValTypes.holdout_validation.</span>
+<span class="sd">            resampling_strategy_args (Optional[Dict[str, Any]]):</span>
+<span class="sd">                arguments required for the chosen resampling strategy. If None, uses</span>
+<span class="sd">                the default values provided in DEFAULT_RESAMPLING_PARAMETERS</span>
+<span class="sd">                in ```datasets/resampling_strategy.py```.</span>
+<span class="sd">            dataset_name (Optional[str]):</span>
+<span class="sd">                name of the dataset, used as experiment name.</span>
+<span class="sd">            dataset_compression (Optional[DatasetCompressionSpec]):</span>
+<span class="sd">                specifications for dataset compression. For more info check</span>
+<span class="sd">                documentation for `BaseTask.get_dataset`.</span>
+<span class="sd">            kwargs (Any):</span>
+<span class="sd">                Currently for tabular tasks, expect `feat_types: (Optional[List[str]]` which</span>
+<span class="sd">                specifies whether a feature is &#39;numerical&#39; or &#39;categorical&#39;.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            TabularDataset:</span>
+<span class="sd">                the dataset object.</span>
+<span class="sd">            TabularInputValidator:</span>
+<span class="sd">                the input validator fitted on the data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">resampling_strategy</span> <span class="o">=</span> <span class="n">resampling_strategy</span> <span class="k">if</span> <span class="n">resampling_strategy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">resampling_strategy</span>
+        <span class="n">resampling_strategy_args</span> <span class="o">=</span> <span class="n">resampling_strategy_args</span> <span class="k">if</span> <span class="n">resampling_strategy_args</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">resampling_strategy_args</span>
+
+        <span class="n">feat_types</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;feat_types&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="c1"># Create a validator object to make sure that the data provided by</span>
+        <span class="c1"># the user matches the autopytorch requirements</span>
+        <span class="n">input_validator</span> <span class="o">=</span> <span class="n">TabularInputValidator</span><span class="p">(</span>
+            <span class="n">is_classification</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">logger_port</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger_port</span><span class="p">,</span>
+            <span class="n">dataset_compression</span><span class="o">=</span><span class="n">dataset_compression</span><span class="p">,</span>
+            <span class="n">feat_types</span><span class="o">=</span><span class="n">feat_types</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Fit a input validator to check the provided data</span>
+        <span class="c1"># Also, an encoder is fit to both train and test data,</span>
+        <span class="c1"># to prevent unseen categories during inference</span>
+        <span class="n">input_validator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="p">)</span>
+
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">TabularDataset</span><span class="p">(</span>
+            <span class="n">X</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span>
+            <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="p">,</span> <span class="n">Y_test</span><span class="o">=</span><span class="n">y_test</span><span class="p">,</span>
+            <span class="n">validator</span><span class="o">=</span><span class="n">input_validator</span><span class="p">,</span>
+            <span class="n">resampling_strategy</span><span class="o">=</span><span class="n">resampling_strategy</span><span class="p">,</span>
+            <span class="n">resampling_strategy_args</span><span class="o">=</span><span class="n">resampling_strategy_args</span><span class="p">,</span>
+            <span class="n">dataset_name</span><span class="o">=</span><span class="n">dataset_name</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">input_validator</span>
 
 <div class="viewcode-block" id="TabularClassificationTask.search"><a class="viewcode-back" href="../../../api.html#autoPyTorch.api.tabular_classification.TabularClassificationTask.search">[docs]</a>    <span class="k">def</span> <span class="nf">search</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -240,20 +358,22 @@
         <span class="n">X_test</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">y_test</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">dataset_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">feat_types</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">budget_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;epochs&#39;</span><span class="p">,</span>
         <span class="n">min_budget</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
         <span class="n">max_budget</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
         <span class="n">total_walltime_limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
         <span class="n">func_eval_time_limit_secs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">enable_traditional_pipeline</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="n">memory_limit</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4096</span><span class="p">,</span>
+        <span class="n">memory_limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4096</span><span class="p">,</span>
         <span class="n">smac_scenario_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">get_smac_object_callback</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">all_supported_metrics</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">precision</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
-        <span class="n">disable_file_output</span><span class="p">:</span> <span class="n">List</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">disable_file_output</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">DisableFileOutputParameters</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">load_models</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">portfolio_selection</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">dataset_compression</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;BaseTask&#39;</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Search for the best pipeline configuration for the given dataset.</span>
@@ -267,6 +387,10 @@
 <span class="sd">                A pair of features (X_train) and targets (y_train) used to fit a</span>
 <span class="sd">                pipeline. Additionally, a holdout of this pairs (X_test, y_test) can</span>
 <span class="sd">                be provided to track the generalization performance of each stage.</span>
+<span class="sd">            feat_types (Optional[List[str]]):</span>
+<span class="sd">                Description about the feature types of the columns.</span>
+<span class="sd">                Accepts `numerical` for integers, float data and `categorical`</span>
+<span class="sd">                for categories, strings and bool. Defaults to None.</span>
 <span class="sd">            optimize_metric (str):</span>
 <span class="sd">                name of the metric that is used to evaluate a pipeline.</span>
 <span class="sd">            budget_type (str):</span>
@@ -322,7 +446,7 @@
 <span class="sd">                feature by turning this flag to False. All machine learning</span>
 <span class="sd">                algorithms that are fitted during search() are considered for</span>
 <span class="sd">                ensemble building.</span>
-<span class="sd">            memory_limit (Optional[int]: default=4096):</span>
+<span class="sd">            memory_limit (int: default=4096):</span>
 <span class="sd">                Memory limit in MB for the machine learning algorithm.</span>
 <span class="sd">                Autopytorch will stop fitting the machine learning algorithm</span>
 <span class="sd">                if it tries to allocate more than memory_limit MB. If None</span>
@@ -350,10 +474,10 @@
 <span class="sd">            precision (int: default=32):</span>
 <span class="sd">                Numeric precision used when loading ensemble data.</span>
 <span class="sd">                Can be either &#39;16&#39;, &#39;32&#39; or &#39;64&#39;.</span>
-<span class="sd">            disable_file_output (Union[bool, List]):</span>
-<span class="sd">                If True, disable model and prediction output.</span>
-<span class="sd">                Can also be used as a list to pass more fine-grained</span>
-<span class="sd">                information on what to save. Allowed elements in the list are:</span>
+<span class="sd">            disable_file_output (Optional[List[Union[str, DisableFileOutputParameters]]]):</span>
+<span class="sd">                Used as a list to pass more fine-grained</span>
+<span class="sd">                information on what to save. Must be a member of `DisableFileOutputParameters`.</span>
+<span class="sd">                Allowed elements in the list are:</span>
 
 <span class="sd">                + `y_optimization`:</span>
 <span class="sd">                    do not save the predictions for the optimization set,</span>
@@ -366,6 +490,9 @@
 <span class="sd">                    pipelines fit on each fold.</span>
 <span class="sd">                + `y_test`:</span>
 <span class="sd">                    do not save the predictions for the test set.</span>
+<span class="sd">                + `all`:</span>
+<span class="sd">                    do not save any of the above.</span>
+<span class="sd">                For more information check `autoPyTorch.evaluation.utils.DisableFileOutputParameters`.</span>
 <span class="sd">            load_models (bool: default=True):</span>
 <span class="sd">                Whether to load the models after fitting AutoPyTorch.</span>
 <span class="sd">            portfolio_selection (Optional[str]):</span>
@@ -377,37 +504,62 @@
 <span class="sd">                Additionally, the keyword &#39;greedy&#39; is supported,</span>
 <span class="sd">                which would use the default portfolio from</span>
 <span class="sd">                `AutoPyTorch Tabular &lt;https://arxiv.org/abs/2006.13799&gt;`_.</span>
+<span class="sd">            dataset_compression: Union[bool, Mapping[str, Any]] = True</span>
+<span class="sd">                We compress datasets so that they fit into some predefined amount of memory.</span>
+<span class="sd">                **NOTE**</span>
+
+<span class="sd">                Default configuration when left as ``True``:</span>
+<span class="sd">                .. code-block:: python</span>
+<span class="sd">                    {</span>
+<span class="sd">                        &quot;memory_allocation&quot;: 0.1,</span>
+<span class="sd">                        &quot;methods&quot;: [&quot;precision&quot;]</span>
+<span class="sd">                    }</span>
+<span class="sd">                You can also pass your own configuration with the same keys and choosing</span>
+<span class="sd">                from the available ``&quot;methods&quot;``.</span>
+<span class="sd">                The available options are described here:</span>
+<span class="sd">                **memory_allocation**</span>
+<span class="sd">                    By default, we attempt to fit the dataset into ``0.1 * memory_limit``. This</span>
+<span class="sd">                    float value can be set with ``&quot;memory_allocation&quot;: 0.1``. We also allow for</span>
+<span class="sd">                    specifying absolute memory in MB, e.g. 10MB is ``&quot;memory_allocation&quot;: 10``.</span>
+<span class="sd">                    The memory used by the dataset is checked after each reduction method is</span>
+<span class="sd">                    performed. If the dataset fits into the allocated memory, any further methods</span>
+<span class="sd">                    listed in ``&quot;methods&quot;`` will not be performed.</span>
+
+<span class="sd">                **methods**</span>
+<span class="sd">                    We currently provide the following methods for reducing the dataset size.</span>
+<span class="sd">                    These can be provided in a list and are performed in the order as given.</span>
+<span class="sd">                    *   ``&quot;precision&quot;`` -</span>
+<span class="sd">                        We reduce floating point precision as follows:</span>
+<span class="sd">                            *   ``np.float128 -&gt; np.float64``</span>
+<span class="sd">                            *   ``np.float96 -&gt; np.float64``</span>
+<span class="sd">                            *   ``np.float64 -&gt; np.float32``</span>
+<span class="sd">                            *   pandas dataframes are reduced using the downcast option of `pd.to_numeric`</span>
+<span class="sd">                                to the lowest possible precision.</span>
+<span class="sd">                    *   ``subsample`` -</span>
+<span class="sd">                        We subsample data such that it **fits directly into</span>
+<span class="sd">                        the memory allocation** ``memory_allocation * memory_limit``.</span>
+<span class="sd">                        Therefore, this should likely be the last method listed in</span>
+<span class="sd">                        ``&quot;methods&quot;``.</span>
+<span class="sd">                        Subsampling takes into account classification labels and stratifies</span>
+<span class="sd">                        accordingly. We guarantee that at least one occurrence of each</span>
+<span class="sd">                        label is included in the sampled set.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            self</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">dataset_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">dataset_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid1</span><span class="p">(</span><span class="n">clock_seq</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">()))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dataset_compression</span> <span class="o">=</span> <span class="n">get_dataset_compression_mapping</span><span class="p">(</span><span class="n">memory_limit</span><span class="p">,</span> <span class="n">dataset_compression</span><span class="p">)</span>
 
-        <span class="c1"># we have to create a logger for at this point for the validator</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_logger</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">)</span>
-
-        <span class="c1"># Create a validator object to make sure that the data provided by</span>
-        <span class="c1"># the user matches the autopytorch requirements</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span> <span class="o">=</span> <span class="n">TabularInputValidator</span><span class="p">(</span>
-            <span class="n">is_classification</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">logger_port</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_logger_port</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="c1"># Fit a input validator to check the provided data</span>
-        <span class="c1"># Also, an encoder is fit to both train and test data,</span>
-        <span class="c1"># to prevent unseen categories during inference</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span> <span class="o">=</span> <span class="n">TabularDataset</span><span class="p">(</span>
-            <span class="n">X</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span>
-            <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="p">,</span> <span class="n">Y_test</span><span class="o">=</span><span class="n">y_test</span><span class="p">,</span>
-            <span class="n">validator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span><span class="p">,</span>
-            <span class="n">dataset_name</span><span class="o">=</span><span class="n">dataset_name</span><span class="p">,</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_validator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_dataset_input_validator</span><span class="p">(</span>
+            <span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span>
+            <span class="n">y_train</span><span class="o">=</span><span class="n">y_train</span><span class="p">,</span>
+            <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="p">,</span>
+            <span class="n">y_test</span><span class="o">=</span><span class="n">y_test</span><span class="p">,</span>
             <span class="n">resampling_strategy</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">resampling_strategy</span><span class="p">,</span>
             <span class="n">resampling_strategy_args</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">resampling_strategy_args</span><span class="p">,</span>
-        <span class="p">)</span>
+            <span class="n">dataset_name</span><span class="o">=</span><span class="n">dataset_name</span><span class="p">,</span>
+            <span class="n">dataset_compression</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dataset_compression</span><span class="p">,</span>
+            <span class="n">feat_types</span><span class="o">=</span><span class="n">feat_types</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_search</span><span class="p">(</span>
             <span class="n">dataset</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
@@ -444,30 +596,30 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Array with estimator predictions.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span><span class="o">.</span><span class="n">_is_fitted</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_validator</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_validator</span><span class="o">.</span><span class="n">_is_fitted</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;predict() is only supported after calling search. Kindly call first &quot;</span>
-                             <span class="s2">&quot;the estimator fit() method.&quot;</span><span class="p">)</span>
+                             <span class="s2">&quot;the estimator search() method.&quot;</span><span class="p">)</span>
 
-        <span class="n">X_test</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span><span class="o">.</span><span class="n">feature_validator</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+        <span class="n">X_test</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_validator</span><span class="o">.</span><span class="n">feature_validator</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
         <span class="n">predicted_probabilities</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
                                                   <span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span><span class="o">.</span><span class="n">target_validator</span><span class="o">.</span><span class="n">is_single_column_target</span><span class="p">():</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_validator</span><span class="o">.</span><span class="n">target_validator</span><span class="o">.</span><span class="n">is_single_column_target</span><span class="p">():</span>
             <span class="n">predicted_indexes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">predicted_probabilities</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">predicted_indexes</span> <span class="o">=</span> <span class="p">(</span><span class="n">predicted_probabilities</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
 
         <span class="c1"># Allow to predict in the original domain -- that is, the user is not interested</span>
         <span class="c1"># in our encoded values</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span><span class="o">.</span><span class="n">target_validator</span><span class="o">.</span><span class="n">inverse_transform</span><span class="p">(</span><span class="n">predicted_indexes</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_validator</span><span class="o">.</span><span class="n">target_validator</span><span class="o">.</span><span class="n">inverse_transform</span><span class="p">(</span><span class="n">predicted_indexes</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">predict_proba</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                       <span class="n">X_test</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">List</span><span class="p">],</span>
                       <span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span><span class="o">.</span><span class="n">_is_fitted</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_validator</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_validator</span><span class="o">.</span><span class="n">_is_fitted</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;predict() is only supported after calling search. Kindly call first &quot;</span>
-                             <span class="s2">&quot;the estimator fit() method.&quot;</span><span class="p">)</span>
-        <span class="n">X_test</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">InputValidator</span><span class="o">.</span><span class="n">feature_validator</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+                             <span class="s2">&quot;the estimator search() method.&quot;</span><span class="p">)</span>
+        <span class="n">X_test</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_validator</span><span class="o">.</span><span class="n">feature_validator</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">)</span></div>
 </pre></div>
 
@@ -485,8 +637,8 @@
       
     </p>
     <p>
-        &copy; Copyright 2014-2021, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.0.<br/>
+        &copy; Copyright 2014-2022, Machine Learning Professorship Freiburg.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.2.<br/>
     </p>
   </div>
 </footer>

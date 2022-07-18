@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>Installation &#8212; AutoPyTorch 0.1.1 documentation</title>
+    <title>Installation &#8212; AutoPyTorch 0.2 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css" />
     <link rel="stylesheet" type="text/css" href="_static/sg_gallery.css" />
@@ -15,6 +15,7 @@
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -22,10 +23,10 @@
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<script type="text/javascript" src="_static/js/jquery-1.12.4.min.js "></script>
-<script type="text/javascript" src="_static/js/jquery-fix.js "></script>
-<script type="text/javascript" src="_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
-<script type="text/javascript" src="_static/bootstrap-sphinx.js "></script>
+<script type="text/javascript" src="_static/js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript" src="_static/js/jquery-fix.js"></script>
+<script type="text/javascript" src="_static/bootstrap-3.4.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
 
   </head><body>
   
@@ -55,7 +56,7 @@
         </button>
         <a class="navbar-brand" href="index.html">
           Auto-PyTorch</a>
-        <span class="navbar-text navbar-version pull-left"><b>0.1.1</b></span>
+        <span class="navbar-text navbar-version pull-left"><b>0.2</b></span>
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -124,24 +125,25 @@
     <div class="body col-md-9 content" role="main">
       
   <section id="installation">
-<span id="id1"></span><h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<span id="id1"></span><h1>Installation<a class="headerlink" href="#installation" title="Permalink to this heading">¶</a></h1>
 <section id="system-requirements">
-<h2>System requirements<a class="headerlink" href="#system-requirements" title="Permalink to this headline">¶</a></h2>
+<h2>System requirements<a class="headerlink" href="#system-requirements" title="Permalink to this heading">¶</a></h2>
 <p>Auto-PyTorch has the following system requirements:</p>
 <ul class="simple">
 <li><p>Linux operating system (for example Ubuntu) <a class="reference external" href="https://www.wikihow.com/Install-Linux">(get Linux here)</a>,</p></li>
-<li><p>Python (&gt;=3.6) <a class="reference external" href="https://www.python.org/downloads/">(get Python here)</a>.</p></li>
+<li><p>Python (&gt;=3.7) <a class="reference external" href="https://www.python.org/downloads/">(get Python here)</a>.</p></li>
 <li><p>C++ compiler (with C++11 supports) <a class="reference external" href="https://www.tutorialspoint.com/How-to-Install-Cplusplus-Compiler-on-Linux">(get GCC here)</a> and</p></li>
 <li><p>SWIG (version 3.0.* is required; &gt;=4.0.0 is not supported) <a class="reference external" href="http://www.swig.org/survey.html">(get SWIG here)</a>.</p></li>
 </ul>
 </section>
 <section id="installing-auto-pytorch">
-<h2>Installing Auto-Pytorch<a class="headerlink" href="#installing-auto-pytorch" title="Permalink to this headline">¶</a></h2>
+<h2>Installing Auto-Pytorch<a class="headerlink" href="#installing-auto-pytorch" title="Permalink to this heading">¶</a></h2>
 <section id="pypi-installation">
-<h3>PyPI Installation<a class="headerlink" href="#pypi-installation" title="Permalink to this headline">¶</a></h3>
+<h3>PyPI Installation<a class="headerlink" href="#pypi-installation" title="Permalink to this heading">¶</a></h3>
+<p>Auto-PyTorch for Time Series Forecasting requires additional dependencies</p>
 </section>
 <section id="manual-installation">
-<h3>Manual Installation<a class="headerlink" href="#manual-installation" title="Permalink to this headline">¶</a></h3>
+<h3>Manual Installation<a class="headerlink" href="#manual-installation" title="Permalink to this heading">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Following commands assume the user is in a cloned directory of Auto-Pytorch</span>
 
 <span class="c1"># We also need to initialize the automl_common repository as follows</span>
@@ -157,13 +159,30 @@ cat requirements.txt <span class="p">|</span> xargs -n <span class="m">1</span> 
 python setup.py install
 </pre></div>
 </div>
+<p>Similarly, Auto-PyTorch for time series forecasting requires additional dependencies</p>
 </section>
 </section>
 <section id="docker-image">
-<h2>Docker Image<a class="headerlink" href="#docker-image" title="Permalink to this headline">¶</a></h2>
-<blockquote>
-<div><p>TODO</p>
-</div></blockquote>
+<h2>Docker Image<a class="headerlink" href="#docker-image" title="Permalink to this heading">¶</a></h2>
+<p>A Docker image is also provided on dockerhub. To download from dockerhub,
+use:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker pull automlorg/autopytorch:master
+</pre></div>
+</div>
+<p>You can also verify that the image was downloaded via:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker images  <span class="c1"># Verify that the image was downloaded</span>
+</pre></div>
+</div>
+<p>This image can be used to start an interactive session as follows:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker run -it automlorg/autopytorch:master
+</pre></div>
+</div>
+<p>To start a Jupyter notebook, you could instead run e.g.:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker run -it -v <span class="si">${</span><span class="nv">PWD</span><span class="si">}</span>:/opt/nb -p <span class="m">8888</span>:8888 automlorg/autopytorch:master /bin/bash -c <span class="s2">&quot;mkdir -p /opt/nb &amp;&amp; jupyter notebook --notebook-dir=/opt/nb --ip=&#39;0.0.0.0&#39; --port=8888 --no-browser --allow-root&quot;</span>
+</pre></div>
+</div>
+<p>Alternatively, it is possible to use the development version of autoPyTorch by replacing all
+occurences of <code class="docutils literal notranslate"><span class="pre">master</span></code> by <code class="docutils literal notranslate"><span class="pre">development</span></code>.</p>
 </section>
 </section>
 
@@ -186,8 +205,8 @@ python setup.py install
       
     </p>
     <p>
-        &copy; Copyright 2014-2021, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.0.<br/>
+        &copy; Copyright 2014-2022, Machine Learning Professorship Freiburg.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.2.<br/>
     </p>
   </div>
 </footer>

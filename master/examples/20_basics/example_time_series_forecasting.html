@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Time Series Forecasting &#8212; AutoPyTorch 0.2 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/bootstrap-sphinx.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-binder.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-dataframe.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-rendered-html.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../../_static/js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript" src="../../_static/js/jquery-fix.js"></script>
+<script type="text/javascript" src="../../_static/bootstrap-3.4.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../../_static/bootstrap-sphinx.js"></script>
+
+  </head><body>
+  
+  <a href="https://github.com/automl/Auto-PyTorch"
+     class="visible-desktop hidden-xs"><img
+    id="gh-banner"
+    style="position: absolute; top: 50px; right: 0; border: 0;"
+    src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png"
+    alt="Fork me on GitHub"></a>
+  <script>
+    // Adjust banner height.
+    $(function () {
+      var navHeight = $(".navbar .container").css("height");
+      $("#gh-banner").css("top", navHeight);
+    });
+  </script>
+
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../../index.html">
+          Auto-PyTorch</a>
+        <span class="navbar-text navbar-version pull-left"><b>0.2</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="../../index.html">Start</a></li>
+                <li><a href="../../releases.html">Releases</a></li>
+                <li><a href="../../installation.html">Installation</a></li>
+                <li><a href="../../manual.html">Manual</a></li>
+                <li><a href="../index.html">Examples</a></li>
+                <li><a href="../../api.html">API</a></li>
+                <li><a href="../../dev.html">Dev</a></li>
+                <li><a href="../../extending.html">Extending</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../../index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-3">
+        <div id="sidebar" class="bs-sidenav" role="complementary"><ul>
+<li><a class="reference internal" href="#">Time Series Forecasting</a><ul>
+<li><a class="reference internal" href="#build-and-fit-a-forecaster">Build and fit a forecaster</a></li>
+<li><a class="reference internal" href="#search-for-an-ensemble-of-machine-learning-algorithms">Search for an ensemble of machine learning algorithms</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    <div class="body col-md-9 content" role="main">
+      
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="admonition-title">Note</p>
+<p>Click <a class="reference internal" href="#sphx-glr-download-examples-20-basics-example-time-series-forecasting-py"><span class="std std-ref">here</span></a>
+to download the full example code or to run this example in your browser via Binder</p>
+</div>
+<section class="sphx-glr-example-title" id="time-series-forecasting">
+<span id="sphx-glr-examples-20-basics-example-time-series-forecasting-py"></span><h1>Time Series Forecasting<a class="headerlink" href="#time-series-forecasting" title="Permalink to this heading">¶</a></h1>
+<p>The following example shows how to fit a sample forecasting model
+with AutoPyTorch. This is only a dummmy example because of the limited size of the dataset.
+Thus, it could be possible that the AutoPyTorch model does not perform as well as a dummy predictor</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">tempfile</span> <span class="k">as</span> <span class="nn">tmp</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;JOBLIB_TEMP_FOLDER&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">gettempdir</span><span class="p">()</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;OMP_NUM_THREADS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;OPENBLAS_NUM_THREADS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;MKL_NUM_THREADS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>
+
+<span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">UserWarning</span><span class="p">)</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">FutureWarning</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">sktime.datasets</span> <span class="kn">import</span> <span class="n">load_longley</span>
+<span class="n">targets</span><span class="p">,</span> <span class="n">features</span> <span class="o">=</span> <span class="n">load_longley</span><span class="p">()</span>
+
+<span class="n">forecasting_horizon</span> <span class="o">=</span> <span class="mi">3</span>
+
+<span class="c1"># Dataset optimized by APT-TS can be a list of np.ndarray/ pd.DataFrame where each series represents an element in the</span>
+<span class="c1"># list, or a single pd.DataFrame that records the series</span>
+<span class="c1"># index information: to which series the timestep belongs? This id can be stored as the DataFrame&#39;s index or a separate</span>
+<span class="c1"># column</span>
+<span class="c1"># Within each series, we take the last forecasting_horizon as test targets. The items before that as training targets</span>
+<span class="c1"># Normally the value to be forecasted should follow the training sets</span>
+<span class="n">y_train</span> <span class="o">=</span> <span class="p">[</span><span class="n">targets</span><span class="p">[:</span> <span class="o">-</span><span class="n">forecasting_horizon</span><span class="p">]]</span>
+<span class="n">y_test</span> <span class="o">=</span> <span class="p">[</span><span class="n">targets</span><span class="p">[</span><span class="o">-</span><span class="n">forecasting_horizon</span><span class="p">:]]</span>
+
+<span class="c1"># same for features. For uni-variant models, X_train, X_test can be omitted and set as None</span>
+<span class="n">X_train</span> <span class="o">=</span> <span class="p">[</span><span class="n">features</span><span class="p">[:</span> <span class="o">-</span><span class="n">forecasting_horizon</span><span class="p">]]</span>
+<span class="c1"># Here x_test indicates the &#39;known future features&#39;: they are the features known previously, features that are unknown</span>
+<span class="c1"># could be replaced with NAN or zeros (which will not be used by our networks). If no feature is known beforehand,</span>
+<span class="c1"># we could also omit X_test</span>
+<span class="n">known_future_features</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">features</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+<span class="n">X_test</span> <span class="o">=</span> <span class="p">[</span><span class="n">features</span><span class="p">[</span><span class="o">-</span><span class="n">forecasting_horizon</span><span class="p">:]]</span>
+
+<span class="n">start_times</span> <span class="o">=</span> <span class="p">[</span><span class="n">targets</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">to_timestamp</span><span class="p">()[</span><span class="mi">0</span><span class="p">]]</span>
+<span class="n">freq</span> <span class="o">=</span> <span class="s1">&#39;1Y&#39;</span>
+
+<span class="kn">from</span> <span class="nn">autoPyTorch.api.time_series_forecasting</span> <span class="kn">import</span> <span class="n">TimeSeriesForecastingTask</span>
+</pre></div>
+</div>
+<section id="build-and-fit-a-forecaster">
+<h2>Build and fit a forecaster<a class="headerlink" href="#build-and-fit-a-forecaster" title="Permalink to this heading">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">api</span> <span class="o">=</span> <span class="n">TimeSeriesForecastingTask</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="search-for-an-ensemble-of-machine-learning-algorithms">
+<h2>Search for an ensemble of machine learning algorithms<a class="headerlink" href="#search-for-an-ensemble-of-machine-learning-algorithms" title="Permalink to this heading">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">api</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
+    <span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span>
+    <span class="n">y_train</span><span class="o">=</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">y_train</span><span class="p">),</span>
+    <span class="n">X_test</span><span class="o">=</span><span class="n">X_test</span><span class="p">,</span>
+    <span class="n">optimize_metric</span><span class="o">=</span><span class="s1">&#39;mean_MASE_forecasting&#39;</span><span class="p">,</span>
+    <span class="n">n_prediction_steps</span><span class="o">=</span><span class="n">forecasting_horizon</span><span class="p">,</span>
+    <span class="n">memory_limit</span><span class="o">=</span><span class="mi">16</span> <span class="o">*</span> <span class="mi">1024</span><span class="p">,</span>   <span class="c1"># Currently, forecasting models use much more memories</span>
+    <span class="n">freq</span><span class="o">=</span><span class="n">freq</span><span class="p">,</span>
+    <span class="n">start_times</span><span class="o">=</span><span class="n">start_times</span><span class="p">,</span>
+    <span class="n">func_eval_time_limit_secs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+    <span class="n">total_walltime_limit</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span>
+    <span class="n">min_num_test_instances</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>  <span class="c1"># proxy validation sets. This only works for the tasks with more than 1000 series</span>
+    <span class="n">known_future_features</span><span class="o">=</span><span class="n">known_future_features</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="kn">from</span> <span class="nn">autoPyTorch.datasets.time_series_dataset</span> <span class="kn">import</span> <span class="n">TimeSeriesSequence</span>
+
+<span class="n">test_sets</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c1"># We could construct test sets from scratch</span>
+<span class="k">for</span> <span class="n">feature</span><span class="p">,</span> <span class="n">future_feature</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">start_time</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span><span class="n">y_train</span><span class="p">,</span> <span class="n">start_times</span><span class="p">):</span>
+    <span class="n">test_sets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+        <span class="n">TimeSeriesSequence</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">feature</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+                           <span class="n">Y</span><span class="o">=</span><span class="n">target</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+                           <span class="n">X_test</span><span class="o">=</span><span class="n">future_feature</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+                           <span class="n">start_time</span><span class="o">=</span><span class="n">start_time</span><span class="p">,</span>
+                           <span class="n">is_test_set</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                           <span class="c1"># additional information required to construct a new time series sequence</span>
+                           <span class="o">**</span><span class="n">api</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">sequences_builder_kwargs</span>
+                           <span class="p">)</span>
+    <span class="p">)</span>
+<span class="c1"># Alternatively, if we only want to forecast the value after the X_train, we could directly ask datamanager to</span>
+<span class="c1"># generate a test set:</span>
+<span class="c1"># test_sets2 = api.dataset.generate_test_seqs()</span>
+
+<span class="n">pred</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">test_sets</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 1 minutes  3.754 seconds)</p>
+<div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-20-basics-example-time-series-forecasting-py">
+<div class="binder-badge docutils container">
+<a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/20_basics/example_time_series_forecasting.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo.svg" width="150px" /></a>
+</div>
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="../../_downloads/e2b09b5dc272261aeb82b46c2e2d6ce6/example_time_series_forecasting.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">example_time_series_forecasting.py</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
+<p><a class="reference download internal" download="" href="../../_downloads/b4aa13e52c27833de473ca84d042e32d/example_time_series_forecasting.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">example_time_series_forecasting.ipynb</span></code></a></p>
+</div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+<div id="sourcelink">
+  <a href="../../_sources/examples/20_basics/example_time_series_forecasting.rst.txt"
+     rel="nofollow">Source</a>
+</div>
+      
+    </p>
+    <p>
+        &copy; Copyright 2014-2022, Machine Learning Professorship Freiburg.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.2.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

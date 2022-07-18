@@ -125,7 +125,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_regression.TabularRegressionTask object at 0x7fa5a8549ca0>
+    <autoPyTorch.api.tabular_regression.TabularRegressionTask object at 0x7f123bc83070>
 
 
 
@@ -159,20 +159,20 @@ Print the final ensemble performance
 
  .. code-block:: none
 
-    {'r2': 0.9445248186059718}
-    |    | Preprocessing                                                     | Estimator                                                       |   Weight |
-    |---:|:------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-    |  0 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.44 |
-    |  1 | None                                                              | CBLearner                                                       |     0.42 |
-    |  2 | None                                                              | LGBMLearner                                                     |     0.08 |
-    |  3 | SimpleImputer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.06 |
+    {'r2': 0.9407884171054208}
+    |    | Preprocessing                                                                                    | Estimator                                                       |   Weight |
+    |---:|:-------------------------------------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
+    |  0 | None                                                                                             | CBLearner                                                       |     0.44 |
+    |  1 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.42 |
+    |  2 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.1  |
+    |  3 | None                                                                                             | LGBMLearner                                                     |     0.04 |
     autoPyTorch results:
-            Dataset name: b90a77ef-4c70-11ec-8755-6f4552dca699
+            Dataset name: e1ae53e5-0685-11ed-882e-b1ae9262a945
             Optimisation Metric: r2
-            Best validation score: 0.8645385039886702
-            Number of target algorithm runs: 28
-            Number of successful target algorithm runs: 25
-            Number of crashed target algorithm runs: 2
+            Best validation score: 0.8670098636440993
+            Number of target algorithm runs: 23
+            Number of successful target algorithm runs: 22
+            Number of crashed target algorithm runs: 0
             Number of target algorithms that exceeded the time limit: 1
             Number of target algorithms that exceeded the memory limit: 0
 
@@ -183,7 +183,7 @@ Print the final ensemble performance
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  28.379 seconds)
+   **Total running time of the script:** ( 5 minutes  42.804 seconds)
 
 
 .. _sphx_glr_download_examples_20_basics_example_tabular_regression.py:

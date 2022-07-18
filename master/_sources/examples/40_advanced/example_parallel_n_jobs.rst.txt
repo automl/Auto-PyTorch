@@ -36,15 +36,45 @@ with AutoPyTorch
 
  .. code-block:: none
 
-    {'accuracy': 0.8728323699421965}
+    [ERROR] [2022-07-18 11:06:23,924:asyncio.events] 
+    Traceback (most recent call last):
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py", line 778, in wrapper
+        return await func(*args, **kwargs)
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/client.py", line 1211, in _reconnect
+        await self._ensure_connected(timeout=timeout)
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/client.py", line 1241, in _ensure_connected
+        comm = await connect(
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/comm/core.py", line 315, in connect
+        await asyncio.sleep(backoff)
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/asyncio/tasks.py", line 659, in sleep
+        return await future
+    asyncio.exceptions.CancelledError
+    [ERROR] [2022-07-18 11:06:23,981:asyncio.events] 
+    Traceback (most recent call last):
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py", line 778, in wrapper
+        return await func(*args, **kwargs)
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/client.py", line 1400, in _handle_report
+        await self._reconnect()
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py", line 778, in wrapper
+        return await func(*args, **kwargs)
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/client.py", line 1211, in _reconnect
+        await self._ensure_connected(timeout=timeout)
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/client.py", line 1241, in _ensure_connected
+        comm = await connect(
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/comm/core.py", line 315, in connect
+        await asyncio.sleep(backoff)
+      File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/asyncio/tasks.py", line 659, in sleep
+        return await future
+    asyncio.exceptions.CancelledError
+    {'accuracy': 0.8554913294797688}
     autoPyTorch results:
-            Dataset name: 0645e121-4c73-11ec-8755-6f4552dca699
+            Dataset name: e93d07a7-0688-11ed-882e-b1ae9262a945
             Optimisation Metric: accuracy
-            Best validation score: 0.8888888888888888
-            Number of target algorithm runs: 61
-            Number of successful target algorithm runs: 48
-            Number of crashed target algorithm runs: 11
-            Number of target algorithms that exceeded the time limit: 2
+            Best validation score: 0.8713450292397661
+            Number of target algorithm runs: 41
+            Number of successful target algorithm runs: 33
+            Number of crashed target algorithm runs: 7
+            Number of target algorithms that exceeded the time limit: 1
             Number of target algorithms that exceeded the memory limit: 0
 
 
@@ -121,7 +151,7 @@ with AutoPyTorch
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  31.555 seconds)
+   **Total running time of the script:** ( 5 minutes  30.388 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_parallel_n_jobs.py:
