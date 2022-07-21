@@ -11,7 +11,7 @@ on:
     branches:
       - master
       - development
-      - fixes_docker
+      - fix-docker
   workflow_dispatch:
 
 jobs:
