@@ -65,8 +65,6 @@ class TestTabularRegression:
         pipeline = TabularRegressionPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'],
             exclude={'trainer': ['AdversarialTrainer']})
-            # ,
-            #          'network_embedding': ['LearnedEntityEmbedding']})
         cs = pipeline.get_hyperparameter_search_space()
 
         config = cs.sample_configuration()
@@ -92,8 +90,7 @@ class TestTabularRegression:
         X = fit_dictionary_tabular['X_train'].copy()
         pipeline = TabularRegressionPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'],
-            exclude={'trainer': ['AdversarialTrainer'],
-                     'network_embedding': ['LearnedEntityEmbedding']})
+            exclude={'trainer': ['AdversarialTrainer']})
 
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.sample_configuration()
@@ -122,8 +119,7 @@ class TestTabularRegression:
 
         pipeline = TabularRegressionPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'],
-            exclude={'trainer': ['AdversarialTrainer'],
-                     'network_embedding': ['LearnedEntityEmbedding']})
+            exclude={'trainer': ['AdversarialTrainer']})
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
