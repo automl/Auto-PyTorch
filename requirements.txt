@@ -14,5 +14,6 @@ smac>=1.2
 dask
 distributed>=2.2.0
 catboost
+lightgbm
 flaky
 tabulate
