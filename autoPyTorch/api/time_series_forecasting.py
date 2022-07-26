@@ -526,6 +526,9 @@ class TimeSeriesForecastingTask(BaseTask):
                 predicted value, it needs to be with shape (B, H, N),
                 B is the number of series, H is forecasting horizon (n_prediction_steps), N is the number of targets
         """
+        if self.dataset is None:
+            raise AttributeError(f"Expected dataset to be initialised when predicting in {self.__class__.__name__}")
+
         if X_test is None or not isinstance(X_test[0], TimeSeriesSequence):
             assert past_targets is not None
             # Validate and construct TimeSeriesSequence
@@ -566,6 +569,9 @@ class TimeSeriesForecastingTask(BaseTask):
                 forecast horizon. Sometimes we could also make our base sliding window size based on the
                 forecast horizon
         """
+        if self.dataset is None:
+            raise AttributeError(f"Expected dataset to be initialised when updating sliding window"
+                                 f" in {self.__class__.__name__}")
         base_window_size = int(np.ceil(self.dataset.base_window_size))
         # we don't want base window size to large, which might cause a too long computation time, in which case
         # we will use n_prediction_step instead (which is normally smaller than base_window_size)

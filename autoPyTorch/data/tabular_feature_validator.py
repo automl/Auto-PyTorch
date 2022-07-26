@@ -283,7 +283,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
             X = self.numpy_to_pandas(X)
 
         if ispandas(X) and not issparse(X):
-            X = cast(pd.DataFrame, X)
 
             if self.all_nan_columns is None:
                 raise ValueError('_fit must be called before calling transform')
@@ -491,7 +490,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         # Also, register the feature types for the estimator
         feat_types = []
 
-        # Make sure each column is a valid type            
+        # Make sure each column is a valid type
         for i, column in enumerate(X.columns):
             if self.all_nan_columns is not None and column in self.all_nan_columns:
                 continue

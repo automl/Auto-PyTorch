@@ -1,7 +1,7 @@
-from copy import copy
 import warnings
 from abc import ABCMeta
 from collections import Counter
+from copy import copy
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace import Configuration
@@ -297,7 +297,7 @@ class BasePipeline(Pipeline):
         """
         raise NotImplementedError()
 
-    def _add_forbidden_conditions(self, cs):
+    def _add_forbidden_conditions(self, cs: ConfigurationSpace) -> ConfigurationSpace:
         """
         Add forbidden conditions to ensure valid configurations.
         Currently, Learned Entity Embedding is only valid when encoder is one hot encoder
@@ -307,6 +307,10 @@ class BasePipeline(Pipeline):
         Args:
             cs (ConfigurationSpace):
                 Configuration space to which forbidden conditions are added.
+
+        Returns:
+            ConfigurationSpace:
+                with forbidden conditions added to the search space
 
         """
 

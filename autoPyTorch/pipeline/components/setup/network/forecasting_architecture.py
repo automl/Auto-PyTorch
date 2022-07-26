@@ -576,7 +576,14 @@ class ForecastingNet(AbstractForecastingNet):
                 ) -> ALL_NET_OUTPUT:
 
         if isinstance(past_targets, dict):
-            past_targets, past_features, future_features, past_observed_targets = self._unwrap_past_targets(past_targets)
+            (
+                past_targets,
+                past_features,
+                future_features,
+                past_observed_targets,
+                future_targets,
+                decoder_observed_values
+            ) = self._unwrap_past_targets(past_targets)
 
         x_past, x_future, x_static, loc, scale, static_context_initial_hidden, _ = self.pre_processing(
             past_targets=past_targets,
@@ -610,13 +617,12 @@ class ForecastingNet(AbstractForecastingNet):
     def _unwrap_past_targets(
         self,
         past_targets: dict
-    ) -> Tuple[
-        torch.Tensor,
-        Optional[torch.Tensor],
-        Optional[torch.Tensor],
-        Optional[torch.Tensor],
-        Optional[torch.BoolTensor],
-        Optional[torch.Tensor]]:
+    ) -> Tuple[torch.Tensor,
+               Optional[torch.Tensor],
+               Optional[torch.Tensor],
+               Optional[torch.Tensor],
+               Optional[torch.BoolTensor],
+               Optional[torch.Tensor]]:
         """
         Time series forecasting network requires multiple inputs for the forward pass which is different to how pytorch
         networks usually work. SWA's update_bn in line #452 of trainer choice, does not unwrap the dictionary of the
@@ -637,7 +643,14 @@ class ForecastingNet(AbstractForecastingNet):
         future_features = past_targets_copy.pop('future_features', None)
         past_observed_targets = past_targets_copy.pop('past_observed_targets', None)
         decoder_observed_values = past_targets_copy.pop('decoder_observed_values', None)
-        return past_targets,past_features,future_features,past_observed_targets
+        return (
+            past_targets,
+            past_features,
+            future_features,
+            past_observed_targets,
+            future_targets,
+            decoder_observed_values
+        )
 
     def pred_from_net_output(self, net_output: ALL_NET_OUTPUT) -> torch.Tensor:
         if self.output_type == 'regression':
@@ -730,9 +743,16 @@ class ForecastingSeq2SeqNet(ForecastingNet):
                 future_features: Optional[torch.Tensor] = None,
                 past_observed_targets: Optional[torch.BoolTensor] = None,
                 decoder_observed_values: Optional[torch.Tensor] = None, ) -> ALL_NET_OUTPUT:
-        
+
         if isinstance(past_targets, dict):
-            past_targets, past_features, future_features, past_observed_targets = self._unwrap_past_targets(past_targets)
+            (
+                past_targets,
+                past_features,
+                future_features,
+                past_observed_targets,
+                future_targets,
+                decoder_observed_values
+            ) = self._unwrap_past_targets(past_targets)
 
         x_past, _, x_static, loc, scale, static_context_initial_hidden, past_targets = self.pre_processing(
             past_targets=past_targets,
@@ -1025,7 +1045,14 @@ class ForecastingDeepARNet(ForecastingSeq2SeqNet):
                 decoder_observed_values: Optional[torch.Tensor] = None, ) -> ALL_NET_OUTPUT:
 
         if isinstance(past_targets, dict):
-            past_targets, past_features, future_features, past_observed_targets = self._unwrap_past_targets(past_targets)
+            (
+                past_targets,
+                past_features,
+                future_features,
+                past_observed_targets,
+                future_targets,
+                decoder_observed_values
+            ) = self._unwrap_past_targets(past_targets)
 
         encode_length = min(self.window_size, past_targets.shape[1])
 
@@ -1295,7 +1322,14 @@ class NBEATSNet(ForecastingNet):
                                                                                    Tuple[torch.Tensor, torch.Tensor]]:
 
         if isinstance(past_targets, dict):
-            past_targets, past_features, future_features, past_observed_targets = self._unwrap_past_targets(past_targets)
+            (
+                past_targets,
+                past_features,
+                future_features,
+                past_observed_targets,
+                future_targets,
+                decoder_observed_values
+            ) = self._unwrap_past_targets(past_targets)
 
         # Unlike other networks, NBEATS network is required to predict both past and future targets.
         # Thereby, we return two tensors for backcast and forecast

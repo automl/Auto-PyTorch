@@ -35,7 +35,10 @@ from autoPyTorch.utils.hyperparameter_search_space_update import (
 
 @pytest.fixture
 def exclude():
-    return {'feature_preprocessor': ['SelectRatesClassification', 'SelectPercentileClassification'], 'network_embedding': ['LearnedEntityEmbedding']}
+    return {
+        'feature_preprocessor': ['SelectRatesClassification', 'SelectPercentileClassification'],
+        'network_embedding': ['LearnedEntityEmbedding']
+    }
 
 
 @pytest.mark.parametrize("fit_dictionary_tabular", ['classification_categorical_only',

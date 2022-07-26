@@ -49,7 +49,7 @@ class BaseFeatureValidator(BaseEstimator):
         self.categories: List[List[int]] = []
         self.categorical_columns: List[int] = []
         self.numerical_columns: List[int] = []
-        self.encode_columns: List[int] = []
+        self.encode_columns: List[str] = []
 
         self.all_nan_columns: Optional[Set[Union[int, str]]] = None
 

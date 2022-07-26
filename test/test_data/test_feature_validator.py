@@ -645,7 +645,6 @@ def test_feature_validator_get_columns_to_encode_error_feat_type(input_data_feat
     with pytest.raises(ValueError, match=r"Expected type of features to be in .*"):
         validator._validate_feat_types(X)
 
- 
     # Null columns in the train split but not necessarily in the test split
     train_features = {
         'A': [np.NaN, np.NaN, np.NaN],
@@ -706,25 +705,3 @@ def test_feature_validator_get_columns_to_encode_error_feat_type(input_data_feat
             null_columns.append(column)
 
     assert null_columns == [1]
-
-def test_comparator():
-    numerical = 'numerical'
-    categorical = 'categorical'
-
-    validator = TabularFeatureValidator
-
-    feat_type = [numerical, categorical] * 10
-    ans = [categorical] * 10 + [numerical] * 10
-    feat_type = sorted(
-        feat_type,
-        key=functools.cmp_to_key(validator._comparator)
-    )
-    assert ans == feat_type
-
-    feat_type = [numerical] * 10 + [categorical] * 10
-    ans = [categorical] * 10 + [numerical] * 10
-    feat_type = sorted(
-        feat_type,
-        key=functools.cmp_to_key(validator._comparator)
-    )
-    assert ans == feat_type

@@ -1908,7 +1908,7 @@ class BaseTask(ABC):
         # builder in the provide dask client
         required_dataset_properties = {'task_type': self.task_type,
                                        'output_type': self.dataset.output_type}
-        
+
         proc_ensemble = EnsembleBuilderManager(
             start_time=time.time(),
             time_left_for_ensembles=time_left_for_ensembles,
