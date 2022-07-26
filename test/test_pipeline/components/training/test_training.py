@@ -392,7 +392,7 @@ def test_every_trainer_is_valid():
 @pytest.mark.parametrize("test_input,expected", [
     ("tabular_classification", set(['RowCutMixTrainer', 'RowCutOutTrainer', 'AdversarialTrainer'])),
     ("image_classification", set(['GridCutMixTrainer', 'GridCutOutTrainer', 'AdversarialTrainer'])),
-    ("time_series_classification", set([])),
+    ("time_series_forecasting", set([])),
 ])
 def test_get_set_config_space(test_input, expected):
     """Make sure that we can setup a valid choice in the trainer

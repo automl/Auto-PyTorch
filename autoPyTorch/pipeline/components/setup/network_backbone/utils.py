@@ -29,15 +29,10 @@ def get_output_shape(network: torch.nn.Module, input_shape: Tuple[int, ...], has
     """
     placeholder = torch.randn((2, *input_shape), dtype=torch.float)
     with torch.no_grad():
-<<<<<<< HEAD
         if has_hidden_states:
             output = network(placeholder)[0]
         else:
             output = network(placeholder)
-=======
-        output = network(placeholder)
-
->>>>>>> Bug fixes (#249)
     return tuple(output.shape[1:])
 
 

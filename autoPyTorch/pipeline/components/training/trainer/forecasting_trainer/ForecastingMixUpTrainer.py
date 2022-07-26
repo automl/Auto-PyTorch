@@ -13,4 +13,7 @@ class ForecastingMixUpTrainer(ForecastingBaseTrainerComponent, MixUpTrainer):
         return {
             'shortname': 'ForecastingMixUpTrainer',
             'name': 'MixUp Regularized Trainer',
+            'handles_tabular': False,
+            'handles_image': False,
+            'handles_time_series': True,
         }

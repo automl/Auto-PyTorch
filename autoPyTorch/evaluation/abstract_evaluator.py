@@ -729,7 +729,7 @@ class AbstractEvaluator(object):
     def finish_up(self, loss: Dict[str, float], train_loss: Dict[str, float],
                   valid_pred: Optional[np.ndarray], test_pred: Optional[np.ndarray],
                   additional_run_info: Optional[Dict], file_output: bool, status: StatusType,
-                  opt_pred: Optional[np.ndarray],
+                  opt_pred: Optional[np.ndarray], **metric_kwargs: Any
                   ) -> Optional[Tuple[float, float, int, Dict]]:
         """This function does everything necessary after the fitting is done:
 

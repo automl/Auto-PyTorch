@@ -13,4 +13,7 @@ class ForecastingStandardTrainer(ForecastingBaseTrainerComponent, StandardTraine
         return {
             'shortname': 'ForecastingStandardTrainer',
             'name': 'Forecasting Standard Trainer',
+            'handles_tabular': False,
+            'handles_image': False,
+            'handles_time_series': True,
         }

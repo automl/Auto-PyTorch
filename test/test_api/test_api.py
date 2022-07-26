@@ -460,6 +460,7 @@ def test_time_series_forecasting(forecasting_toy_dataset, resampling_strategy, b
         resampling_strategy_args=resampling_strategy_args,
         ensemble_size=2,
         seed=42,
+        delete_tmp_folder_after_terminate=False
     )
 
     with unittest.mock.patch.object(estimator, '_do_dummy_prediction', new=dummy_do_dummy_prediction):
@@ -475,6 +476,7 @@ def test_time_series_forecasting(forecasting_toy_dataset, resampling_strategy, b
             total_walltime_limit=30,
             func_eval_time_limit_secs=10,
             known_future_features=known_future_features,
+            enable_traditional_pipeline=False
         )
 
     # Internal dataset has expected settings

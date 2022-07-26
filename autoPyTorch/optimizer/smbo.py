@@ -276,7 +276,8 @@ class AutoMLSMBO(object):
         initial_configurations = []
 
         if STRING_TO_TASK_TYPES.get(self.task_type, -1) == TIMESERIES_FORECASTING:
-            initial_configurations = self.get_init_configs_for_forecasting(config_space, kwargs)
+            # TODO: update search space (to remove reg cocktails) for forecasting tasks so that we can use the portfolio (or build the portfolio again)
+            # initial_configurations = self.get_init_configs_for_forecasting(config_space, kwargs)
             # proxy-validation sets
             self.min_num_test_instances: Optional[int] = kwargs.get('min_num_test_instances',  # type:ignore[assignment]
                                                                     None)

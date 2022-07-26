@@ -520,7 +520,6 @@ class BasePipeline(Pipeline):
                 # needs to be updated is in components of the
                 # choice module
                 elif split_hyperparameter[0] not in components.keys():
-<<<<<<< HEAD
                     hp_in_component = False
                     if hasattr(node, 'additional_components') and node.additional_components:
                         # This is designed for forecasting network encoder:
@@ -538,12 +537,6 @@ class BasePipeline(Pipeline):
                                          "Expected update hyperparameter "
                                          "to be in {} got {}".format(node.__class__.__name__,
                                                                      components.keys(), split_hyperparameter[0]))
-=======
-                    raise ValueError("Unknown component choice for node {}. "
-                                     "Expected update component "
-                                     "to be in {}, but got {}".format(node_name,
-                                                                      components.keys(), split_hyperparameter[0]))
->>>>>>> Bug fixes (#249)
                 else:
                     # check if hyperparameter is in the search space of the component
                     component = components[split_hyperparameter[0]]

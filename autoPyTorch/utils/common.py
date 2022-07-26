@@ -105,9 +105,6 @@ class autoPyTorchEnum(str, Enum):
         return str(self.value)
 
 
-<<<<<<< HEAD
-def custom_collate_fn(batch: List, x_collector: Callable = default_collate) -> List[Optional[torch.Tensor]]:
-=======
 def replace_prefix_in_config_dict(config: Dict[str, Any], prefix: str, replace: str = "") -> Dict[str, Any]:
     """
     Replace the prefix in all keys with the specified replacement string (the empty string by
@@ -128,8 +125,7 @@ def replace_prefix_in_config_dict(config: Dict[str, Any], prefix: str, replace: 
             k.startswith(prefix)}
 
 
-def custom_collate_fn(batch: List) -> List[Optional[torch.Tensor]]:
->>>>>>> Bug fixes (#249)
+def custom_collate_fn(batch: List, x_collector: Callable = default_collate) -> List[Optional[torch.Tensor]]:
     """
     In the case of not providing a y tensor, in a
     dataset of form {X, y}, y would be None.

@@ -168,27 +168,23 @@ class TabularFeatureValidator(BaseFeatureValidator):
 
             # Handle objects if possible
             exist_object_columns = has_object_columns(X.dtypes.values)
+
             if exist_object_columns:
                 X = self.infer_objects(X)
             self.dtypes = [dt.name for dt in X.dtypes]  # Also note this change in self.dtypes
+
             self.all_nan_columns = set(all_nan_columns)
 
-            self.transformed_columns, self.feat_types = self.get_columns_to_encode(X)
+            self.encode_columns, self.feat_types = self.get_columns_to_encode(X)
 
             assert self.feat_types is not None
 
-            preprocessors = get_tabular_preprocessors()
-            self.column_transformer = _create_column_transformer(
-                preprocessors=preprocessors,
-                categorical_columns=self.transformed_columns,
-            )
-
-            if len(self.enc_columns) > 0:
+            if len(self.encode_columns) > 0:
 
                 preprocessors = get_tabular_preprocessors()
                 self.column_transformer = _create_column_transformer(
                     preprocessors=preprocessors,
-                    categorical_columns=self.enc_columns,
+                    categorical_columns=self.encode_columns,
                 )
 
                 # Mypy redefinition
@@ -302,8 +298,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
             # we change those columns to `object` dtype
             # to ensure that these columns are changed to appropriate dtype
             # in self.infer_objects
-            all_nan_cat_cols = set(X[self.enc_columns].columns[X[self.enc_columns].isna().all()])
-            dtype_dict = {col: 'object' for col in self.enc_columns if col in all_nan_cat_cols}
+            all_nan_cat_cols = set(X[self.encode_columns].columns[X[self.encode_columns].isna().all()])
+            dtype_dict = {col: 'object' for col in self.encode_columns if col in all_nan_cat_cols}
             X = X.astype(dtype_dict)
 
         # Check the data here so we catch problems on new test data
@@ -387,10 +383,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
             exist_object_columns = has_object_columns(X.dtypes.values)
             if exist_object_columns:
                 X = self.infer_objects(X)
-
-            # Define the column to be encoded here as the feature validator is fitted once
-            # per estimator
-            self.transformed_columns, self.feat_types = self.get_columns_to_encode(X)
 
             column_order = [column for column in X.columns]
             if len(self.column_order) > 0:
@@ -491,8 +483,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 Type of each column numerical/categorical
         """
 
-        if len(self.transformed_columns) > 0 and self.feat_types is not None:
-            return self.transformed_columns, self.feat_types
+        if len(self.encode_columns) > 0 and self.feat_types is not None:
+            return self.encode_columns, self.feat_types
 
         # Register if a column needs encoding
         categorical_columns = []
@@ -503,7 +495,7 @@ class TabularFeatureValidator(BaseFeatureValidator):
         for i, column in enumerate(X.columns):
             if self.all_nan_columns is not None and column in self.all_nan_columns:
                 continue
-            column_dtype = self.dtypes[i]
+            column_dtype = self.dtypes[i] if len(self.dtypes) > 0 else X[column].dtype.name
             err_msg = "Valid types are `numerical`, `categorical` or `boolean`, " \
                       "but input column {} has an invalid type `{}`.".format(column, column_dtype)
             if column_dtype in ['category', 'bool']:

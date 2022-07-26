@@ -254,8 +254,7 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
             self.val_transform,
             train=False,
         )
-
-        if X['dataset_properties']["is_small_preprocess"]:
+        if X['dataset_properties'].get("is_small_preprocess", True):
             # This parameter indicates that the data has been pre-processed for speed
             # Overwrite the datamanager with the pre-processes data
             datamanager.replace_data(X['X_train'],
@@ -616,3 +615,16 @@ class TimeSeriesForecastingDataLoader(FeatureDataLoader):
         """ Allow a nice understanding of what components where used """
         string = self.train_data_loader.__class__.__name__
         return string
+
+    def _check_transform_requirements(self, X: Dict[str, Any], y: Any = None) -> None:
+        """
+
+        Makes sure that the fit dictionary contains the required transformations
+        that the dataset should go through
+
+        Args:
+            X (Dict[str, Any]): Dictionary with fitted parameters. It is a message passing
+                mechanism, in which during a transform, a components adds relevant information
+                so that further stages can be properly fitted
+        """
+        pass

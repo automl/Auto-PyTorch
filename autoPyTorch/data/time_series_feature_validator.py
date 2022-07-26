@@ -37,8 +37,8 @@ class TimeSeriesFeatureValidator(TabularFeatureValidator):
         self.series_idx: Optional[List[Union[str, int]]] = None
 
     def get_reordered_columns(self) -> List[str]:
-        return self.transformed_columns + [
-            col for col in self.column_order if col not in set(self.transformed_columns)
+        return self.encode_columns + [
+            col for col in self.column_order if col not in set(self.encode_columns)
         ]
 
     def fit(

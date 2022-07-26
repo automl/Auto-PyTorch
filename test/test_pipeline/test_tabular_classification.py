@@ -593,8 +593,8 @@ def test_train_pipeline_with_runtime(fit_dictionary_tabular_dummy):
     # There is no epoch limitation
     assert not budget_tracker.is_max_epoch_reached(epoch=np.inf)
 
-    # More than 200 epochs would have pass in 5 seconds for this dataset
-    assert len(run_summary.performance_tracker['start_time']) > 100
+    # More than 50 epochs would have pass in 5 seconds for this dataset
+    assert len(run_summary.performance_tracker['start_time']) > 50
 
 
 @pytest.mark.parametrize("fit_dictionary_tabular_dummy", ["classification"], indirect=True)
