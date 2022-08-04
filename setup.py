@@ -83,6 +83,7 @@ setuptools.setup(
     },
     test_suite="pytest",
     data_files=[('configs', ['autoPyTorch/configs/default_pipeline_options.json']),
-                ('portfolio', ['autoPyTorch/configs/greedy_portfolio.json'])],
+                ('portfolio', ['autoPyTorch/configs/greedy_portfolio.json']),
+                ('forecasting_init', ['autoPyTorch/configs/forecasting_init_cfgs.json'])],
     dependency_links=['https://github.com/automl/automl_common.git/tarball/autoPyTorch#egg=package-0.0.1']
 )
