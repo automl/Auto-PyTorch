@@ -368,7 +368,9 @@ class AbstractForecastingNet(nn.Module):
                 outputs = raw_value - loc.to(device)
             else:
                 outputs = (raw_value - loc.to(device)) / scale.to(device)
-        return outputs
+            return outputs
+        else:
+            return raw_value
 
     @abstractmethod
     def forward(self,
