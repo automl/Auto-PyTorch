@@ -1632,7 +1632,7 @@ class BaseTask(ABC):
                              names=[eval_metric] if eval_metric is not None else None,
                              all_supported_metrics=False).pop()
 
-        pipeline_options = self.pipeline_options.copy().update(pipeline_options) if pipeline_options is not None \
+        pipeline_options = {**self.pipeline_options, **pipeline_options} if pipeline_options is not None \
             else self.pipeline_options.copy()
 
         assert pipeline_options is not None
