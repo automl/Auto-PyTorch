@@ -938,7 +938,8 @@ def test_pipeline_fit_pass_pipeline_options(
     openml_id,
     backend,
     budget,
-    n_samples):
+    n_samples
+):
     # Get the data and check that contents of data-manager make sense
     X, y = sklearn.datasets.fetch_openml(
         data_id=int(openml_id),
