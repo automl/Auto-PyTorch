@@ -1,6 +1,6 @@
 import io
 from datetime import datetime
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration
 
@@ -72,7 +72,7 @@ def _extract_metrics_info(
     run_value: RunValue,
     scoring_functions: List[autoPyTorchMetric],
     inference_name: str
-) -> Dict[str, float]:
+) -> Dict[str, Optional[float]]:
     """
     Extract the metric information given a run_value
     and a list of metrics of interest.
@@ -518,7 +518,8 @@ class MetricResults:
             data = getattr(self.search_results, f'{inference_name}_metric_dict')[metric_name]
             if all([d is None for d in data]):
                 if inference_name not in OPTIONAL_INFERENCE_CHOICES:
-                    raise ValueError(f"Expected {metric_name} score for {inference_name} set to not be None, but got {data}")
+                    raise ValueError(f"Expected {metric_name} score for {inference_name} set"
+                                     f" to not be None, but got {data}")
                 else:
                     continue
             self.data[f'single::{inference_name}::{metric_name}'] = np.array(data)
@@ -529,7 +530,8 @@ class MetricResults:
             data = getattr(self.ensemble_results, f'{inference_name}_scores')
             if all([d is None for d in data]):
                 if inference_name not in OPTIONAL_INFERENCE_CHOICES:
-                    raise ValueError(f"Expected {metric_name} score for {inference_name} set to not be None, but got {data}")
+                    raise ValueError(f"Expected {metric_name} score for {inference_name} set"
+                                     f" to not be None, but got {data}")
                 else:
                     continue
             self.data[f'ensemble::{inference_name}::{metric_name}'] = np.array(data)
