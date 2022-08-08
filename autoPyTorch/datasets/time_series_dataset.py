@@ -699,8 +699,8 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
                 valid_splits.append(split)
 
         if len(valid_splits) == 0:
-                raise ValueError('The forecasting horizon setting is unsuited for the Current dataset, please '
-                                 'considering reducing n_prediction_steps')
+            raise ValueError('The forecasting horizon setting is unsuited for the Current dataset, please '
+                             'considering reducing n_prediction_steps')
 
         self.splits = valid_splits
 
