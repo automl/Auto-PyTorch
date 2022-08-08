@@ -404,6 +404,59 @@ def test_search_results_sprint_statistics():
     assert all([m1 == m2 for m1, m2 in zip(api.sprint_statistics().split("\n"), msg)])
 
 
+def test_search_results_sprint_statistics_no_test():
+    BaseTask.__abstractmethods__ = set()
+    api = BaseTask()
+    for method in ['get_search_results', 'sprint_statistics', 'get_incumbent_results']:
+        with pytest.raises(RuntimeError):
+            getattr(api, method)()
+
+    run_history_data = json.load(open(os.path.join(os.path.dirname(__file__),
+                                                   'runhistory_no_test.json'),
+                                      mode='r'))['data']
+    api._results_manager.run_history = MagicMock()
+    api.run_history.empty = MagicMock(return_value=False)
+
+    # The run_history has 16 runs + 1 run interruption ==> 16 runs
+    api.run_history.data = make_dict_run_history_data(run_history_data)
+    api._metric = accuracy
+    api.dataset_name = 'iris'
+    api._scoring_functions = [accuracy, balanced_accuracy]
+    api.search_space = MagicMock(spec=ConfigurationSpace)
+    worst_val = api._metric._worst_possible_result
+    search_results = api.get_search_results()
+
+    _check_status(search_results.status_types)
+    _check_costs(search_results.opt_scores)
+    _check_end_times(search_results.end_times)
+    _check_fit_times(search_results.fit_times)
+    _check_budgets(search_results.budgets)
+    _check_metric_dict(search_results.opt_metric_dict, search_results.status_types, worst_val)
+    _check_additional_infos(status_types=search_results.status_types,
+                            additional_infos=search_results.additional_infos)
+
+    # config_ids can duplicate because of various budget size
+    config_ids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 1, 10, 11, 12, 10, 13]
+    assert config_ids == search_results.config_ids
+
+    # assert that contents of search_results are of expected types
+    assert isinstance(search_results.rank_opt_scores, np.ndarray)
+    assert search_results.rank_opt_scores.dtype is np.dtype(np.int)
+    assert isinstance(search_results.configs, list)
+
+    n_success, n_timeout, n_memoryout, n_crashed = 13, 2, 0, 1
+    msg = ["autoPyTorch results:", f"\tDataset name: {api.dataset_name}",
+           f"\tOptimisation Metric: {api._metric.name}",
+           f"\tBest validation score: {max(search_results.opt_scores)}",
+           "\tNumber of target algorithm runs: 16", f"\tNumber of successful target algorithm runs: {n_success}",
+           f"\tNumber of crashed target algorithm runs: {n_crashed}",
+           f"\tNumber of target algorithms that exceeded the time limit: {n_timeout}",
+           f"\tNumber of target algorithms that exceeded the memory limit: {n_memoryout}"]
+
+    assert isinstance(api.sprint_statistics(), str)
+    assert all([m1 == m2 for m1, m2 in zip(api.sprint_statistics().split("\n"), msg)])
+
+
 @pytest.mark.parametrize('run_history', (None, RunHistory()))
 def test_check_run_history(run_history):
     manager = ResultsManager()
