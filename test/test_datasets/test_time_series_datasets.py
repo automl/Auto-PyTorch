@@ -397,7 +397,7 @@ def test_splits():
                                            n_prediction_steps=10,
                                            freq='1M')
     # the length of each sequence does not support 5 splitions
-    assert len(dataset.splits) == 3
+    assert len(dataset.splits) == 2
 
     # datasets with long but little sequence
     y = [np.arange(4000) for _ in range(2)]
@@ -456,6 +456,14 @@ def test_splits():
 
     refit_set = dataset.create_refit_set()
     assert len(refit_set.splits[0][0]) == len(refit_set)
+
+    y = [np.arange(10)]
+    with pytest.raises(ValueError):
+        dataset = TimeSeriesForecastingDataset(None, y,
+                                               resampling_strategy=CrossValTypes.time_series_cross_validation,
+                                               resampling_strategy_args=resampling_strategy_args,
+                                               n_prediction_steps=5,
+                                               freq='1M')
 
 
 def test_extract_time_features():

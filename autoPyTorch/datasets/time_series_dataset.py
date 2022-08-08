@@ -693,6 +693,17 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
 
         self.splits = self.get_splits_from_resampling_strategy()  # type: ignore[assignment]
 
+        valid_splits = []
+        for i, split in enumerate(self.splits):
+            if len(split[0]) > 0:
+                valid_splits.append(split)
+
+        if len(valid_splits) == 0:
+                raise ValueError('The forecasting horizon setting is unsuited for the Current dataset, please '
+                                 'considering reducing n_prediction_steps')
+
+        self.splits = valid_splits
+
         # TODO doing experiments to give the most proper way of defining these two values
         if lagged_value is None:
             try:
