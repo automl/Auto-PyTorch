@@ -26,6 +26,7 @@ class TestScaling(unittest.TestCase):
 
         columns = ['f1', 's', 'f2']
         self.raw_data = [data_seq_1, data_seq_2]
+
         self.data = pd.DataFrame(np.concatenate([data_seq_1, data_seq_2]), columns=columns, index=[0] * 3 + [1] * 4)
         self.static_features = ('s',)
         self.static_features_column = (1, )
@@ -37,6 +38,9 @@ class TestScaling(unittest.TestCase):
                                    'numerical_columns': numerical_columns,
                                    'static_features': self.static_features,
                                    'is_small_preprocess': True}
+
+        self.small_data = pd.DataFrame(np.array([[1e-10, 0., 1e-15],
+                                                [-1e-10, 0., +1e-15]]), columns=columns, index=[0] * 2)
 
     def test_base_and_standard_scaler(self):
         scaler_component = BaseScaler(scaling_mode='standard')
@@ -82,6 +86,10 @@ class TestScaling(unittest.TestCase):
         transformed_test = np.concatenate([scaler.transform(raw_data) for raw_data in self.raw_data])
         self.assertTrue(np.allclose(transformed_test[:, [0, -1]], transformed_test[:, [0, -1]]))
 
+        scaler.dataset_is_small_preprocess = True
+        scaler.fit(self.small_data)
+        self.assertTrue(np.allclose(scaler.scale.values.flatten(), np.array([1.41421356e-10, 1., 1.])))
+
     def test_min_max(self):
         scaler = TimeSeriesScaler(mode='min_max',
                                   static_features=self.static_features
@@ -108,6 +116,10 @@ class TestScaling(unittest.TestCase):
 
         transformed_test = np.concatenate([scaler.transform(raw_data) for raw_data in self.raw_data])
         self.assertTrue(np.allclose(transformed_test[:, [0, -1]], transformed_test[:, [0, -1]]))
+
+        scaler.dataset_is_small_preprocess = True
+        scaler.fit(self.small_data)
+        self.assertTrue(np.all(scaler.scale.values.flatten() == np.array([2e-10, 1., 1.])))
 
     def test_max_abs_scaler(self):
         scaler = TimeSeriesScaler(mode='max_abs',
@@ -136,6 +148,10 @@ class TestScaling(unittest.TestCase):
         transformed_test = np.concatenate([scaler.transform(raw_data) for raw_data in self.raw_data])
         self.assertTrue(np.allclose(transformed_test[:, [0, -1]], transformed_test[:, [0, -1]]))
 
+        scaler.dataset_is_small_preprocess = True
+        scaler.fit(self.small_data)
+        self.assertTrue(np.all(scaler.scale.values.flatten() == np.array([1e-10, 1., 1.])))
+
     def test_mean_abs_scaler(self):
         scaler = TimeSeriesScaler(mode='mean_abs',
                                   static_features=self.static_features
@@ -161,6 +177,10 @@ class TestScaling(unittest.TestCase):
 
         transformed_test = np.concatenate([scaler.transform(raw_data) for raw_data in self.raw_data])
         self.assertTrue(np.allclose(transformed_test[:, [0, -1]], transformed_test[:, [0, -1]]))
+
+        scaler.dataset_is_small_preprocess = True
+        scaler.fit(self.small_data)
+        self.assertTrue(np.all(scaler.scale.values.flatten() == np.array([1e-10, 1., 1.])))
 
     def test_no_scaler(self):
         scaler = TimeSeriesScaler(mode='none',

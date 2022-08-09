@@ -58,6 +58,10 @@ ForecastingDependenciesNotInstalledMSG = "Additional dependencies must be instal
                                          "forecasting tasks! Please run \n pip install autoPyTorch[forecasting] \n to "\
                                          "install the corresponding dependencies!"
 
+# This value is applied to ensure numerical stability: Sometimes we want to rescale some values: value / scale.
+# We make the scale value to be 1 if it is smaller than this value to ensure that the scaled value will not resutl in
+# overflow
+VERY_SMALL_VALUE = 1e-12
 
 # The constant values for time series forecasting comes from
 # https://github.com/rakshitha123/TSForecasting/blob/master/experiments/deep_learning_experiments.py
