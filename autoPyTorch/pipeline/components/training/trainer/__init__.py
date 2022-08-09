@@ -447,15 +447,18 @@ class TrainerChoice(autoPyTorchChoice):
             raise RuntimeError("Budget exhausted without finishing an epoch.")
 
         if self.choice.use_stochastic_weight_averaging and self.choice.swa_updated:
+            use_double = 'float64' in X['preprocessed_dtype']
 
             # update batch norm statistics
-            swa_utils.update_bn(loader=X['train_data_loader'], model=self.choice.swa_model.double())
-
+            swa_model = self.choice.swa_model.double() if use_double else self.choice.swa_model
+            swa_utils.update_bn(loader=X['train_data_loader'], model=swa_model)
             # change model
             update_model_state_dict_from_swa(X['network'], self.choice.swa_model.state_dict())
-            if self.choice.use_snapshot_ensemble and len(self.choice.model_snapshots) > 0:
+            if self.choice.use_snapshot_ensemble:
                 # we update only the last network which pertains to the stochastic weight averaging model
-                swa_utils.update_bn(X['train_data_loader'], self.choice.model_snapshots[-1].double())
+                snapshot_model = self.choice.model_snapshots[-1].double() if use_double else self.choice.model_snapshots[-1]
+                swa_utils.update_bn(X['train_data_loader'], snapshot_model)
+                update_model_state_dict_from_swa(X['network_snapshots'][-1], self.choice.swa_model.state_dict())
 
         # wrap up -- add score if not evaluating every epoch
         if not self.eval_valid_each_epoch(X):
