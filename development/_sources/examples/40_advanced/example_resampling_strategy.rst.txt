@@ -137,7 +137,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f48b84c55e0>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f7ea1662fa0>
 
 
 
@@ -176,13 +176,13 @@ Print the final ensemble performance
     |  3 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.18 |
     |  4 | None                                                                                             | KNNLearner                                                      |     0.02 |
     autoPyTorch results:
-            Dataset name: 3a04819e-17e1-11ed-88b6-f144ec8da2bd
+            Dataset name: 52d90edf-17f3-11ed-88a4-a98c1c8ad0eb
             Optimisation Metric: accuracy
             Best validation score: 0.8713450292397661
-            Number of target algorithm runs: 20
-            Number of successful target algorithm runs: 16
-            Number of crashed target algorithm runs: 4
-            Number of target algorithms that exceeded the time limit: 0
+            Number of target algorithm runs: 18
+            Number of successful target algorithm runs: 14
+            Number of crashed target algorithm runs: 2
+            Number of target algorithms that exceeded the time limit: 2
             Number of target algorithms that exceeded the memory limit: 0
 
 
@@ -244,7 +244,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f4937e9f610>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f7ea2342bb0>
 
 
 
@@ -284,13 +284,13 @@ Print the final ensemble performance
     |  4 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,QuantileTransformer,TruncSVD        | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.04 |
     |  5 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,MinMaxScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
     autoPyTorch results:
-            Dataset name: 9f8f4d50-17e1-11ed-88b6-f144ec8da2bd
+            Dataset name: b5a2452e-17f3-11ed-88a4-a98c1c8ad0eb
             Optimisation Metric: accuracy
             Best validation score: 0.8626733083495604
-            Number of target algorithm runs: 16
-            Number of successful target algorithm runs: 11
+            Number of target algorithm runs: 14
+            Number of successful target algorithm runs: 10
             Number of crashed target algorithm runs: 4
-            Number of target algorithms that exceeded the time limit: 1
+            Number of target algorithms that exceeded the time limit: 0
             Number of target algorithms that exceeded the memory limit: 0
 
 
@@ -354,7 +354,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f48bb1ced90>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f7e80755400>
 
 
 
@@ -393,13 +393,13 @@ Print the final ensemble performance
     |  4 | None                                                                                             | SVMLearner                                                      |     0.04 |
     |  5 | None                                                                                             | LGBMLearner                                                     |     0.02 |
     autoPyTorch results:
-            Dataset name: 0b284237-17e2-11ed-88b6-f144ec8da2bd
+            Dataset name: 1c3ba56a-17f4-11ed-88a4-a98c1c8ad0eb
             Optimisation Metric: accuracy
             Best validation score: 0.8362573099415205
-            Number of target algorithm runs: 18
+            Number of target algorithm runs: 17
             Number of successful target algorithm runs: 13
             Number of crashed target algorithm runs: 3
-            Number of target algorithms that exceeded the time limit: 2
+            Number of target algorithms that exceeded the time limit: 1
             Number of target algorithms that exceeded the memory limit: 0
 
 
@@ -409,7 +409,7 @@ Print the final ensemble performance
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 8 minutes  43.912 seconds)
+   **Total running time of the script:** ( 8 minutes  23.966 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_resampling_strategy.py:
