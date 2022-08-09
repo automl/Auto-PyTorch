@@ -6,6 +6,7 @@ import torch
 
 from autoPyTorch.constants import VERY_SMALL_VALUE
 
+
 # Similar to / inspired by
 # https://github.com/tslearn-team/tslearn/blob/a3cf3bf/tslearn/preprocessing/preprocessing.py
 class TargetScaler(BaseEstimator):

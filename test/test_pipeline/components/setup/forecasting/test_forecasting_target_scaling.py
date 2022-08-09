@@ -96,7 +96,7 @@ class TestTargetScalar(unittest.TestCase):
         self.assertIsNone(loc_full)
 
         _, _, _, scale = scalar(
-            torch.Tensor([[1e-10, 1e-10, 1e-10],[1e-15,1e-15, 1e-15]]).reshape([2, 3, 1])
+            torch.Tensor([[1e-10, 1e-10, 1e-10], [1e-15, 1e-15, 1e-15]]).reshape([2, 3, 1])
         )
         self.assertTrue(torch.equal(scale.flatten(), torch.Tensor([1e-10, 1.])))
 
@@ -184,7 +184,7 @@ class TestTargetScalar(unittest.TestCase):
         self.assertTrue(torch.equal(scale, scale_full))
 
         _, _, _, scale = scalar(
-            torch.Tensor([[1e-10, -1e-10, 1e-10],[1e-15, -1e-15, 1e-15]]).reshape([2, 3, 1])
+            torch.Tensor([[1e-10, -1e-10, 1e-10], [1e-15, -1e-15, 1e-15]]).reshape([2, 3, 1])
         )
         self.assertTrue(torch.all(torch.isclose(scale.flatten(), torch.Tensor([1.1547e-10, 1.]))))
 
@@ -256,7 +256,7 @@ class TestTargetScalar(unittest.TestCase):
         self.assertTrue(torch.equal(scale, scale_full))
 
         _, _, _, scale = scalar(
-            torch.Tensor([[1e-10, 1e-10, 1e-10],[1e-15,1e-15, 1e-15]]).reshape([2, 3, 1])
+            torch.Tensor([[1e-10, 1e-10, 1e-10], [1e-15, 1e-15, 1e-15]]).reshape([2, 3, 1])
         )
         self.assertTrue(torch.equal(scale.flatten(), torch.Tensor([1e-10, 1.])))
 
@@ -326,6 +326,6 @@ class TestTargetScalar(unittest.TestCase):
         self.assertTrue(torch.equal(scale, scale_full))
 
         _, _, _, scale = scalar(
-            torch.Tensor([[1e-10, 1e-10, 1e-10],[1e-15,1e-15, 1e-15]]).reshape([2, 3, 1])
+            torch.Tensor([[1e-10, 1e-10, 1e-10], [1e-15, 1e-15, 1e-15]]).reshape([2, 3, 1])
         )
         self.assertTrue(torch.equal(scale.flatten(), torch.Tensor([1e-10, 1.])))

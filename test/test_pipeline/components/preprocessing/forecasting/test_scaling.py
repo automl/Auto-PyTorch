@@ -38,12 +38,9 @@ class TestScaling(unittest.TestCase):
                                    'numerical_columns': numerical_columns,
                                    'static_features': self.static_features,
                                    'is_small_preprocess': True}
-        very_small_values = np.array([[1e-10, 0., 1e-15],
-                                               [1e-10, 0., 1e-15]])
 
         self.small_data = pd.DataFrame(np.array([[1e-10, 0., 1e-15],
                                                 [-1e-10, 0., +1e-15]]), columns=columns, index=[0] * 2)
-
 
     def test_base_and_standard_scaler(self):
         scaler_component = BaseScaler(scaling_mode='standard')

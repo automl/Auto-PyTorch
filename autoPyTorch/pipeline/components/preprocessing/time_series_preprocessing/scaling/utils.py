@@ -135,7 +135,7 @@ class TimeSeriesScaler(BaseEstimator):
                 X_abs = np.abs(X)
                 mean_abs_ = X_abs.mean(0, keepdims=True)
                 scale = np.where(mean_abs_ == 0.0, np.max(X_abs), mean_abs_)
-                scale[scale  < VERY_SMALL_VALUE] = 1
+                scale[scale < VERY_SMALL_VALUE] = 1
                 return X / scale
 
             elif self.mode == "none":
