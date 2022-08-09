@@ -101,7 +101,7 @@ class TestBaseDataLoader(unittest.TestCase):
             'y_train': np.array([0, 1, 0]),
             'train_indices': [0, 1],
             'val_indices': [2],
-            'dataset_properties': {'is_small_preprocess': True},
+            'dataset_properties': {},
             'working_dir': '/tmp',
             'split_id': 0,
             'backend': backend,
