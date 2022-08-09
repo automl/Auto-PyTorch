@@ -558,7 +558,7 @@ class MetricResults:
         cur, timestep_size, sign = 0, self.cum_times.size, self.metric._sign
         key_train, key_test = f'ensemble::train::{self.metric.name}', f'ensemble::test::{self.metric.name}'
 
-        all_test_perfs_null = all([[perf is None for perf in test_scores]])
+        all_test_perfs_null = all([perf is None for perf in test_scores])
 
         train_perfs = np.full_like(self.cum_times, self.metric._worst_possible_result)
         test_perfs = np.full_like(self.cum_times, self.metric._worst_possible_result)
