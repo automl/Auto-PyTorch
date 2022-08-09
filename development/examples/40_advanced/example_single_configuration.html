@@ -3,7 +3,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
     <title>Fit a single configuration &#8212; AutoPyTorch 0.2 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
@@ -183,7 +183,6 @@ get further documentation about Scikit-Learn models here: &lt;<a class="referenc
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Passed Configuration:&quot;</span><span class="p">,</span> <span class="n">configuration</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Passed Configuration: Configuration(values={
   &#39;coalescer:__choice__&#39;: &#39;NoCoalescer&#39;,
   &#39;data_loader:batch_size&#39;: 64,
@@ -239,7 +238,6 @@ get further documentation about Scikit-Learn models here: &lt;<a class="referenc
 <span class="nb">print</span><span class="p">(</span><span class="n">pipeline</span><span class="o">.</span><span class="n">named_steps</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>RunInfo(config=Configuration(values={
   &#39;coalescer:__choice__&#39;: &#39;NoCoalescer&#39;,
   &#39;data_loader:batch_size&#39;: 64,
@@ -273,8 +271,8 @@ get further documentation about Scikit-Learn models here: &lt;<a class="referenc
   &#39;trainer:__choice__&#39;: &#39;StandardTrainer&#39;,
 })
 , instance=None, instance_specific=None, seed=1, cutoff=69, capped=False, budget=5, source_id=0)
-RunValue(cost=0.03379224030037542, time=30.08857226371765, status=&lt;StatusType.SUCCESS: 1&gt;, starttime=1658170922.395119, endtime=1658170953.5325603, additional_info={&#39;opt_loss&#39;: {&#39;accuracy&#39;: 0.03379224030037542}, &#39;duration&#39;: 30.01760244369507, &#39;num_run&#39;: 2, &#39;train_loss&#39;: {&#39;accuracy&#39;: 0.0012515644555695093}, &#39;test_loss&#39;: {&#39;accuracy&#39;: 0.028785982478097605}, &#39;configuration_origin&#39;: None})
-{&#39;imputer&#39;: SimpleImputer(random_state=RandomState(MT19937) at 0x7FD12F337D40), &#39;variance_threshold&#39;: VarianceThreshold(random_state=RandomState(MT19937) at 0x7FD12E8EF740), &#39;coalescer&#39;: &lt;autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.coalescer.CoalescerChoice object at 0x7fd12cb78760&gt;, &#39;encoder&#39;: &lt;autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.EncoderChoice object at 0x7fd12cb78fd0&gt;, &#39;scaler&#39;: &lt;autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.ScalerChoice object at 0x7fd12c167e50&gt;, &#39;feature_preprocessor&#39;: &lt;autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.FeatureProprocessorChoice object at 0x7fd12c167520&gt;, &#39;tabular_transformer&#39;: TabularColumnTransformer(random_state=RandomState(MT19937) at 0x7FD12F337D40), &#39;preprocessing&#39;: EarlyPreprocessing(random_state=RandomState(MT19937) at 0x7FD12F337D40), &#39;network_embedding&#39;: &lt;autoPyTorch.pipeline.components.setup.network_embedding.NetworkEmbeddingChoice object at 0x7fd127c95a90&gt;, &#39;network_backbone&#39;: &lt;autoPyTorch.pipeline.components.setup.network_backbone.NetworkBackboneChoice object at 0x7fd12f5feca0&gt;, &#39;network_head&#39;: &lt;autoPyTorch.pipeline.components.setup.network_head.NetworkHeadChoice object at 0x7fd127b35e20&gt;, &#39;network&#39;: NetworkComponent(network=Sequential(
+RunValue(cost=0.03379224030037542, time=28.07133460044861, status=&lt;StatusType.SUCCESS: 1&gt;, starttime=1660048787.0716414, endtime=1660048816.1864827, additional_info={&#39;opt_loss&#39;: {&#39;accuracy&#39;: 0.03379224030037542}, &#39;duration&#39;: 28.008365392684937, &#39;num_run&#39;: 2, &#39;train_loss&#39;: {&#39;accuracy&#39;: 0.0012515644555695093}, &#39;test_loss&#39;: {&#39;accuracy&#39;: 0.028785982478097605}, &#39;configuration_origin&#39;: None})
+{&#39;imputer&#39;: SimpleImputer(random_state=RandomState(MT19937) at 0x7F48BB4C1040), &#39;variance_threshold&#39;: VarianceThreshold(random_state=RandomState(MT19937) at 0x7F48B3969140), &#39;coalescer&#39;: &lt;autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.coalescer.CoalescerChoice object at 0x7f48b3fa43d0&gt;, &#39;encoder&#39;: &lt;autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.EncoderChoice object at 0x7f48b3fa4850&gt;, &#39;scaler&#39;: &lt;autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling.ScalerChoice object at 0x7f48b37d3eb0&gt;, &#39;feature_preprocessor&#39;: &lt;autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature_preprocessing.FeatureProprocessorChoice object at 0x7f48b37d3ee0&gt;, &#39;tabular_transformer&#39;: TabularColumnTransformer(random_state=RandomState(MT19937) at 0x7F48BB4C1040), &#39;preprocessing&#39;: EarlyPreprocessing(random_state=RandomState(MT19937) at 0x7F48BB4C1040), &#39;network_embedding&#39;: &lt;autoPyTorch.pipeline.components.setup.network_embedding.NetworkEmbeddingChoice object at 0x7f48b89e9df0&gt;, &#39;network_backbone&#39;: &lt;autoPyTorch.pipeline.components.setup.network_backbone.NetworkBackboneChoice object at 0x7f48ba70bbe0&gt;, &#39;network_head&#39;: &lt;autoPyTorch.pipeline.components.setup.network_head.NetworkHeadChoice object at 0x7f48b36fe3d0&gt;, &#39;network&#39;: NetworkComponent(network=Sequential(
   (0): _NoEmbedding()
   (1): Sequential(
     (0): Linear(in_features=73, out_features=200, bias=True)
@@ -294,11 +292,11 @@ RunValue(cost=0.03379224030037542, time=30.08857226371765, status=&lt;StatusType
     (3): Linear(in_features=128, out_features=2, bias=True)
   )
 ),
-                 random_state=RandomState(MT19937) at 0x7FD12F337D40), &#39;network_init&#39;: &lt;autoPyTorch.pipeline.components.setup.network_initializer.NetworkInitializerChoice object at 0x7fd127b357f0&gt;, &#39;optimizer&#39;: &lt;autoPyTorch.pipeline.components.setup.optimizer.OptimizerChoice object at 0x7fd127b35fa0&gt;, &#39;lr_scheduler&#39;: &lt;autoPyTorch.pipeline.components.setup.lr_scheduler.SchedulerChoice object at 0x7fd127d72c40&gt;, &#39;data_loader&#39;: FeatureDataLoader(random_state=RandomState(MT19937) at 0x7FD12F337D40), &#39;trainer&#39;: &lt;autoPyTorch.pipeline.components.training.trainer.TrainerChoice object at 0x7fd127a195b0&gt;}
+                 random_state=RandomState(MT19937) at 0x7F48BB4C1040), &#39;network_init&#39;: &lt;autoPyTorch.pipeline.components.setup.network_initializer.NetworkInitializerChoice object at 0x7f48ba6f5f70&gt;, &#39;optimizer&#39;: &lt;autoPyTorch.pipeline.components.setup.optimizer.OptimizerChoice object at 0x7f48b3d25a30&gt;, &#39;lr_scheduler&#39;: &lt;autoPyTorch.pipeline.components.setup.lr_scheduler.SchedulerChoice object at 0x7f48b3fca9d0&gt;, &#39;data_loader&#39;: FeatureDataLoader(random_state=RandomState(MT19937) at 0x7F48BB4C1040), &#39;trainer&#39;: &lt;autoPyTorch.pipeline.components.training.trainer.TrainerChoice object at 0x7f48b8619430&gt;}
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  46.328 seconds)</p>
-<div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-single-configuration-py">
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 1 minutes  55.177 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-single-configuration-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_single_configuration.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>
 </div>
@@ -333,7 +331,7 @@ RunValue(cost=0.03379224030037542, time=30.08857226371765, status=&lt;StatusType
     </p>
     <p>
         &copy; Copyright 2014-2022, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.2.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.1.1.<br/>
     </p>
   </div>
 </footer>

@@ -134,12 +134,10 @@ Search for an ensemble of machine learning algorithms
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fd127fdc5e0>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f48b84c55e0>
 
 
 
@@ -167,8 +165,6 @@ Print the final ensemble performance
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
     {'accuracy': 0.8554913294797688}
@@ -180,13 +176,13 @@ Print the final ensemble performance
     |  3 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.18 |
     |  4 | None                                                                                             | KNNLearner                                                      |     0.02 |
     autoPyTorch results:
-            Dataset name: 009a0e47-06cd-11ed-8954-4fe262bfd01b
+            Dataset name: 3a04819e-17e1-11ed-88b6-f144ec8da2bd
             Optimisation Metric: accuracy
             Best validation score: 0.8713450292397661
             Number of target algorithm runs: 20
-            Number of successful target algorithm runs: 15
+            Number of successful target algorithm runs: 16
             Number of crashed target algorithm runs: 4
-            Number of target algorithms that exceeded the time limit: 1
+            Number of target algorithms that exceeded the time limit: 0
             Number of target algorithms that exceeded the memory limit: 0
 
 
@@ -245,12 +241,10 @@ Search for an ensemble of machine learning algorithms
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fd12c40eca0>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f4937e9f610>
 
 
 
@@ -278,8 +272,6 @@ Print the final ensemble performance
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
     {'accuracy': 0.8728323699421965}
@@ -292,7 +284,7 @@ Print the final ensemble performance
     |  4 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,QuantileTransformer,TruncSVD        | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.04 |
     |  5 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,MinMaxScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
     autoPyTorch results:
-            Dataset name: 69a72b3b-06cd-11ed-8954-4fe262bfd01b
+            Dataset name: 9f8f4d50-17e1-11ed-88b6-f144ec8da2bd
             Optimisation Metric: accuracy
             Best validation score: 0.8626733083495604
             Number of target algorithm runs: 16
@@ -359,12 +351,10 @@ Search for an ensemble of machine learning algorithms
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fd12f58b2b0>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f48bb1ced90>
 
 
 
@@ -391,8 +381,6 @@ Print the final ensemble performance
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
     {'accuracy': 0.8670520231213873}
@@ -405,13 +393,13 @@ Print the final ensemble performance
     |  4 | None                                                                                             | SVMLearner                                                      |     0.04 |
     |  5 | None                                                                                             | LGBMLearner                                                     |     0.02 |
     autoPyTorch results:
-            Dataset name: d7536321-06cd-11ed-8954-4fe262bfd01b
+            Dataset name: 0b284237-17e2-11ed-88b6-f144ec8da2bd
             Optimisation Metric: accuracy
             Best validation score: 0.8362573099415205
-            Number of target algorithm runs: 17
+            Number of target algorithm runs: 18
             Number of successful target algorithm runs: 13
             Number of crashed target algorithm runs: 3
-            Number of target algorithms that exceeded the time limit: 1
+            Number of target algorithms that exceeded the time limit: 2
             Number of target algorithms that exceeded the memory limit: 0
 
 
@@ -421,35 +409,30 @@ Print the final ensemble performance
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 8 minutes  47.001 seconds)
+   **Total running time of the script:** ( 8 minutes  43.912 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_resampling_strategy.py:
 
+.. only:: html
 
-.. only :: html
-
- .. container:: sphx-glr-footer
-    :class: sphx-glr-footer-example
+  .. container:: sphx-glr-footer sphx-glr-footer-example
 
 
-  .. container:: binder-badge
+    .. container:: binder-badge
 
-    .. image:: images/binder_badge_logo.svg
-      :target: https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_resampling_strategy.ipynb
-      :alt: Launch binder
-      :width: 150 px
+      .. image:: images/binder_badge_logo.svg
+        :target: https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_resampling_strategy.ipynb
+        :alt: Launch binder
+        :width: 150 px
 
+    .. container:: sphx-glr-download sphx-glr-download-python
 
-  .. container:: sphx-glr-download sphx-glr-download-python
+      :download:`Download Python source code: example_resampling_strategy.py <example_resampling_strategy.py>`
 
-     :download:`Download Python source code: example_resampling_strategy.py <example_resampling_strategy.py>`
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
 
-
-
-  .. container:: sphx-glr-download sphx-glr-download-jupyter
-
-     :download:`Download Jupyter notebook: example_resampling_strategy.ipynb <example_resampling_strategy.ipynb>`
+      :download:`Download Jupyter notebook: example_resampling_strategy.ipynb <example_resampling_strategy.ipynb>`
 
 
 .. only:: html

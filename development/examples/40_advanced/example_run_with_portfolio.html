@@ -3,7 +3,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
     <title>Tabular Classification with Greedy Portfolio &#8212; AutoPyTorch 0.2 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
@@ -184,8 +184,7 @@ with AutoPyTorch using the greedy portfolio</p>
 <span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fd12f4be130&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f48bb38d5e0&gt;
 </pre></div>
 </div>
 </section>
@@ -201,7 +200,6 @@ with AutoPyTorch using the greedy portfolio</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">sprint_statistics</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;accuracy&#39;: 0.8786127167630058}
 |    | Preprocessing                                                                                    | Estimator                                                          |   Weight |
 |---:|:-------------------------------------------------------------------------------------------------|:-------------------------------------------------------------------|---------:|
@@ -216,18 +214,18 @@ with AutoPyTorch using the greedy portfolio</p>
 |  8 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
 |  9 | None                                                                                             | RFLearner                                                          |     0.02 |
 autoPyTorch results:
-        Dataset name: f2096f97-06c9-11ed-8954-4fe262bfd01b
+        Dataset name: 10addf74-17de-11ed-88b6-f144ec8da2bd
         Optimisation Metric: accuracy
         Best validation score: 0.8830409356725146
         Number of target algorithm runs: 27
         Number of successful target algorithm runs: 24
-        Number of crashed target algorithm runs: 1
-        Number of target algorithms that exceeded the time limit: 2
+        Number of crashed target algorithm runs: 0
+        Number of target algorithms that exceeded the time limit: 3
         Number of target algorithms that exceeded the memory limit: 0
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  31.041 seconds)</p>
-<div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-run-with-portfolio-py">
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  25.679 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-run-with-portfolio-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_run_with_portfolio.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>
 </div>
@@ -262,7 +260,7 @@ autoPyTorch results:
     </p>
     <p>
         &copy; Copyright 2014-2022, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.2.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.1.1.<br/>
     </p>
   </div>
 </footer>

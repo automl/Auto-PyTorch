@@ -29,28 +29,26 @@ Image Classification
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
     Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz
     Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz to ../datasets/FashionMNIST/raw/train-images-idx3-ubyte.gz
-      0%|          | 0/26421880 [00:00<?, ?it/s]      0%|          | 65536/26421880 [00:00<01:13, 357670.37it/s]      1%|          | 163840/26421880 [00:00<00:43, 604095.22it/s]      2%|1         | 425984/26421880 [00:00<00:23, 1085730.17it/s]      5%|5         | 1343488/26421880 [00:00<00:07, 3411143.17it/s]     13%|#2        | 3375104/26421880 [00:00<00:03, 6977086.82it/s]     30%|##9       | 7798784/26421880 [00:00<00:01, 16621160.50it/s]     43%|####3     | 11370496/26421880 [00:00<00:00, 21712188.47it/s]     58%|#####8    | 15400960/26421880 [00:01<00:00, 22573274.67it/s]     73%|#######3  | 19365888/26421880 [00:01<00:00, 26831604.73it/s]     89%|########8 | 23494656/26421880 [00:01<00:00, 30520250.66it/s]    100%|##########| 26421880/26421880 [00:01<00:00, 18853136.90it/s]
+      0%|          | 0/26421880 [00:00<?, ?it/s]      0%|          | 32768/26421880 [00:00<01:53, 231928.47it/s]      0%|          | 65536/26421880 [00:00<01:54, 230908.71it/s]      0%|          | 131072/26421880 [00:00<01:18, 335717.81it/s]      1%|          | 229376/26421880 [00:00<00:55, 475759.79it/s]      2%|1         | 425984/26421880 [00:00<00:32, 802339.36it/s]      3%|3         | 884736/26421880 [00:00<00:15, 1625120.17it/s]      7%|6         | 1736704/26421880 [00:00<00:08, 3049193.29it/s]     13%|#3        | 3473408/26421880 [00:01<00:03, 5962888.68it/s]     25%|##4       | 6488064/26421880 [00:01<00:01, 10712916.76it/s]     36%|###5      | 9469952/26421880 [00:01<00:01, 13863205.21it/s]     47%|####6     | 12320768/26421880 [00:01<00:00, 15731289.51it/s]     58%|#####8    | 15368192/26421880 [00:01<00:00, 17458237.61it/s]     69%|######9   | 18317312/26421880 [00:01<00:00, 18442026.10it/s]     80%|########  | 21200896/26421880 [00:01<00:00, 18980240.42it/s]     91%|######### | 24018944/26421880 [00:02<00:00, 19215170.92it/s]    100%|##########| 26421880/26421880 [00:02<00:00, 12287565.88it/s]
     Extracting ../datasets/FashionMNIST/raw/train-images-idx3-ubyte.gz to ../datasets/FashionMNIST/raw
 
     Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-labels-idx1-ubyte.gz
     Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-labels-idx1-ubyte.gz to ../datasets/FashionMNIST/raw/train-labels-idx1-ubyte.gz
-      0%|          | 0/29515 [00:00<?, ?it/s]    100%|##########| 29515/29515 [00:00<00:00, 323498.75it/s]
+      0%|          | 0/29515 [00:00<?, ?it/s]    100%|##########| 29515/29515 [00:00<00:00, 211498.05it/s]    100%|##########| 29515/29515 [00:00<00:00, 211025.39it/s]
     Extracting ../datasets/FashionMNIST/raw/train-labels-idx1-ubyte.gz to ../datasets/FashionMNIST/raw
 
     Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz
     Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz to ../datasets/FashionMNIST/raw/t10k-images-idx3-ubyte.gz
-      0%|          | 0/4422102 [00:00<?, ?it/s]      1%|1         | 65536/4422102 [00:00<00:12, 357723.43it/s]      4%|4         | 196608/4422102 [00:00<00:05, 748820.40it/s]     11%|#1        | 491520/4422102 [00:00<00:03, 1258742.33it/s]     37%|###7      | 1638400/4422102 [00:00<00:00, 4219187.94it/s]     87%|########6 | 3833856/4422102 [00:00<00:00, 7885400.99it/s]    100%|##########| 4422102/4422102 [00:00<00:00, 6003502.25it/s]
+      0%|          | 0/4422102 [00:00<?, ?it/s]      1%|          | 32768/4422102 [00:00<00:18, 231252.57it/s]      1%|1         | 65536/4422102 [00:00<00:18, 230353.14it/s]      3%|2         | 131072/4422102 [00:00<00:12, 335518.37it/s]      5%|5         | 229376/4422102 [00:00<00:08, 475818.21it/s]     10%|9         | 425984/4422102 [00:00<00:04, 802625.41it/s]     20%|##        | 884736/4422102 [00:00<00:02, 1625946.95it/s]     39%|###9      | 1736704/4422102 [00:00<00:00, 3050846.50it/s]     79%|#######8  | 3473408/4422102 [00:01<00:00, 5961671.44it/s]    100%|##########| 4422102/4422102 [00:01<00:00, 3878389.21it/s]
     Extracting ../datasets/FashionMNIST/raw/t10k-images-idx3-ubyte.gz to ../datasets/FashionMNIST/raw
 
     Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labels-idx1-ubyte.gz
     Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labels-idx1-ubyte.gz to ../datasets/FashionMNIST/raw/t10k-labels-idx1-ubyte.gz
-      0%|          | 0/5148 [00:00<?, ?it/s]    100%|##########| 5148/5148 [00:00<00:00, 4377996.15it/s]
+      0%|          | 0/5148 [00:00<?, ?it/s]    100%|##########| 5148/5148 [00:00<00:00, 40359396.25it/s]
     Extracting ../datasets/FashionMNIST/raw/t10k-labels-idx1-ubyte.gz to ../datasets/FashionMNIST/raw
 
     Pipeline CS:
@@ -86,14 +84,16 @@ Image Classification
      ________________________________________ 
     Configuration(values={
       'image_augmenter:GaussianBlur:use_augmenter': False,
-      'image_augmenter:GaussianNoise:sigma_offset': 2.637590398087471,
-      'image_augmenter:GaussianNoise:use_augmenter': True,
-      'image_augmenter:RandomAffine:use_augmenter': False,
-      'image_augmenter:RandomCutout:p': 0.48009161263295064,
-      'image_augmenter:RandomCutout:use_augmenter': True,
+      'image_augmenter:GaussianNoise:use_augmenter': False,
+      'image_augmenter:RandomAffine:rotate': 0,
+      'image_augmenter:RandomAffine:scale_offset': 0.09817883435719255,
+      'image_augmenter:RandomAffine:shear': 3,
+      'image_augmenter:RandomAffine:translate_percent_offset': 0.092968162759446,
+      'image_augmenter:RandomAffine:use_augmenter': True,
+      'image_augmenter:RandomCutout:use_augmenter': False,
       'image_augmenter:Resize:use_augmenter': True,
-      'image_augmenter:ZeroPadAndCrop:percent': 0.44345230095564253,
-      'normalizer:__choice__': 'ImageNormalizer',
+      'image_augmenter:ZeroPadAndCrop:percent': 0.011876312992094795,
+      'normalizer:__choice__': 'NoNormalizer',
     })
 
     Fitting the pipeline...
@@ -101,7 +101,7 @@ Image Classification
             ImageClassificationPipeline
     ________________________________________
     0-) normalizer: 
-            ImageNormalizer
+            NoNormalizer
 
     1-) preprocessing: 
             EarlyPreprocessing
@@ -173,35 +173,30 @@ Image Classification
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  5.700 seconds)
+   **Total running time of the script:** ( 0 minutes  6.988 seconds)
 
 
 .. _sphx_glr_download_examples_20_basics_example_image_classification.py:
 
+.. only:: html
 
-.. only :: html
-
- .. container:: sphx-glr-footer
-    :class: sphx-glr-footer-example
+  .. container:: sphx-glr-footer sphx-glr-footer-example
 
 
-  .. container:: binder-badge
+    .. container:: binder-badge
 
-    .. image:: images/binder_badge_logo.svg
-      :target: https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/20_basics/example_image_classification.ipynb
-      :alt: Launch binder
-      :width: 150 px
+      .. image:: images/binder_badge_logo.svg
+        :target: https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/20_basics/example_image_classification.ipynb
+        :alt: Launch binder
+        :width: 150 px
 
+    .. container:: sphx-glr-download sphx-glr-download-python
 
-  .. container:: sphx-glr-download sphx-glr-download-python
+      :download:`Download Python source code: example_image_classification.py <example_image_classification.py>`
 
-     :download:`Download Python source code: example_image_classification.py <example_image_classification.py>`
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
 
-
-
-  .. container:: sphx-glr-download sphx-glr-download-jupyter
-
-     :download:`Download Jupyter notebook: example_image_classification.ipynb <example_image_classification.ipynb>`
+      :download:`Download Jupyter notebook: example_image_classification.ipynb <example_image_classification.ipynb>`
 
 
 .. only:: html
