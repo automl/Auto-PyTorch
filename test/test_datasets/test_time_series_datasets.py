@@ -13,7 +13,7 @@ import pytest
 import torch
 
 
-from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes
+from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes
 from autoPyTorch.datasets.time_series_dataset import (
     TimeSeriesForecastingDataset,
     TimeSeriesSequence,
@@ -297,7 +297,8 @@ def test_freq_valeus():
 
 def test_target_normalization():
     Y = [[1, 2], [3, 4, 5]]
-    dataset = TimeSeriesForecastingDataset(None, Y, normalize_y=True)
+    dataset = TimeSeriesForecastingDataset(None, Y, normalize_y=True,
+                                           resampling_strategy=NoResamplingStrategyTypes.no_resampling)
 
     assert np.allclose(dataset.y_mean.values, np.vstack([np.mean(y) for y in Y]))
     assert np.allclose(dataset.y_std.values, np.vstack([np.std(y, ddof=1) for y in Y]))
@@ -356,7 +357,8 @@ def test_test_tensors(backend, fit_dictionary_forecasting):
     assert test_tensors[0].shape == (n_seq * forecast_horizon, datamanager.num_features)
     assert test_tensors[1].shape == (n_seq * forecast_horizon, datamanager.num_targets)
 
-    datamanager2 = TimeSeriesForecastingDataset(X=None, Y=[[1, 2]])
+    datamanager2 = TimeSeriesForecastingDataset(X=None, Y=[[1, 2]],
+                                                resampling_strategy=NoResamplingStrategyTypes.no_resampling)
     assert datamanager2.test_tensors is None
 
 
@@ -397,7 +399,7 @@ def test_splits():
                                            n_prediction_steps=10,
                                            freq='1M')
     # the length of each sequence does not support 5 splitions
-    assert len(dataset.splits) == 3
+    assert len(dataset.splits) == 2
 
     # datasets with long but little sequence
     y = [np.arange(4000) for _ in range(2)]
@@ -456,6 +458,14 @@ def test_splits():
 
     refit_set = dataset.create_refit_set()
     assert len(refit_set.splits[0][0]) == len(refit_set)
+
+    y = [np.arange(10)]
+    with pytest.raises(ValueError):
+        dataset = TimeSeriesForecastingDataset(None, y,
+                                               resampling_strategy=CrossValTypes.time_series_cross_validation,
+                                               resampling_strategy_args=resampling_strategy_args,
+                                               n_prediction_steps=5,
+                                               freq='1M')
 
 
 def test_extract_time_features():
