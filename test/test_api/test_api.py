@@ -932,8 +932,7 @@ def test_pipeline_fit(openml_id,
             assert not os.path.exists(cv_model_path)
 
 
-@pytest.mark.parametrize('openml_id', (40984,))
-@pytest.mark.parametrize("budget", [1])
+@pytest.mark.parametrize('openml_id,budget', [(40984, 1)])
 def test_pipeline_fit_pass_pipeline_options(
     openml_id,
     backend,
@@ -985,7 +984,6 @@ def test_pipeline_fit_pass_pipeline_options(
         run_info.seed, run_value.additional_info['num_run'], budget=float(budget)))
 
     # We expect the model path always
-    # And the cv model only on 'cv'
     assert os.path.exists(model_path)
 
 
