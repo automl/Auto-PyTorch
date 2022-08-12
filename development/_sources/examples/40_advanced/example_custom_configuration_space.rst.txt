@@ -161,7 +161,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f7ea180a400>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f1acad59730>
 
 
 
@@ -205,12 +205,12 @@ Print the final ensemble performance
     |  9 | None                                                                                             | SVMLearner                                                |     0.02 |
     | 10 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
     autoPyTorch results:
-            Dataset name: 7b335b0e-17f2-11ed-88a4-a98c1c8ad0eb
+            Dataset name: 46889735-1a47-11ed-8830-056390bd6e17
             Optimisation Metric: accuracy
             Best validation score: 0.8596491228070176
             Number of target algorithm runs: 18
-            Number of successful target algorithm runs: 15
-            Number of crashed target algorithm runs: 2
+            Number of successful target algorithm runs: 14
+            Number of crashed target algorithm runs: 3
             Number of target algorithms that exceeded the time limit: 1
             Number of target algorithms that exceeded the memory limit: 0
 
@@ -268,7 +268,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f7ea19b12b0>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f1acab936a0>
 
 
 
@@ -296,23 +296,25 @@ Print the final ensemble performance
 
  .. code-block:: none
 
-    {'accuracy': 0.8670520231213873}
+    {'accuracy': 0.8728323699421965}
     |    | Preprocessing                                                                                | Estimator                                                       |   Weight |
     |---:|:---------------------------------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-    |  0 | None                                                                                         | LGBMLearner                                                     |     0.32 |
-    |  1 | None                                                                                         | SVMLearner                                                      |     0.28 |
-    |  2 | None                                                                                         | RFLearner                                                       |     0.26 |
-    |  3 | None                                                                                         | ETLearner                                                       |     0.1  |
-    |  4 | SimpleImputer,Variance Threshold,NoCoalescer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
-    |  5 | SimpleImputer,Variance Threshold,NoCoalescer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+    |  0 | None                                                                                         | LGBMLearner                                                     |     0.36 |
+    |  1 | None                                                                                         | RFLearner                                                       |     0.26 |
+    |  2 | None                                                                                         | ETLearner                                                       |     0.14 |
+    |  3 | SimpleImputer,Variance Threshold,NoCoalescer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.1  |
+    |  4 | None                                                                                         | SVMLearner                                                      |     0.08 |
+    |  5 | SimpleImputer,Variance Threshold,NoCoalescer,NoEncoder,Normalizer,KernelPCA                  | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
+    |  6 | None                                                                                         | KNNLearner                                                      |     0.02 |
+    |  7 | SimpleImputer,Variance Threshold,NoCoalescer,NoEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.02 |
     autoPyTorch results:
-            Dataset name: e4d3e27f-17f2-11ed-88a4-a98c1c8ad0eb
+            Dataset name: b001e5c8-1a47-11ed-8830-056390bd6e17
             Optimisation Metric: accuracy
             Best validation score: 0.8596491228070176
-            Number of target algorithm runs: 17
-            Number of successful target algorithm runs: 13
-            Number of crashed target algorithm runs: 3
-            Number of target algorithms that exceeded the time limit: 1
+            Number of target algorithm runs: 20
+            Number of successful target algorithm runs: 15
+            Number of crashed target algorithm runs: 5
+            Number of target algorithms that exceeded the time limit: 0
             Number of target algorithms that exceeded the memory limit: 0
 
 
@@ -322,7 +324,7 @@ Print the final ensemble performance
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 6 minutes  1.438 seconds)
+   **Total running time of the script:** ( 5 minutes  41.695 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_custom_configuration_space.py:
