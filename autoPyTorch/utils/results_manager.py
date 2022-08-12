@@ -12,6 +12,7 @@ from smac.runhistory.runhistory import RunHistory, RunKey, RunValue
 from smac.tae import StatusType
 from smac.utils.io.traj_logging import TrajEntry
 
+from autoPyTorch.constants import OPTIONAL_INFERENCE_CHOICES
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 
 
@@ -26,9 +27,6 @@ STATUS_TYPES = [
     StatusType.ABORT,
     StatusType.MEMOUT
 ]
-
-
-OPTIONAL_INFERENCE_CHOICES = ('test',)
 
 
 def cost2metric(cost: float, metric: autoPyTorchMetric) -> float:
@@ -434,7 +432,7 @@ class SearchResults:
         self
     ) -> None:
         """
-        Checks if the data is missing for each optional inference choice and
+        Checks if the data is missing or if all the runs failed for each optional inference choice and
         sets the scores for that inference choice to all None.
         """
         for inference_choice in OPTIONAL_INFERENCE_CHOICES:

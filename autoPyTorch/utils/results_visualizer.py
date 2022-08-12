@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
-from autoPyTorch.utils.results_manager import MetricResults, OPTIONAL_INFERENCE_CHOICES
+from autoPyTorch.constants import OPTIONAL_INFERENCE_CHOICES
+from autoPyTorch.utils.results_manager import MetricResults
 
 
 plt.rcParams["font.family"] = "Times New Roman"
