@@ -151,7 +151,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f1ad16c85b0>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7face7b0b220>
 
 
 
@@ -203,7 +203,7 @@ Print the final ensemble performance
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 1 minutes  49.275 seconds)
+   **Total running time of the script:** ( 1 minutes  50.152 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_pass_feature_types.py:

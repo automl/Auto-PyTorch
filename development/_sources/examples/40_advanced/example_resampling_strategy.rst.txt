@@ -137,7 +137,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f1acb3055e0>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7facdff32bb0>
 
 
 
@@ -176,7 +176,7 @@ Print the final ensemble performance
     |  3 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.18 |
     |  4 | None                                                                                             | KNNLearner                                                      |     0.02 |
     autoPyTorch results:
-            Dataset name: 1261de5d-1a48-11ed-8830-056390bd6e17
+            Dataset name: 3e9a5de0-1a48-11ed-883e-c7f5fe1042ee
             Optimisation Metric: accuracy
             Best validation score: 0.8713450292397661
             Number of target algorithm runs: 20
@@ -244,7 +244,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f1acabbf310>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7facd4903220>
 
 
 
@@ -284,7 +284,7 @@ Print the final ensemble performance
     |  4 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,QuantileTransformer,TruncSVD        | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.04 |
     |  5 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,MinMaxScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
     autoPyTorch results:
-            Dataset name: 79cd1644-1a48-11ed-8830-056390bd6e17
+            Dataset name: a6d8f1e6-1a48-11ed-883e-c7f5fe1042ee
             Optimisation Metric: accuracy
             Best validation score: 0.8626733083495604
             Number of target algorithm runs: 16
@@ -354,7 +354,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f1ac0188e20>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7facd4011f70>
 
 
 
@@ -393,7 +393,7 @@ Print the final ensemble performance
     |  4 | None                                                                                             | SVMLearner                                                      |     0.04 |
     |  5 | None                                                                                             | LGBMLearner                                                     |     0.02 |
     autoPyTorch results:
-            Dataset name: e63efb1f-1a48-11ed-8830-056390bd6e17
+            Dataset name: 135d0fe3-1a49-11ed-883e-c7f5fe1042ee
             Optimisation Metric: accuracy
             Best validation score: 0.8362573099415205
             Number of target algorithm runs: 17
@@ -409,7 +409,7 @@ Print the final ensemble performance
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 8 minutes  42.186 seconds)
+   **Total running time of the script:** ( 8 minutes  43.701 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_resampling_strategy.py:
