@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
+from autoPyTorch.constants import OPTIONAL_INFERENCE_CHOICES
 from autoPyTorch.utils.results_manager import MetricResults
 
 
@@ -318,7 +319,15 @@ class ResultsVisualizer:
         minimize = (results.metric._sign == -1)
 
         for key in data.keys():
+            inference_name = key.split('::')[1]
             _label, _color, _perfs = labels[key], colors[key], data[key]
+            all_null_perfs = all([perf is None for perf in _perfs])
+
+            if all_null_perfs:
+                if inference_name not in OPTIONAL_INFERENCE_CHOICES:
+                    raise ValueError(f"Expected loss for {inference_name} set to not be None")
+                else:
+                    continue
             # Take the best results over time
             _cum_perfs = np.minimum.accumulate(_perfs) if minimize else np.maximum.accumulate(_perfs)
 

@@ -82,3 +82,6 @@ SEASONALITY_MAP = {
 
 # To avoid that we get a sequence that is too long to be fed to a network
 MAX_WINDOW_SIZE_BASE = 500
+
+# AutoPyTorch optionally allows network inference or metrics calculation for the following datasets
+OPTIONAL_INFERENCE_CHOICES = ('test',)
