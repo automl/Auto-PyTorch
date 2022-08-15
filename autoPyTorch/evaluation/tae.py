@@ -123,7 +123,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         abort_on_first_run_crash: bool,
         pynisher_context: str,
         multi_objectives: List[str],
-        pipeline_config: Optional[Dict[str, Any]] = None,
+        pipeline_options: Optional[Dict[str, Any]] = None,
         initial_num_run: int = 1,
         stats: Optional[Stats] = None,
         run_obj: str = 'quality',
@@ -198,13 +198,13 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         self.disable_file_output = disable_file_output
         self.init_params = init_params
 
-        self.budget_type = pipeline_config['budget_type'] if pipeline_config is not None else budget_type
+        self.budget_type = pipeline_options['budget_type'] if pipeline_options is not None else budget_type
 
-        self.pipeline_config: Dict[str, Union[int, str, float]] = dict()
-        if pipeline_config is None:
-            pipeline_config = replace_string_bool_to_bool(json.load(open(
+        self.pipeline_options: Dict[str, Union[int, str, float]] = dict()
+        if pipeline_options is None:
+            pipeline_options = replace_string_bool_to_bool(json.load(open(
                 os.path.join(os.path.dirname(__file__), '../configs/default_pipeline_options.json'))))
-        self.pipeline_config.update(pipeline_config)
+        self.pipeline_options.update(pipeline_options)
 
         self.logger_port = logger_port
         if self.logger_port is None:
@@ -225,7 +225,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
     def _check_and_get_default_budget(self) -> float:
         budget_type_choices_tabular = ('epochs', 'runtime')
         budget_choices = {
-            budget_type: float(self.pipeline_config.get(budget_type, np.inf))
+            budget_type: float(self.pipeline_options.get(budget_type, np.inf))
             for budget_type in budget_type_choices_tabular
         }
 
@@ -234,7 +234,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         budget_type_choices = budget_type_choices_tabular + FORECASTING_BUDGET_TYPE
 
         # budget is defined by epochs by default
-        budget_type = str(self.pipeline_config.get('budget_type', 'epochs'))
+        budget_type = str(self.pipeline_options.get('budget_type', 'epochs'))
         if self.budget_type is not None:
             budget_type = self.budget_type
 
@@ -361,7 +361,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
             init_params=init_params,
             budget=budget,
             budget_type=self.budget_type,
-            pipeline_config=self.pipeline_config,
+            pipeline_options=self.pipeline_options,
             logger_port=self.logger_port,
             all_supported_metrics=self.all_supported_metrics,
             search_space_updates=self.search_space_updates

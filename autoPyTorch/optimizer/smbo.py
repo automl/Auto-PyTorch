@@ -111,7 +111,7 @@ class AutoMLSMBO(object):
                  watcher: StopWatch,
                  n_jobs: int,
                  dask_client: Optional[dask.distributed.Client],
-                 pipeline_config: Dict[str, Any],
+                 pipeline_options: Dict[str, Any],
                  start_num_run: int = 1,
                  seed: int = 1,
                  resampling_strategy: Union[HoldoutValTypes,
@@ -227,7 +227,7 @@ class AutoMLSMBO(object):
         self.backend = backend
         self.all_supported_metrics = all_supported_metrics
 
-        self.pipeline_config = pipeline_config
+        self.pipeline_options = pipeline_options
         # the configuration space
         self.config_space = config_space
 
@@ -326,7 +326,7 @@ class AutoMLSMBO(object):
             ta=func,
             logger_port=self.logger_port,
             all_supported_metrics=self.all_supported_metrics,
-            pipeline_config=self.pipeline_config,
+            pipeline_options=self.pipeline_options,
             search_space_updates=self.search_space_updates,
             pynisher_context=self.pynisher_context,
         )
@@ -376,7 +376,7 @@ class AutoMLSMBO(object):
                     )
             scenario_dict.update(self.smac_scenario_args)
 
-        budget_type = self.pipeline_config['budget_type']
+        budget_type = self.pipeline_options['budget_type']
         if budget_type in FORECASTING_BUDGET_TYPE:
             if STRING_TO_TASK_TYPES.get(self.task_type, -1) != TIMESERIES_FORECASTING:
                 raise ValueError('Forecasting Budget type is only available for forecasting task!')

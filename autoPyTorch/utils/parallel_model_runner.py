@@ -100,7 +100,7 @@ def run_models_on_dataset(
                 metric=metric,
                 multi_objectives=["cost"],
                 logger_port=logger_port,
-                pipeline_config=pipeline_options,
+                pipeline_options=pipeline_options,
                 cost_for_crash=get_cost_of_crash(metric),
                 abort_on_first_run_crash=False,
                 initial_num_run=init_num_run,
@@ -159,7 +159,7 @@ def run_models_on_dataset(
                         configuration = Configuration(current_search_space, config)
                     else:
                         # we assume that it is a traditional model and `pipeline_configuration` specifies the configuration.
-                        configuration = additional_info.pop('pipeline_configuration')
+                        configuration = additional_info.pop('pipeline_optionsuration')
 
                     run_history.add(config=configuration, cost=cost,
                                     time=runtime, status=status, seed=seed,

@@ -60,7 +60,7 @@ class TestTimeSeriesForecastingTrainEvaluator(unittest.TestCase):
                                                             queue_,
                                                             configuration=configuration,
                                                             metric=mean_MASE_forecasting, budget=0,
-                                                            pipeline_config={'budget_type': budget_type,
+                                                            pipeline_options={'budget_type': budget_type,
                                                                              budget_type: 0.1},
                                                             min_num_test_instances=100)
             self.assertTrue('epochs' not in evaluator.fit_dictionary)
@@ -93,7 +93,7 @@ class TestTimeSeriesForecastingTrainEvaluator(unittest.TestCase):
                                                         queue_,
                                                         configuration=configuration,
                                                         metric=mean_MASE_forecasting, budget=0,
-                                                        pipeline_config={'budget_type': 'epochs', 'epochs': 50},
+                                                        pipeline_options={'budget_type': 'epochs', 'epochs': 50},
                                                         min_num_test_instances=100)
         self.assertTrue('epochs' in evaluator.fit_dictionary)
         evaluator.file_output = unittest.mock.Mock(spec=evaluator.file_output)
@@ -148,7 +148,7 @@ class TestTimeSeriesForecastingTrainEvaluator(unittest.TestCase):
                                                         queue_,
                                                         configuration=configuration,
                                                         metric=mean_MASE_forecasting, budget=0,
-                                                        pipeline_config={'budget_type': 'epochs', 'epochs': 50})
+                                                        pipeline_optionss={'budget_type': 'epochs', 'epochs': 50})
 
         evaluator.file_output = unittest.mock.Mock(spec=evaluator.file_output)
         evaluator.file_output.return_value = (None, {})
@@ -197,7 +197,7 @@ class TestTimeSeriesForecastingTrainEvaluator(unittest.TestCase):
                                                         queue_,
                                                         configuration=configuration,
                                                         metric=mean_MASE_forecasting, budget=0.3,
-                                                        pipeline_config={'budget_type': 'epochs', 'epochs': 50},
+                                                        pipeline_options={'budget_type': 'epochs', 'epochs': 50},
                                                         min_num_test_instances=1)
         evaluator.file_output = unittest.mock.Mock(spec=evaluator.file_output)
         evaluator.file_output.return_value = (None, {})
@@ -247,7 +247,7 @@ class TestTimeSeriesForecastingTrainEvaluator(unittest.TestCase):
                                                  queue_mock,
                                                  configuration=configuration,
                                                  metric=mean_MASE_forecasting, budget=0.3,
-                                                 pipeline_config={'budget_type': 'epochs', 'epochs': 50},
+                                                 pipeline_options={'budget_type': 'epochs', 'epochs': 50},
                                                  min_num_test_instances=1)
 
         val_splits = D.splits[0][1]

@@ -34,11 +34,13 @@ from smac.tae import StatusType
 from autoPyTorch import metrics
 from autoPyTorch.automl_common.common.utils.backend import Backend, create
 from autoPyTorch.constants import (
+    CLASSIFICATION_TASKS,
     FORECASTING_BUDGET_TYPE,
     FORECASTING_TASKS,
     REGRESSION_TASKS,
     STRING_TO_OUTPUT_TYPES,
     STRING_TO_TASK_TYPES,
+    TABULAR_TASKS,
     TIMESERIES_FORECASTING,
 )
 from autoPyTorch.data.base_validator import BaseInputValidator
@@ -52,7 +54,7 @@ from autoPyTorch.datasets.resampling_strategy import (
 )
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.ensemble.singlebest_ensemble import SingleBest
-from autoPyTorch.evaluation.abstract_evaluator import fit_and_suppress_warnings
+from autoPyTorch.evaluation.abstract_evaluator import MyTraditionalTabularClassificationPipeline, MyTraditionalTabularRegressionPipeline, fit_and_suppress_warnings
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
 from autoPyTorch.evaluation.utils import DisableFileOutputParameters
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
@@ -444,14 +446,14 @@ class BaseTask(ABC):
     def trajectory(self) -> Optional[List]:
         return self._results_manager.trajectory
 
-    def set_pipeline_config(self, **pipeline_config_kwargs: Any) -> None:
+    def set_pipeline_options(self, **pipeline_options_kwargs: Any) -> None:
         """
         Check whether arguments are valid and
         then sets them to the current pipeline
         configuration.
 
         Args:
-            **pipeline_config_kwargs: Valid config options include "num_run",
+            **pipeline_options_kwargs: Valid config options include "num_run",
             "device", "budget_type", "epochs", "runtime", "torch_num_threads",
             "early_stopping", "use_tensorboard_logger",
             "metrics_during_training"
@@ -460,7 +462,7 @@ class BaseTask(ABC):
             None
         """
         unknown_keys = []
-        for option, value in pipeline_config_kwargs.items():
+        for option, value in pipeline_options_kwargs.items():
             if option in self.pipeline_options.keys():
                 pass
             else:
@@ -471,7 +473,7 @@ class BaseTask(ABC):
                              " expected arguments to be in {}".
                              format(unknown_keys, self.pipeline_options.keys()))
 
-        self.pipeline_options.update(pipeline_config_kwargs)
+        self.pipeline_options.update(pipeline_options_kwargs)
 
     def get_pipeline_options(self) -> dict:
         """
@@ -1196,7 +1198,7 @@ class BaseTask(ABC):
                 all_supported_metrics=self._all_supported_metrics,
                 smac_scenario_args=smac_scenario_args,
                 get_smac_object_callback=get_smac_object_callback,
-                pipeline_config=self.pipeline_options,
+                pipeline_options=self.pipeline_options,
                 min_budget=min_budget,
                 max_budget=max_budget,
                 ensemble_callback=proc_ensemble,
@@ -1310,14 +1312,12 @@ class BaseTask(ABC):
         dataset_name: Optional[str] = None,
         resampling_strategy: Optional[Union[HoldoutValTypes, CrossValTypes, NoResamplingStrategyTypes]] = None,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
+        total_walltime_limit: int = 120,
         run_time_limit_secs: int = 60,
         memory_limit: Optional[int] = None,
         eval_metric: Optional[str] = None,
         all_supported_metrics: bool = False,
         budget_type: Optional[str] = None,
-        include_components: Optional[Dict[str, Any]] = None,
-        exclude_components: Optional[Dict[str, Any]] = None,
-        search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
         budget: Optional[float] = None,
         pipeline_options: Optional[Dict] = None,
         disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
@@ -1332,8 +1332,8 @@ class BaseTask(ABC):
         given. This method may also be used together with holdout to avoid
         only using 66% of the training data to fit the final model.
 
-        Refit uses the estimator pipeline_config attribute, which the user
-        can interact via the get_pipeline_config()/set_pipeline_config()
+        Refit uses the estimator pipeline_options attribute, which the user
+        can interact via the get_pipeline_options()/set_pipeline_options()
         methods.
 
         Args:
@@ -1375,10 +1375,6 @@ class BaseTask(ABC):
         dataset_properties = dataset.get_dataset_properties(dataset_requirements)
         self._backend.save_datamanager(dataset)
 
-        include_components = self.include_components if include_components is None else include_components
-        exclude_components = self.exclude_components if exclude_components is None else exclude_components
-        search_space_updates = self.search_space_updates if search_space_updates is None else search_space_updates
-
         scenario_mock = unittest.mock.Mock()
         scenario_mock.wallclock_limit = run_time_limit_secs
         # This stats object is a hack - maybe the SMAC stats object should
@@ -1412,11 +1408,34 @@ class BaseTask(ABC):
         if self.models_ is None or len(self.models_) == 0 or self.ensemble_ is None:
             self._load_models()
 
-        configurations = []
+        model_configs = []
         for identifier in self.models_:
             model = self.models_[identifier]
-            configurations.append(model.config)
+            budget = identifier[-1]  # identifier is num_run, seed, budget
+            model_configs.append(budget, model.config)
             
+        _, model_identifiers = run_models_on_dataset(
+            time_left=total_walltime_limit,
+            func_eval_time_limit_secs=run_time_limit_secs,
+            model_configs=model_configs,
+            logger=self._logger,
+            logger_port=self._logger_port,
+            metric=metric,
+            dask_client=self._dask_client,
+            backend=self._backend,
+            memory_limit=memory_limit,
+            disable_file_output=disable_file_output,
+            all_supported_metrics=all_supported_metrics,
+            include=self.include_components,
+            exclude=self.exclude_components,
+            search_space_updates=self.search_space_updates,
+            pipeline_options=pipeline_options,
+            seed=self.seed,
+            multiprocessing_context=self._multiprocessing_context,
+            n_jobs=self.n_jobs,
+            current_search_space=self.search_space,
+            smac_initial_run=self._backend.get_next_num_run()
+        )
 
         self._clean_logger()
 
@@ -1451,8 +1470,8 @@ class BaseTask(ABC):
         A pipeline configuration can be specified if None,
         uses default
 
-        Fit uses the estimator pipeline_config attribute, which the user
-        can interact via the get_pipeline_config()/set_pipeline_config()
+        Fit uses the estimator pipeline_options attribute, which the user
+        can interact via the get_pipeline_options()/set_pipeline_options()
         methods.
 
         Args:
@@ -1644,7 +1663,7 @@ class BaseTask(ABC):
             include=include_components,
             exclude=exclude_components,
             search_space_updates=search_space_updates,
-            pipeline_config=pipeline_options,
+            pipeline_options=pipeline_options,
             pynisher_context=self._multiprocessing_context,
         )
 

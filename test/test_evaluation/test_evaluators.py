@@ -102,7 +102,7 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
         queue_ = multiprocessing.Queue()
 
         evaluator = TrainEvaluator(backend_api, queue_, configuration=configuration, metric=accuracy, budget=0,
-                                   pipeline_config={'budget_type': 'epochs', 'epochs': 50})
+                                   pipeline_options={'budget_type': 'epochs', 'epochs': 50})
         evaluator.file_output = unittest.mock.Mock(spec=evaluator.file_output)
         evaluator.file_output.return_value = (None, {})
 
@@ -141,7 +141,7 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
         queue_ = multiprocessing.Queue()
 
         evaluator = TrainEvaluator(backend_api, queue_, configuration=configuration, metric=accuracy, budget=0,
-                                   pipeline_config={'budget_type': 'epochs', 'epochs': 50})
+                                   pipeline_options={'budget_type': 'epochs', 'epochs': 50})
         evaluator.file_output = unittest.mock.Mock(spec=evaluator.file_output)
         evaluator.file_output.return_value = (None, {})
 
@@ -246,7 +246,7 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
         queue_ = multiprocessing.Queue()
 
         evaluator = TrainEvaluator(self.backend_mock, queue_, configuration=configuration, metric=accuracy, budget=0,
-                                   pipeline_config={'budget_type': 'epochs', 'epochs': 50})
+                                   pipeline_options={'budget_type': 'epochs', 'epochs': 50})
 
         evaluator.fit_predict_and_loss()
         Y_optimization_pred = self.backend_mock.save_numrun_to_dir.call_args_list[0][1][
@@ -283,7 +283,7 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
         queue_ = multiprocessing.Queue()
 
         evaluator = TrainEvaluator(backend_api, queue_, configuration=configuration, metric=accuracy, budget=0,
-                                   pipeline_config={'budget_type': 'epochs', 'epochs': 50}, all_supported_metrics=True)
+                                   pipeline_options={'budget_type': 'epochs', 'epochs': 50}, all_supported_metrics=True)
         evaluator.file_output = unittest.mock.Mock(spec=evaluator.file_output)
         evaluator.file_output.return_value = (None, {})
 

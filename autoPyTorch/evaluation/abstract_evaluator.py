@@ -347,7 +347,7 @@ class AbstractEvaluator(object):
 
     An evaluator is an object that:
         + constructs a pipeline (i.e. a classification or regression estimator) for a given
-          pipeline_config and run settings (budget, seed)
+          pipeline_options and run settings (budget, seed)
         + Fits and trains this pipeline (TrainEvaluator) or tests a given
           configuration (TestEvaluator)
 
@@ -369,7 +369,7 @@ class AbstractEvaluator(object):
             The amount of epochs/time a configuration is allowed to run.
         budget_type  (str):
             The budget type. Currently, only epoch and time are allowed.
-        pipeline_config (Optional[Dict[str, Any]]):
+        pipeline_options (Optional[Dict[str, Any]]):
             Defines the content of the pipeline being evaluated. For example, it
             contains pipeline specific settings like logging name, or whether or not
             to use tensorboard.
@@ -430,7 +430,7 @@ class AbstractEvaluator(object):
                  budget: float,
                  configuration: Union[int, str, Configuration],
                  budget_type: str = None,
-                 pipeline_config: Optional[Dict[str, Any]] = None,
+                 pipeline_options: Optional[Dict[str, Any]] = None,
                  seed: int = 1,
                  output_y_hat_optimization: bool = True,
                  num_run: Optional[int] = None,
@@ -523,10 +523,10 @@ class AbstractEvaluator(object):
         self._init_params = init_params
 
         assert self.pipeline_class is not None, "Could not infer pipeline class"
-        pipeline_config = pipeline_config if pipeline_config is not None \
+        pipeline_options = pipeline_options if pipeline_options is not None \
             else self.pipeline_class.get_default_pipeline_options()
-        self.budget_type = pipeline_config['budget_type'] if budget_type is None else budget_type
-        self.budget = pipeline_config[self.budget_type] if budget == 0 else budget
+        self.budget_type = pipeline_options['budget_type'] if budget_type is None else budget_type
+        self.budget = pipeline_options[self.budget_type] if budget == 0 else budget
 
         self.num_run = 0 if num_run is None else num_run
 
@@ -539,7 +539,7 @@ class AbstractEvaluator(object):
             port=logger_port,
         )
 
-        self._init_fit_dictionary(logger_port=logger_port, pipeline_config=pipeline_config, metrics_dict=metrics_dict)
+        self._init_fit_dictionary(logger_port=logger_port, pipeline_options=pipeline_options, metrics_dict=metrics_dict)
         self.Y_optimization: Optional[np.ndarray] = None
         self.Y_actual_train: Optional[np.ndarray] = None
         self.pipelines: Optional[List[BaseEstimator]] = None
@@ -597,7 +597,7 @@ class AbstractEvaluator(object):
     def _init_fit_dictionary(
         self,
         logger_port: int,
-        pipeline_config: Dict[str, Any],
+        pipeline_options: Dict[str, Any],
         metrics_dict: Optional[Dict[str, List[str]]] = None,
     ) -> None:
         """
@@ -608,7 +608,7 @@ class AbstractEvaluator(object):
                 Logging is performed using a socket-server scheme to be robust against many
                 parallel entities that want to write to the same file. This integer states the
                 socket port for the communication channel.
-            pipeline_config (Dict[str, Any]):
+            pipeline_options (Dict[str, Any]):
                 Defines the content of the pipeline being evaluated. For example, it
                 contains pipeline specific settings like logging name, or whether or not
                 to use tensorboard.
@@ -634,7 +634,7 @@ class AbstractEvaluator(object):
             'optimize_metric': self.metric.name
         })
 
-        self.fit_dictionary.update(pipeline_config)
+        self.fit_dictionary.update(pipeline_options)
         # If the budget is epochs, we want to limit that in the fit dictionary
         if self.budget_type == 'epochs':
             self.fit_dictionary['epochs'] = self.budget
