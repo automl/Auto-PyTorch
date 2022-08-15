@@ -805,6 +805,10 @@ class AbstractEvaluator(object):
         if test_loss is not None:
             additional_run_info['test_loss'] = test_loss
 
+        # Add information to additional info that can be useful for other functionalities
+        additional_run_info['configuration'] = self.configuration if not isinstance(self.configuration, Configuration) else self.configuration.get_dictionary()
+        additional_run_info['budget'] = self.budget
+
         rval_dict = {'loss': cost,
                      'additional_run_info': additional_run_info,
                      'status': status}
