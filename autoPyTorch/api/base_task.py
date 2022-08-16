@@ -812,7 +812,7 @@ class BaseTask(ABC):
         model_configs = [(classifier, self.pipeline_options[self.pipeline_options['budget_type']])
                          for classifier in available_classifiers]
 
-        run_history, _ = run_models_on_dataset(
+        run_history = run_models_on_dataset(
             time_left=time_left,
             func_eval_time_limit_secs=func_eval_time_limit_secs,
             model_configs=model_configs,
@@ -832,7 +832,7 @@ class BaseTask(ABC):
             multiprocessing_context=self._multiprocessing_context,
             n_jobs=self.n_jobs,
             current_search_space=self.search_space,
-            smac_initial_run=self._backend.get_next_num_run()
+            initial_num_run=self._backend.get_next_num_run()
         )
 
         self._logger.debug("Run history traditional: {}".format(run_history))
@@ -1420,7 +1420,7 @@ class BaseTask(ABC):
             model_configs.append((model.config, budget))
 
         self._logger.debug(f"Refitting {model_configs}")
-        run_history, _ = run_models_on_dataset(
+        run_history = run_models_on_dataset(
             time_left=total_walltime_limit,
             func_eval_time_limit_secs=run_time_limit_secs,
             model_configs=model_configs,
@@ -1440,7 +1440,7 @@ class BaseTask(ABC):
             multiprocessing_context=self._multiprocessing_context,
             n_jobs=self.n_jobs,
             current_search_space=self.search_space,
-            smac_initial_run=self._backend.get_next_num_run()
+            initial_num_run=self._backend.get_next_num_run()
         )
         replace_old_identifiers_to_refit_identifiers = {}
 

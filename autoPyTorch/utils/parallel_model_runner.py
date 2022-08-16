@@ -34,7 +34,7 @@ def run_models_on_dataset(
     multiprocessing_context: str,
     n_jobs: int,
     current_search_space: ConfigurationSpace,
-    smac_initial_run: int,
+    initial_num_run: int,
     include: Optional[Dict[str, List[str]]] = None,
     exclude: Optional[Dict[str, List[str]]] = None,
     search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
@@ -42,41 +42,104 @@ def run_models_on_dataset(
     memory_limit: Optional[int] = None,
     disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
     pipeline_options: Optional[Dict] = None,
-) -> Tuple[RunHistory, List[Optional[Tuple[int, int, float]]]]:
+) -> RunHistory:
     """
     Runs models specified by `model_configs` on dask parallel infrastructure.
 
     Args:
-        time_left (int): _description_
-        func_eval_time_limit_secs (int): _description_
-        model_configs (List[Tuple[str, Configuration]]): _description_
-        logger (PicklableClientLogger): _description_
-        metric (autoPyTorchMetric): _description_
-        dask_client (dask.distributed.Client): _description_
-        backend (Backend): _description_
-        memory_limit (int): _description_
-        disable_file_output (_type_): _description_
-        all_supported_metrics (bool): _description_
-        pipeline_options (_type_): _description_
-        seed (int): _description_
-        multiprocessing_context (str): _description_
-        n_jobs (int): _description_
-        current_search_space (ConfigurationSpace): _description_
-        smac_initial_run (int): _description_
-        include (Optional[Dict[str, List[str]]], optional): _description_. Defaults to None.
-        exclude (Optional[Dict[str, List[str]]], optional): _description_. Defaults to None.
-        search_space_updates (Optional[HyperparameterSearchSpaceUpdates], optional): _description_. Defaults to None.
-        logger_port (Optional[int], optional): _description_. Defaults to logging.handlers.DEFAULT_TCP_LOGGING_PORT.
+        time_left (int):
+            Time limit in seconds for the search of appropriate models.
+            By increasing this value, autopytorch has a higher
+            chance of finding better models.
+        func_eval_time_limit_secs (int):
+            Time limit for a single call to the machine learning model.
+            Model fitting will be terminated if the machine
+            learning algorithm runs over the time limit. Set
+            this value high enough so that typical machine
+            learning algorithms can be fit on the training
+            data.
+            Set to np.inf in case no time limit is desired.
+        model_configs (List[Tuple[str, Configuration]]):
+            List containing the configuration and the budget for the model to be evaluated.
+        logger (PicklableClientLogger):
+            Logger
+        metric (autoPyTorchMetric):
+            autoPyTorchMetric to be used for evaluation.
+        dask_client (dask.distributed.Client):
+            dask client where the function evaluation jobs are submitted.
+        backend (Backend):
+            Current backend object where the data is stored. The backend
+            is used to interact with the disk.
+        all_supported_metrics (bool):
+            If True, all metrics supporting current task will be calculated
+            for each pipeline.
+        seed (int):
+            Seed to be used for reproducibility.
+        multiprocessing_context (str):
+            context used for spawning child processes.
+        n_jobs (int):
+            Number of consecutive processes to spawn.
+        current_search_space (ConfigurationSpace):
+            The search space of the neural networks which will be used to instantiate Configuration objects.
+        initial_num_run (int):
+            Initial num run for running the models.
+        include (Optional[Dict[str, List[str]]]):
+            Dictionary containing components to include. Key is the node
+            name and Value is an Iterable of the names of the components
+            to include. Only these components will be present in the
+            search space. Defaults to None.
+        exclude (Optional[Dict[str, List[str]]]):
+            Dictionary containing components to exclude. Key is the node
+            name and Value is an Iterable of the names of the components
+            to exclude. All except these components will be present in
+            the search space. Defaults to None.
+        search_space_updates (Optional[HyperparameterSearchSpaceUpdates]):
+            Search space updates that can be used to modify the search
+            space of particular components or choice modules of the pipeline.
+            Defaults to None.
+        logger_port (Optional[int]):
+            Port used to create the logging server. Defaults to logging.handlers.DEFAULT_TCP_LOGGING_PORT.
+        memory_limit (Optional[int]):
+            Memory limit in MB for the machine learning algorithm.
+            Autopytorch will stop fitting the machine learning algorithm
+            if it tries to allocate more than memory_limit MB. If None
+            is provided, no memory limit is set. In case of multi-processing,
+            memory_limit will be per job. This memory limit also applies to
+            the ensemble creation process. Defaults to None.
+        disable_file_output (Optional[List[Union[str, DisableFileOutputParameters]]]):
+                Used as a list to pass more fine-grained
+                information on what to save. Must be a member of `DisableFileOutputParameters`.
+                Allowed elements in the list are:
+
+                + `y_optimization`:
+                    do not save the predictions for the optimization set,
+                    which would later on be used to build an ensemble. Note that SMAC
+                    optimizes a metric evaluated on the optimization set.
+                + `pipeline`:
+                    do not save any individual pipeline files
+                + `pipelines`:
+                    In case of cross validation, disables saving the joint model of the
+                    pipelines fit on each fold.
+                + `y_test`:
+                    do not save the predictions for the test set.
+                + `all`:
+                    do not save any of the above.
+                For more information check `autoPyTorch.evaluation.utils.DisableFileOutputParameters`.
+                Defaults to None.
+        pipeline_options (Optional[Dict]):
+            Valid config options include "device",
+                "torch_num_threads", "early_stopping", "use_tensorboard_logger",
+                "metrics_during_training".
 
     Returns:
-        Union[RunHistory, List[Tuple[int, int, float]]]: _description_
+        RunHistory:
+            run_history:
+                Run History of training all the models in model_configs
     """
-
     starttime = time.time()
     run_history = RunHistory()
     if memory_limit is not None:
         memory_limit = int(math.ceil(memory_limit))
-    model_identifiers: List[Optional[Tuple[int, int, float]]] = []
     total_models = len(model_configs)
     dask_futures: List[dask.distributed.Future] = []
     for n_r, (config, budget) in enumerate(model_configs):
@@ -94,9 +157,9 @@ def run_models_on_dataset(
 
             if isinstance(config, Configuration):
                 config.config_id = n_r
-                init_num_run = smac_initial_run
+                init_num_run = initial_num_run
             else:
-                init_num_run = smac_initial_run + n_r
+                init_num_run = initial_num_run + n_r
 
             ta = ExecuteTaFuncWithQueue(
                 pynisher_context=multiprocessing_context,
@@ -151,7 +214,6 @@ def run_models_on_dataset(
                     current_search_space=current_search_space,
                     dask_futures=dask_futures,
                     run_history=run_history,
-                    model_identifiers=model_identifiers,
                     seed=seed,
                     starttime=starttime,
                     logger=logger)
@@ -166,29 +228,32 @@ def run_models_on_dataset(
                            "Please consider increasing the run time to further improve performance.")
             break
 
-    return run_history, model_identifiers
+    return run_history
 
 
 def _process_result(
     dask_futures: List[dask.distributed.Future],
     current_search_space: ConfigurationSpace,
     run_history: RunHistory,
-    model_identifiers: List[Optional[Tuple[int, int, float]]],
     seed: int,
     starttime: float,
     logger: PicklableClientLogger
 ) -> None:
     """
-    Update run_history and model_identifiers in-place using results of the
+    Update run_history in-place using results of the
     latest finishing model.
 
     Args:
-        dask_futures (List[dask.distributed.Future]): _description_
-        run_history (RunHistory): _description_
-        model_identifiers (List[Tuple[int, int, float]]): _description_
-        seed (int): _description_
-        starttime (float): _description_
-        logger (PicklableClientLogger): _description_
+        dask_futures (List[dask.distributed.Future]):
+            List of dask futures which are used to get the results of a finished run.
+        run_history (RunHistory):
+            RunHistory object to be appended with the finished run
+        seed (int):
+            Seed used for reproducibility.
+        starttime (float):
+            starttime of the runs.
+        logger (PicklableClientLogger):
+            Logger.
     """
     cls, future = dask_futures.pop(0)
     status, cost, runtime, additional_info = future.result()
@@ -199,7 +264,6 @@ def _process_result(
         )
         origin: str = additional_info['configuration_origin']
         current_config: Union[str, dict] = additional_info['configuration']
-        current_budget: float = additional_info['budget']
 
         # indicates the finished model is part of autopytorch search space
         if isinstance(current_config, dict):
@@ -213,9 +277,7 @@ def _process_result(
                         time=runtime, status=status, seed=seed,
                         starttime=starttime, endtime=starttime + runtime,
                         origin=origin, additional_info=additional_info)
-        model_identifiers.append((seed, additional_info['num_run'], float(current_budget)))
     else:
-        model_identifiers.append(None)
         if additional_info.get('exitcode') == -6:
             logger.error(
                 "Traditional prediction for {} failed with run state {},\n"
