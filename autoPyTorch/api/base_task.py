@@ -1460,7 +1460,7 @@ class BaseTask(ABC):
                 replace_old_identifiers_to_refit_identifiers[
                     list(self.models_.keys())[old_identifier_index]] = refit_identifier
             else:
-                self._logger.warning(f"Refit for {config} failed. Updating ensemble weights accordingly.")
+                self._logger.warning(f"Refit for {config} failed. Model fitted during search will be used instead.")
             old_identifier_index = None
         self.ensemble_.update_identifiers(replace_old_identifiers_to_refit_identifiers)
 
