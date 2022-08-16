@@ -85,7 +85,7 @@ class AbstractEnsemble(object):
         self,
         replace_identifiers_mapping: Dict[Tuple[int, int, float], Tuple[int, int, float]]
     ) -> None:
-        identifiers = copy(self.identifiers_)
+        identifiers = self.identifiers_.copy()
         for i, identifier in enumerate(self.identifiers_):
             identifiers[i] = replace_identifiers_mapping.get(identifier, identifier)
         self.identifiers_ = identifiers

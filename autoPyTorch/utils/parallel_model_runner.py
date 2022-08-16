@@ -74,12 +74,11 @@ def run_models_on_dataset(
 
     starttime = time.time()
     run_history = RunHistory()
-    memory_limit = memory_limit
     if memory_limit is not None:
         memory_limit = int(math.ceil(memory_limit))
     model_identifiers: List[Optional[Tuple[int, int, float]]] = []
     total_models = len(model_configs)
-    dask_futures = []
+    dask_futures: List[dask.distributed.Future] = []
     for n_r, (config, budget) in enumerate(model_configs):
 
         # Only launch a task if there is time
@@ -148,48 +147,16 @@ def run_models_on_dataset(
                 # We launch dask jobs only when there are resources available.
                 # This allow us to control time allocation properly, and early terminate
                 # the traditional machine learning pipeline
-                cls, future = dask_futures.pop(0)
-                status, cost, runtime, additional_info = future.result()
+                _process_result(
+                    current_search_space=current_search_space,
+                    dask_futures=dask_futures,
+                    run_history=run_history,
+                    model_identifiers=model_identifiers,
+                    seed=seed,
+                    starttime=starttime,
+                    logger=logger)
 
-                if status == StatusType.SUCCESS:
-                    logger.info(
-                        "Fitting {} took {} [sec] and got performance: {}.\n"
-                        "additional info:\n{}".format(cls, runtime, cost, dict_repr(additional_info))
-                    )
-                    origin: str = additional_info['configuration_origin']
-                    current_config: Union[str, dict] = additional_info['configuration']
-                    current_budget: float = additional_info['budget']
-
-                    # indicates the finished model is part of autopytorch search space
-                    if isinstance(current_config, dict):
-                        configuration = Configuration(current_search_space, current_config)  # type: ignore[misc]
-                    else:
-                        # we assume that it is a traditional model and `pipeline_configuration`
-                        # specifies the configuration.
-                        configuration = additional_info.pop('pipeline_configuration')
-
-                    run_history.add(config=configuration, cost=cost,
-                                    time=runtime, status=status, seed=seed,
-                                    starttime=starttime, endtime=starttime + runtime,
-                                    origin=origin, additional_info=additional_info)
-                    model_identifiers.append((seed, additional_info['num_run'], float(current_budget)))
-                else:
-                    if additional_info.get('exitcode') == -6:
-                        logger.error(
-                            "Traditional prediction for {} failed with run state {},\n"
-                            "because the provided memory limits were too tight.\n"
-                            "Please increase the 'ml_memory_limit' and try again.\n"
-                            "If you still get the problem, please open an issue\n"
-                            "and paste the additional info.\n"
-                            "Additional info:\n{}".format(cls, str(status), dict_repr(additional_info))
-                        )
-                    else:
-                        logger.error(
-                            "Traditional prediction for {} failed with run state {}.\nAdditional info:\n{}".format(
-                                cls, str(status), dict_repr(additional_info)
-                            )
-                        )
-                    model_identifiers.append(None)
+                
         # In the case of a serial execution, calling submit halts the run for a resource
         # dynamically adjust time in this case
         time_left -= int(time.time() - start_time)
@@ -201,3 +168,67 @@ def run_models_on_dataset(
             break
 
     return run_history, model_identifiers
+
+
+def _process_result(
+    dask_futures: List[dask.distributed.Future],
+    current_search_space: ConfigurationSpace,
+    run_history: RunHistory,
+    model_identifiers: List[Tuple[int, int, float]],
+    seed: int,
+    starttime: float,
+    logger: PicklableClientLogger
+) -> None:
+    """
+    Update run_history and model_identifiers in-place using results of the
+    latest finishing model.
+
+    Args:
+        dask_futures (List[dask.distributed.Future]): _description_
+        run_history (RunHistory): _description_
+        model_identifiers (List[Tuple[int, int, float]]): _description_
+        seed (int): _description_
+        starttime (float): _description_
+        logger (PicklableClientLogger): _description_
+    """
+    cls, future = dask_futures.pop(0)
+    status, cost, runtime, additional_info = future.result()
+    if status == StatusType.SUCCESS:
+        logger.info(
+            "Fitting {} took {} [sec] and got performance: {}.\n"
+            "additional info:\n{}".format(cls, runtime, cost, dict_repr(additional_info))
+        )
+        origin: str = additional_info['configuration_origin']
+        current_config: Union[str, dict] = additional_info['configuration']
+        current_budget: float = additional_info['budget']
+
+        # indicates the finished model is part of autopytorch search space
+        if isinstance(current_config, dict):
+            configuration = Configuration(current_search_space, current_config)  # type: ignore[misc]
+        else:
+            # we assume that it is a traditional model and `pipeline_configuration`
+            # specifies the configuration.
+            configuration = additional_info.pop('pipeline_configuration')
+
+        run_history.add(config=configuration, cost=cost,
+                        time=runtime, status=status, seed=seed,
+                        starttime=starttime, endtime=starttime + runtime,
+                        origin=origin, additional_info=additional_info)
+        model_identifiers.append((seed, additional_info['num_run'], float(current_budget)))
+    else:
+        model_identifiers.append(None)
+        if additional_info.get('exitcode') == -6:
+            logger.error(
+                "Traditional prediction for {} failed with run state {},\n"
+                "because the provided memory limits were too tight.\n"
+                "Please increase the 'ml_memory_limit' and try again.\n"
+                "If you still get the problem, please open an issue\n"
+                "and paste the additional info.\n"
+                "Additional info:\n{}".format(cls, str(status), dict_repr(additional_info))
+            )
+        else:
+            logger.error(
+                "Traditional prediction for {} failed with run state {}.\nAdditional info:\n{}".format(
+                    cls, str(status), dict_repr(additional_info)
+                )
+            )
