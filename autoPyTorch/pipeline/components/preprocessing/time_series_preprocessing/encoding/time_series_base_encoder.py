@@ -15,11 +15,11 @@ class TimeSeriesBaseEncoder(autoPyTorchTimeSeriesPreprocessingComponent):
         super(TimeSeriesBaseEncoder, self).__init__()
         self.add_fit_requirements([
             FitRequirement('categorical_columns', (List,), user_defined=True, dataset_property=True),
-            FitRequirement('categories', (List,), user_defined=True, dataset_property=True),
+            FitRequirement('num_categories_per_col', (List,), user_defined=True, dataset_property=True),
             FitRequirement('feature_names', (tuple,), user_defined=True, dataset_property=True),
             FitRequirement('feature_shapes', (Dict, ), user_defined=True, dataset_property=True),
         ])
-        self.feature_shapes: Union[Dict[str, int]] = {}
+        self.feature_shapes: Dict[str, int] = {}
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """

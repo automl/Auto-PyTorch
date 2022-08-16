@@ -77,10 +77,9 @@ class TabularFeatureValidator(BaseFeatureValidator):
     transformer.
 
     Attributes:
-        categories (List[List[str]]):
-            List for which an element at each index is a
-            list containing the categories for the respective
-            categorical column.
+        num_categories_per_col (List[int]):
+            List for which an element at each index is the number
+            of categories for the respective categorical column.
         transformed_columns (List[str])
             List of columns that were transformed.
         column_transformer (Optional[BaseEstimator])
