@@ -1,5 +1,4 @@
 from abc import ABCMeta, abstractmethod
-from copy import copy
 from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np

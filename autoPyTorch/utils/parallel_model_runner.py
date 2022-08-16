@@ -156,7 +156,6 @@ def run_models_on_dataset(
                     starttime=starttime,
                     logger=logger)
 
-                
         # In the case of a serial execution, calling submit halts the run for a resource
         # dynamically adjust time in this case
         time_left -= int(time.time() - start_time)
@@ -174,7 +173,7 @@ def _process_result(
     dask_futures: List[dask.distributed.Future],
     current_search_space: ConfigurationSpace,
     run_history: RunHistory,
-    model_identifiers: List[Tuple[int, int, float]],
+    model_identifiers: List[Optional[Tuple[int, int, float]]],
     seed: int,
     starttime: float,
     logger: PicklableClientLogger
