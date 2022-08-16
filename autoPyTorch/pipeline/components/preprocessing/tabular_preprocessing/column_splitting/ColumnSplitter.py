@@ -16,7 +16,7 @@ from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparamet
 
 class ColumnSplitter(autoPyTorchTabularPreprocessingComponent):
     """
-    Removes features that have the same value in the training data.
+    Splits categorical columns into embed or encode columns based on a hyperparameter.
     """
     def __init__(
         self,
