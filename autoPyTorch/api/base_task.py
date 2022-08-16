@@ -53,6 +53,7 @@ from autoPyTorch.datasets.resampling_strategy import (
     ResamplingStrategies,
 )
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
+from ..ensemble.ensemble_selection import EnsembleSelection
 from autoPyTorch.ensemble.singlebest_ensemble import SingleBest
 from autoPyTorch.evaluation.abstract_evaluator import MyTraditionalTabularClassificationPipeline, MyTraditionalTabularRegressionPipeline, fit_and_suppress_warnings
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
@@ -637,7 +638,10 @@ class BaseTask(ABC):
             self._is_dask_client_internally_created = False
             del self._is_dask_client_internally_created
 
-    def _load_models(self) -> bool:
+    def _load_models(
+        self,
+        resampling_strategy: Optional[Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]] = None
+    ) -> bool:
 
         """
         Loads the models saved in the temporary directory
@@ -646,7 +650,8 @@ class BaseTask(ABC):
         Returns:
             None
         """
-        if self.resampling_strategy is None:
+        resampling_strategy = resampling_strategy if resampling_strategy is not None else self.resampling_strategy
+        if resampling_strategy is None:
             raise ValueError("Resampling strategy is needed to determine what models to load")
         self.ensemble_ = self._backend.load_ensemble(self.seed)
 
@@ -657,10 +662,10 @@ class BaseTask(ABC):
         if self.ensemble_:
             identifiers = self.ensemble_.get_selected_model_identifiers()
             self.models_ = self._backend.load_models_by_identifiers(identifiers)
-            if isinstance(self.resampling_strategy, CrossValTypes):
+            if isinstance(resampling_strategy, CrossValTypes):
                 self.cv_models_ = self._backend.load_cv_models_by_identifiers(identifiers)
 
-            if isinstance(self.resampling_strategy, CrossValTypes):
+            if isinstance(resampling_strategy, CrossValTypes):
                 if len(self.cv_models_) == 0:
                     raise ValueError('No models fitted!')
 
@@ -1310,7 +1315,7 @@ class BaseTask(ABC):
         X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
         y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
         dataset_name: Optional[str] = None,
-        resampling_strategy: Optional[Union[HoldoutValTypes, CrossValTypes, NoResamplingStrategyTypes]] = None,
+        resampling_strategy: Union[HoldoutValTypes, CrossValTypes, NoResamplingStrategyTypes] = NoResamplingStrategyTypes.no_resampling,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         total_walltime_limit: int = 120,
         run_time_limit_secs: int = 60,
@@ -1349,8 +1354,8 @@ class BaseTask(ABC):
 
         if dataset is None:
             if (
-                X_train is not None
-                and y_train is not None
+                X_train is None
+                and y_train is None
             ):
                 raise ValueError("No dataset provided, must provide X_train, y_train tensors")
             dataset = self.get_dataset(X_train=X_train,
@@ -1365,7 +1370,9 @@ class BaseTask(ABC):
         self.dataset_name = dataset.dataset_name
 
         if self._logger is None:
-            self._logger = self._get_logger(str(self.dataset_name))
+            self._logger = self._get_logger(f"RefitLogger-{self.dataset_name}")
+
+        self._logger.debug(f"Starting refit")
 
         dataset_requirements = get_dataset_requirements(
             info=dataset.get_required_dataset_info(),
@@ -1411,10 +1418,11 @@ class BaseTask(ABC):
         model_configs = []
         for identifier in self.models_:
             model = self.models_[identifier]
-            budget = identifier[-1]  # identifier is num_run, seed, budget
-            model_configs.append(budget, model.config)
-            
-        _, model_identifiers = run_models_on_dataset(
+            budget = identifier[-1]  # identifier is seed, num_run, budget
+            model_configs.append((model.config, budget))
+        
+        self._logger.debug(f"Refitting {model_configs}")
+        run_history, _ = run_models_on_dataset(
             time_left=total_walltime_limit,
             func_eval_time_limit_secs=run_time_limit_secs,
             model_configs=model_configs,
@@ -1436,7 +1444,28 @@ class BaseTask(ABC):
             current_search_space=self.search_space,
             smac_initial_run=self._backend.get_next_num_run()
         )
+        replace_old_identifiers_to_refit_identifiers = {}
 
+        self._logger.debug(f"Finished refit training")
+        old_identifier_index = None
+        for run_key, run_value in run_history.data.items():
+            config = run_value.additional_info['configuration']
+            refit_identifier = (self.seed, run_value.additional_info['num_run'], run_key.budget)
+            for i, (configuration, _) in enumerate(model_configs):
+                if isinstance(configuration, Configuration):
+                    configuration = configuration.get_dictionary()
+                self._logger.debug(f"Matching {config} with {configuration}")
+                if config == configuration:
+                    old_identifier_index = i
+                    break
+            if old_identifier_index is not None:
+                replace_old_identifiers_to_refit_identifiers[list(self.models_.keys())[old_identifier_index]] = refit_identifier
+            else:
+                self._logger.warning(f"Refit for {config} failed. Updating ensemble weights accordingly.")
+            old_identifier_index = None
+        self.ensemble_.update_identifiers(replace_old_identifiers_to_refit_identifiers)
+
+        self._load_models(resampling_strategy=resampling_strategy)
         self._clean_logger()
 
         return self
@@ -1578,8 +1607,8 @@ class BaseTask(ABC):
 
         if dataset is None:
             if (
-                X_train is not None
-                and y_train is not None
+                X_train is None
+                and y_train is None
             ):
                 raise ValueError("No dataset provided, must provide X_train, y_train tensors")
             dataset = self.get_dataset(X_train=X_train,
@@ -1600,21 +1629,21 @@ class BaseTask(ABC):
         # search process, it makes sense to set it to 0
         configuration.__setattr__('config_id', 0)
 
+        include_components = self.include_components if include_components is None else include_components
+        exclude_components = self.exclude_components if exclude_components is None else exclude_components
+        search_space_updates = self.search_space_updates if search_space_updates is None else search_space_updates
+
         # get dataset properties
         dataset_requirements = get_dataset_requirements(
             info=dataset.get_required_dataset_info(),
-            include=self.include_components,
-            exclude=self.exclude_components,
-            search_space_updates=self.search_space_updates)
+            include=include_components,
+            exclude=exclude_components,
+            search_space_updates=search_space_updates)
         dataset_properties = dataset.get_dataset_properties(dataset_requirements)
         self._backend.save_datamanager(dataset)
 
         if self._logger is None:
             self._logger = self._get_logger(dataset.dataset_name)
-
-        include_components = self.include_components if include_components is None else include_components
-        exclude_components = self.exclude_components if exclude_components is None else exclude_components
-        search_space_updates = self.search_space_updates if search_space_updates is None else search_space_updates
 
         scenario_mock = unittest.mock.Mock()
         scenario_mock.wallclock_limit = run_time_limit_secs

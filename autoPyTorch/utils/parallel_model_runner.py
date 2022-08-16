@@ -37,7 +37,7 @@ def run_models_on_dataset(
     n_jobs: int,
     current_search_space: ConfigurationSpace,
     smac_initial_run: int
-) -> RunHistory:
+) -> Union[RunHistory, List[Tuple[int, int, float]]]:
     """
     Runs models specified by `model_configs` on dask parallel infrastructure.
 
@@ -159,7 +159,7 @@ def run_models_on_dataset(
                         configuration = Configuration(current_search_space, config)
                     else:
                         # we assume that it is a traditional model and `pipeline_configuration` specifies the configuration.
-                        configuration = additional_info.pop('pipeline_optionsuration')
+                        configuration = additional_info.pop('pipeline_configuration')
 
                     run_history.add(config=configuration, cost=cost,
                                     time=runtime, status=status, seed=seed,
