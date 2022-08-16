@@ -61,7 +61,7 @@ class TestTimeSeriesForecastingTrainEvaluator(unittest.TestCase):
                                                             configuration=configuration,
                                                             metric=mean_MASE_forecasting, budget=0,
                                                             pipeline_options={'budget_type': budget_type,
-                                                                             budget_type: 0.1},
+                                                                              budget_type: 0.1},
                                                             min_num_test_instances=100)
             self.assertTrue('epochs' not in evaluator.fit_dictionary)
             if budget_type == 'resolution':

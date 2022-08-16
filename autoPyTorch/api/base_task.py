@@ -34,13 +34,11 @@ from smac.tae import StatusType
 from autoPyTorch import metrics
 from autoPyTorch.automl_common.common.utils.backend import Backend, create
 from autoPyTorch.constants import (
-    CLASSIFICATION_TASKS,
     FORECASTING_BUDGET_TYPE,
     FORECASTING_TASKS,
     REGRESSION_TASKS,
     STRING_TO_OUTPUT_TYPES,
     STRING_TO_TASK_TYPES,
-    TABULAR_TASKS,
     TIMESERIES_FORECASTING,
 )
 from autoPyTorch.data.base_validator import BaseInputValidator
@@ -53,9 +51,7 @@ from autoPyTorch.datasets.resampling_strategy import (
     ResamplingStrategies,
 )
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
-from ..ensemble.ensemble_selection import EnsembleSelection
 from autoPyTorch.ensemble.singlebest_ensemble import SingleBest
-from autoPyTorch.evaluation.abstract_evaluator import MyTraditionalTabularClassificationPipeline, MyTraditionalTabularRegressionPipeline, fit_and_suppress_warnings
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
 from autoPyTorch.evaluation.utils import DisableFileOutputParameters
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
@@ -72,7 +68,7 @@ from autoPyTorch.utils.logging_ import (
     start_log_server,
 )
 from autoPyTorch.utils.parallel import preload_modules
-from ..utils.parallel_model_runner import run_models_on_dataset
+from autoPyTorch.utils.parallel_model_runner import run_models_on_dataset
 from autoPyTorch.utils.pipeline import get_configuration_space, get_dataset_requirements
 from autoPyTorch.utils.results_manager import MetricResults, ResultsManager, SearchResults
 from autoPyTorch.utils.results_visualizer import ColorLabelSettings, PlotSettingParams, ResultsVisualizer
@@ -813,8 +809,9 @@ class BaseTask(ABC):
         if memory_limit is not None:
             memory_limit = int(math.ceil(memory_limit))
         available_classifiers = get_available_traditional_learners()
-        model_configs = [(classifier, self.pipeline_options[self.pipeline_options['budget_type']]) for classifier in available_classifiers]
-        
+        model_configs = [(classifier, self.pipeline_options[self.pipeline_options['budget_type']])
+                         for classifier in available_classifiers]
+
         run_history, _ = run_models_on_dataset(
             time_left=time_left,
             func_eval_time_limit_secs=func_eval_time_limit_secs,
@@ -1315,7 +1312,8 @@ class BaseTask(ABC):
         X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
         y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
         dataset_name: Optional[str] = None,
-        resampling_strategy: Union[HoldoutValTypes, CrossValTypes, NoResamplingStrategyTypes] = NoResamplingStrategyTypes.no_resampling,
+        resampling_strategy: Union[
+            HoldoutValTypes, CrossValTypes, NoResamplingStrategyTypes] = NoResamplingStrategyTypes.no_resampling,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         total_walltime_limit: int = 120,
         run_time_limit_secs: int = 60,
@@ -1372,7 +1370,7 @@ class BaseTask(ABC):
         if self._logger is None:
             self._logger = self._get_logger(f"RefitLogger-{self.dataset_name}")
 
-        self._logger.debug(f"Starting refit")
+        self._logger.debug("Starting refit")
 
         dataset_requirements = get_dataset_requirements(
             info=dataset.get_required_dataset_info(),
@@ -1420,7 +1418,7 @@ class BaseTask(ABC):
             model = self.models_[identifier]
             budget = identifier[-1]  # identifier is seed, num_run, budget
             model_configs.append((model.config, budget))
-        
+
         self._logger.debug(f"Refitting {model_configs}")
         run_history, _ = run_models_on_dataset(
             time_left=total_walltime_limit,
@@ -1446,7 +1444,7 @@ class BaseTask(ABC):
         )
         replace_old_identifiers_to_refit_identifiers = {}
 
-        self._logger.debug(f"Finished refit training")
+        self._logger.debug("Finished refit training")
         old_identifier_index = None
         for run_key, run_value in run_history.data.items():
             config = run_value.additional_info['configuration']
@@ -1459,7 +1457,8 @@ class BaseTask(ABC):
                     old_identifier_index = i
                     break
             if old_identifier_index is not None:
-                replace_old_identifiers_to_refit_identifiers[list(self.models_.keys())[old_identifier_index]] = refit_identifier
+                replace_old_identifiers_to_refit_identifiers[
+                    list(self.models_.keys())[old_identifier_index]] = refit_identifier
             else:
                 self._logger.warning(f"Refit for {config} failed. Updating ensemble weights accordingly.")
             old_identifier_index = None

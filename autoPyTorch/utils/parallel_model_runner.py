@@ -1,7 +1,8 @@
-import time
+import logging
 import math
-from typing import Any, Dict, List, Tuple, Union
+import time
 import unittest
+from typing import Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration, ConfigurationSpace
 
@@ -11,67 +12,72 @@ from smac.runhistory.runhistory import RunHistory
 from smac.stats.stats import Stats
 from smac.tae import StatusType
 
-from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
 from autoPyTorch.automl_common.common.utils.backend import Backend
+from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
+from autoPyTorch.evaluation.utils import DisableFileOutputParameters
+from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 from autoPyTorch.utils.common import dict_repr
+from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
+from autoPyTorch.utils.logging_ import PicklableClientLogger
 
 
 def run_models_on_dataset(
     time_left: int,
     func_eval_time_limit_secs: int,
-    model_configs: List[Tuple[Union[str, Configuration]]],
-    logger,
-    logger_port,
-    metric,
+    model_configs: List[Tuple[str, Configuration]],
+    logger: PicklableClientLogger,
+    metric: autoPyTorchMetric,
     dask_client: dask.distributed.Client,
     backend: Backend,
-    memory_limit: int,
-    disable_file_output,
     all_supported_metrics: bool,
-    include,
-    exclude,
-    search_space_updates,
-    pipeline_options,
     seed: int,
-    multiprocessing_context,
+    multiprocessing_context: str,
     n_jobs: int,
     current_search_space: ConfigurationSpace,
-    smac_initial_run: int
-) -> Union[RunHistory, List[Tuple[int, int, float]]]:
+    smac_initial_run: int,
+    include: Optional[Dict[str, List[str]]] = None,
+    exclude: Optional[Dict[str, List[str]]] = None,
+    search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
+    logger_port: Optional[int] = logging.handlers.DEFAULT_TCP_LOGGING_PORT,
+    memory_limit: Optional[int] = None,
+    disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
+    pipeline_options: Optional[Dict] = None,
+) -> Tuple[RunHistory, List[Optional[Tuple[int, int, float]]]]:
     """
     Runs models specified by `model_configs` on dask parallel infrastructure.
 
     Args:
         time_left (int): _description_
         func_eval_time_limit_secs (int): _description_
-        model_configs (List[Tuple[Union[str, Configuration]]]): _description_
-        logger (_type_): _description_
-        logger_port (_type_): _description_
-        metric (_type_): _description_
+        model_configs (List[Tuple[str, Configuration]]): _description_
+        logger (PicklableClientLogger): _description_
+        metric (autoPyTorchMetric): _description_
         dask_client (dask.distributed.Client): _description_
         backend (Backend): _description_
         memory_limit (int): _description_
         disable_file_output (_type_): _description_
         all_supported_metrics (bool): _description_
-        include (_type_): _description_
-        exclude (_type_): _description_
-        search_space_updates (_type_): _description_
         pipeline_options (_type_): _description_
         seed (int): _description_
-        multiprocessing_context (_type_): _description_
+        multiprocessing_context (str): _description_
         n_jobs (int): _description_
         current_search_space (ConfigurationSpace): _description_
         smac_initial_run (int): _description_
+        include (Optional[Dict[str, List[str]]], optional): _description_. Defaults to None.
+        exclude (Optional[Dict[str, List[str]]], optional): _description_. Defaults to None.
+        search_space_updates (Optional[HyperparameterSearchSpaceUpdates], optional): _description_. Defaults to None.
+        logger_port (Optional[int], optional): _description_. Defaults to logging.handlers.DEFAULT_TCP_LOGGING_PORT.
 
     Returns:
-        RunHistory: _description_
+        Union[RunHistory, List[Tuple[int, int, float]]]: _description_
     """
+
     starttime = time.time()
     run_history = RunHistory()
     memory_limit = memory_limit
     if memory_limit is not None:
         memory_limit = int(math.ceil(memory_limit))
-    model_identifiers = []
+    model_identifiers: List[Optional[Tuple[int, int, float]]] = []
     total_models = len(model_configs)
     dask_futures = []
     for n_r, (config, budget) in enumerate(model_configs):
@@ -149,23 +155,24 @@ def run_models_on_dataset(
                     logger.info(
                         "Fitting {} took {} [sec] and got performance: {}.\n"
                         "additional info:\n{}".format(cls, runtime, cost, dict_repr(additional_info))
-                    ) 
-                    origin = additional_info['configuration_origin']
-                    config = additional_info['configuration']
-                    budget = additional_info['budget']
+                    )
+                    origin: str = additional_info['configuration_origin']
+                    current_config: Union[str, dict] = additional_info['configuration']
+                    current_budget: float = additional_info['budget']
 
                     # indicates the finished model is part of autopytorch search space
-                    if isinstance(config, dict):
-                        configuration = Configuration(current_search_space, config)
+                    if isinstance(current_config, dict):
+                        configuration = Configuration(current_search_space, current_config)  # type: ignore[misc]
                     else:
-                        # we assume that it is a traditional model and `pipeline_configuration` specifies the configuration.
+                        # we assume that it is a traditional model and `pipeline_configuration`
+                        # specifies the configuration.
                         configuration = additional_info.pop('pipeline_configuration')
 
                     run_history.add(config=configuration, cost=cost,
                                     time=runtime, status=status, seed=seed,
                                     starttime=starttime, endtime=starttime + runtime,
                                     origin=origin, additional_info=additional_info)
-                    model_identifiers.append((seed, additional_info['num_run'], float(budget)))
+                    model_identifiers.append((seed, additional_info['num_run'], float(current_budget)))
                 else:
                     if additional_info.get('exitcode') == -6:
                         logger.error(
@@ -192,4 +199,5 @@ def run_models_on_dataset(
             logger.warning("Not enough time to fit all machine learning models."
                            "Please consider increasing the run time to further improve performance.")
             break
+
     return run_history, model_identifiers
