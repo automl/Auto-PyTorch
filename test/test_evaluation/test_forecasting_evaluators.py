@@ -85,6 +85,7 @@ class TestTimeSeriesForecastingTrainEvaluator(unittest.TestCase):
         pipeline_mock.get_additional_run_info.return_value = None
 
         configuration = unittest.mock.Mock(spec=Configuration)
+        configuration.get_dictionary.return_value = {}
         backend_api = create(self.tmp_dir, self.output_dir, prefix='autoPyTorch')
         backend_api.load_datamanager = lambda: D
         queue_ = multiprocessing.Queue()
@@ -140,6 +141,7 @@ class TestTimeSeriesForecastingTrainEvaluator(unittest.TestCase):
         pipeline_mock.get_additional_run_info.return_value = None
 
         configuration = unittest.mock.Mock(spec=Configuration)
+        configuration.get_dictionary.return_value = {}
         backend_api = create(self.tmp_dir, self.output_dir, prefix='autoPyTorch')
         backend_api.load_datamanager = lambda: D
         queue_ = multiprocessing.Queue()
@@ -148,7 +150,7 @@ class TestTimeSeriesForecastingTrainEvaluator(unittest.TestCase):
                                                         queue_,
                                                         configuration=configuration,
                                                         metric=mean_MASE_forecasting, budget=0,
-                                                        pipeline_optionss={'budget_type': 'epochs', 'epochs': 50})
+                                                        pipeline_options={'budget_type': 'epochs', 'epochs': 50})
 
         evaluator.file_output = unittest.mock.Mock(spec=evaluator.file_output)
         evaluator.file_output.return_value = (None, {})
@@ -189,6 +191,7 @@ class TestTimeSeriesForecastingTrainEvaluator(unittest.TestCase):
         pipeline_mock.get_additional_run_info.return_value = None
 
         configuration = unittest.mock.Mock(spec=Configuration)
+        configuration.get_dictionary.return_value = {}
         backend_api = create(self.tmp_dir, self.output_dir, prefix='autoPyTorch')
         backend_api.load_datamanager = lambda: D
         queue_ = multiprocessing.Queue()

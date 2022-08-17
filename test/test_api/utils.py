@@ -63,6 +63,11 @@ class DummyTrainEvaluator(TrainEvaluator):
             test_indices=test_indices,
         )
 
+        # the configuration is used in refit where
+        # pipeline.config is used to retrieve the
+        # original configuration.
+        pipeline.config = self.configuration
+
         if add_pipeline_to_self:
             self.pipeline = pipeline
         else:

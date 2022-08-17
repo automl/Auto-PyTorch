@@ -97,6 +97,7 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
         pipeline_mock.get_additional_run_info.return_value = None
 
         configuration = unittest.mock.Mock(spec=Configuration)
+        configuration.get_dictionary.return_value = {}
         backend_api = create(self.tmp_dir, self.output_dir, prefix='autoPyTorch')
         backend_api.load_datamanager = lambda: D
         queue_ = multiprocessing.Queue()
@@ -136,6 +137,7 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
         pipeline_mock.get_additional_run_info.return_value = None
 
         configuration = unittest.mock.Mock(spec=Configuration)
+        configuration.get_dictionary.return_value = {}
         backend_api = create(self.tmp_dir, self.output_dir, prefix='autoPyTorch')
         backend_api.load_datamanager = lambda: D
         queue_ = multiprocessing.Queue()
@@ -278,6 +280,7 @@ class TestTrainEvaluator(BaseEvaluatorTest, unittest.TestCase):
         D = get_binary_classification_datamanager()
 
         configuration = unittest.mock.Mock(spec=Configuration)
+        configuration.get_dictionary.return_value = {}
         backend_api = create(self.tmp_dir, self.output_dir, prefix='autoPyTorch')
         backend_api.load_datamanager = lambda: D
         queue_ = multiprocessing.Queue()
@@ -339,6 +342,7 @@ class TestTestEvaluator(BaseEvaluatorTest, unittest.TestCase):
         pipeline_mock.get_default_pipeline_options.return_value = {'budget_type': 'epochs', 'epochs': 10}
 
         configuration = unittest.mock.Mock(spec=Configuration)
+        configuration.get_dictionary.return_value = {}
         backend_api = create(self.tmp_dir, self.output_dir, 'autoPyTorch')
         backend_api.load_datamanager = lambda: D
         queue_ = multiprocessing.Queue()

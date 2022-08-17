@@ -1372,6 +1372,11 @@ class BaseTask(ABC):
 
         self._logger.debug("Starting refit")
 
+        if self.n_jobs == 1:
+            self._dask_client = SingleThreadedClient()
+        else:
+            self._create_dask_client()
+
         dataset_requirements = get_dataset_requirements(
             info=dataset.get_required_dataset_info(),
             include=self.include_components,
