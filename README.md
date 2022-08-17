@@ -213,6 +213,12 @@ If you want to contribute to Auto-PyTorch, clone the repository and checkout our
 $ git checkout development
 ```
 
+### Community Contribution
+1. Fork the Repository into your account
+2. create a `feature` or `bug` sub-branch e.g. `git checkout -b feature/name_of_feature`
+3. Create reasonable commits in your branch
+4. Create a Pull Request
+
 ## License
 
 This program is free software: you can redistribute it and/or modify
