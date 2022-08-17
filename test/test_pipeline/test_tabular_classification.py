@@ -3,8 +3,10 @@ import re
 import unittest
 import unittest.mock
 
+from ConfigSpace.configuration_space import Configuration
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
+    Constant,
     UniformFloatHyperparameter,
     UniformIntegerHyperparameter,
 )
@@ -15,20 +17,28 @@ import numpy as np
 
 import pytest
 
+from pytest_mock import mocker  # noqa F401
+
 import torch
 from torch.optim.lr_scheduler import _LRScheduler
 
 from autoPyTorch.pipeline.components.setup.early_preprocessor.utils import get_preprocess_transforms
 from autoPyTorch.pipeline.components.setup.lr_scheduler.NoScheduler import NoScheduler
+from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 from autoPyTorch.utils.common import FitRequirement
-from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates, \
+from autoPyTorch.utils.hyperparameter_search_space_update import (
+    HyperparameterSearchSpaceUpdates,
     parse_hyperparameter_search_space_updates
+)
 
 
 @pytest.fixture
 def exclude():
-    return {'feature_preprocessor': ['SelectRatesClassification', 'SelectPercentileClassification']}
+    return {
+        'feature_preprocessor': ['SelectRatesClassification', 'SelectPercentileClassification'],
+        'network_embedding': ['LearnedEntityEmbedding']
+    }
 
 
 @pytest.mark.parametrize("fit_dictionary_tabular", ['classification_categorical_only',
@@ -66,6 +76,8 @@ class TestTabularClassification:
         """This test makes sure that the pipeline is able to fit
         given random combinations of hyperparameters across the pipeline"""
 
+        fit_dictionary_tabular['epochs'] = 5
+
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'],
             exclude=exclude)
@@ -93,6 +105,9 @@ class TestTabularClassification:
     def test_pipeline_predict(self, fit_dictionary_tabular, exclude):
         """This test makes sure that the pipeline is able to predict
         given a random configuration"""
+
+        fit_dictionary_tabular['epochs'] = 5
+
         X = fit_dictionary_tabular['X_train'].copy()
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'],
@@ -120,6 +135,9 @@ class TestTabularClassification:
         given random combinations of hyperparameters across the pipeline
         And then predict using predict probability
         """
+
+        fit_dictionary_tabular['epochs'] = 5
+
         X = fit_dictionary_tabular['X_train'].copy()
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'],
@@ -153,6 +171,8 @@ class TestTabularClassification:
         This code is added in light of components not properly added to the fit dicitonary
         """
 
+        fit_dictionary_tabular['epochs'] = 5
+
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'],
             exclude=exclude)
@@ -172,9 +192,11 @@ class TestTabularClassification:
         assert fit_dictionary_tabular.items() <= transformed_fit_dictionary_tabular.items()
 
         # Then the pipeline should have added the following keys
-        expected_keys = {'imputer', 'encoder', 'scaler', 'tabular_transformer',
-                         'preprocess_transforms', 'network', 'optimizer', 'lr_scheduler',
-                         'train_data_loader', 'val_data_loader', 'run_summary'}
+        # Removing 'imputer', 'encoder', 'scaler', these will be
+        # added back after a PR fixing preprocessing
+        expected_keys = {'tabular_transformer', 'preprocess_transforms', 'network',
+                         'optimizer', 'lr_scheduler', 'train_data_loader',
+                         'val_data_loader', 'run_summary', 'feature_preprocessor'}
         assert expected_keys.issubset(set(transformed_fit_dictionary_tabular.keys()))
 
         # Then we need to have transformations being created.
@@ -188,6 +210,8 @@ class TestTabularClassification:
         """Makes sure that when no config is set, we can trust the
         default configuration from the space"""
 
+        fit_dictionary_tabular['epochs'] = 5
+
         fit_dictionary_tabular['is_small_preprocess'] = is_small_preprocess
 
         pipeline = TabularClassificationPipeline(
@@ -200,6 +224,9 @@ class TestTabularClassification:
 
     def test_remove_key_check_requirements(self, fit_dictionary_tabular):
         """Makes sure that when a key is removed from X, correct error is outputted"""
+
+        fit_dictionary_tabular['epochs'] = 5
+
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'])
         for key in ['num_run', 'device', 'split_id', 'torch_num_threads', 'dataset_properties']:
@@ -231,8 +258,8 @@ class TestTabularClassification:
         # Then fitting a optimizer should fail if no network:
         assert 'optimizer' in pipeline.named_steps.keys()
         with pytest.raises(
-                ValueError,
-                match=r"To fit .+?, expected fit dictionary to have 'network' but got .*"
+            ValueError,
+            match=r"To fit .+?, expected fit dictionary to have 'network' but got .*"
         ):
             pipeline.named_steps['optimizer'].fit({'dataset_properties': {}}, None)
 
@@ -244,8 +271,8 @@ class TestTabularClassification:
         # Then fitting a optimizer should fail if no network:
         assert 'lr_scheduler' in pipeline.named_steps.keys()
         with pytest.raises(
-                ValueError,
-                match=r"To fit .+?, expected fit dictionary to have 'optimizer' but got .*"
+            ValueError,
+            match=r"To fit .+?, expected fit dictionary to have 'optimizer' but got .*"
         ):
             pipeline.named_steps['lr_scheduler'].fit({'dataset_properties': {}}, None)
 
@@ -305,8 +332,8 @@ class TestTabularClassification:
                                               search_space_updates=error_search_space_updates)
         except Exception as e:
             assert isinstance(e, ValueError)
-            assert re.match(r'Unknown hyperparameter for component .*?\. Expected update '
-                            r'hyperparameter to be in \[.*?\] got .+', e.args[0])
+            assert re.match(r'Unknown hyperparameter for .*?\. Expected update '
+                            r'hyperparameter to be in \[.*?\], but got .+', e.args[0])
 
     def test_set_range_search_space_updates(self, fit_dictionary_tabular):
         dataset_properties = {'numerical_columns': [1], 'categorical_columns': [2],
@@ -326,6 +353,9 @@ class TestTabularClassification:
             if isinstance(hyperparameter, CategoricalHyperparameter):
                 value_range = (hyperparameter.choices[0],)
                 default_value = hyperparameter.choices[0]
+            elif isinstance(hyperparameter, Constant):
+                value_range = (hyperparameter.value,)
+                default_value = hyperparameter.value
             else:
                 value_range = (0, 1)
                 default_value = 1
@@ -339,7 +369,7 @@ class TestTabularClassification:
         except AssertionError as e:
             # As we are setting num_layers to 1 for fully connected
             # head, units_layer does not exist in the configspace
-            assert 'fully_connected:units_layer' in e.args[0], e.args[0]
+            assert 'fully_connected:units_layer' in e.args[0]
 
     def test_set_choices_updates(self, fit_dictionary_tabular):
         dataset_properties = {'numerical_columns': [1], 'categorical_columns': [2],
@@ -366,6 +396,58 @@ class TestTabularClassification:
         pipeline = TabularClassificationPipeline(dataset_properties=dataset_properties,
                                                  search_space_updates=updates)
         self._assert_pipeline_search_space(pipeline, updates)
+
+    @pytest.mark.parametrize('trainer', ['StandardTrainer',
+                                         'AdversarialTrainer',
+                                         'MixUpTrainer',
+                                         'RowCutMixTrainer',
+                                         'RowCutOutTrainer'])
+    @pytest.mark.parametrize('lr_scheduler', ['CosineAnnealingWarmRestarts',
+                                              'ReduceLROnPlateau'])
+    def test_trainer_cocktails(self, fit_dictionary_tabular, mocker, lr_scheduler, trainer):  # noqa F811
+        fit_dictionary_tabular['epochs'] = 45
+        fit_dictionary_tabular['early_stopping'] = -1
+        pipeline = TabularClassificationPipeline(
+            dataset_properties=fit_dictionary_tabular['dataset_properties'],
+            include={'lr_scheduler': [lr_scheduler], 'trainer': [trainer]})
+        cs = pipeline.get_hyperparameter_search_space()
+        config = cs.get_default_configuration()
+        assert trainer == config.get('trainer:__choice__')
+        config_dict = config.get_dictionary()
+        config_dict[f'trainer:{trainer}:use_stochastic_weight_averaging'] = True
+        config_dict[f'trainer:{trainer}:use_snapshot_ensemble'] = True
+        if not config_dict[f'trainer:{trainer}:use_lookahead_optimizer']:
+            config_dict[f'trainer:{trainer}:use_lookahead_optimizer'] = True
+            default_values = Lookahead.get_hyperparameter_search_space().get_default_configuration().get_dictionary()
+            for key, value in default_values.items():
+                config_dict[f'trainer:{trainer}:Lookahead:{key}'] = value
+        config = Configuration(cs, values=config_dict)
+        assert lr_scheduler == config.get('lr_scheduler:__choice__')
+        pipeline.set_hyperparameters(config)
+
+        pipeline.fit(fit_dictionary_tabular.copy())
+        X = pipeline.transform(fit_dictionary_tabular.copy())
+        assert 'is_cyclic_scheduler' in X and \
+               (X['is_cyclic_scheduler'] or config.get('lr_scheduler:__choice__') == 'ReduceLROnPlateau')
+
+        trainer = config.get('trainer:__choice__')
+        assert 'network_snapshots' in X and \
+               len(X['network_snapshots']) == config.get(f'trainer:{trainer}:se_lastk')
+
+        mocker.patch("autoPyTorch.pipeline.components.setup.network.base_network.NetworkComponent._predict",
+                     return_value=torch.Tensor([1]))
+        # Assert that predict gives no error when swa and se are on
+        assert isinstance(pipeline.predict(fit_dictionary_tabular['X_train']), np.ndarray)
+        # As SE is True, _predict should be called 3 times
+        assert pipeline.named_steps['network']._predict.call_count == 3
+
+        optimizer = pipeline.named_steps['trainer'].choice.optimizer
+        assert isinstance(optimizer, Lookahead)
+
+        # check if final value of la_step is epochs * num_batches % la_steps
+        assert optimizer.get_la_step() == fit_dictionary_tabular['epochs'] * \
+               len(list(X['train_data_loader'].batch_sampler)) \
+               % optimizer._total_la_steps
 
 
 @pytest.mark.parametrize("fit_dictionary_tabular", ['iris'], indirect=True)
@@ -496,6 +578,12 @@ def test_train_pipeline_with_runtime(fit_dictionary_tabular_dummy):
 
     cs = pipeline.get_hyperparameter_search_space()
     config = cs.get_default_configuration()
+    trainer = config.get('trainer:__choice__')
+    config_dict = config.get_dictionary()
+    config_dict[f'trainer:{trainer}:use_stochastic_weight_averaging'] = False
+    config_dict[f'trainer:{trainer}:use_snapshot_ensemble'] = False
+    del config_dict[f'trainer:{trainer}:se_lastk']
+    config = Configuration(cs, values=config_dict)
     pipeline.set_hyperparameters(config)
 
     pipeline.fit(fit_dictionary_tabular_dummy)
@@ -508,8 +596,8 @@ def test_train_pipeline_with_runtime(fit_dictionary_tabular_dummy):
     # There is no epoch limitation
     assert not budget_tracker.is_max_epoch_reached(epoch=np.inf)
 
-    # More than 200 epochs would have pass in 5 seconds for this dataset
-    assert len(run_summary.performance_tracker['start_time']) > 100
+    # More than 50 epochs would have pass in 5 seconds for this dataset
+    assert len(run_summary.performance_tracker['start_time']) > 50
 
 
 @pytest.mark.parametrize("fit_dictionary_tabular_dummy", ["classification"], indirect=True)

@@ -114,15 +114,20 @@ class ShakeDropFunction(Function):
 shake_drop = ShakeDropFunction.apply
 
 
-def shake_get_alpha_beta(is_training: bool, is_cuda: bool
-                         ) -> Tuple[torch.Tensor, torch.Tensor]:
+def shake_get_alpha_beta(
+    is_training: bool,
+    is_cuda: bool,
+    method: str
+) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     The methods used in this function have been introduced in 'ShakeShake Regularisation'
-    Currently, this function supports `shake-shake`.
+    Each method name is available in the referred paper.
+    Currently, this function supports `even-even`, `shake-even`, `shake-shake` and `M3`.
 
     Args:
         is_training (bool): Whether the computation for the training
         is_cuda (bool): Whether the tensor is on CUDA
+        method (str): The shake method either `even-even`, `shake-even`, `shake-shake` or `M3`
 
     Returns:
         alpha, beta (Tuple[float, float]):
@@ -134,17 +139,28 @@ def shake_get_alpha_beta(is_training: bool, is_cuda: bool
         Author: Xavier Gastaldi
         URL: https://arxiv.org/abs/1705.07485
 
-    Note:
-        The names have been taken from the paper as well.
-        Currently, this function supports `shake-shake`.
+    The names have been taken from the paper as well.
+    Currently, this function supports `even-even`, `shake-even`, `shake-shake` and `M3`.
     """
     if not is_training:
         result = (torch.FloatTensor([0.5]), torch.FloatTensor([0.5]))
         return result if not is_cuda else (result[0].cuda(), result[1].cuda())
 
     # TODO implement other update methods
-    alpha = torch.rand(1)
-    beta = torch.rand(1)
+    # alpha is the weight ratio for the forward pass and beta is that for the backward pass
+    alpha = torch.FloatTensor([0.5]) if method.startswith('even') else torch.rand(1)
+    if method.endswith('even'):
+        beta = torch.FloatTensor([0.5])
+    elif method.endswith('shake'):
+        beta = torch.rand(1)
+    elif method == 'M3':
+        # Table 4 in the paper `Shake-Shake regularization`
+        rnd = torch.rand(1)
+        beta = torch.FloatTensor(
+            [rnd * (0.5 - alpha) + alpha if alpha < 0.5 else rnd * (alpha - 0.5) + 0.5]
+        )
+    else:
+        raise ValueError(f"Unknown method `{method}` for ShakeShakeRegularisation in NetworkBackbone")
 
     if is_cuda:
         alpha = alpha.cuda()
@@ -154,16 +170,15 @@ def shake_get_alpha_beta(is_training: bool, is_cuda: bool
 
 
 def shake_drop_get_bl(
-        block_index: int,
-        min_prob_no_shake: float,
-        num_blocks: int,
-        is_training: bool,
-        is_cuda: bool
+    block_index: int,
+    min_prob_no_shake: float,
+    num_blocks: int,
+    is_training: bool,
+    is_cuda: bool
 ) -> torch.Tensor:
     """
     The sampling of Bernoulli random variable
     based on Eq. (4) in the paper
-
     Args:
         block_index (int): The index of the block from the input layer
         min_prob_no_shake (float): The initial shake probability
@@ -173,18 +188,16 @@ def shake_drop_get_bl(
 
     Returns:
         bl (torch.Tensor): a Bernoulli random variable in {0, 1}
-
     Reference:
         ShakeDrop Regularization for Deep Residual Learning
         Yoshihiro Yamada et. al. (2020)
         paper: https://arxiv.org/pdf/1802.02375.pdf
         implementation: https://github.com/imenurok/ShakeDrop
     """
-
     pl = 1 - ((block_index + 1) / num_blocks) * (1 - min_prob_no_shake)
 
     if is_training:
-        # Move to torch.rand(1) for reproducibility
+        # Move to torch.randn(1) for reproducibility
         bl = torch.as_tensor(1.0) if torch.rand(1) <= pl else torch.as_tensor(0.0)
     else:
         bl = torch.as_tensor(pl)

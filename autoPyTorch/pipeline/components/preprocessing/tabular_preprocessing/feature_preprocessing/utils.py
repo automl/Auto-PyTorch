@@ -81,11 +81,18 @@ def percentage_value_range_to_integer_range(
             log = False
         else:
             log = hyperparameter_search_space.log
+
+        min_hyperparameter_value = hyperparameter_search_space.value_range[0]
+        if len(hyperparameter_search_space.value_range) > 1:
+            max_hyperparameter_value = hyperparameter_search_space.value_range[1]
+        else:
+            max_hyperparameter_value = hyperparameter_search_space.value_range[0]
+
         hyperparameter_search_space = HyperparameterSearchSpace(
             hyperparameter=hyperparameter_name,
             value_range=(
-                floor(float(hyperparameter_search_space.value_range[0]) * n_features),
-                floor(float(hyperparameter_search_space.value_range[1]) * n_features)),
+                floor(float(min_hyperparameter_value) * n_features),
+                floor(float(max_hyperparameter_value) * n_features)),
             default_value=ceil(float(hyperparameter_search_space.default_value) * n_features),
             log=log)
     else:

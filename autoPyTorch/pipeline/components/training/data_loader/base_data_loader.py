@@ -56,18 +56,18 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
         # Define fit requirements
         self.add_fit_requirements([
             FitRequirement("split_id", (int,), user_defined=True, dataset_property=False),
-            FitRequirement("Backend", (Backend,), user_defined=True, dataset_property=False),
-            FitRequirement("is_small_preprocess", (bool,), user_defined=True, dataset_property=True)])
+            FitRequirement("Backend", (Backend,), user_defined=True, dataset_property=False)
+        ])
 
-    def transform(self, X: Dict) -> Dict:
+    def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """The transform function calls the transform function of the
         underlying model and returns the transformed array.
 
         Args:
-            X (np.ndarray): input features
+            X (Dict[str, Any])): fit dictionary
 
         Returns:
-            np.ndarray: Transformed features
+            (Dict[str, Any]): the updated fit dictionary
         """
         X.update({'train_data_loader': self.train_data_loader,
                   'val_data_loader': self.val_data_loader,
@@ -102,10 +102,9 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
             self.val_transform,
             train=False,
         )
-        if X['dataset_properties']["is_small_preprocess"]:
-            # This parameter indicates that the data has been pre-processed for speed
-            # Overwrite the datamanager with the pre-processes data
-            datamanager.replace_data(X['X_train'], X['X_test'] if 'X_test' in X else None)
+        # This parameter indicates that the data has been pre-processed for speed
+        # Overwrite the datamanager with the pre-processes data
+        datamanager.replace_data(X['X_train'], X['X_test'] if 'X_test' in X else None)
 
         train_dataset = datamanager.get_dataset(split_id=X['split_id'], train=True)
 
@@ -149,6 +148,7 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
             train_tensors=(X, y),
             seed=self.random_state.get_state()[1][0],
             # This dataset is used for loading test data in a batched format
+            shuffle=False,
             train_transforms=self.test_transform,
             val_transforms=self.test_transform,
         )
@@ -220,10 +220,6 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
         if 'backend' not in X:
             raise ValueError("backend is needed to load the data from disk")
 
-        if 'is_small_preprocess' not in X['dataset_properties']:
-            raise ValueError("is_small_pre-process is required to know if the data was preprocessed"
-                             " or if the data-loader should transform it while loading a batch")
-
         # We expect this class to be a base for image/tabular/time
         # And the difference among this data types should be mainly
         # in the transform, so we delegate for special transformation checking
@@ -264,10 +260,12 @@ class BaseDataLoaderComponent(autoPyTorchTrainingComponent):
         dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
         batch_size: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="batch_size",
                                                                           value_range=(32, 320),
-                                                                          default_value=64)
+                                                                          default_value=64,
+                                                                          log=True)
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         add_hyperparameter(cs, batch_size, UniformIntegerHyperparameter)
+
         return cs
 
     def __str__(self) -> str:

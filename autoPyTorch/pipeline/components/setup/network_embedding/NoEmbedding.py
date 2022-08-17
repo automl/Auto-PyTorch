@@ -24,7 +24,7 @@ class NoEmbedding(NetworkEmbeddingComponent):
     Class to learn an embedding for categorical hyperparameters.
     """
 
-    def __init__(self, random_state: Optional[Union[np.random.RandomState, int]] = None):
+    def __init__(self, random_state: Optional[np.random.RandomState] = None):
         super().__init__(random_state=random_state)
 
     def build_embedding(self,

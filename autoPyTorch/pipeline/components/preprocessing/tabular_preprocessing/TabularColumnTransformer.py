@@ -48,6 +48,7 @@ class TabularColumnTransformer(autoPyTorchTabularPreprocessingComponent):
         Returns:
             "TabularColumnTransformer": an instance of self
         """
+
         self.check_requirements(X, y)
 
         preprocessors = get_tabular_preprocessers(X)

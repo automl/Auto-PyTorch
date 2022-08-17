@@ -164,12 +164,10 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         if len(self.train_tensors) == 2 and self.train_tensors[1] is not None:
             self.output_shape, self.output_type = _get_output_properties(self.train_tensors)
 
-        # TODO: Look for a criteria to define small enough to preprocess
-        self.is_small_preprocess = True
-
         # Make sure cross validation splits are created once
         self.cross_validators = CrossValFuncs.get_cross_validators(*CrossValTypes)
         self.holdout_validators = HoldOutFuncs.get_holdout_validators(*HoldoutValTypes)
+
         self.no_resampling_validators = NoResamplingFuncs.get_no_resampling_validators(*NoResamplingStrategyTypes)
 
         self.splits = self.get_splits_from_resampling_strategy()
@@ -356,6 +354,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             train (bool): whether the dataset is required for training or evaluating.
 
         Returns:
+
             Dataset: the reduced dataset to be used for testing
         """
         # Subset creates a dataset. Splits is a (train_indices, test_indices) tuple

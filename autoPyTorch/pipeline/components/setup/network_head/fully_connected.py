@@ -83,7 +83,6 @@ class FullyConnectedHead(NetworkHeadComponent):
             )
             num_units_hp = get_hyperparameter(num_units_search_space, UniformIntegerHyperparameter)
             cs.add_hyperparameter(num_units_hp)
-
             if i >= min_num_layers and not num_layers_is_constant:
                 # In the case of a constant, the max and min number of layers are the same.
                 # So no condition is needed. If it is not a constant but a hyperparameter,

@@ -445,11 +445,11 @@ class TestNetworkBackbone:
         # clear addons
         base_network_backbone_choice._addons = ThirdPartyComponents(NetworkBackboneComponent)
 
-    @pytest.mark.parametrize('resnet_shape', ['funnel', 'long_funnel',
-                                              'diamond', 'hexagon',
-                                              'brick', 'triangle',
-                                              'stairs'])
-    def test_dropout(self, resnet_shape):
+    @pytest.mark.parametrize('dropout_shape', ['funnel', 'long_funnel',
+                                               'diamond', 'hexagon',
+                                               'brick', 'triangle',
+                                               'stairs'])
+    def test_dropout(self, dropout_shape):
         # ensures that dropout is assigned to the resblock as expected
         dataset_properties = {"task_type": constants.TASK_TYPES_TO_STRING[1]}
         max_dropout = 0.5
@@ -463,10 +463,10 @@ class TestNetworkBackbone:
                                                                                 hyperparameter='max_dropout',
                                                                                 value_range=[max_dropout],
                                                                                 default_value=max_dropout),
-                                                                            resnet_shape=HyperparameterSearchSpace(
-                                                                                hyperparameter='resnet_shape',
-                                                                                value_range=[resnet_shape],
-                                                                                default_value=resnet_shape),
+                                                                            dropout_shape=HyperparameterSearchSpace(
+                                                                                hyperparameter='dropout_shape',
+                                                                                value_range=[dropout_shape],
+                                                                                default_value=dropout_shape),
                                                                             num_groups=HyperparameterSearchSpace(
                                                                                 hyperparameter='num_groups',
                                                                                 value_range=[num_groups],
@@ -481,9 +481,10 @@ class TestNetworkBackbone:
         config = config_space.sample_configuration().get_dictionary()
         resnet_backbone = ShapedResNetBackbone(**config)
         backbone = resnet_backbone.build_backbone((100, 5))
-        dropout_probabilites = [resnet_backbone.config[key] for key in resnet_backbone.config if 'dropout_' in key]
+        dropout_probabilites = [resnet_backbone.config[key] for key in resnet_backbone.config
+                                if 'dropout_' in key and 'shape' not in key]
         dropout_shape = get_shaped_neuron_counts(
-            shape=resnet_shape,
+            shape=dropout_shape,
             in_feat=0,
             out_feat=0,
             max_neurons=max_dropout,
@@ -501,8 +502,7 @@ class TestNetworkBackbone:
 class TestNetworkHead:
     def test_all_heads_available(self):
         network_head_choice = NetworkHeadChoice(dataset_properties={})
-
-        assert len(network_head_choice.get_components().keys()) == 2
+        assert len(network_head_choice.get_components().keys()) == 3
 
     @pytest.mark.parametrize('task_type_input_output_shape', [(constants.IMAGE_CLASSIFICATION, (3, 64, 64), (5,)),
                                                               (constants.IMAGE_REGRESSION, (3, 64, 64), (1,)),
@@ -518,7 +518,9 @@ class TestNetworkHead:
         if task_type in constants.CLASSIFICATION_TASKS:
             dataset_properties["num_classes"] = output_shape[0]
 
-        cs = network_head_choice.get_hyperparameter_search_space(dataset_properties=dataset_properties)
+        cs = network_head_choice.get_hyperparameter_search_space(
+            dataset_properties=dataset_properties,
+        )
         # test 10 random configurations
         for _ in range(10):
             config = cs.sample_configuration()

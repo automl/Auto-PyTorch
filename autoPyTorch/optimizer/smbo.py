@@ -120,7 +120,7 @@ class AutoMLSMBO(object):
                  resampling_strategy_args: Optional[Dict[str, Any]] = None,
                  include: Optional[Dict[str, Any]] = None,
                  exclude: Optional[Dict[str, Any]] = None,
-                 disable_file_output: List = [],
+                 disable_file_output: Union[bool, List[str]] = False,
                  smac_scenario_args: Optional[Dict[str, Any]] = None,
                  get_smac_object_callback: Optional[Callable] = None,
                  all_supported_metrics: bool = True,
@@ -276,7 +276,9 @@ class AutoMLSMBO(object):
         initial_configurations = []
 
         if STRING_TO_TASK_TYPES.get(self.task_type, -1) == TIMESERIES_FORECASTING:
-            initial_configurations = self.get_init_configs_for_forecasting(config_space, kwargs)
+            # TODO: update search space (to remove reg cocktails) for forecasting tasks so
+            # that we can use the portfolio (or build the portfolio again)
+            # initial_configurations = self.get_init_configs_for_forecasting(config_space, kwargs)
             # proxy-validation sets
             self.min_num_test_instances: Optional[int] = kwargs.get('min_num_test_instances',  # type:ignore[assignment]
                                                                     None)

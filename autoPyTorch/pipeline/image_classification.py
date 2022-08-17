@@ -156,6 +156,7 @@ class ImageClassificationPipeline(ClassifierMixin, BasePipeline):
 
         # Here we add custom code, like this with this
         # is not a valid configuration
+        cs = self._add_forbidden_conditions(cs)
 
         self.configuration_space = cs
         self.dataset_properties = dataset_properties

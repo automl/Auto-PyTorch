@@ -41,6 +41,8 @@ from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner import _traditional_learners
 from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
 
+from test.test_api.api_utils import print_debug_information  # noqa E402
+
 
 CV_NUM_SPLITS = 2
 HOLDOUT_NUM_SPLITS = 1
@@ -154,7 +156,7 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
             run_key_model_run_dir,
             f"{estimator.seed}.{successful_num_run}.{run_key.budget}.cv_model"
         )
-        assert os.path.exists(model_file), model_file
+        assert os.path.exists(model_file), print_debug_information(estimator)
 
         model = estimator._backend.load_cv_model_by_seed_and_id_and_budget(
             estimator.seed, successful_num_run, run_key.budget)
@@ -458,6 +460,7 @@ def test_time_series_forecasting(forecasting_toy_dataset, resampling_strategy, b
         resampling_strategy_args=resampling_strategy_args,
         ensemble_size=2,
         seed=42,
+        delete_tmp_folder_after_terminate=False
     )
 
     with unittest.mock.patch.object(estimator, '_do_dummy_prediction', new=dummy_do_dummy_prediction):
@@ -473,6 +476,7 @@ def test_time_series_forecasting(forecasting_toy_dataset, resampling_strategy, b
             total_walltime_limit=30,
             func_eval_time_limit_secs=10,
             known_future_features=known_future_features,
+            enable_traditional_pipeline=False
         )
 
     # Internal dataset has expected settings

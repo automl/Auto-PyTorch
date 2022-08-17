@@ -153,8 +153,10 @@ class NetworkEmbeddingChoice(autoPyTorchChoice):
                     default = default_
                     break
 
-        categorical_columns = dataset_properties['categorical_columns'] \
-            if isinstance(dataset_properties['categorical_columns'], List) else []
+        if isinstance(dataset_properties['categorical_columns'], list):
+            categorical_columns = dataset_properties['categorical_columns']
+        else:
+            categorical_columns = []
 
         updates = self._get_search_space_updates()
         if '__choice__' in updates.keys():

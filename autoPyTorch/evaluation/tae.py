@@ -370,6 +370,7 @@ class ExecuteTaFuncWithQueue(AbstractTAFunc):
         info: Optional[List[RunValue]]
         additional_run_info: Dict[str, Any]
         try:
+            # By default, self.ta is fit_predict_try_except_decorator
             obj = pynisher.enforce_limits(**pynisher_arguments)(self.ta)
             obj(**obj_kwargs)
         except Exception as e:

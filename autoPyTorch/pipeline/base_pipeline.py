@@ -1,10 +1,12 @@
 import warnings
 from abc import ABCMeta
 from collections import Counter
+from copy import copy
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace import Configuration
 from ConfigSpace.configuration_space import ConfigurationSpace
+from ConfigSpace.forbidden import ForbiddenAndConjunction, ForbiddenEqualsClause
 
 import numpy as np
 
@@ -22,7 +24,9 @@ from autoPyTorch.pipeline.create_searchspace_util import (
     get_match_array
 )
 from autoPyTorch.utils.common import FitRequirement
-from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdates
+from autoPyTorch.utils.hyperparameter_search_space_update import (
+    HyperparameterSearchSpaceUpdates
+)
 
 
 PipelineStepType = Union[autoPyTorchComponent, autoPyTorchChoice]
@@ -293,6 +297,71 @@ class BasePipeline(Pipeline):
         """
         raise NotImplementedError()
 
+    def _add_forbidden_conditions(self, cs: ConfigurationSpace) -> ConfigurationSpace:
+        """
+        Add forbidden conditions to ensure valid configurations.
+        Currently, Learned Entity Embedding is only valid when encoder is one hot encoder
+        and CyclicLR is disabled when using stochastic weight averaging and snapshot
+        ensembling.
+
+        Args:
+            cs (ConfigurationSpace):
+                Configuration space to which forbidden conditions are added.
+
+        Returns:
+            ConfigurationSpace:
+                with forbidden conditions added to the search space
+
+        """
+
+        # Learned Entity Embedding is only valid when encoder is one hot encoder
+        if 'network_embedding' in self.named_steps.keys() and 'encoder' in self.named_steps.keys():
+            embeddings = cs.get_hyperparameter('network_embedding:__choice__').choices
+            if 'LearnedEntityEmbedding' in embeddings:
+                encoders = cs.get_hyperparameter('encoder:__choice__').choices
+                possible_default_embeddings = copy(list(embeddings))
+                del possible_default_embeddings[possible_default_embeddings.index('LearnedEntityEmbedding')]
+
+                for encoder in encoders:
+                    if encoder == 'OneHotEncoder':
+                        continue
+                    while True:
+                        try:
+                            cs.add_forbidden_clause(ForbiddenAndConjunction(
+                                ForbiddenEqualsClause(cs.get_hyperparameter(
+                                    'network_embedding:__choice__'), 'LearnedEntityEmbedding'),
+                                ForbiddenEqualsClause(cs.get_hyperparameter('encoder:__choice__'), encoder)
+                            ))
+                            break
+                        except ValueError:
+                            # change the default and try again
+                            try:
+                                default = possible_default_embeddings.pop()
+                            except IndexError:
+                                raise ValueError("Cannot find a legal default configuration")
+                            cs.get_hyperparameter('network_embedding:__choice__').default_value = default
+
+        # Disable CyclicLR until todo is completed.
+        if 'lr_scheduler' in self.named_steps.keys() and 'trainer' in self.named_steps.keys():
+            trainers = cs.get_hyperparameter('trainer:__choice__').choices
+            for trainer in trainers:
+                available_schedulers = cs.get_hyperparameter('lr_scheduler:__choice__').choices
+                # TODO: update cyclic lr to use n_restarts and adjust according to batch size
+                cyclic_lr_name = 'CyclicLR'
+                if cyclic_lr_name in available_schedulers:
+                    # disable snapshot ensembles and stochastic weight averaging
+                    cs.add_forbidden_clause(ForbiddenAndConjunction(
+                        ForbiddenEqualsClause(cs.get_hyperparameter(
+                            f'trainer:{trainer}:use_snapshot_ensemble'), True),
+                        ForbiddenEqualsClause(cs.get_hyperparameter('lr_scheduler:__choice__'), cyclic_lr_name)
+                    ))
+                    cs.add_forbidden_clause(ForbiddenAndConjunction(
+                        ForbiddenEqualsClause(cs.get_hyperparameter(
+                            f'trainer:{trainer}:use_stochastic_weight_averaging'), True),
+                        ForbiddenEqualsClause(cs.get_hyperparameter('lr_scheduler:__choice__'), cyclic_lr_name)
+                    ))
+        return cs
+
     def __repr__(self) -> str:
         """Retrieves a str representation of the current pipeline
 
@@ -405,6 +474,7 @@ class BasePipeline(Pipeline):
                 raise ValueError("Unknown node name. Expected update node name to be in {} "
                                  "got {}".format(self.named_steps.keys(), update.node_name))
             node = self.named_steps[update.node_name]
+            node_name = node.__class__.__name__
             # if node is a choice module
             if hasattr(node, 'get_components'):
                 split_hyperparameter = update.hyperparameter.split(':')
@@ -446,10 +516,10 @@ class BasePipeline(Pipeline):
                             if choice in exclude[update.node_name]:
                                 raise ValueError("Found {} in exclude".format(choice))
                         if choice not in components.keys():
-                            raise ValueError("Unknown hyperparameter for choice {}. "
+                            raise ValueError("Unknown component choice for node {}. "
                                              "Expected update hyperparameter "
-                                             "to be in {} got {}".format(node.__class__.__name__,
-                                                                         components.keys(), choice))
+                                             "to be in {}, but got {}".format(node_name,
+                                                                              components.keys(), choice))
                 # check if the component whose hyperparameter
                 # needs to be updated is in components of the
                 # choice module
@@ -483,14 +553,16 @@ class BasePipeline(Pipeline):
                                 component.get_hyperparameter_search_space(
                                     dataset_properties=self.dataset_properties).get_hyperparameter_names()]):
                             continue
-                        raise ValueError("Unknown hyperparameter for component {}. "
-                                         "Expected update hyperparameter "
-                                         "to be in {} got {}".format(node.__class__.__name__,
-                                                                     component.
-                                                                     get_hyperparameter_search_space(
-                                                                         dataset_properties=self.dataset_properties).
-                                                                     get_hyperparameter_names(),
-                                                                     split_hyperparameter[1]))
+                        component_hyperparameters = component.get_hyperparameter_search_space(
+                            dataset_properties=self.dataset_properties).get_hyperparameter_names()
+                        raise ValueError("Unknown hyperparameter for  component {} of node {}."
+                                         " Expected update hyperparameter "
+                                         "to be in {}, but got {}.".format(component.__name__,
+                                                                           node_name,
+                                                                           component_hyperparameters,
+                                                                           split_hyperparameter[1]
+                                                                           )
+                                         )
             else:
                 if update.hyperparameter not in node.get_hyperparameter_search_space(
                         dataset_properties=self.dataset_properties):
@@ -498,13 +570,13 @@ class BasePipeline(Pipeline):
                             node.get_hyperparameter_search_space(
                                 dataset_properties=self.dataset_properties).get_hyperparameter_names()]):
                         continue
-                    raise ValueError("Unknown hyperparameter for component {}. "
+                    node_hyperparameters = node.get_hyperparameter_search_space(
+                        dataset_properties=self.dataset_properties).get_hyperparameter_names()
+                    raise ValueError("Unknown hyperparameter for node {}. "
                                      "Expected update hyperparameter "
-                                     "to be in {} got {}".format(node.__class__.__name__,
-                                                                 node.
-                                                                 get_hyperparameter_search_space(
-                                                                     dataset_properties=self.dataset_properties).
-                                                                 get_hyperparameter_names(), update.hyperparameter))
+                                     "to be in {}, but got {}".format(node_name,
+                                                                      node_hyperparameters,
+                                                                      update.hyperparameter))
 
     def _get_pipeline_steps(self, dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]]
                             ) -> List[Tuple[str, PipelineStepType]]:
@@ -527,7 +599,7 @@ class BasePipeline(Pipeline):
         Returns:
             List[NamedTuple]: List of FitRequirements
         """
-        fit_requirements = list()  # List[FitRequirement]
+        fit_requirements: List[FitRequirement] = list()
         for name, step in self.steps:
             step_requirements = step.get_fit_requirements()
             if step_requirements:
@@ -596,6 +668,7 @@ class BasePipeline(Pipeline):
 
     @staticmethod
     def get_default_pipeline_options() -> Dict[str, Any]:
+
         return {
             'num_run': 0,
             'device': 'cpu',

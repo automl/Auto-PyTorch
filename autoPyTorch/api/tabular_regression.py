@@ -79,7 +79,6 @@ class TabularRegressionTask(BaseTask):
             Search space updates that can be used to modify the search
             space of particular components or choice modules of the pipeline
     """
-
     def __init__(
         self,
         seed: int = 1,

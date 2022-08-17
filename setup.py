@@ -64,6 +64,7 @@ setuptools.setup(
             "pytest-cov",
             'pytest-forked',
             'pytest-subtests',
+            "pytest-mock",
             "codecov",
             "pep8",
             "mypy",
@@ -71,6 +72,7 @@ setuptools.setup(
             "emcee",
             "scikit-optimize",
             "pyDOE",
+            "pytest-forked"
         ],
         "examples": [
             "matplotlib",

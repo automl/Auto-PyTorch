@@ -36,7 +36,7 @@ class BaseTargetValidator(BaseEstimator):
                                         logging.Logger
                                         ]
                                   ] = None,
-                 ):
+                 ) -> None:
         self.is_classification = is_classification
 
         self.data_type: Optional[type] = None
@@ -131,7 +131,7 @@ class BaseTargetValidator(BaseEstimator):
 
     def transform(
         self,
-        y: Union[SupportedTargetTypes],
+        y: SupportedTargetTypes,
     ) -> np.ndarray:
         """
         Args:

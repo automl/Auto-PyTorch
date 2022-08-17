@@ -81,6 +81,7 @@ class ReduceLROnPlateau(BaseLRComponent):
         return {
             'shortname': 'ReduceLROnPlateau',
             'name': 'ReduceLROnPlateau',
+            'cyclic': False
         }
 
     @staticmethod
@@ -99,7 +100,6 @@ class ReduceLROnPlateau(BaseLRComponent):
                                                                       default_value=0.1,
                                                                       )
     ) -> ConfigurationSpace:
-
         cs = ConfigurationSpace()
 
         add_hyperparameter(cs, mode, CategoricalHyperparameter)

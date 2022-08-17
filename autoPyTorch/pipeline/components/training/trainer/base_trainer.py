@@ -1,5 +1,13 @@
 import time
+from copy import deepcopy
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+
+from ConfigSpace.conditions import EqualsCondition
+from ConfigSpace.configuration_space import ConfigurationSpace
+from ConfigSpace.hyperparameters import (
+    CategoricalHyperparameter,
+    Constant
+)
 
 import numpy as np
 
@@ -8,11 +16,12 @@ import pandas as pd
 from sklearn.utils import check_random_state
 
 import torch
-from torch.optim import Optimizer
+from torch.optim import Optimizer, swa_utils
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from autoPyTorch.constants import FORECASTING_TASKS, REGRESSION_TASKS
+from autoPyTorch.constants import CLASSIFICATION_TASKS, FORECASTING_TASKS, REGRESSION_TASKS, STRING_TO_TASK_TYPES
+from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.lr_scheduler.constants import StepIntervalUnit
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
 from autoPyTorch.pipeline.components.training.metrics.metrics import (
@@ -21,6 +30,8 @@ from autoPyTorch.pipeline.components.training.metrics.metrics import (
     REGRESSION_METRICS,
 )
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
+from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead, swa_update
+from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, add_hyperparameter, get_hyperparameter
 from autoPyTorch.utils.implementations import get_loss_weight_strategy
 
 
@@ -34,8 +45,17 @@ class BudgetTracker(object):
         An object for tracking when to stop the network training.
         It handles epoch based criteria as well as training based criteria.
 
-        It also allows to define a 'epoch_or_time' budget type, which means,
-        the first of them both which is exhausted, is honored
+        It also allows to define a 'epoch_or_time' budget type, which means, the first of them both which is
+        exhausted, is honored
+
+        Args:
+            budget_type (str):
+                Type of budget to be used when fitting the pipeline.
+                Possible values are 'epochs', 'runtime', or 'epoch_or_time'
+            max_epochs (Optional[int], default=None):
+                Maximum number of epochs to train the pipeline for
+            max_runtime (Optional[int], default=None):
+                Maximum number of seconds to train the pipeline for
         """
         self.start_time = time.time()
         self.budget_type = budget_type
@@ -43,8 +63,19 @@ class BudgetTracker(object):
         self.max_runtime = max_runtime
 
     def is_max_epoch_reached(self, epoch: int) -> bool:
+        """
+        For budget type 'epoch' or 'epoch_or_time' return True if the maximum number of epochs is reached.
 
-        # Make None a method to run without this constrain
+        Args:
+            epoch (int):
+                the current epoch
+
+        Returns:
+            bool:
+                True if the current epoch is larger than the maximum epochs, False otherwise.
+                Additionally, returns False if the run is without this constraint.
+        """
+        # Make None a method to run without this constraint
         if self.max_epochs is None:
             return False
         if self.budget_type in ['epochs', 'epoch_or_time'] and epoch > self.max_epochs:
@@ -52,7 +83,15 @@ class BudgetTracker(object):
         return False
 
     def is_max_time_reached(self) -> bool:
-        # Make None a method to run without this constrain
+        """
+        For budget type 'runtime' or 'epoch_or_time' return True if the maximum runtime is reached.
+
+        Returns:
+            bool:
+                True if the maximum runtime is reached, False otherwise.
+                Additionally, returns False if the run is without this constraint.
+        """
+        # Make None a method to run without this constraint
         if self.max_runtime is None:
             return False
         elapsed_time = time.time() - self.start_time
@@ -67,14 +106,22 @@ class RunSummary(object):
         total_parameter_count: float,
         trainable_parameter_count: float,
         optimize_metric: Optional[str] = None,
-    ):
+    ) -> None:
         """
         A useful object to track performance per epoch.
 
-        It allows to track train, validation and test information not only for
-        debug, but for research purposes (Like understanding overfit).
+        It allows to track train, validation and test information not only for debug, but for research purposes
+        (Like understanding overfit).
 
         It does so by tracking a metric/loss at the end of each epoch.
+
+        Args:
+            total_parameter_count (float):
+                the total number of parameters of the model
+            trainable_parameter_count (float):
+                only the parameters being optimized
+            optimize_metric (Optional[str], default=None):
+                name of the metric that is used to evaluate a pipeline.
         """
         self.performance_tracker: Dict[str, Dict] = {
             'start_time': {},
@@ -110,8 +157,30 @@ class RunSummary(object):
                         test_loss: Optional[float] = None,
                         ) -> None:
         """
-        Tracks performance information about the run, useful for
-        plotting individual runs
+        Tracks performance information about the run, useful for plotting individual runs.
+
+        Args:
+            epoch (int):
+                the current epoch
+            start_time (float):
+                timestamp at the beginning of current epoch
+            end_time (float):
+                timestamp when gathering the information after the current epoch
+            train_loss (float):
+                the training loss
+            train_metrics (Dict[str, float]):
+                training scores for each desired metric
+            val_metrics (Dict[str, float]):
+                validation scores for each desired metric
+            test_metrics (Dict[str, float]):
+                test scores for each desired metric
+            val_loss (Optional[float], default=None):
+                the validation loss
+            test_loss (Optional[float], default=None):
+                the test loss
+
+        Returns:
+            None
         """
         self.performance_tracker['train_loss'][epoch] = train_loss
         self.performance_tracker['val_loss'][epoch] = val_loss
@@ -123,6 +192,18 @@ class RunSummary(object):
         self.performance_tracker['test_metrics'][epoch] = test_metrics
 
     def get_best_epoch(self, split_type: str = 'val') -> int:
+        """
+        Get the epoch with the best metric.
+
+        Args:
+            split_type (str, default=val):
+                Which split's metric to consider.
+                Possible values are 'train' or 'val
+
+        Returns:
+            int:
+                the epoch with the best metric
+        """
         # If we compute for optimization, prefer the performance
         # metric to the loss
         if self.optimize_metric is not None:
@@ -148,6 +229,13 @@ class RunSummary(object):
             )) + 1  # Epochs start at 1
 
     def get_last_epoch(self) -> int:
+        """
+        Get the last epoch.
+
+        Returns:
+            int:
+                the last epoch
+        """
         if 'train_loss' not in self.performance_tracker:
             return 0
         else:
@@ -159,7 +247,8 @@ class RunSummary(object):
         performance
 
         Returns:
-            str: A nice representation of the last epoch
+            str:
+                A nice representation of the last epoch
         """
         last_epoch = len(self.performance_tracker['train_loss'])
         string = "\n"
@@ -191,15 +280,53 @@ class RunSummary(object):
         Checks if the object is empty or not
 
         Returns:
-            bool
+            bool:
+                True if the object is empty, False otherwise
         """
         # if train_loss is empty, we can be sure that RunSummary is empty.
         return not bool(self.performance_tracker['train_loss'])
 
 
 class BaseTrainerComponent(autoPyTorchTrainingComponent):
+    """
+    Base class for training.
 
-    def __init__(self, random_state: Optional[np.random.RandomState] = None) -> None:
+    Args:
+        weighted_loss (int, default=0):
+            In case for classification, whether to weight the loss function according to the distribution of classes
+            in the target
+        use_stochastic_weight_averaging (bool, default=True):
+            whether to use stochastic weight averaging. Stochastic weight averaging is a simple average of
+            multiple points(model parameters) along the trajectory of SGD. SWA has been proposed in
+            [Averaging Weights Leads to Wider Optima and Better Generalization](https://arxiv.org/abs/1803.05407)
+        use_snapshot_ensemble (bool, default=True):
+            whether to use snapshot ensemble
+        se_lastk (int, default=3):
+            Number of snapshots of the network to maintain
+        use_lookahead_optimizer (bool, default=True):
+            whether to use lookahead optimizer
+        random_state (Optional[np.random.RandomState]):
+            Object that contains a seed and allows for reproducible results
+        swa_model (Optional[torch.nn.Module], default=None):
+            Averaged model used for Stochastic Weight Averaging
+        model_snapshots (Optional[List[torch.nn.Module]], default=None):
+            List of model snapshots in case snapshot ensemble is used
+        **lookahead_config (Any):
+            keyword arguments for the lookahead optimizer including:
+            la_steps (int):
+                number of lookahead steps
+            la_alpha (float):
+                linear interpolation factor. 1.0 recovers the inner optimizer.
+    """
+    def __init__(self, weighted_loss: int = 0,
+                 use_stochastic_weight_averaging: bool = True,
+                 use_snapshot_ensemble: bool = True,
+                 se_lastk: int = 3,
+                 use_lookahead_optimizer: bool = True,
+                 random_state: Optional[np.random.RandomState] = None,
+                 swa_model: Optional[torch.nn.Module] = None,
+                 model_snapshots: Optional[List[torch.nn.Module]] = None,
+                 **lookahead_config: Any) -> None:
         if random_state is None:
             # A trainer components need a random state for
             # sampling -- for example in MixUp training
@@ -207,8 +334,21 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         else:
             self.random_state = random_state
         super().__init__(random_state=self.random_state)
-
-        self.weighted_loss: bool = False
+        self.weighted_loss = weighted_loss
+        self.use_stochastic_weight_averaging = use_stochastic_weight_averaging
+        self.use_snapshot_ensemble = use_snapshot_ensemble
+        self.se_lastk = se_lastk
+        self.use_lookahead_optimizer = use_lookahead_optimizer
+        self.swa_model = swa_model
+        self.model_snapshots = model_snapshots
+        # Add default values for the lookahead optimizer
+        if len(lookahead_config) == 0:
+            lookahead_config = {f'{Lookahead.__name__}:la_steps': 6,
+                                f'{Lookahead.__name__}:la_alpha': 0.6}
+        self.lookahead_config = lookahead_config
+        self.add_fit_requirements([
+            FitRequirement("is_cyclic_scheduler", (bool,), user_defined=False, dataset_property=False),
+        ])
 
     def prepare(
         self,
@@ -223,6 +363,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         task_type: int,
         labels: Union[np.ndarray, torch.Tensor, pd.DataFrame],
         step_interval: Union[str, StepIntervalUnit] = StepIntervalUnit.batch,
+        numerical_columns: Optional[List[int]] = None,
         **kwargs: Dict
     ) -> None:
 
@@ -242,7 +383,30 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         # setup the model
         self.model = model.to(device)
 
+        # in case we are using swa, maintain an averaged model,
+        if self.use_stochastic_weight_averaging:
+            self.swa_model = swa_utils.AveragedModel(self.model, avg_fn=swa_update)
+
+        # in case we are using se or swa, initialise budget_threshold to know when to start swa or se
+        self._budget_threshold = 0
+        if self.use_stochastic_weight_averaging or self.use_snapshot_ensemble:
+            if budget_tracker.max_epochs is None:
+                raise ValueError("Budget for stochastic weight averaging or snapshot ensemble must be `epoch`.")
+
+            self._budget_threshold = int(0.75 * budget_tracker.max_epochs)
+
+        # in case we are using se, initialise list to store model snapshots
+        if self.use_snapshot_ensemble:
+            self.model_snapshots = list()
+
+        # in case we are using, swa or se with early stopping,
+        # we need to make sure network params are only updated
+        # from the swa model if the swa model was actually updated
+        self.swa_updated: bool = False
+
         # setup the optimizers
+        if self.use_lookahead_optimizer:
+            optimizer = Lookahead(optimizer=optimizer, config=self.lookahead_config)
         self.optimizer = optimizer
 
         # The budget tracker
@@ -258,21 +422,83 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         # task type (used for calculating metrics)
         self.task_type = task_type
 
+        # for cutout trainer, we need the list of numerical columns
+        self.numerical_columns = numerical_columns
+
     def on_epoch_start(self, X: Dict[str, Any], epoch: int) -> None:
         """
-        Optional place holder for AutoPytorch Extensions.
+        Optional placeholder for AutoPytorch Extensions.
+        A user can define what happens on every epoch start or every epoch end.
 
-        An user can define what happens on every epoch start or every epoch end.
+        Args:
+            X (Dict[str, Any]):
+                Dictionary with fitted parameters. It is a message passing mechanism, in which during a transform,
+                a components adds relevant information so that further stages can be properly fitted
+            epoch (int):
+                the current epoch
         """
         pass
 
+    def _swa_update(self) -> None:
+        """
+        Perform Stochastic Weight Averaging model update
+        """
+        if self.swa_model is None:
+            raise ValueError("SWA model cannot be none when stochastic weight averaging is enabled")
+        self.swa_model.update_parameters(self.model)
+        self.swa_updated = True
+
+    def _se_update(self, epoch: int) -> None:
+        """
+        Add latest model or swa_model to model snapshot ensemble
+
+        Args:
+            epoch (int):
+                current epoch
+        """
+        if self.model_snapshots is None:
+            raise ValueError("model snapshots cannot be None when snapshot ensembling is enabled")
+        is_last_epoch = (epoch == self.budget_tracker.max_epochs)
+        if is_last_epoch and self.use_stochastic_weight_averaging:
+            model_copy = deepcopy(self.swa_model)
+        else:
+            model_copy = deepcopy(self.model)
+
+        assert model_copy is not None
+        model_copy.cpu()
+        self.model_snapshots.append(model_copy)
+        self.model_snapshots = self.model_snapshots[-self.se_lastk:]
+
     def on_epoch_end(self, X: Dict[str, Any], epoch: int) -> bool:
         """
-        Optional place holder for AutoPytorch Extensions.
-        An user can define what happens on every epoch start or every epoch end.
-        If returns True, the training is stopped
+        Optional placeholder for AutoPytorch Extensions.
+        A user can define what happens on every epoch start or every epoch end.
+        If returns True, the training is stopped.
+
+        Args:
+            X (Dict[str, Any]):
+                Dictionary with fitted parameters. It is a message passing mechanism, in which during a transform,
+                a components adds relevant information so that further stages can be properly fitted
+            epoch (int):
+                the current epoch
 
         """
+        if X['is_cyclic_scheduler']:
+            if hasattr(self.scheduler, 'T_cur') and self.scheduler.T_cur == 0 and epoch != 1:
+                if self.use_stochastic_weight_averaging:
+                    self._swa_update()
+                if self.use_snapshot_ensemble:
+                    self._se_update(epoch=epoch)
+        else:
+            if epoch > self._budget_threshold and self.use_stochastic_weight_averaging:
+                self._swa_update()
+
+            if (
+                self.use_snapshot_ensemble
+                and self.budget_tracker.max_epochs is not None
+                and epoch > (self.budget_tracker.max_epochs - self.se_lastk)
+            ):
+                self._se_update(epoch=epoch)
         return False
 
     def _scheduler_step(
@@ -300,12 +526,18 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         Train the model for a single epoch.
 
         Args:
-            train_loader (torch.utils.data.DataLoader): generator of features/label
-            epoch (int): The current epoch used solely for tracking purposes
+            train_loader (torch.utils.data.DataLoader):
+                generator of features/label
+            epoch (int):
+                The current epoch used solely for tracking purposes
+            writer (Optional[SummaryWriter]):
+                Object to keep track of the training loss in an event file
 
         Returns:
-            float: training loss
-            Dict[str, float]: scores for each desired metric
+            float:
+                training loss
+            Dict[str, float]:
+                scores for each desired metric
         """
 
         loss_sum = 0.0
@@ -361,12 +593,16 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         Allows to train 1 step of gradient descent, given a batch of train/labels
 
         Args:
-            data (torch.Tensor): input features to the network
-            targets (torch.Tensor): ground truth to calculate loss
+            data (torch.Tensor):
+                input features to the network
+            targets (torch.Tensor):
+                ground truth to calculate loss
 
         Returns:
-            torch.Tensor: The predictions of the network
-            float: the loss incurred in the prediction
+            torch.Tensor:
+                The predictions of the network
+            float:
+                the loss incurred in the prediction
         """
         # prepare
         data = data.float().to(self.device)
@@ -392,12 +628,18 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         Evaluate the model in both metrics and criterion
 
         Args:
-            test_loader (torch.utils.data.DataLoader): generator of features/label
-            epoch (int): the current epoch for tracking purposes
+            test_loader (torch.utils.data.DataLoader):
+                generator of features/label
+            epoch (int):
+                the current epoch for tracking purposes
+            writer (Optional[SummaryWriter]):
+                Object to keep track of the test loss in an event file
 
         Returns:
-            float: test loss
-            Dict[str, float]: scores for each desired metric
+            float:
+                test loss
+            Dict[str, float]:
+                scores for each desired metric
         """
         self.model.eval()
 
@@ -455,14 +697,15 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
     def data_preparation(self, X: torch.Tensor, y: torch.Tensor,
                          ) -> Tuple[torch.Tensor, Dict[str, np.ndarray]]:
         """
-        Depending on the trainer choice, data fed to the network might be pre-processed
-        on a different way. That is, in standard training we provide the data to the
-        network as we receive it to the loader. Some regularization techniques, like mixup
-        alter the data.
+        Depending on the trainer choice, data fed to the network might be pre-processed on a different way. That is,
+        in standard training we provide the data to the network as we receive it to the loader. Some regularization
+        techniques, like mixup alter the data.
 
         Args:
-            X (torch.Tensor): The batch training features
-            y (torch.Tensor): The batch training labels
+            X (torch.Tensor):
+                The batch training features
+            y (torch.Tensor):
+                The batch training labels
 
         Returns:
             torch.Tensor: that processes data
@@ -474,15 +717,97 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
     def criterion_preparation(self, y_a: torch.Tensor, y_b: torch.Tensor = None, lam: float = 1.0
                               ) -> Callable:  # type: ignore
         """
-        Depending on the trainer choice, the criterion is not directly applied to the
-        traditional y_pred/y_ground_truth pairs, but rather it might have a slight transformation.
+        Depending on the trainer choice, the criterion is not directly applied to the traditional
+        y_pred/y_ground_truth pairs, but rather it might have a slight transformation.
         For example, in the case of mixup training, we need to account for the lambda mixup
 
         Args:
-            kwargs (Dict): an expanded dictionary with modifiers to the
-                                  criterion calculation
+            y_a (torch.Tensor):
+                the batch label of the first training example used in trainer
+            y_b (torch.Tensor, default=None):
+                if applicable, the batch label of the second training example used in trainer
+            lam (float):
+                trainer coefficient
 
         Returns:
-            Callable: a lambda function that contains the new criterion calculation recipe
+            Callable:
+                a lambda function that contains the new criterion calculation recipe
         """
-        raise NotImplementedError
+        raise NotImplementedError()
+
+    @staticmethod
+    def get_hyperparameter_search_space(
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+        weighted_loss: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="weighted_loss",
+            value_range=(1, ),
+            default_value=1),
+        la_steps: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="la_steps",
+            value_range=(5, 10),
+            default_value=6,
+            log=False),
+        la_alpha: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="la_alpha",
+            value_range=(0.5, 0.8),
+            default_value=0.6,
+            log=False),
+        use_lookahead_optimizer: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="use_lookahead_optimizer",
+            value_range=(True, False),
+            default_value=True),
+        use_stochastic_weight_averaging: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="use_stochastic_weight_averaging",
+            value_range=(True, False),
+            default_value=True),
+        use_snapshot_ensemble: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="use_snapshot_ensemble",
+            value_range=(True, False),
+            default_value=True),
+        se_lastk: HyperparameterSearchSpace = HyperparameterSearchSpace(
+            hyperparameter="se_lastk",
+            value_range=(3, ),
+            default_value=3),
+    ) -> ConfigurationSpace:
+        cs = ConfigurationSpace()
+
+        add_hyperparameter(cs, use_stochastic_weight_averaging, CategoricalHyperparameter)
+        snapshot_ensemble_flag = any(use_snapshot_ensemble.value_range)
+
+        use_snapshot_ensemble = get_hyperparameter(use_snapshot_ensemble, CategoricalHyperparameter)
+        cs.add_hyperparameter(use_snapshot_ensemble)
+
+        if snapshot_ensemble_flag:
+            se_lastk = get_hyperparameter(se_lastk, Constant)
+            cs.add_hyperparameter(se_lastk)
+            cond = EqualsCondition(se_lastk, use_snapshot_ensemble, True)
+            cs.add_condition(cond)
+
+        lookahead_flag = any(use_lookahead_optimizer.value_range)
+        use_lookahead_optimizer = get_hyperparameter(use_lookahead_optimizer, CategoricalHyperparameter)
+        cs.add_hyperparameter(use_lookahead_optimizer)
+
+        if lookahead_flag:
+            la_config_space = Lookahead.get_hyperparameter_search_space(la_steps=la_steps,
+                                                                        la_alpha=la_alpha)
+            parent_hyperparameter = {'parent': use_lookahead_optimizer, 'value': True}
+            cs.add_configuration_space(
+                Lookahead.__name__,
+                la_config_space,
+                parent_hyperparameter=parent_hyperparameter
+            )
+
+        """
+        # TODO, decouple the weighted loss from the trainer
+        if dataset_properties is not None:
+            if STRING_TO_TASK_TYPES[dataset_properties['task_type']] in CLASSIFICATION_TASKS:
+                add_hyperparameter(cs, weighted_loss, CategoricalHyperparameter)
+        """
+        # TODO, decouple the weighted loss from the trainer. Uncomment the code above and
+        # remove the code below. Also update the method signature, so the weighted loss
+        # is not a constant.
+        if dataset_properties is not None:
+            if STRING_TO_TASK_TYPES[str(dataset_properties['task_type'])] in CLASSIFICATION_TASKS:
+                add_hyperparameter(cs, weighted_loss, Constant)
+
+        return cs

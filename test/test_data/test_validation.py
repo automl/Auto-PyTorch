@@ -1,7 +1,5 @@
 import numpy as np
 
-import pandas as pd
-
 import pytest
 
 from scipy import sparse
@@ -32,16 +30,7 @@ def test_data_validation_for_classification(openmlid, as_frame):
         x, y, test_size=0.33, random_state=0)
 
     validator.fit(X_train=X_train, y_train=y_train, X_test=X_test, y_test=y_test)
-
     X_train_t, y_train_t = validator.transform(X_train, y_train)
-    assert np.shape(X_train) == np.shape(X_train_t)
-
-    # Leave columns that are complete NaN
-    # The sklearn pipeline will handle that
-    if as_frame and np.any(pd.isnull(X_train).values.all(axis=0)):
-        assert np.any(pd.isnull(X_train_t).values.all(axis=0))
-    elif not as_frame and np.any(pd.isnull(X_train).all(axis=0)):
-        assert np.any(pd.isnull(X_train_t).all(axis=0))
 
     # make sure everything was encoded to number
     assert np.issubdtype(X_train_t.dtype, np.number)
@@ -76,14 +65,6 @@ def test_data_validation_for_regression(openmlid, as_frame):
     validator.fit(X_train=X_train, y_train=y_train)
 
     X_train_t, y_train_t = validator.transform(X_train, y_train)
-    assert np.shape(X_train) == np.shape(X_train_t)
-
-    # Leave columns that are complete NaN
-    # The sklearn pipeline will handle that
-    if as_frame and np.any(pd.isnull(X_train).values.all(axis=0)):
-        assert np.any(pd.isnull(X_train_t).values.all(axis=0))
-    elif not as_frame and np.any(pd.isnull(X_train).all(axis=0)):
-        assert np.any(pd.isnull(X_train_t).all(axis=0))
 
     # make sure everything was encoded to number
     assert np.issubdtype(X_train_t.dtype, np.number)
@@ -104,9 +85,7 @@ def test_sparse_data_validation_for_regression():
 
     validator.fit(X_train=X_sp, y_train=y)
 
-    X_t, y_t = validator.transform(X, y)
-    assert np.shape(X) == np.shape(X_t)
-
+    X_t, y_t = validator.transform(X_sp, y)
     # make sure everything was encoded to number
     assert np.issubdtype(X_t.dtype, np.number)
     assert np.issubdtype(y_t.dtype, np.number)

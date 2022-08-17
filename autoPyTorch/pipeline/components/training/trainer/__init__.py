@@ -14,7 +14,7 @@ from ConfigSpace.hyperparameters import (
 import numpy as np
 
 import torch
-from torch.optim import Optimizer
+from torch.optim import Optimizer, swa_utils
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
@@ -33,7 +33,8 @@ from autoPyTorch.pipeline.components.training.trainer.base_trainer import (
     BudgetTracker,
     RunSummary,
 )
-from autoPyTorch.utils.common import FitRequirement, get_device_from_fit_dictionary
+from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead, update_model_state_dict_from_swa
+from autoPyTorch.utils.common import FitRequirement, HyperparameterSearchSpace, get_device_from_fit_dictionary
 from autoPyTorch.utils.logging_ import get_named_client_logger
 
 trainer_directory = os.path.split(__file__)[0]
@@ -82,6 +83,68 @@ class TrainerChoice(autoPyTorchChoice):
 
     def get_fit_requirements(self) -> Optional[List[FitRequirement]]:
         return self._fit_requirements
+
+    def get_available_components(
+        self,
+        dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
+        include: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
+    ) -> Dict[str, autoPyTorchComponent]:
+        """
+        Wrapper over get components to incorporate include/exclude
+        user specification
+
+        Args:
+            dataset_properties (Optional[Dict[str, str]]): Describes the dataset to work on
+            include: Optional[Dict[str, Any]]: what components to include. It is an exhaustive
+                list, and will exclusively use this components.
+            exclude: Optional[Dict[str, Any]]: which components to skip
+
+        Results:
+            Dict[str, autoPyTorchComponent]: A dictionary with valid components for this
+                choice object
+
+        """
+        if dataset_properties is None:
+            dataset_properties = {}
+
+        if include is not None and exclude is not None:
+            raise ValueError(
+                "The argument include and exclude cannot be used together.")
+
+        available_comp = self.get_components()
+
+        if include is not None:
+            for incl in include:
+                if incl not in available_comp:
+                    raise ValueError("Trying to include unknown component: "
+                                     "%s" % incl)
+
+        components_dict = collections.OrderedDict()
+        for name in available_comp:
+            if include is not None and name not in include:
+                continue
+            elif exclude is not None and name in exclude:
+                continue
+
+            # Allow training schemes exclusive for some task types
+            entry = available_comp[name]
+            task_type = str(dataset_properties['task_type'])
+            properties = entry.get_properties()
+            if 'tabular' in task_type and not properties['handles_tabular']:
+                continue
+            elif 'image' in task_type and not properties['handles_image']:
+                continue
+            elif 'time_series' in task_type and not properties['handles_time_series']:
+                continue
+
+            if 'issparse' in dataset_properties:
+                if dataset_properties['issparse'] and \
+                        not available_comp[name].get_properties(dataset_properties)['handles_sparse']:
+                    continue
+            components_dict[name] = available_comp[name]
+
+        return components_dict
 
     def get_components(self) -> Dict[str, autoPyTorchComponent]:
         """Returns the available trainer components
@@ -135,14 +198,20 @@ class TrainerChoice(autoPyTorchChoice):
 
         if default is None:
             defaults = ['StandardTrainer',
+                        'AdversarialTrainer',
+                        'GridCutMixTrainer',
+                        'GridCutOutTrainer',
+                        'MixUpTrainer',
+                        'RowCutMixTrainer',
+                        'RowCutOutTrainer',
                         ]
             for default_ in defaults:
                 if default_ in available_trainers:
                     default = default_
                     break
-        updates = self._get_search_space_updates()
+        updates: Dict[str, HyperparameterSearchSpace] = self._get_search_space_updates()
         if '__choice__' in updates.keys():
-            choice_hyperparameter = updates['__choice__']
+            choice_hyperparameter: HyperparameterSearchSpace = updates['__choice__']
             if not set(choice_hyperparameter.value_range).issubset(available_trainers):
                 raise ValueError("Expected given update for {} to have "
                                  "choices in {} got {}".format(self.__class__.__name__,
@@ -214,7 +283,17 @@ class TrainerChoice(autoPyTorchChoice):
             **kwargs
         )
 
-        return cast(autoPyTorchComponent, self.choice)
+        # Comply with mypy
+        # Notice that choice here stands for the component choice framework,
+        # where we dynamically build the configuration space by selecting the available
+        # component choices. In this case, is what trainer choices are available
+        assert self.choice is not None
+
+        # Add snapshots to base network to enable
+        # predicting with snapshot ensemble
+        if self.choice.use_snapshot_ensemble:
+            X['network_snapshots'].extend(self.choice.model_snapshots)
+        return self.choice
 
     def prepare_trainer(self, X: Dict) -> None:
         """
@@ -244,7 +323,9 @@ class TrainerChoice(autoPyTorchChoice):
             scheduler=X['lr_scheduler'],
             task_type=STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']],
             labels=labels,
-            step_interval=X['step_interval']
+            step_interval=X['step_interval'],
+            numerical_columns=X['dataset_properties']['numerical_columns'] if 'numerical_columns' in X[
+                'dataset_properties'] else None
         )
 
     def get_budget_tracker(self, X: Dict) -> BudgetTracker:
@@ -322,7 +403,7 @@ class TrainerChoice(autoPyTorchChoice):
 
             val_loss, val_metrics, test_loss, test_metrics = None, {}, None, {}
             if self.eval_valid_each_epoch(X):
-                if X['val_data_loader']:
+                if 'val_data_loader' in X and X['val_data_loader']:
                     val_loss, val_metrics = self.choice.evaluate(X['val_data_loader'], epoch, writer)
                 if 'test_data_loader' in X and X['test_data_loader']:
                     test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'], epoch, writer)
@@ -365,12 +446,23 @@ class TrainerChoice(autoPyTorchChoice):
         if self.run_summary.is_empty():
             raise RuntimeError("Budget exhausted without finishing an epoch.")
 
+        if self.choice.use_stochastic_weight_averaging and self.choice.swa_updated:
+
+            # update batch norm statistics
+            swa_utils.update_bn(loader=X['train_data_loader'], model=self.choice.swa_model.double())
+
+            # change model
+            update_model_state_dict_from_swa(X['network'], self.choice.swa_model.state_dict())
+            if self.choice.use_snapshot_ensemble:
+                # we update only the last network which pertains to the stochastic weight averaging model
+                swa_utils.update_bn(X['train_data_loader'], self.choice.model_snapshots[-1].double())
+
         # wrap up -- add score if not evaluating every epoch
         if not self.eval_valid_each_epoch(X):
-            if X['val_data_loader']:
+            if 'val_data_loader' in X and X['val_data_loader']:
                 val_loss, val_metrics = self.choice.evaluate(X['val_data_loader'], epoch, writer)
-            if 'test_data_loader' in X and X['val_data_loader']:
-                test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'], epoch, writer)
+            if 'test_data_loader' in X and X['test_data_loader']:
+                test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'])
             self.run_summary.add_performance(
                 epoch=epoch,
                 start_time=start_time,
@@ -439,7 +531,6 @@ class TrainerChoice(autoPyTorchChoice):
             X (Dict[str, Any]): Dictionary with fitted parameters. It is a message passing
                 mechanism, in which during a transform, a components adds relevant information
                 so that further stages can be properly fitted
-
         Returns:
             bool: If true, training should be stopped
         """
@@ -585,3 +676,32 @@ class TrainerChoice(autoPyTorchChoice):
         """ Allow a nice understanding of what components where used """
         string = str(self.run_summary)
         return string
+
+    def _get_search_space_updates(self, prefix: Optional[str] = None) -> Dict[str, HyperparameterSearchSpace]:
+        """Get the search space updates with the given prefix
+
+        Args:
+            prefix (Optional[str]): Only return search space updates with given prefix
+
+        Returns:
+            Dict[str, HyperparameterSearchSpace]:
+                Mapping of search space updates. Keys don't contain the prefix.
+        """
+        updates = super()._get_search_space_updates(prefix=prefix)
+
+        result: Dict[str, HyperparameterSearchSpace] = dict()
+
+        # iterate over all search space updates of this node and filter the ones out, that have the given prefix
+        for key in updates.keys():
+            if Lookahead.__name__ in key:
+                # need to also remove lookahead from the hyperparameter name
+                new_update = HyperparameterSearchSpace(
+                    updates[key].hyperparameter.replace('{}:'.format(Lookahead.__name__), ''),
+                    value_range=updates[key].value_range,
+                    default_value=updates[key].default_value,
+                    log=updates[key].log
+                )
+                result[key.replace('{}:'.format(Lookahead.__name__), '')] = new_update
+            else:
+                result[key] = updates[key]
+        return result

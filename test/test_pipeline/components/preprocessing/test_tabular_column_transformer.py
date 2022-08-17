@@ -13,12 +13,15 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.Tabular
 )
 
 
+# TODO: fix in preprocessing PR
+# @pytest.mark.skip("Skipping tests as preprocessing is not finalised")
 @pytest.mark.parametrize("fit_dictionary_tabular", ['classification_numerical_only',
                                                     'classification_categorical_only',
                                                     'classification_numerical_and_categorical'], indirect=True)
 class TestTabularTransformer:
     def test_tabular_preprocess(self, fit_dictionary_tabular):
         pipeline = TabularPipeline(dataset_properties=fit_dictionary_tabular['dataset_properties'])
+        X_train = fit_dictionary_tabular['X_train'].copy()
         pipeline = pipeline.fit(fit_dictionary_tabular)
         X = pipeline.transform(fit_dictionary_tabular)
         column_transformer = X['tabular_transformer']
@@ -30,17 +33,17 @@ class TestTabularTransformer:
         # as the later is not callable and runs into error in the compose transform
         assert isinstance(column_transformer, TabularColumnTransformer)
 
-        data = column_transformer.preprocessor.fit_transform(X['X_train'])
+        data = column_transformer.preprocessor.fit_transform(X_train)
         assert isinstance(data, np.ndarray)
 
         # Make sure no columns are unintentionally dropped after preprocessing
         if len(fit_dictionary_tabular['dataset_properties']["numerical_columns"]) == 0:
             categorical_pipeline = column_transformer.preprocessor.named_transformers_['categorical_pipeline']
-            categorical_data = categorical_pipeline.transform(X['X_train'])
+            categorical_data = categorical_pipeline.transform(X_train)
             assert data.shape[1] == categorical_data.shape[1]
         elif len(fit_dictionary_tabular['dataset_properties']["categorical_columns"]) == 0:
             numerical_pipeline = column_transformer.preprocessor.named_transformers_['numerical_pipeline']
-            numerical_data = numerical_pipeline.transform(X['X_train'])
+            numerical_data = numerical_pipeline.transform(X_train)
             assert data.shape[1] == numerical_data.shape[1]
 
     def test_sparse_data(self, fit_dictionary_tabular):

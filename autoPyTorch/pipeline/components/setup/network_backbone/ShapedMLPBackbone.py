@@ -96,11 +96,11 @@ class ShapedMLPBackbone(NetworkBackboneComponent):
         max_units: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="max_units",
                                                                          value_range=(10, 1024),
                                                                          default_value=200,
-                                                                         ),
+                                                                         log=True),
         output_dim: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="output_dim",
                                                                           value_range=(10, 1024),
                                                                           default_value=200,
-                                                                          ),
+                                                                          log=True),
         mlp_shape: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="mlp_shape",
                                                                          value_range=('funnel', 'long_funnel',
                                                                                       'diamond', 'hexagon',
@@ -114,7 +114,6 @@ class ShapedMLPBackbone(NetworkBackboneComponent):
                                                                           ),
 
     ) -> ConfigurationSpace:
-
         cs = ConfigurationSpace()
 
         # The number of groups that will compose the resnet. That is,
@@ -128,10 +127,15 @@ class ShapedMLPBackbone(NetworkBackboneComponent):
 
         # We can have dropout in the network for
         # better generalization
+        dropout_flag = False
+        if any(use_dropout.value_range):
+            dropout_flag = True
         use_dropout = get_hyperparameter(use_dropout, CategoricalHyperparameter)
-        max_dropout = get_hyperparameter(max_dropout, UniformFloatHyperparameter)
+        cs.add_hyperparameter(use_dropout)
 
-        cs.add_hyperparameters([use_dropout, max_dropout])
-        cs.add_condition(CS.EqualsCondition(max_dropout, use_dropout, True))
+        if dropout_flag:
+            max_dropout = get_hyperparameter(max_dropout, UniformFloatHyperparameter)
+            cs.add_hyperparameter(max_dropout)
+            cs.add_condition(CS.EqualsCondition(max_dropout, use_dropout, True))
 
         return cs
