@@ -636,7 +636,6 @@ class BaseTask(ABC):
 
     def _load_models(
         self,
-        resampling_strategy: Optional[Union[CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes]] = None
     ) -> bool:
 
         """
@@ -646,9 +645,9 @@ class BaseTask(ABC):
         Returns:
             None
         """
-        resampling_strategy = resampling_strategy if resampling_strategy is not None else self.resampling_strategy
-        if resampling_strategy is None:
+        if self.resampling_strategy is None:
             raise ValueError("Resampling strategy is needed to determine what models to load")
+
         self.ensemble_ = self._backend.load_ensemble(self.seed)
 
         # If no ensemble is loaded, try to get the best performing model
@@ -658,10 +657,10 @@ class BaseTask(ABC):
         if self.ensemble_:
             identifiers = self.ensemble_.get_selected_model_identifiers()
             self.models_ = self._backend.load_models_by_identifiers(identifiers)
-            if isinstance(resampling_strategy, CrossValTypes):
+            if isinstance(self.resampling_strategy, CrossValTypes):
                 self.cv_models_ = self._backend.load_cv_models_by_identifiers(identifiers)
 
-            if isinstance(resampling_strategy, CrossValTypes):
+            if isinstance(self.resampling_strategy, CrossValTypes):
                 if len(self.cv_models_) == 0:
                     raise ValueError('No models fitted!')
 
@@ -1312,8 +1311,7 @@ class BaseTask(ABC):
         X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
         y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
         dataset_name: Optional[str] = None,
-        resampling_strategy: Union[
-            HoldoutValTypes, CrossValTypes, NoResamplingStrategyTypes] = NoResamplingStrategyTypes.no_resampling,
+        resampling_strategy: ResamplingStrategies = NoResamplingStrategyTypes.no_resampling,
         resampling_strategy_args: Optional[Dict[str, Any]] = None,
         total_walltime_limit: int = 120,
         run_time_limit_secs: int = 60,
@@ -1326,26 +1324,93 @@ class BaseTask(ABC):
         disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
     ) -> "BaseTask":
         """
-        Refit all models found with fit to new data.
-
-        Necessary when using cross-validation. During training, autoPyTorch
-        fits each model k times on the dataset, but does not keep any trained
-        model and can therefore not be used to predict for new data points.
-        This methods fits all models found during a call to fit on the data
-        given. This method may also be used together with holdout to avoid
-        only using 66% of the training data to fit the final model.
+        Fit all the models found in the ensemble on the whole training set X_train.
+        Therefore, we recommend using `NoResamplingStrategy` to be able to do that. Nevertheless, it
+        is still able to fit using other splitting techniques such as hold out or cross validation.
 
         Refit uses the estimator pipeline_options attribute, which the user
         can interact via the get_pipeline_options()/set_pipeline_options()
         methods.
 
         Args:
-            dataset (Dataset):
-                The argument that will provide the dataset splits. It can either
-                be a dictionary with the splits, or the dataset object which can
-                generate the splits based on different restrictions.
-            split_id (int):
-                split id to fit on.
+            dataset (BaseDataset):
+                An object of the appropriate child class of `BaseDataset`,
+                that will be used to fit the pipeline
+            X_train, y_train, X_test, y_test: Union[np.ndarray, List, pd.DataFrame]
+                A pair of features (X_train) and targets (y_train) used to fit a
+                pipeline. Additionally, a holdout of this pairs (X_test, y_test) can
+                be provided to track the generalization performance of each stage.
+            dataset_name (Optional[str]):
+                Name of the dataset, if None, random value is used.
+            resampling_strategy (ResamplingStrategies):
+                Strategy to split the training data. Defaults to
+                NoResamplingStrategyTypes.no_resampling.
+            resampling_strategy_args (Optional[Dict[str, Any]]):
+                Arguments required for the chosen resampling strategy. If None, uses
+                the default values provided in DEFAULT_RESAMPLING_PARAMETERS
+                in ```datasets/resampling_strategy.py```.
+            dataset_name (Optional[str]):
+                name of the dataset, used as experiment name.
+            total_walltime_limit (int):
+                Total time that can be used by all the models to be refitted. Defaults to 120.
+            run_time_limit_secs (int: default=60):
+                Time limit for a single call to the machine learning model.
+                Model fitting will be terminated if the machine learning algorithm
+                runs over the time limit. Set this value high enough so that
+                typical machine learning algorithms can be fit on the training
+                data.
+            memory_limit (Optional[int]):
+                Memory limit in MB for the machine learning algorithm. autopytorch
+                will stop fitting the machine learning algorithm if it tries
+                to allocate more than memory_limit MB. If None is provided,
+                no memory limit is set. In case of multi-processing, memory_limit
+                will be per job. This memory limit also applies to the ensemble
+                creation process.
+            eval_metric (Optional[str]):
+                Name of the metric that is used to evaluate a pipeline.
+            all_supported_metrics (bool: default=True):
+                if True, all metrics supporting current task will be calculated
+                for each pipeline and results will be available via cv_results
+            budget_type (str):
+                Type of budget to be used when fitting the pipeline.
+                It can be one of:
+
+                + `epochs`: The training of each pipeline will be terminated after
+                    a number of epochs have passed. This number of epochs is determined by the
+                    budget argument of this method.
+                + `runtime`: The training of each pipeline will be terminated after
+                    a number of seconds have passed. This number of seconds is determined by the
+                    budget argument of this method. The overall fitting time of a pipeline is
+                    controlled by func_eval_time_limit_secs. 'runtime' only controls the allocated
+                    time to train a pipeline, but it does not consider the overall time it takes
+                    to create a pipeline (data loading and preprocessing, other i/o operations, etc.).
+            budget (Optional[float]):
+                Budget to fit a single run of the pipeline. If not
+                provided, uses the default in the pipeline config
+            pipeline_options (Optional[Dict]):
+                Valid config options include "device",
+                "torch_num_threads", "early_stopping", "use_tensorboard_logger",
+                "metrics_during_training"
+            disable_file_output (Optional[List[Union[str, DisableFileOutputParameters]]]):
+                Used as a list to pass more fine-grained
+                information on what to save. Must be a member of `DisableFileOutputParameters`.
+                Allowed elements in the list are:
+
+                + `y_optimization`:
+                    do not save the predictions for the optimization set,
+                    which would later on be used to build an ensemble. Note that SMAC
+                    optimizes a metric evaluated on the optimization set.
+                + `pipeline`:
+                    do not save any individual pipeline files
+                + `pipelines`:
+                    In case of cross validation, disables saving the joint model of the
+                    pipelines fit on each fold.
+                + `y_test`:
+                    do not save the predictions for the test set.
+                + `all`:
+                    do not save any of the above.
+                For more information check `autoPyTorch.evaluation.utils.DisableFileOutputParameters`.
+
         Returns:
             self
         """
@@ -1367,6 +1432,9 @@ class BaseTask(ABC):
 
         self.dataset_name = dataset.dataset_name
 
+        # Used when loading models
+        self.resampling_strategy = resampling_strategy
+
         if self._logger is None:
             self._logger = self._get_logger(f"RefitLogger-{self.dataset_name}")
 
@@ -1383,6 +1451,7 @@ class BaseTask(ABC):
             exclude=self.exclude_components,
             search_space_updates=self.search_space_updates)
         dataset_properties = dataset.get_dataset_properties(dataset_requirements)
+
         self._backend.save_datamanager(dataset)
 
         scenario_mock = unittest.mock.Mock()
@@ -1447,13 +1516,13 @@ class BaseTask(ABC):
             current_search_space=self.search_space,
             initial_num_run=self._backend.get_next_num_run()
         )
+
         replace_old_identifiers_to_refit_identifiers = {}
 
         self._logger.debug("Finished refit training")
         old_identifier_index = None
-        for run_key, run_value in run_history.data.items():
+        for _, run_value in run_history.data.items():
             config = run_value.additional_info['configuration']
-            refit_identifier = (self.seed, run_value.additional_info['num_run'], run_key.budget)
             for i, (configuration, _) in enumerate(model_configs):
                 if isinstance(configuration, Configuration):
                     configuration = configuration.get_dictionary()
@@ -1462,14 +1531,21 @@ class BaseTask(ABC):
                     old_identifier_index = i
                     break
             if old_identifier_index is not None:
-                replace_old_identifiers_to_refit_identifiers[
-                    list(self.models_.keys())[old_identifier_index]] = refit_identifier
+                old_identifier = list(self.models_.keys())[old_identifier_index]
+                refit_identifier = (self.seed, run_value.additional_info['num_run'], old_identifier[2])
+                replace_old_identifiers_to_refit_identifiers[old_identifier] = refit_identifier
             else:
-                self._logger.warning(f"Refit for {config} failed. Model fitted during search will be used instead.")
+                warnings.warn(f"Refit for {config} failed. Model fitted during search will be used instead.")
             old_identifier_index = None
         self.ensemble_.update_identifiers(replace_old_identifiers_to_refit_identifiers)
 
-        self._load_models(resampling_strategy=resampling_strategy)
+        self.run_history.update(run_history, DataOrigin.EXTERNAL_SAME_INSTANCES)
+        run_history.save_json(os.path.join(self._backend.internals_directory, 'refit_run_history.json'),
+                              save_external=True)
+        # store ensemble for later use, with large iteration
+        self._backend.save_ensemble(self.ensemble_, 10**8, self.seed)
+
+        self._load_models()
         self._clean_logger()
 
         return self
