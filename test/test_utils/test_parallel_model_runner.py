@@ -1,18 +1,16 @@
-import pytest
 import unittest.mock
+from test.test_api.utils import dummy_eval_train_function
+from test.test_evaluation.evaluation_util import get_binary_classification_datamanager
 
 from ConfigSpace import Configuration
 
 from smac.tae import StatusType
 
 from autoPyTorch.pipeline.components.training.metrics.utils import get_metrics
-from autoPyTorch.utils.single_thread_client import SingleThreadedClient
 from autoPyTorch.utils.logging_ import PicklableClientLogger
 from autoPyTorch.utils.parallel_model_runner import run_models_on_dataset
 from autoPyTorch.utils.pipeline import get_configuration_space, get_dataset_requirements
-
-from test.test_evaluation.evaluation_util import get_binary_classification_datamanager
-from test.test_api.utils import dummy_eval_train_function
+from autoPyTorch.utils.single_thread_client import SingleThreadedClient
 
 
 @unittest.mock.patch('autoPyTorch.evaluation.tae.eval_train_function',
@@ -32,8 +30,8 @@ def test_run_models_on_dataset(backend):
     model_configurations.append(('lgb', 1))
 
     metric = get_metrics(dataset_properties=dataset_properties,
-                             names=["accuracy"],
-                             all_supported_metrics=False).pop()
+                         names=["accuracy"],
+                         all_supported_metrics=False).pop()
     logger = unittest.mock.Mock(spec=PicklableClientLogger)
 
     dask_client = SingleThreadedClient()

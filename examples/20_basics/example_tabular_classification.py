@@ -10,7 +10,7 @@ import os
 import tempfile as tmp
 import warnings
 
-from autoPyTorch.datasets.resampling_strategy import CrossValTypes, NoResamplingStrategyTypes
+from autoPyTorch.datasets.resampling_strategy import CrossValTypes
 
 os.environ['JOBLIB_TEMP_FOLDER'] = tmp.gettempdir()
 os.environ['OMP_NUM_THREADS'] = '1'
