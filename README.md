@@ -44,6 +44,12 @@ Then API starts the following procedures:
 (which specifies the choice of components in each step and their corresponding hyperparameters.
 
 ## Installation
+Clone the repository with submodules 
+```sh
+
+git clone --recurse-submodules git@github.com:automl/Auto-PyTorch.git
+
+```
 
 ### PyPI Installation
 
@@ -57,7 +63,7 @@ Auto-PyTorch for Time Series Forecasting requires additional dependencies
 
 ```sh
 
-pip install autoPyTorch[forecasting]
+pip install 'autoPyTorch[forecasting]'
 
 ```
 
