@@ -609,7 +609,6 @@ def test_tabular_input_support(openml_id, backend):
     estimator = TabularClassificationTask(
         backend=backend,
         resampling_strategy=HoldoutValTypes.holdout_validation,
-        ensemble_size=0,
     )
 
     estimator._do_dummy_prediction = unittest.mock.MagicMock()
@@ -624,6 +623,7 @@ def test_tabular_input_support(openml_id, backend):
             func_eval_time_limit_secs=50,
             enable_traditional_pipeline=False,
             load_models=False,
+            ensemble_size=0,
         )
 
 
@@ -633,7 +633,6 @@ def test_do_dummy_prediction(dask_client, fit_dictionary_tabular):
     estimator = TabularClassificationTask(
         backend=backend,
         resampling_strategy=HoldoutValTypes.holdout_validation,
-        ensemble_size=0,
     )
 
     # Setup pre-requisites normally set by search()
@@ -759,7 +758,6 @@ def test_do_traditional_pipeline(fit_dictionary_tabular):
     estimator = TabularClassificationTask(
         backend=backend,
         resampling_strategy=HoldoutValTypes.holdout_validation,
-        ensemble_size=0,
     )
 
     # Setup pre-requisites normally set by search()

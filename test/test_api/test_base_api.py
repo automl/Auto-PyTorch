@@ -12,7 +12,10 @@ from smac.tae.serial_runner import SerialRunner
 
 from autoPyTorch.api.base_task import BaseTask, _pipeline_predict
 from autoPyTorch.constants import TABULAR_CLASSIFICATION, TABULAR_REGRESSION
+from autoPyTorch.datasets.base_dataset import BaseDataset
 from autoPyTorch.datasets.resampling_strategy import NoResamplingStrategyTypes
+from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
+from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
 from autoPyTorch.pipeline.tabular_classification import TabularClassificationPipeline
 
 
@@ -115,7 +118,7 @@ def test_set_pipeline_config():
     ])
 def test_pipeline_get_budget(fit_dictionary_tabular, min_budget, max_budget, budget_type, expected):
     BaseTask.__abstractmethods__ = set()
-    estimator = BaseTask(task_type='tabular_classification', ensemble_size=0)
+    estimator = BaseTask(task_type='tabular_classification')
 
     # Fixture pipeline config
     default_pipeline_config = {
@@ -138,7 +141,7 @@ def test_pipeline_get_budget(fit_dictionary_tabular, min_budget, max_budget, bud
         smac_mock.return_value = smac
         estimator._search(optimize_metric='accuracy', dataset=dataset, tae_func=pipeline_fit,
                           min_budget=min_budget, max_budget=max_budget, budget_type=budget_type,
-                          enable_traditional_pipeline=False,
+                          ensemble_size=0, enable_traditional_pipeline=False,
                           total_walltime_limit=20, func_eval_time_limit_secs=10,
                           load_models=False)
         assert list(smac_mock.call_args)[1]['ta_kwargs']['pipeline_config'] == default_pipeline_config
@@ -201,3 +204,32 @@ def test_pipeline_get_budget_forecasting(fit_dictionary_forecasting, min_budget,
         assert list(smac_mock.call_args)[1]['ta_kwargs']['pipeline_config'] == default_pipeline_config
         assert list(smac_mock.call_args)[1]['max_budget'] == max_budget
         assert list(smac_mock.call_args)[1]['initial_budget'] == min_budget
+
+
+def test_init_ensemble_builder(backend):
+    BaseTask.__abstractmethods__ = set()
+    estimator = BaseTask(
+        backend=backend,
+    )
+
+    # Setup pre-requisites normally set by search()
+    estimator._logger = estimator._get_logger('test')
+    estimator.task_type = "tabular_classification"
+    estimator._memory_limit = 60
+    estimator.dataset = MagicMock(spec=BaseDataset)
+    estimator.dataset.output_type = 'binary'
+    estimator.dataset.dataset_name = 'dummy'
+
+    proc_ensemble = estimator._init_ensemble_builder(
+        time_left_for_ensembles=60,
+        optimize_metric='accuracy',
+        ensemble_nbest=10,
+        ensemble_size=5)
+
+    assert isinstance(proc_ensemble, EnsembleBuilderManager)
+    assert proc_ensemble.opt_metric == 'accuracy'
+    assert proc_ensemble.metrics[0] == accuracy
+
+    estimator._cleanup()
+
+    del estimator
