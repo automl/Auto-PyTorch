@@ -4,6 +4,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
     UniformFloatHyperparameter,
+    UniformIntegerHyperparameter,
+    CategoricalHyperparameter
 )
 
 import numpy as np
@@ -14,6 +16,34 @@ from torch import embedding, nn
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_embedding.base_network_embedding import NetworkEmbeddingComponent
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
+
+
+def get_num_output_dimensions(config: Dict[str, Any], num_categs_per_feature: List[int]) -> List[int]:
+    """
+        Returns list of embedding sizes for each categorical variable.
+        Selects this adaptively based on training_datset.
+        Note: Assumes there is at least one embed feature.
+    Args:
+        config (Dict[str, Any]): 
+            contains the hyperparameters required to calculate the `num_output_dimensions`
+        num_categs_per_feature (List[int]):
+            list containing number of categories for each feature that is to be embedded,
+            0 if the column is not an embed column
+    Returns:
+        List[int]:
+            list containing the output embedding size for each column,
+            1 if the column is not an embed column
+    """
+
+    max_embedding_dim = config['max_embedding_dim']
+    embed_exponent = config['embed_exponent']
+    size_factor = config['embedding_size_factor']
+    num_output_dimensions = [int(size_factor*max(
+                                                 2,
+                                                 min(max_embedding_dim,
+                                                     1.6 * num_categories**embed_exponent)))
+                             if num_categories > 0 else 1 for num_categories in num_categs_per_feature]
+    return num_output_dimensions
 
 
 class _LearnedEntityEmbedding(nn.Module):
@@ -35,9 +65,7 @@ class _LearnedEntityEmbedding(nn.Module):
 
         self.num_embed_features = self.num_categories_per_col[self.embed_features]
 
-        self.num_output_dimensions = [1] * num_features_excl_embed
-        self.num_output_dimensions.extend([ceil(config["dimension_reduction_" + str(i)] * num_in) for i, num_in in
-                                           enumerate(self.num_embed_features)])
+        self.num_output_dimensions = get_num_output_dimensions(config, self.num_categories_per_col)
 
         self.num_out_feats = num_features_excl_embed + sum(self.num_output_dimensions)
 
@@ -78,12 +106,10 @@ class _LearnedEntityEmbedding(nn.Module):
         # before passing it through the model
         concat_seq = []
 
-        x_pointer = 0
         layer_pointer = 0
         for x_pointer, embed in enumerate(self.embed_features):
             current_feature_slice = x[:, x_pointer]
             if not embed:
-                x_pointer += 1
                 concat_seq.append(current_feature_slice.view(-1, 1))
                 continue
             current_feature_slice = current_feature_slice.to(torch.int)
@@ -153,28 +179,24 @@ class LearnedEntityEmbedding(NetworkEmbeddingComponent):
     @staticmethod
     def get_hyperparameter_search_space(
         dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
-        dimension_reduction: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="dimension_reduction",
-                                                                                   value_range=(0, 1),
-                                                                                   default_value=0.5),
+        embed_exponent: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="embed_exponent",
+                                                                                   value_range=(0.56,),
+                                                                                   default_value=0.56),
+        max_embedding_dim: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="max_embedding_dim",
+                                                                                   value_range=(100,),
+                                                                                   default_value=100),
+        embedding_size_factor: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="embedding_size_factor",
+                                                                                     value_range=(0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5),
+                                                                                     default_value=1,
+                                                                                     ),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
         if dataset_properties is not None:
-            for i in range(len(dataset_properties['categorical_columns'])
-                           if isinstance(dataset_properties['categorical_columns'], List) else 0):
-                # currently as we dont have information about the embedding columns
-                # we search for more dimensions than necessary. This can be solved by
-                # not having `min_unique_values_for_embedding` as a hyperparameter and
-                # instead passing it as a parameter to the feature validator, which
-                # allows us to pass embed_columns to the dataset properties.
-                # TODO: test the trade off
-                # Another solution is to combine `OneHotEncoding`, `Embedding` and `NoEncoding`
-                # in one custom transformer. this will also allow users to use this transformer
-                # outside the pipeline
-                ee_dimensions_search_space = HyperparameterSearchSpace(hyperparameter="dimension_reduction_" + str(i),
-                                                                       value_range=dimension_reduction.value_range,
-                                                                       default_value=dimension_reduction.default_value,
-                                                                       log=dimension_reduction.log)
-                add_hyperparameter(cs, ee_dimensions_search_space, UniformFloatHyperparameter)
+            if len(dataset_properties['categorical_columns']) > 0:
+                add_hyperparameter(cs, embed_exponent, UniformFloatHyperparameter)
+                add_hyperparameter(cs, max_embedding_dim, UniformIntegerHyperparameter)
+                add_hyperparameter(cs, embedding_size_factor, CategoricalHyperparameter)
+
         return cs
 
     @staticmethod
