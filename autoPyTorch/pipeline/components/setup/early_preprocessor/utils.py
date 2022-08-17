@@ -13,6 +13,7 @@ from autoPyTorch.pipeline.components.preprocessing.base_preprocessing import (
     autoPyTorchPreprocessingComponent as aPTPre,
     autoPyTorchTargetPreprocessingComponent as aPTTPre
 )
+from .....utils.common import ispandas
 
 
 def get_preprocess_transforms(X: Dict[str, Any],
@@ -71,3 +72,10 @@ def time_series_preprocess(dataset: pd.DataFrame, transforms: torchvision.transf
         sub_dataset = composite_transforms(sub_dataset)
         dataset.iloc[:, indices] = sub_dataset
     return dataset
+
+
+def get_preprocessed_dtype(X_train: Union[np.ndarray, pd.DataFrame]):
+    if ispandas(X_train):
+        return X_train.dtypes[X_train.columns].name
+    else:
+        return X_train.dtype.name

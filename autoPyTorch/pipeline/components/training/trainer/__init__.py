@@ -453,7 +453,7 @@ class TrainerChoice(autoPyTorchChoice):
             if preprocessed_dtype is None:
                 use_double = True
             else:
-                use_double = 'float64' in preprocessed_dtype
+                use_double = 'float64' in preprocessed_dtype or 'int64' in preprocessed_dtype
 
             # update batch norm statistics
             swa_model = self.choice.swa_model.double() if use_double else self.choice.swa_model
