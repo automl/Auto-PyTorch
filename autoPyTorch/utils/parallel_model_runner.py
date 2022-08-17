@@ -29,12 +29,12 @@ def run_models_on_dataset(
     metric: autoPyTorchMetric,
     dask_client: dask.distributed.Client,
     backend: Backend,
-    all_supported_metrics: bool,
     seed: int,
     multiprocessing_context: str,
-    n_jobs: int,
     current_search_space: ConfigurationSpace,
-    initial_num_run: int,
+    n_jobs: int = 1,
+    initial_num_run: int = 1,
+    all_supported_metrics: bool = False,
     include: Optional[Dict[str, List[str]]] = None,
     exclude: Optional[Dict[str, List[str]]] = None,
     search_space_updates: Optional[HyperparameterSearchSpaceUpdates] = None,
@@ -280,7 +280,7 @@ def _process_result(
     else:
         if additional_info.get('exitcode') == -6:
             logger.error(
-                "Traditional prediction for {} failed with run state {},\n"
+                "Prediction for {} failed with run state {},\n"
                 "because the provided memory limits were too tight.\n"
                 "Please increase the 'ml_memory_limit' and try again.\n"
                 "If you still get the problem, please open an issue\n"
@@ -289,7 +289,7 @@ def _process_result(
             )
         else:
             logger.error(
-                "Traditional prediction for {} failed with run state {}.\nAdditional info:\n{}".format(
+                "Prediction for {} failed with run state {}.\nAdditional info:\n{}".format(
                     cls, str(status), dict_repr(additional_info)
                 )
             )
