@@ -10,7 +10,7 @@ from autoPyTorch.pipeline.components.preprocessing.base_preprocessing import \
 from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing import \
     EarlyPreprocessing
 from autoPyTorch.pipeline.components.setup.early_preprocessor.utils import (
-    get_preprocess_transforms, time_series_preprocess)
+    get_preprocess_transforms, get_preprocessed_dtype, time_series_preprocess)
 from autoPyTorch.utils.common import FitRequirement
 
 
@@ -62,11 +62,12 @@ class TimeSeriesEarlyPreprocessing(EarlyPreprocessing):
             new_feature_names += list(set(feature_names) - set(new_feature_names))
         X['dataset_properties']['feature_names'] = tuple(new_feature_names)
 
+        preprocessed_dtype = get_preprocessed_dtype(X['X_train'])
         # We need to also save the preprocess transforms for inference
         X.update({
             'preprocess_transforms': transforms,
             'shape_after_preprocessing': X['X_train'].shape[1:],
-            'preprocessed_dtype': X['X_train'].dtype.name
+            'preprocessed_dtype': preprocessed_dtype
             })
         return X
 

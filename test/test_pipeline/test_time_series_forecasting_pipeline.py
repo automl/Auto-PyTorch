@@ -46,7 +46,7 @@ class TestTimeSeriesForecastingPipeline:
                                                             "multi_variant_only_num"], indirect=True)
     def test_fit_predict(self, fit_dictionary_forecasting, forecasting_budgets):
         dataset_properties = fit_dictionary_forecasting['dataset_properties']
-        if not dataset_properties['uni_variant'] and len(dataset_properties['categories']) > 0:
+        if not dataset_properties['uni_variant'] and len(dataset_properties['num_categories_per_col']) > 0:
             include = {'network_embedding': ['LearnedEntityEmbedding']}
         else:
             include = None
