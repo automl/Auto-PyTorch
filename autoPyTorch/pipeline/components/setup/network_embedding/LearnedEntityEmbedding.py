@@ -62,6 +62,7 @@ class _LearnedEntityEmbedding(nn.Module):
         # or 0 for numerical data
         self.num_categories_per_col = num_categories_per_col
         self.embed_features = self.num_categories_per_col > 0
+        self.num_features_excl_embed = num_features_excl_embed
 
         self.num_embed_features = self.num_categories_per_col[self.embed_features]
 
@@ -84,8 +85,8 @@ class _LearnedEntityEmbedding(nn.Module):
             partial_model (_LearnedEntityEmbedding)
                 a new partial model
         """
-        num_input_features = self.num_input_features[subset_features]
-        num_numerical_features = sum([sf < self.num_numerical for sf in subset_features])
+        num_input_features = self.num_categories_per_col[subset_features]
+        num_features_excl_embed = sum([sf < self.num_features_excl_embed for sf in subset_features])
 
         num_output_dimensions = [self.num_output_dimensions[sf] for sf in subset_features]
         embed_features = [self.embed_features[sf] for sf in subset_features]
@@ -98,7 +99,7 @@ class _LearnedEntityEmbedding(nn.Module):
                 ee_layer_tracker += 1
         ee_layers = nn.ModuleList(ee_layers)
 
-        return PartialLearnedEntityEmbedding(num_input_features, num_numerical_features, embed_features,
+        return PartialLearnedEntityEmbedding(num_input_features, num_features_excl_embed, embed_features,
                                              num_output_dimensions, ee_layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -136,27 +137,26 @@ class PartialLearnedEntityEmbedding(_LearnedEntityEmbedding):
     of the input features. This is applied to forecasting tasks where not all the features might be known beforehand
     """
     def __init__(self,
-                 num_input_features: np.ndarray,
-                 num_numerical_features: int,
+                 num_categories_per_col: np.ndarray,
+                 num_features_excl_embed: int,
                  embed_features: List[bool],
                  num_output_dimensions: List[int],
                  ee_layers: nn.Module
                  ):
         super(_LearnedEntityEmbedding, self).__init__()
-        self.num_numerical = num_numerical_features
+        self.num_features_excl_embed = num_features_excl_embed
         # list of number of categories of categorical data
         # or 0 for numerical data
-        self.num_input_features = num_input_features
-        categorical_features: np.ndarray = self.num_input_features > 0
-
-        self.num_categorical_features = self.num_input_features[categorical_features]
+        self.num_categories_per_col = num_categories_per_col
 
         self.embed_features = embed_features
 
         self.num_output_dimensions = num_output_dimensions
-        self.num_out_feats = self.num_numerical + sum(self.num_output_dimensions)
+        self.num_out_feats = self.num_features_excl_embed + sum(self.num_output_dimensions)
 
         self.ee_layers = ee_layers
+
+        self.num_embed_features = self.num_categories_per_col[self.embed_features]
 
 
 class LearnedEntityEmbedding(NetworkEmbeddingComponent):
