@@ -1,5 +1,3 @@
-import logging
-import time
 from typing import Any, Dict, List, Optional, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -14,7 +12,6 @@ from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.base_tabular_preprocessing import \
     autoPyTorchTabularPreprocessingComponent
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
-from autoPyTorch.utils.logging_ import get_named_client_logger
 
 
 class ColumnSplitter(autoPyTorchTabularPreprocessingComponent):
