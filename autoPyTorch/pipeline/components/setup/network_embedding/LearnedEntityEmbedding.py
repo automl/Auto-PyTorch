@@ -108,16 +108,24 @@ class _LearnedEntityEmbedding(nn.Module):
         concat_seq = []
 
         layer_pointer = 0
+        # Time series tasks need to add targets to the embeddings. However, the target information is not recorded
+        # by autoPyTorch's embeddings. Therefore, we need to add the targets parts to `concat_seq` manually, which is
+        # the last few dimensions of the input x
+        # we assign x_pointer to 0 beforehand to avoid the case that self.embed_features has 0 length
+        x_pointer = 0
         for x_pointer, embed in enumerate(self.embed_features):
-            current_feature_slice = x[:, x_pointer]
             if not embed:
-                concat_seq.append(current_feature_slice.view(-1, 1))
+                current_feature_slice = x[..., [x_pointer]]
+                concat_seq.append(current_feature_slice)
                 continue
+            current_feature_slice = x[..., x_pointer]
             current_feature_slice = current_feature_slice.to(torch.int)
             concat_seq.append(self.ee_layers[layer_pointer](current_feature_slice))
             layer_pointer += 1
 
-        return torch.cat(concat_seq, dim=1)
+        concat_seq.append(x[..., x_pointer:])
+
+        return torch.cat(concat_seq, dim=-1)
 
     def _create_ee_layers(self) -> nn.ModuleList:
         # entity embeding layers are Linear Layers
