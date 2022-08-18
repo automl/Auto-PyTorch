@@ -14,19 +14,19 @@ class autoPyTorchTabularPreprocessingComponent(autoPyTorchPreprocessingComponent
     def __init__(self) -> None:
         super().__init__()
         self.preprocessor: Union[Dict[str, Optional[BaseEstimator]], BaseEstimator] = dict(
-            numerical=None, categorical=None)
+            numerical=None, encode=None, categorical=None)
 
     def get_preprocessor_dict(self) -> Dict[str, BaseEstimator]:
         """
-        Returns early_preprocessor dictionary containing the sklearn numerical
-        and categorical early_preprocessor with "numerical" and "categorical"
-        keys. May contain None for a key if early_preprocessor does not
+        Returns early_preprocessor dictionary containing the sklearn numerical,
+        categorical and encode early_preprocessor with "numerical", "categorical"
+        "encode" keys. May contain None for a key if early_preprocessor does not
         handle the datatype defined by key
 
         Returns:
             Dict[str, BaseEstimator]: early_preprocessor dictionary
         """
-        if (self.preprocessor['numerical'] and self.preprocessor['categorical']) is None:
+        if (self.preprocessor['numerical'] and self.preprocessor['categorical'] and self.preprocessor['encode']) is None:
             raise AttributeError("{} can't return early_preprocessor dict without fitting first"
                                  .format(self.__class__.__name__))
         return self.preprocessor
