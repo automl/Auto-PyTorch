@@ -820,7 +820,7 @@ class BaseTask(ABC):
             metric=self._metric,
             dask_client=self._dask_client,
             backend=self._backend,
-            memory_limit=self._memory_limit,
+            memory_limit=memory_limit,
             disable_file_output=self._disable_file_output,
             all_supported_metrics=self._all_supported_metrics,
             include=self.include_components,
