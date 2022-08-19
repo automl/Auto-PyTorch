@@ -119,7 +119,10 @@ class _LearnedEntityEmbedding(nn.Module):
         concat_seq = []
 
         layer_pointer = 0
-        # Given that our embedding network is only applied to the last few feature columns self.embed_features
+        # Time series tasks need to add targets to the embeddings. However, the target information is not recorded
+        # by autoPyTorch's embeddings. Therefore, we need to add the targets parts to `concat_seq` manually, which is
+        # the last few dimensions of the input x
+        # we assign x_pointer to 0 beforehand to avoid the case that self.embed_features has 0 length
         x_pointer = 0
         for x_pointer, embed in enumerate(self.embed_features):
             if not embed:
