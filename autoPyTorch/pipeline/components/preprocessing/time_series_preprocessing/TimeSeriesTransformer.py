@@ -12,7 +12,7 @@ from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.bas
     autoPyTorchTimeSeriesPreprocessingComponent,
     autoPyTorchTimeSeriesTargetPreprocessingComponent)
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.utils import (
-    get_time_series_preprocessers, get_time_series_target_preprocessers)
+    get_time_series_preprocessors, get_time_series_target_preprocessers)
 from autoPyTorch.utils.common import FitRequirement
 
 
@@ -38,18 +38,25 @@ class TimeSeriesFeatureTransformer(autoPyTorchTimeSeriesPreprocessingComponent):
         """
         self.check_requirements(X, y)
 
-        preprocessors = get_time_series_preprocessers(X)
+        preprocessors = get_time_series_preprocessors(X)
         column_transformers: List[Tuple[str, BaseEstimator, List[int]]] = []
+
+        numerical_pipeline = 'passthrough'
+        encode_pipeline = 'passthrough'
+
         if len(preprocessors['numerical']) > 0:
             numerical_pipeline = make_pipeline(*preprocessors['numerical'])
-            column_transformers.append(
-                ('numerical_pipeline', numerical_pipeline, X['dataset_properties']['numerical_columns'])
-            )
-        if len(preprocessors['categorical']) > 0:
-            categorical_pipeline = make_pipeline(*preprocessors['categorical'])
-            column_transformers.append(
-                ('categorical_pipeline', categorical_pipeline, X['dataset_properties']['categorical_columns'])
-            )
+
+        column_transformers.append(
+            ('numerical_pipeline', numerical_pipeline, X['dataset_properties']['numerical_columns'])
+        )
+
+        if len(preprocessors['encode']) > 0:
+            encode_pipeline = make_pipeline(*preprocessors['encode'])
+
+        column_transformers.append(
+            ('encode_pipeline', encode_pipeline, X['encode_columns'])
+        )
 
         # in case the preprocessing steps are disabled
         # i.e, NoEncoder for categorical, we want to
@@ -86,7 +93,6 @@ class TimeSeriesFeatureTransformer(autoPyTorchTimeSeriesPreprocessingComponent):
         if self.preprocessor is None:
             raise ValueError("cant call {} without fitting the column transformer first."
                              .format(self.__class__.__name__))
-
         return self.preprocessor.transform(X)
 
     def get_column_transformer(self) -> ColumnTransformer:

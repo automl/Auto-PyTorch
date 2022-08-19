@@ -54,6 +54,10 @@ class TimeSeriesEarlyPreprocessing(EarlyPreprocessing):
         feature_names = X['dataset_properties']['feature_names']
         numerical_columns = X['dataset_properties']['numerical_columns']
         categorical_columns = X['dataset_properties']['categorical_columns']
+        # encoding_columns = X['dataset_properties']['encoding_columns']
+        encode_columns = X['encode_columns']
+        import pdb
+        pdb.set_trace()
 
         # resort feature_names
         # Previously, the categorical features are sorted before numerical features. However,
