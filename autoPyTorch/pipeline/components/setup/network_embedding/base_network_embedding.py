@@ -20,6 +20,7 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
         self.embedding: Optional[nn.Module] = None
         self.random_state = random_state
         self.feature_shapes: Dict[str, int] = {}
+        self.embed_features_idx: Optional[Tuple] = None
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
 
@@ -30,22 +31,28 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
             num_features_excl_embed=num_features_excl_embed
         )
         if "feature_shapes" in X['dataset_properties']:
+            n_features_embedded = len(num_categories_per_col) - num_features_excl_embed
             if num_output_features is not None:
                 feature_shapes = X['dataset_properties']['feature_shapes']
                 # forecasting tasks
                 feature_names = X['dataset_properties']['feature_names']
-                for idx_cat, n_output_cat in enumerate(num_output_features[num_features_excl_embed:]):
-                    cat_feature_name = feature_names[idx_cat + num_features_excl_embed]
-                    feature_shapes[cat_feature_name] = n_output_cat
+                n_features_all = len(feature_names)
+                embed_features_idx = tuple(range(n_features_all - n_features_embedded, n_features_all))
+                for idx, n_output_embedded in zip(embed_features_idx, num_output_features[-n_features_embedded:]):
+                    feat_name = feature_names[idx]
+                    feature_shapes[feat_name] = n_output_embedded
+                self.embed_features_idx = embed_features_idx
                 self.feature_shapes = feature_shapes
             else:
                 self.feature_shapes = X['dataset_properties']['feature_shapes']
+                self.embed_features_idx = []
         return self
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         X.update({'network_embedding': self.embedding})
         if "feature_shapes" in X['dataset_properties']:
             X['dataset_properties'].update({"feature_shapes": self.feature_shapes})
+            X['embed_features_idx'] = self.embed_features_idx
         return X
 
     def build_embedding(self,
