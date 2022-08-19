@@ -1435,8 +1435,7 @@ class BaseTask(ABC):
         # Used when loading models
         self.resampling_strategy = resampling_strategy
 
-        if self._logger is None:
-            self._logger = self._get_logger(f"RefitLogger-{self.dataset_name}")
+        self._logger = self._get_logger("RefitLogger")
 
         self._logger.debug("Starting refit")
 
@@ -1542,6 +1541,7 @@ class BaseTask(ABC):
         self.run_history.update(run_history, DataOrigin.EXTERNAL_SAME_INSTANCES)
         run_history.save_json(os.path.join(self._backend.internals_directory, 'refit_run_history.json'),
                               save_external=True)
+
         # store ensemble for later use, with large iteration
         self._backend.save_ensemble(self.ensemble_, 10**8, self.seed)
 
@@ -1848,8 +1848,7 @@ class BaseTask(ABC):
 
         # Parallelize predictions across models with n_jobs processes.
         # Each process computes predictions in chunks of batch_size rows.
-        if self._logger is None:
-            self._logger = self._get_logger("Predict-Logger")
+        self._logger = self._get_logger("Predict-Logger")
 
         if self.ensemble_ is None and not self._load_models():
             raise ValueError("No ensemble found. Either fit has not yet "

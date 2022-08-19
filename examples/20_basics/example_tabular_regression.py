@@ -53,16 +53,40 @@ api.search(
 )
 
 ############################################################################
-# Print the final ensemble performance
-# ====================================
+# Print the final ensemble performance before refit
+# =================================================
 y_pred = api.predict(X_test)
-
-# Rescale the Neural Network predictions into the original target range
 score = api.score(y_pred, y_test)
-
 print(score)
-# Print the final ensemble built by AutoPyTorch
-print(api.show_models())
 
 # Print statistics from search
 print(api.sprint_statistics())
+
+###########################################################################
+# Refit the models on the full dataset.
+# =====================================
+
+api.refit(
+    X_train=X_train,
+    y_train=y_train,
+    X_test=X_test,
+    y_test=y_test,
+    dataset_name="Boston",
+    total_walltime_limit=1000,
+    run_time_limit_secs=200
+    # you can change the resampling strategy to
+    # for example, CrossValTypes.k_fold_cross_validation
+    # to fit k fold models and have a voting classifier
+    # resampling_strategy=CrossValTypes.k_fold_cross_validation
+)
+
+############################################################################
+# Print the final ensemble performance after refit
+# ================================================
+
+y_pred = api.predict(X_test)
+score = api.score(y_pred, y_test)
+print(score)
+
+# Print the final ensemble built by AutoPyTorch
+print(api.show_models())

@@ -195,7 +195,8 @@ class MyTraditionalTabularRegressionPipeline(BaseEstimator):
                     Can be found in autoPyTorch/pipeline/components/setup/traditional_ml/estimator_configs
         """
         return {'pipeline_configuration': self.configuration,
-                'trainer_configuration': self.pipeline.named_steps['model_trainer'].choice.model.get_config()}
+                'trainer_configuration': self.pipeline.named_steps['model_trainer'].choice.model.get_config(),
+                'configuration_origin': 'traditional'}
 
     def get_pipeline_representation(self) -> Dict[str, str]:
         return self.pipeline.get_pipeline_representation()

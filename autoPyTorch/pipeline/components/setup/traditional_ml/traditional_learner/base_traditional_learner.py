@@ -68,6 +68,8 @@ class BaseTraditionalLearner:
 
         self.is_classification = STRING_TO_TASK_TYPES[task_type] not in REGRESSION_TASKS
 
+        self.has_val_set = False
+
         self.metric = get_metrics(dataset_properties={'task_type': task_type,
                                                       'output_type': output_type},
                                   names=[optimize_metric] if optimize_metric is not None else None)[0]
@@ -132,8 +134,8 @@ class BaseTraditionalLearner:
     def _fit(self,
              X_train: np.ndarray,
              y_train: np.ndarray,
-             X_val: np.ndarray,
-             y_val: np.ndarray) -> None:
+             X_val: Optional[np.ndarray] = None,
+             y_val: Optional[np.ndarray] = None) -> None:
         """
         Method that fits the underlying estimator
         Args:
@@ -152,8 +154,8 @@ class BaseTraditionalLearner:
 
     def fit(self, X_train: np.ndarray,
             y_train: np.ndarray,
-            X_val: np.ndarray,
-            y_val: np.ndarray) -> Dict[str, Any]:
+            X_val: Optional[np.ndarray] = None,
+            y_val: Optional[np.ndarray] = None) -> Dict[str, Any]:
         """
         Fit the model (possible using the validation set for early stopping) and
         return the results on the training and validation set.
@@ -172,7 +174,10 @@ class BaseTraditionalLearner:
                 Dictionary containing the results. see _get_results()
         """
         X_train = self._preprocess(X_train)
-        X_val = self._preprocess(X_val)
+
+        if X_val is not None:
+            self.has_val_set = True
+            X_val = self._preprocess(X_val)
 
         self._prepare_model(X_train, y_train)
 
@@ -253,14 +258,14 @@ class BaseTraditionalLearner:
                 Dictionary containing the results
         """
         pred_train = self.predict(X_train, predict_proba=self.is_classification, preprocess=False)
-        pred_val = self.predict(X_val, predict_proba=self.is_classification, preprocess=False)
 
         results = dict()
-
-        results["val_preds"] = pred_val.tolist()
-        results["labels"] = y_val.tolist()
-
         results["train_score"] = self.metric(y_train, pred_train)
-        results["val_score"] = self.metric(y_val, pred_val)
+
+        if self.has_val_set:
+            pred_val = self.predict(X_val, predict_proba=self.is_classification, preprocess=False)
+            results["labels"] = y_val.tolist()
+            results["val_preds"] = pred_val.tolist()
+            results["val_score"] = self.metric(y_val, pred_val)
 
         return results
