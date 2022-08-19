@@ -56,6 +56,8 @@ class TimeSeriesEarlyPreprocessing(EarlyPreprocessing):
         categorical_columns = X['dataset_properties']['categorical_columns']
 
         # resort feature_names
+        # Previously, the categorical features are sorted before numerical features. However,
+        # After the preprocessing. The numerical features are sorted at the first place.
         new_feature_names = [feature_names[num_col] for num_col in numerical_columns]
         new_feature_names += [feature_names[cat_col] for cat_col in categorical_columns]
         if set(feature_names) != set(new_feature_names):

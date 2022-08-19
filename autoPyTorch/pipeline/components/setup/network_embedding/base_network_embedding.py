@@ -70,6 +70,11 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
                 number of categories for categorical columns and
                 0 for numerical columns
         """
+        if X['dataset_properties']['target_type'] == 'time_series_forecasting' \
+                and X['dataset_properties'].get('uni_variant', False):
+            # For uni_variant time series forecasting tasks, we don't have the related information for embeddings
+            return 0, np.asarray([])
+
         num_cols = X['shape_after_preprocessing']
         # only works for 2D(rows, features) tabular data
         num_features_excl_embed = num_cols[0] - len(X['embed_columns'])
