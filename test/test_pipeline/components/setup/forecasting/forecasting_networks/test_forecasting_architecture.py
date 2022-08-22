@@ -24,22 +24,22 @@ from autoPyTorch.pipeline.components.setup.network_head.forecasting_network_head
 from autoPyTorch.utils.hyperparameter_search_space_update import HyperparameterSearchSpaceUpdate
 
 
-class ReducedEmbedding(torch.nn.Module):
+class IncrementalEmbedding(torch.nn.Module):
     # a dummy reduced embedding, it simply cut row for each categorical features
-    def __init__(self, num_input_features, num_numerical_features: int):
-        super(ReducedEmbedding, self).__init__()
-        self.num_input_features = num_input_features
-        self.num_numerical_features = num_numerical_features
-        self.n_cat_features = len(num_input_features) - num_numerical_features
+    def __init__(self, n_excl_embed_features, embed_feat_idx):
+        super(IncrementalEmbedding, self).__init__()
+        self.n_excl_embed_features = n_excl_embed_features
+        self.embed_feat_idx = embed_feat_idx
 
     def forward(self, x):
-        x = x[..., :-self.n_cat_features]
+        if len(self.embed_feat_idx) > 0:
+            x = torch.cat([x, x[..., -len(self.embed_feat_idx):]], dim=-1)
         return x
 
-    def get_partial_models(self, subset_features):
-        num_numerical_features = sum([sf < self.num_numerical_features for sf in subset_features])
-        num_input_features = [self.num_input_features[sf] for sf in subset_features]
-        return ReducedEmbedding(num_input_features, num_numerical_features)
+    def get_partial_models(self, n_excl_embed_features,  idx_embed_feat_partial):
+        n_excl_embed_features = n_excl_embed_features
+        embed_feat_idx = [self.embed_feat_idx[idx] for idx in idx_embed_feat_partial]
+        return IncrementalEmbedding(n_excl_embed_features, embed_feat_idx)
 
 
 @pytest.fixture(params=['ForecastingNet', 'ForecastingSeq2SeqNet', 'ForecastingDeepARNet', 'NBEATSNet'])
@@ -52,7 +52,7 @@ def network_encoder(request):
     return request.param
 
 
-@pytest.fixture(params=['ReducedEmbedding', 'NoEmbedding'])
+@pytest.fixture(params=['IncrementalEmbedding', 'NoEmbedding'])
 def embedding(request):
     return request.param
 
@@ -110,7 +110,7 @@ class TestForecastingNetworks:
             dataset_properties['known_future_features'] = ('f1', 'f3', 'f5')
 
         if with_static_features:
-            dataset_properties['static_features'] = (0, 4)
+            dataset_properties['static_features'] = (0, 3)
         else:
             dataset_properties['static_features'] = tuple()
 
@@ -130,10 +130,14 @@ class TestForecastingNetworks:
         fit_dictionary['net_output_type'] = net_output_type
 
         if embedding == 'NoEmbedding':
+            embed_features_idx = ()
             fit_dictionary['network_embedding'] = _NoEmbedding()
+            fit_dictionary['embed_features_idx'] = embed_features_idx
         else:
-            fit_dictionary['network_embedding'] = ReducedEmbedding([10] * 5, 2)
-            dataset_properties['feature_shapes'] = {'f1': 10, 'f2': 10, 'f3': 9, 'f4': 9, 'f5': 9}
+            embed_features_idx = (3, 4)
+            fit_dictionary['network_embedding'] = IncrementalEmbedding(50, embed_features_idx)
+            fit_dictionary['embed_features_idx'] = embed_features_idx
+            dataset_properties['feature_shapes'] = {'f1': 10, 'f2': 10, 'f3': 10, 'f4': 11, 'f5': 11}
 
         if uni_variant_data:
             fit_dictionary['X_train'] = None

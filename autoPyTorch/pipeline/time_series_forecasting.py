@@ -26,6 +26,9 @@ from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.TimeSeriesTransformer import (
     TimeSeriesFeatureTransformer
 )
+from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.column_spliting.ColumnSplitter import (
+    TimeSeriesColumnSplitter
+)
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.encoding import TimeSeriesEncoderChoice
 from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.imputation.TimeSeriesImputer import (
     TimeSeriesFeatureImputer,
@@ -333,6 +336,7 @@ class TimeSeriesForecastingPipeline(RegressorMixin, BasePipeline):
         if not default_dataset_properties.get("uni_variant", False):
             steps.extend([("impute", TimeSeriesFeatureImputer(random_state=self.random_state)),
                           ("scaler", BaseScaler(random_state=self.random_state)),
+                          ("column_splitter", TimeSeriesColumnSplitter(random_state=self.random_state)),
                           ('feature_encoding', TimeSeriesEncoderChoice(default_dataset_properties,
                                                                        random_state=self.random_state)),
                           ("time_series_transformer", TimeSeriesFeatureTransformer(random_state=self.random_state)),

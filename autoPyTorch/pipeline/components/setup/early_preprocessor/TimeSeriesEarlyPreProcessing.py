@@ -22,18 +22,12 @@ class TimeSeriesEarlyPreprocessing(EarlyPreprocessing):
             FitRequirement('X_train', (pd.DataFrame, ), user_defined=True,
                            dataset_property=False),
             FitRequirement('feature_names', (tuple,), user_defined=True, dataset_property=True),
-            FitRequirement('numerical_columns', (List,), user_defined=True, dataset_property=True),
-            FitRequirement('categorical_columns', (List,), user_defined=True, dataset_property=True),
+            FitRequirement('feature_order_after_preprocessing', (List,), user_defined=False, dataset_property=False)
         ])
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         """
         if dataset is small process, we transform the entire dataset here.
-        Before transformation, the order of the dataset is:
-        [(unknown_columns), categorical_columns, numerical_columns]
-        While after transformation, the order of the dataset is:
-        [numerical_columns, categorical_columns, unknown_columns]
-        we need to change feature_names and feature_shapes accordingly
 
         Args:
             X(Dict): fit dictionary
@@ -52,14 +46,9 @@ class TimeSeriesEarlyPreprocessing(EarlyPreprocessing):
         X['X_train'] = time_series_preprocess(dataset=X_train, transforms=transforms)
 
         feature_names = X['dataset_properties']['feature_names']
-        numerical_columns = X['dataset_properties']['numerical_columns']
-        categorical_columns = X['dataset_properties']['categorical_columns']
 
-        # resort feature_names
-        new_feature_names = [feature_names[num_col] for num_col in numerical_columns]
-        new_feature_names += [feature_names[cat_col] for cat_col in categorical_columns]
-        if set(feature_names) != set(new_feature_names):
-            new_feature_names += list(set(feature_names) - set(new_feature_names))
+        feature_order_after_preprocessing = X['feature_order_after_preprocessing']
+        new_feature_names = (feature_names[i] for i in feature_order_after_preprocessing)
         X['dataset_properties']['feature_names'] = tuple(new_feature_names)
 
         preprocessed_dtype = get_preprocessed_dtype(X['X_train'])

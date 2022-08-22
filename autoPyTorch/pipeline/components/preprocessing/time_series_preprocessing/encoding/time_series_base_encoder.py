@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding.base_encoder import \
     BaseEncoder
@@ -7,7 +7,7 @@ from autoPyTorch.pipeline.components.preprocessing.time_series_preprocessing.bas
 from autoPyTorch.utils.common import FitRequirement
 
 
-class TimeSeriesBaseEncoder(autoPyTorchTimeSeriesPreprocessingComponent):
+class TimeSeriesBaseEncoder(autoPyTorchTimeSeriesPreprocessingComponent, BaseEncoder):
     """
     Base class for encoder
     """

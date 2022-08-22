@@ -72,34 +72,47 @@ class _LearnedEntityEmbedding(nn.Module):
 
         self.ee_layers = self._create_ee_layers()
 
-    def get_partial_models(self, subset_features: List[int]) -> "_LearnedEntityEmbedding":
+    def get_partial_models(self,
+                           n_excl_embed_features: int,
+                           idx_embed_feat_partial: List[int]) -> "_LearnedEntityEmbedding":
         """
         extract a partial models that only works on a subset of the data that ought to be passed to the embedding
         network, this function is implemented for time series forecasting tasks where the known future features is only
         a subset of the past features
+
         Args:
-            subset_features (List[int]):
-                a set of index identifying which features will pass through the partial model
+            n_excl_embed_features (int):
+                number of unembedded features
+            idx_embed_feat_partial (List[int]):
+                a set of index identifying the which embedding features will be inherited by the partial model. This
+                index is used to extract self.ee_layers
 
         Returns:
             partial_model (_LearnedEntityEmbedding)
                 a new partial model
         """
-        num_input_features = self.num_categories_per_col[subset_features]
-        num_features_excl_embed = sum([sf < self.num_features_excl_embed for sf in subset_features])
+        n_partial_features = n_excl_embed_features + len(idx_embed_feat_partial)
 
-        num_output_dimensions = [self.num_output_dimensions[sf] for sf in subset_features]
-        embed_features = [self.embed_features[sf] for sf in subset_features]
+        num_categories_per_col = np.zeros(n_partial_features, dtype=np.int16)
+        num_output_dimensions = [1] * n_partial_features
 
         ee_layers = []
-        ee_layer_tracker = 0
-        for sf in subset_features:
-            if self.embed_features[sf]:
-                ee_layers.append(self.ee_layers[ee_layer_tracker])
-                ee_layer_tracker += 1
+        for idx, idx_embed in enumerate(idx_embed_feat_partial):
+            idx_raw = self.num_features_excl_embed + idx_embed
+            n_embed = self.num_categories_per_col[idx_raw]
+            n_output = self.num_output_dimensions[idx_raw]
+
+            idx_new = n_excl_embed_features + idx
+            num_categories_per_col[idx_new] = n_embed
+            num_output_dimensions[idx_new] = n_output
+
+            ee_layers.append(self.ee_layers[idx_embed])
+
         ee_layers = nn.ModuleList(ee_layers)
 
-        return PartialLearnedEntityEmbedding(num_input_features, num_features_excl_embed, embed_features,
+        embed_features = num_categories_per_col > 0
+
+        return PartialLearnedEntityEmbedding(num_categories_per_col, n_excl_embed_features, embed_features,
                                              num_output_dimensions, ee_layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -108,16 +121,22 @@ class _LearnedEntityEmbedding(nn.Module):
         concat_seq = []
 
         layer_pointer = 0
+        x_pointer = 0
+        # For forcasting architectures,besides the input features, we might also need to feed targets and time features
+        # to the embedding layers, which are not counted by self.embed_features.
         for x_pointer, embed in enumerate(self.embed_features):
-            current_feature_slice = x[:, x_pointer]
             if not embed:
-                concat_seq.append(current_feature_slice.view(-1, 1))
+                current_feature_slice = x[..., [x_pointer]]
+                concat_seq.append(current_feature_slice)
                 continue
+            current_feature_slice = x[..., x_pointer]
             current_feature_slice = current_feature_slice.to(torch.int)
             concat_seq.append(self.ee_layers[layer_pointer](current_feature_slice))
-            layer_pointer += 1
 
-        return torch.cat(concat_seq, dim=1)
+            layer_pointer += 1
+        concat_seq.append(x[..., x_pointer + 1:])
+
+        return torch.cat(concat_seq, dim=-1)
 
     def _create_ee_layers(self) -> nn.ModuleList:
         # entity embeding layers are Linear Layers

@@ -44,6 +44,7 @@ class ForecastingNetworkComponent(NetworkComponent):
             FitRequirement("auto_regressive", (bool,), user_defined=False, dataset_property=False),
             FitRequirement("target_scaler", (BaseTargetScaler,), user_defined=False, dataset_property=False),
             FitRequirement("net_output_type", (str,), user_defined=False, dataset_property=False),
+            FitRequirement('embed_features_idx', (tuple,), user_defined=False, dataset_property=False),
             FitRequirement("feature_names", (Iterable,), user_defined=False, dataset_property=True),
             FitRequirement("feature_shapes", (Iterable,), user_defined=False, dataset_property=True),
             FitRequirement('transform_time_features', (bool,), user_defined=False, dataset_property=False),
@@ -85,6 +86,7 @@ class ForecastingNetworkComponent(NetworkComponent):
                                    feature_names=feature_names,
                                    feature_shapes=feature_shapes,
                                    known_future_features=known_future_features,
+                                   embed_features_idx=X['embed_features_idx'],
                                    time_feature_names=time_feature_names,
                                    static_features=X['dataset_properties']['static_features']
                                    )
