@@ -72,23 +72,6 @@ class _LearnedEntityEmbedding(nn.Module):
 
         self.ee_layers = self._create_ee_layers()
 
-    def insert_new_input_features(self, n_new_features: int):
-        """
-        Time series tasks need to add targets to the embeddings. However, the target information is not recorded
-        by autoPyTorch's embeddings. Therefore, we need to add the targets to the input features manually, which is
-        located in front of the features
-
-        Args:
-            n_new_features (int):
-                number of new features that is inserted in front of the input features
-        """
-        self.num_categories_per_col = np.hstack([np.zeros(n_new_features, dtype=np.int16), self.num_categories_per_col])
-        self.embed_features = np.hstack([np.zeros(n_new_features, dtype=np.bool), self.num_categories_per_col])
-
-        self.num_features_excl_embed += n_new_features
-        self.num_output_dimensions = [1] * n_new_features + self.num_output_dimensions
-        self.num_out_feats += n_new_features
-
     def get_partial_models(self,
                            n_excl_embed_features: int,
                            idx_embed_feat_partial: List[int]) -> "_LearnedEntityEmbedding":
