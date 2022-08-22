@@ -24,6 +24,7 @@ class TimeSeriesFeatureTransformer(autoPyTorchTimeSeriesPreprocessingComponent):
         self.add_fit_requirements([
             FitRequirement('numerical_features', (List,), user_defined=True, dataset_property=True),
             FitRequirement('categorical_features', (List,), user_defined=True, dataset_property=True)])
+        self.output_feature_order = None
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> BaseEstimator:
         """
@@ -74,6 +75,7 @@ class TimeSeriesFeatureTransformer(autoPyTorchTimeSeriesPreprocessingComponent):
             X_train = X['backend'].load_datamanager().train_tensors[0]
 
         self.preprocessor.fit(X_train)
+        self.output_feature_order = self.get_output_column_orders(len(X['dataset_properties']['feature_names']))
         return self
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
@@ -86,7 +88,8 @@ class TimeSeriesFeatureTransformer(autoPyTorchTimeSeriesPreprocessingComponent):
         Returns:
             X (Dict[str, Any]): updated fit dictionary
         """
-        X.update({'time_series_feature_transformer': self})
+        X.update({'time_series_feature_transformer': self,
+                  'feature_order_after_preprocessing': self.output_feature_order})
         return X
 
     def __call__(self, X: pd.DataFrame) -> pd.DataFrame:
@@ -107,6 +110,33 @@ class TimeSeriesFeatureTransformer(autoPyTorchTimeSeriesPreprocessingComponent):
             raise AttributeError("{} can't return column transformer before transform is called"
                                  .format(self.__class__.__name__))
         return self.preprocessor
+
+    def get_output_column_orders(self, n_input_columns: int) -> List[int]:
+        """
+        get the order of the output features transformed by self.preprocessor
+        TODO: replace this function with self.preprocessor.get_feature_names_out() when switch to sklearn 1.0 !
+
+        Args:
+            n_input_columns (int): number of input columns that will be transformed
+
+        Returns:
+            np.ndarray: a list of index indicating the order of each columns after transformation. Its length should
+                equal to n_input_columns
+        """
+        if self.preprocessor is None:
+            raise ValueError("cant call {} without fitting the column transformer first."
+                             .format(self.__class__.__name__))
+        transformers = self.preprocessor.transformers
+
+        n_reordered_input = np.arange(n_input_columns)
+        processed_columns = np.asarray([], dtype=np.int)
+
+        for tran in transformers:
+            trans_columns = np.array(tran[-1], dtype=np.int)
+            unprocessed_columns = np.setdiff1d(processed_columns, trans_columns)
+            processed_columns = np.hstack([unprocessed_columns, trans_columns])
+        unprocessed_columns = np.setdiff1d(n_reordered_input, processed_columns)
+        return np.hstack([processed_columns, unprocessed_columns]).tolist()  # type: ignore[return-value]
 
 
 class TimeSeriesTargetTransformer(autoPyTorchTimeSeriesTargetPreprocessingComponent):

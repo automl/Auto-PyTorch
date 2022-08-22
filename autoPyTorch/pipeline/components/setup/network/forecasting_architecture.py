@@ -2,6 +2,7 @@ import warnings
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+import numpy as np
 import torch
 from torch import nn
 from torch.distributions import AffineTransform, TransformedDistribution
@@ -205,6 +206,7 @@ class AbstractForecastingNet(nn.Module):
                  auto_regressive: bool,
                  feature_names: Union[Tuple[str], Tuple[()]] = (),
                  known_future_features: Union[Tuple[str], Tuple[()]] = (),
+                 embed_features_idx: Tuple[int] = (),
                  feature_shapes: Dict[str, int] = {},
                  static_features: Union[Tuple[str], Tuple[()]] = (),
                  time_feature_names: Union[Tuple[str], Tuple[()]] = (),
@@ -218,7 +220,16 @@ class AbstractForecastingNet(nn.Module):
         self.embedding = network_embedding
         if len(known_future_features) > 0:
             known_future_features_idx = [feature_names.index(kff) for kff in known_future_features]
-            self.decoder_embedding = self.embedding.get_partial_models(known_future_features_idx)
+            known_future_embed_features = np.where(
+                np.in1d(embed_features_idx, known_future_features_idx, assume_unique=True)
+            )[0]
+            idx_excl_embed_future_features = np.setdiff1d(known_future_features_idx, embed_features_idx)
+            n_excl_embed_features = sum(feature_shapes[feature_names[i]] for i in idx_excl_embed_future_features)
+
+            self.decoder_embedding = self.embedding.get_partial_models(
+                n_excl_embed_features=n_excl_embed_features,
+                idx_embed_feat_partial=known_future_embed_features
+            )
         else:
             self.decoder_embedding = _NoEmbedding()
         # modules that generate tensors while doing forward pass
@@ -558,7 +569,7 @@ class ForecastingNet(AbstractForecastingNet):
             return x_past, x_future, x_static, loc, scale, static_context_initial_hidden, past_targets
         else:
             if past_features is not None:
-                x_past = torch.cat([truncated_past_targets, past_features], dim=-1).to(device=self.device)
+                x_past = torch.cat([past_features, truncated_past_targets], dim=-1).to(device=self.device)
                 x_past = self.embedding(x_past.to(device=self.device))
             else:
                 x_past = self.embedding(truncated_past_targets.to(device=self.device))
@@ -615,8 +626,8 @@ class ForecastingNet(AbstractForecastingNet):
         return self.rescale_output(output, loc, scale, self.device)
 
     def _unwrap_past_targets(
-        self,
-        past_targets: dict
+            self,
+            past_targets: dict
     ) -> Tuple[torch.Tensor,
                Optional[torch.Tensor],
                Optional[torch.Tensor],

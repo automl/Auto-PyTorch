@@ -37,6 +37,7 @@ class NetworkEmbeddingComponent(autoPyTorchSetupComponent):
                 # forecasting tasks
                 feature_names = X['dataset_properties']['feature_names']
                 n_features_all = len(feature_names)
+                # embedded feature index
                 embed_features_idx = tuple(range(n_features_all - n_features_embedded, n_features_all))
                 for idx, n_output_embedded in zip(embed_features_idx, num_output_features[-n_features_embedded:]):
                     feat_name = feature_names[idx]

@@ -25,7 +25,11 @@ class TimeSeriesColumnSplitter(ColumnSplitter, autoPyTorchTimeSeriesPreprocessin
 
     def fit(self, X: Dict[str, Any], y: Optional[Any] = None) -> 'TimeSeriesColumnSplitter':
         super(TimeSeriesColumnSplitter, self).fit(X, y)
+
         self.num_categories_per_col_encoded = X['dataset_properties']['num_categories_per_col']
+        for i in range(len(self.num_categories_per_col_encoded)):
+            if i in self.special_feature_types['embed_columns']:
+                self.num_categories_per_col_encoded[i] = 1
         return self
 
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:

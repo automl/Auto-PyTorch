@@ -72,6 +72,23 @@ class _LearnedEntityEmbedding(nn.Module):
 
         self.ee_layers = self._create_ee_layers()
 
+    def insert_new_input_features(self, n_new_features: int):
+        """
+        Time series tasks need to add targets to the embeddings. However, the target information is not recorded
+        by autoPyTorch's embeddings. Therefore, we need to add the targets to the input features manually, which is
+        located in front of the features
+
+        Args:
+            n_new_features (int):
+                number of new features that is inserted in front of the input features
+        """
+        self.num_categories_per_col = np.hstack([np.zeros(n_new_features, dtype=np.int16), self.num_categories_per_col])
+        self.embed_features = np.hstack([np.zeros(n_new_features, dtype=np.bool), self.num_categories_per_col])
+
+        self.num_features_excl_embed += n_new_features
+        self.num_output_dimensions = [1] * n_new_features + self.num_output_dimensions
+        self.num_out_feats += n_new_features
+
     def get_partial_models(self,
                            n_excl_embed_features: int,
                            idx_embed_feat_partial: List[int]) -> "_LearnedEntityEmbedding":
@@ -79,11 +96,13 @@ class _LearnedEntityEmbedding(nn.Module):
         extract a partial models that only works on a subset of the data that ought to be passed to the embedding
         network, this function is implemented for time series forecasting tasks where the known future features is only
         a subset of the past features
+
         Args:
             n_excl_embed_features (int):
                 number of unembedded features
             idx_embed_feat_partial (List[int]):
-                a set of index identifying the which embedding features will be inherited by the partial model
+                a set of index identifying the which embedding features will be inherited by the partial model. This
+                index is used to extract self.ee_layers
 
         Returns:
             partial_model (_LearnedEntityEmbedding)
@@ -119,11 +138,9 @@ class _LearnedEntityEmbedding(nn.Module):
         concat_seq = []
 
         layer_pointer = 0
-        # Time series tasks need to add targets to the embeddings. However, the target information is not recorded
-        # by autoPyTorch's embeddings. Therefore, we need to add the targets parts to `concat_seq` manually, which is
-        # the last few dimensions of the input x
-        # we assign x_pointer to 0 beforehand to avoid the case that self.embed_features has 0 length
         x_pointer = 0
+        # For forcasting architectures,besides the input features, we might also need to feed targets and time features
+        # to the embedding layers, which are not counted by self.embed_features.
         for x_pointer, embed in enumerate(self.embed_features):
             if not embed:
                 current_feature_slice = x[..., [x_pointer]]
@@ -134,6 +151,7 @@ class _LearnedEntityEmbedding(nn.Module):
             concat_seq.append(self.ee_layers[layer_pointer](current_feature_slice))
 
             layer_pointer += 1
+        concat_seq.append(x[..., x_pointer + 1:])
 
         return torch.cat(concat_seq, dim=-1)
 
