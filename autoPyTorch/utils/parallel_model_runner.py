@@ -1,3 +1,4 @@
+from distutils.command.config import config
 import logging
 import math
 import time
@@ -271,12 +272,17 @@ def _process_result(
         else:
             # we assume that it is a traditional model and `pipeline_configuration`
             # specifies the configuration.
-            configuration = additional_info.pop('pipeline_configuration')
+            configuration = additional_info.pop('pipeline_configuration', None)
 
-        run_history.add(config=configuration, cost=cost,
-                        time=runtime, status=status, seed=seed,
-                        starttime=starttime, endtime=starttime + runtime,
-                        origin=origin, additional_info=additional_info)
+        if configuration is not None:
+            run_history.add(config=configuration, cost=cost,
+                            time=runtime, status=status, seed=seed,
+                            starttime=starttime, endtime=starttime + runtime,
+                            origin=origin, additional_info=additional_info)
+        else:
+            logger.warning(f"Something went wrong while processing the results of {current_config}."
+                           f"with additional_info: {additional_info} and status_type: {status}. "
+                           f"Refer to the log file for more information.\nSkipping for now.")
     else:
         if additional_info.get('exitcode') == -6:
             logger.error(
