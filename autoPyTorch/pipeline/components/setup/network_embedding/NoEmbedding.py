@@ -15,9 +15,6 @@ class _NoEmbedding(nn.Module):
     def get_partial_models(self, *args, **kwargs) -> "_NoEmbedding":
         return self
 
-    def insert_new_input_features(self, *args, **kwargs) -> "_NoEmbedding":
-        return self
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return x
 
