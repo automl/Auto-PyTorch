@@ -34,7 +34,7 @@ with AutoPyTorch
 
  .. code-block:: none
 
-    [ERROR] [2022-08-23 14:11:40,492:asyncio.events] 
+    [ERROR] [2022-08-23 15:08:15,342:asyncio.events] 
     Traceback (most recent call last):
       File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py", line 799, in wrapper
         return await func(*args, **kwargs)
@@ -47,7 +47,7 @@ with AutoPyTorch
       File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/asyncio/tasks.py", line 659, in sleep
         return await future
     asyncio.exceptions.CancelledError
-    [ERROR] [2022-08-23 14:11:40,540:asyncio.events] 
+    [ERROR] [2022-08-23 15:08:15,360:asyncio.events] 
     Traceback (most recent call last):
       File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py", line 799, in wrapper
         return await func(*args, **kwargs)
@@ -64,13 +64,13 @@ with AutoPyTorch
       File "/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/asyncio/tasks.py", line 659, in sleep
         return await future
     asyncio.exceptions.CancelledError
-    {'accuracy': 0.8554913294797688}
+    {'accuracy': 0.8728323699421965}
     autoPyTorch results:
-            Dataset name: c4f63d6a-22ec-11ed-88d2-3d9b0b4a5fcb
+            Dataset name: a93dcf4e-22f4-11ed-8835-b1fa420cf160
             Optimisation Metric: accuracy
             Best validation score: 0.8713450292397661
-            Number of target algorithm runs: 48
-            Number of successful target algorithm runs: 38
+            Number of target algorithm runs: 42
+            Number of successful target algorithm runs: 32
             Number of crashed target algorithm runs: 7
             Number of target algorithms that exceeded the time limit: 3
             Number of target algorithms that exceeded the memory limit: 0
@@ -149,7 +149,7 @@ with AutoPyTorch
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  29.188 seconds)
+   **Total running time of the script:** ( 5 minutes  30.701 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_parallel_n_jobs.py:
