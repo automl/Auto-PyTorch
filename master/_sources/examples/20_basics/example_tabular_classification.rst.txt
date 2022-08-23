@@ -22,16 +22,18 @@
 Tabular Classification
 ======================
 
-The following example shows how to fit a sample classification model
-with AutoPyTorch
+The following example shows how to fit a simple classification ensemble
+with AutoPyTorch and refit the found ensemble.
 
-.. GENERATED FROM PYTHON SOURCE LINES 9-27
+.. GENERATED FROM PYTHON SOURCE LINES 9-29
 
 .. code-block:: default
 
     import os
     import tempfile as tmp
     import warnings
+
+    from autoPyTorch.datasets.resampling_strategy import CrossValTypes
 
     os.environ['JOBLIB_TEMP_FOLDER'] = tmp.gettempdir()
     os.environ['OMP_NUM_THREADS'] = '1'
@@ -54,12 +56,12 @@ with AutoPyTorch
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 28-30
+.. GENERATED FROM PYTHON SOURCE LINES 30-32
 
 Data Loading
 ============
 
-.. GENERATED FROM PYTHON SOURCE LINES 30-37
+.. GENERATED FROM PYTHON SOURCE LINES 32-39
 
 .. code-block:: default
 
@@ -77,12 +79,12 @@ Data Loading
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 38-40
+.. GENERATED FROM PYTHON SOURCE LINES 40-42
 
 Build and fit a classifier
 ==========================
 
-.. GENERATED FROM PYTHON SOURCE LINES 40-50
+.. GENERATED FROM PYTHON SOURCE LINES 42-52
 
 .. code-block:: default
 
@@ -103,12 +105,12 @@ Build and fit a classifier
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 51-53
+.. GENERATED FROM PYTHON SOURCE LINES 53-55
 
 Search for an ensemble of machine learning algorithms
 =====================================================
 
-.. GENERATED FROM PYTHON SOURCE LINES 53-64
+.. GENERATED FROM PYTHON SOURCE LINES 55-66
 
 .. code-block:: default
 
@@ -129,29 +131,26 @@ Search for an ensemble of machine learning algorithms
 
 .. rst-class:: sphx-glr-script-out
 
- Out:
-
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f3d3a092850>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f6ea609f0d0>
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 65-67
+.. GENERATED FROM PYTHON SOURCE LINES 67-69
 
-Print the final ensemble performance
-====================================
+Print the final ensemble performance before refit
+=================================================
 
-.. GENERATED FROM PYTHON SOURCE LINES 67-75
+.. GENERATED FROM PYTHON SOURCE LINES 69-77
 
 .. code-block:: default
+
 
     y_pred = api.predict(X_test)
     score = api.score(y_pred, y_test)
     print(score)
-    # Print the final ensemble built by AutoPyTorch
-    print(api.show_models())
 
     # Print statistics from search
     print(api.sprint_statistics())
@@ -159,26 +158,18 @@ Print the final ensemble performance
 
 
 
-.. rst-class:: sphx-glr-script-out
 
- Out:
+.. rst-class:: sphx-glr-script-out
 
  .. code-block:: none
 
     {'accuracy': 0.8670520231213873}
-    |    | Preprocessing                                                                         | Estimator                                                       |   Weight |
-    |---:|:--------------------------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
-    |  0 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,MinMaxScaler,FastICA       | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential       |     0.56 |
-    |  1 | SimpleImputer,Variance Threshold,MinorityCoalescer,OneHotEncoder,Normalizer,KernelPCA | embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.38 |
-    |  2 | SimpleImputer,Variance Threshold,NoCoalescer,NoEncoder,StandardScaler,PCA             | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential       |     0.02 |
-    |  3 | None                                                                                  | CBLearner                                                       |     0.02 |
-    |  4 | None                                                                                  | SVMLearner                                                      |     0.02 |
     autoPyTorch results:
             Dataset name: Australian
             Optimisation Metric: accuracy
             Best validation score: 0.8713450292397661
-            Number of target algorithm runs: 24
-            Number of successful target algorithm runs: 23
+            Number of target algorithm runs: 27
+            Number of successful target algorithm runs: 26
             Number of crashed target algorithm runs: 0
             Number of target algorithms that exceeded the time limit: 1
             Number of target algorithms that exceeded the memory limit: 0
@@ -187,38 +178,104 @@ Print the final ensemble performance
 
 
 
+.. GENERATED FROM PYTHON SOURCE LINES 78-80
+
+Refit the models on the full dataset.
+=====================================
+
+.. GENERATED FROM PYTHON SOURCE LINES 80-93
+
+.. code-block:: default
+
+
+    api.refit(
+        X_train=X_train,
+        y_train=y_train,
+        X_test=X_test,
+        y_test=y_test,
+        dataset_name="Australian",
+        # you can change the resampling strategy to
+        # for example, CrossValTypes.k_fold_cross_validation
+        # to fit k fold models and have a voting classifier
+        # resampling_strategy=CrossValTypes.k_fold_cross_validation
+    )
+
+
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7f6ea609f0d0>
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 94-96
+
+Print the final ensemble performance after refit
+================================================
+
+.. GENERATED FROM PYTHON SOURCE LINES 96-103
+
+.. code-block:: default
+
+
+    y_pred = api.predict(X_test)
+    score = api.score(y_pred, y_test)
+    print(score)
+
+    # Print the final ensemble built by AutoPyTorch
+    print(api.show_models())
+
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+    {'accuracy': 0.8323699421965318}
+    |    | Preprocessing                                                                         | Estimator                                                       |   Weight |
+    |---:|:--------------------------------------------------------------------------------------|:----------------------------------------------------------------|---------:|
+    |  0 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,MinMaxScaler,FastICA       | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential       |     0.56 |
+    |  1 | SimpleImputer,Variance Threshold,MinorityCoalescer,OneHotEncoder,Normalizer,KernelPCA | embedding,ShapedResNetBackbone,FullyConnectedHead,nn.Sequential |     0.38 |
+    |  2 | SimpleImputer,Variance Threshold,NoCoalescer,NoEncoder,StandardScaler,PCA             | no embedding,MLPBackbone,FullyConnectedHead,nn.Sequential       |     0.02 |
+    |  3 | None                                                                                  | CBLearner                                                       |     0.02 |
+    |  4 | None                                                                                  | SVMLearner                                                      |     0.02 |
+
+
+
+
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 5 minutes  20.185 seconds)
+   **Total running time of the script:** ( 6 minutes  44.224 seconds)
 
 
 .. _sphx_glr_download_examples_20_basics_example_tabular_classification.py:
 
+.. only:: html
 
-.. only :: html
-
- .. container:: sphx-glr-footer
-    :class: sphx-glr-footer-example
+  .. container:: sphx-glr-footer sphx-glr-footer-example
 
 
-  .. container:: binder-badge
+    .. container:: binder-badge
 
-    .. image:: images/binder_badge_logo.svg
-      :target: https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/20_basics/example_tabular_classification.ipynb
-      :alt: Launch binder
-      :width: 150 px
+      .. image:: images/binder_badge_logo.svg
+        :target: https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/20_basics/example_tabular_classification.ipynb
+        :alt: Launch binder
+        :width: 150 px
 
+    .. container:: sphx-glr-download sphx-glr-download-python
 
-  .. container:: sphx-glr-download sphx-glr-download-python
+      :download:`Download Python source code: example_tabular_classification.py <example_tabular_classification.py>`
 
-     :download:`Download Python source code: example_tabular_classification.py <example_tabular_classification.py>`
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
 
-
-
-  .. container:: sphx-glr-download sphx-glr-download-jupyter
-
-     :download:`Download Jupyter notebook: example_tabular_classification.ipynb <example_tabular_classification.ipynb>`
+      :download:`Download Jupyter notebook: example_tabular_classification.ipynb <example_tabular_classification.ipynb>`
 
 
 .. only:: html

@@ -3,9 +3,9 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
-    <title>Tabular Classification with n parallel jobs &#8212; AutoPyTorch 0.2 documentation</title>
+    <title>Tabular Classification with n parallel jobs &#8212; AutoPyTorch 0.2.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/bootstrap-sphinx.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css" />
@@ -56,7 +56,7 @@
         </button>
         <a class="navbar-brand" href="../../index.html">
           Auto-PyTorch</a>
-        <span class="navbar-text navbar-version pull-left"><b>0.2</b></span>
+        <span class="navbar-text navbar-version pull-left"><b>0.2.1</b></span>
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -124,46 +124,45 @@ to download the full example code or to run this example in your browser via Bin
 <span id="sphx-glr-examples-40-advanced-example-parallel-n-jobs-py"></span><h1>Tabular Classification with n parallel jobs<a class="headerlink" href="#tabular-classification-with-n-parallel-jobs" title="Permalink to this heading">¶</a></h1>
 <p>The following example shows how to fit a sample classification model parallely on 2 cores
 with AutoPyTorch</p>
-<p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>[ERROR] [2022-07-21 09:12:53,688:asyncio.events]
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>[ERROR] [2022-08-23 17:15:49,771:asyncio.events]
 Traceback (most recent call last):
-  File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py&quot;, line 778, in wrapper
+  File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py&quot;, line 799, in wrapper
     return await func(*args, **kwargs)
-  File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/client.py&quot;, line 1211, in _reconnect
+  File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/client.py&quot;, line 1246, in _reconnect
     await self._ensure_connected(timeout=timeout)
-  File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/client.py&quot;, line 1241, in _ensure_connected
+  File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/client.py&quot;, line 1276, in _ensure_connected
     comm = await connect(
   File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/comm/core.py&quot;, line 315, in connect
     await asyncio.sleep(backoff)
   File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/asyncio/tasks.py&quot;, line 659, in sleep
     return await future
 asyncio.exceptions.CancelledError
-[ERROR] [2022-07-21 09:12:53,701:asyncio.events]
+[ERROR] [2022-08-23 17:15:49,814:asyncio.events]
 Traceback (most recent call last):
-  File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py&quot;, line 778, in wrapper
+  File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py&quot;, line 799, in wrapper
     return await func(*args, **kwargs)
-  File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/client.py&quot;, line 1400, in _handle_report
+  File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/client.py&quot;, line 1435, in _handle_report
     await self._reconnect()
-  File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py&quot;, line 778, in wrapper
+  File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py&quot;, line 799, in wrapper
     return await func(*args, **kwargs)
-  File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/client.py&quot;, line 1211, in _reconnect
+  File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/client.py&quot;, line 1246, in _reconnect
     await self._ensure_connected(timeout=timeout)
-  File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/client.py&quot;, line 1241, in _ensure_connected
+  File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/client.py&quot;, line 1276, in _ensure_connected
     comm = await connect(
   File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/comm/core.py&quot;, line 315, in connect
     await asyncio.sleep(backoff)
   File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/asyncio/tasks.py&quot;, line 659, in sleep
     return await future
 asyncio.exceptions.CancelledError
-{&#39;accuracy&#39;: 0.8439306358381503}
+{&#39;accuracy&#39;: 0.8554913294797688}
 autoPyTorch results:
-        Dataset name: 894fd3cb-08d4-11ed-89e8-31427268e3f1
+        Dataset name: 79a6d6a9-2306-11ed-884d-557eb8b24584
         Optimisation Metric: accuracy
         Best validation score: 0.8713450292397661
-        Number of target algorithm runs: 38
-        Number of successful target algorithm runs: 30
-        Number of crashed target algorithm runs: 4
-        Number of target algorithms that exceeded the time limit: 4
+        Number of target algorithm runs: 45
+        Number of successful target algorithm runs: 37
+        Number of crashed target algorithm runs: 7
+        Number of target algorithms that exceeded the time limit: 1
         Number of target algorithms that exceeded the memory limit: 0
 </pre></div>
 </div>
@@ -231,8 +230,8 @@ autoPyTorch results:
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">sprint_statistics</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  39.601 seconds)</p>
-<div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-parallel-n-jobs-py">
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  37.985 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-parallel-n-jobs-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_parallel_n_jobs.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>
 </div>
@@ -266,7 +265,7 @@ autoPyTorch results:
     </p>
     <p>
         &copy; Copyright 2014-2022, Machine Learning Professorship Freiburg.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.2.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.1.1.<br/>
     </p>
   </div>
 </footer>
