@@ -51,7 +51,7 @@ class TestEvaluator(AbstractEvaluator):
             The amount of epochs/time a configuration is allowed to run.
         budget_type  (str):
             The budget type, which can be epochs or time
-        pipeline_config (Optional[Dict[str, Any]]):
+        pipeline_options (Optional[Dict[str, Any]]):
             Defines the content of the pipeline being evaluated. For example, it
             contains pipeline specific settings like logging name, or whether or not
             to use tensorboard.
@@ -113,7 +113,7 @@ class TestEvaluator(AbstractEvaluator):
         budget: float,
         configuration: Union[int, str, Configuration],
         budget_type: str = None,
-        pipeline_config: Optional[Dict[str, Any]] = None,
+        pipeline_options: Optional[Dict[str, Any]] = None,
         seed: int = 1,
         output_y_hat_optimization: bool = False,
         num_run: Optional[int] = None,
@@ -141,7 +141,7 @@ class TestEvaluator(AbstractEvaluator):
             budget_type=budget_type,
             logger_port=logger_port,
             all_supported_metrics=all_supported_metrics,
-            pipeline_config=pipeline_config,
+            pipeline_options=pipeline_options,
             search_space_updates=search_space_updates
         )
 
@@ -206,7 +206,7 @@ def eval_test_function(
     include: Optional[Dict[str, Any]],
     exclude: Optional[Dict[str, Any]],
     disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
-    pipeline_config: Optional[Dict[str, Any]] = None,
+    pipeline_options: Optional[Dict[str, Any]] = None,
     budget_type: str = None,
     init_params: Optional[Dict[str, Any]] = None,
     logger_port: Optional[int] = None,
@@ -230,7 +230,7 @@ def eval_test_function(
         budget_type=budget_type,
         logger_port=logger_port,
         all_supported_metrics=all_supported_metrics,
-        pipeline_config=pipeline_config,
+        pipeline_options=pipeline_options,
         search_space_updates=search_space_updates)
 
     evaluator.fit_predict_and_loss()

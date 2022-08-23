@@ -307,7 +307,7 @@ class AbstractEvaluatorTest(unittest.TestCase):
                     backend=backend,
                     output_y_hat_optimization=False,
                     queue=queue_mock,
-                    pipeline_config={'budget_type': "error", 'error': 0},
+                    pipeline_options={'budget_type': "error", 'error': 0},
                     metric=accuracy,
                     budget=0,
                     configuration=1)

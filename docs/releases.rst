@@ -12,6 +12,22 @@
 Releases
 ========
 
+Version 0.2.1
+=============
+| [FIX] ADD forecasting init design to pip data files by @dengdifan in https://github.com/automl/Auto-PyTorch/pull/459
+| checks for time series dataset split by @dengdifan in https://github.com/automl/Auto-PyTorch/pull/464
+| [FIX] Numerical stability scaling for timeseries forecasting tasks by @dengdifan in https://github.com/automl/Auto-PyTorch/pull/467
+| [FIX] pipeline options in `fit_pipeline` by @ravinkohli in https://github.com/automl/Auto-PyTorch/pull/466
+| [FIX] results management and visualisation with missing test data by @ravinkohli in https://github.com/automl/Auto-PyTorch/pull/465
+| [ADD] Robustly refit models in final ensemble in parallel by @ravinkohli in https://github.com/automl/Auto-PyTorch/pull/471
+
+Contributors v0.2
+*****************
+* Difan Deng
+* Ravin Kohli
+* Shuhei Watanabe
+* Theodoros Athanasiadis
+
 Version 0.2
 ===========
 | [FIX] Documentation and docker workflow file (#449)

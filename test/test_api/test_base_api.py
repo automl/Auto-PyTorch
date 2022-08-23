@@ -27,7 +27,7 @@ def test_nonsupported_arguments(fit_dictionary_tabular):
 
     api = BaseTask()
     with pytest.raises(ValueError, match=r".*Invalid configuration arguments given.*"):
-        api.set_pipeline_config(unsupported=True)
+        api.set_pipeline_options(unsupported=True)
     with pytest.raises(ValueError, match=r".*No search space initialised and no dataset.*"):
         api.get_search_space()
     api.resampling_strategy = None
@@ -95,7 +95,7 @@ def test_show_models(fit_dictionary_tabular):
     assert re.search(expected, api.show_models()) is not None
 
 
-def test_set_pipeline_config():
+def test_set_pipeline_options():
     # checks if we can correctly change the pipeline options
     BaseTask.__abstractmethods__ = set()
     estimator = BaseTask()
@@ -103,7 +103,7 @@ def test_set_pipeline_config():
                         "budget_type": "epochs",
                         "epochs": 51,
                         "runtime": 360}
-    estimator.set_pipeline_config(**pipeline_options)
+    estimator.set_pipeline_options(**pipeline_options)
     assert pipeline_options.items() <= estimator.get_pipeline_options().items()
 
 
@@ -118,12 +118,12 @@ def test_pipeline_get_budget(fit_dictionary_tabular, min_budget, max_budget, bud
     estimator = BaseTask(task_type='tabular_classification', ensemble_size=0)
 
     # Fixture pipeline config
-    default_pipeline_config = {
+    default_pipeline_options = {
         'device': 'cpu', 'budget_type': 'epochs', 'epochs': 50, 'runtime': 3600,
         'torch_num_threads': 1, 'early_stopping': 20, 'use_tensorboard_logger': False,
         'metrics_during_training': True, 'optimize_metric': 'accuracy'
     }
-    default_pipeline_config.update(expected)
+    default_pipeline_options.update(expected)
 
     # Create pre-requisites
     dataset = fit_dictionary_tabular['backend'].load_datamanager()
@@ -141,7 +141,7 @@ def test_pipeline_get_budget(fit_dictionary_tabular, min_budget, max_budget, bud
                           enable_traditional_pipeline=False,
                           total_walltime_limit=20, func_eval_time_limit_secs=10,
                           load_models=False)
-        assert list(smac_mock.call_args)[1]['ta_kwargs']['pipeline_config'] == default_pipeline_config
+        assert list(smac_mock.call_args)[1]['ta_kwargs']['pipeline_options'] == default_pipeline_options
         assert list(smac_mock.call_args)[1]['max_budget'] == max_budget
         assert list(smac_mock.call_args)[1]['initial_budget'] == min_budget
 
@@ -174,12 +174,12 @@ def test_pipeline_get_budget_forecasting(fit_dictionary_forecasting, min_budget,
     BaseTask.__abstractmethods__ = set()
     estimator = BaseTask(task_type='time_series_forecasting', ensemble_size=0)
     # Fixture pipeline config
-    default_pipeline_config = {
+    default_pipeline_options = {
         'device': 'cpu', 'budget_type': 'epochs', 'epochs': 50, 'runtime': 3600,
         'torch_num_threads': 1, 'early_stopping': 20, 'use_tensorboard_logger': False,
         'metrics_during_training': True, 'optimize_metric': 'mean_MASE_forecasting'
     }
-    default_pipeline_config.update(expected)
+    default_pipeline_options.update(expected)
 
     # Create pre-requisites
     dataset = fit_dictionary_forecasting['backend'].load_datamanager()
@@ -198,6 +198,6 @@ def test_pipeline_get_budget_forecasting(fit_dictionary_forecasting, min_budget,
                           total_walltime_limit=20, func_eval_time_limit_secs=10,
                           memory_limit=8192,
                           load_models=False)
-        assert list(smac_mock.call_args)[1]['ta_kwargs']['pipeline_config'] == default_pipeline_config
+        assert list(smac_mock.call_args)[1]['ta_kwargs']['pipeline_options'] == default_pipeline_options
         assert list(smac_mock.call_args)[1]['max_budget'] == max_budget
         assert list(smac_mock.call_args)[1]['initial_budget'] == min_budget

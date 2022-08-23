@@ -1,6 +1,6 @@
 import io
 from datetime import datetime
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import Configuration
 
@@ -12,6 +12,7 @@ from smac.runhistory.runhistory import RunHistory, RunKey, RunValue
 from smac.tae import StatusType
 from smac.utils.io.traj_logging import TrajEntry
 
+from autoPyTorch.constants import OPTIONAL_INFERENCE_CHOICES
 from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric
 
 
@@ -69,7 +70,7 @@ def _extract_metrics_info(
     run_value: RunValue,
     scoring_functions: List[autoPyTorchMetric],
     inference_name: str
-) -> Dict[str, float]:
+) -> Dict[str, Optional[float]]:
     """
     Extract the metric information given a run_value
     and a list of metrics of interest.
@@ -97,7 +98,14 @@ def _extract_metrics_info(
     if inference_name not in inference_choices:
         raise ValueError(f'inference_name must be in {inference_choices}, but got {inference_choices}')
 
-    cost_info = run_value.additional_info[f'{inference_name}_loss']
+    cost_info = run_value.additional_info.get(f'{inference_name}_loss', None)
+    if cost_info is None:
+        if inference_name not in OPTIONAL_INFERENCE_CHOICES:
+            raise ValueError(f"Expected loss for {inference_name} set to not be None, but got {cost_info}")
+        else:
+            # Additional info for metrics is not available in this case.
+            return {metric.name: None for metric in scoring_functions}
+
     avail_metrics = cost_info.keys()
 
     return {
@@ -175,7 +183,7 @@ class EnsembleResults:
             )
 
         self._train_scores.append(data[f'train_{self.metric_name}'])
-        self._test_scores.append(data[f'test_{self.metric_name}'])
+        self._test_scores.append(data.get(f'test_{self.metric_name}', None))
         self._end_times.append(datetime.timestamp(data['Timestamp']))
 
     def _sort_by_endtime(self) -> None:
@@ -413,10 +421,30 @@ class SearchResults:
             config = run_history.ids_config[run_key.config_id]
             self._update(config=config, run_key=run_key, run_value=run_value)
 
+        self._check_null_in_optional_inference_choices()
+
         self.rank_opt_scores = scipy.stats.rankdata(
             -1 * self._metric._sign * self.opt_scores,  # rank order
             method='min'
         )
+
+    def _check_null_in_optional_inference_choices(
+        self
+    ) -> None:
+        """
+        Checks if the data is missing or if all the runs failed for each optional inference choice and
+        sets the scores for that inference choice to all None.
+        """
+        for inference_choice in OPTIONAL_INFERENCE_CHOICES:
+            metrics_dict = getattr(self, f'{inference_choice}_metric_dict')
+            new_metric_dict = {}
+
+            for metric in self._scoring_functions:
+                scores = metrics_dict[metric.name]
+                if all([score is None or score == metric._worst_possible_result for score in scores]):
+                    scores = [None] * len(self.status_types)
+                new_metric_dict[metric.name] = scores
+            setattr(self, f'{inference_choice}_metric_dict', new_metric_dict)
 
 
 class MetricResults:
@@ -486,12 +514,24 @@ class MetricResults:
         for inference_name in ['train', 'test', 'opt']:
             # TODO: Extract information from self.search_results
             data = getattr(self.search_results, f'{inference_name}_metric_dict')[metric_name]
+            if all([d is None for d in data]):
+                if inference_name not in OPTIONAL_INFERENCE_CHOICES:
+                    raise ValueError(f"Expected {metric_name} score for {inference_name} set"
+                                     f" to not be None, but got {data}")
+                else:
+                    continue
             self.data[f'single::{inference_name}::{metric_name}'] = np.array(data)
 
             if self.ensemble_results.empty() or inference_name == 'opt':
                 continue
 
             data = getattr(self.ensemble_results, f'{inference_name}_scores')
+            if all([d is None for d in data]):
+                if inference_name not in OPTIONAL_INFERENCE_CHOICES:
+                    raise ValueError(f"Expected {metric_name} score for {inference_name} set"
+                                     f" to not be None, but got {data}")
+                else:
+                    continue
             self.data[f'ensemble::{inference_name}::{metric_name}'] = np.array(data)
 
     def get_ensemble_merged_data(self) -> Dict[str, np.ndarray]:
@@ -516,6 +556,8 @@ class MetricResults:
         cur, timestep_size, sign = 0, self.cum_times.size, self.metric._sign
         key_train, key_test = f'ensemble::train::{self.metric.name}', f'ensemble::test::{self.metric.name}'
 
+        all_test_perfs_null = all([perf is None for perf in test_scores])
+
         train_perfs = np.full_like(self.cum_times, self.metric._worst_possible_result)
         test_perfs = np.full_like(self.cum_times, self.metric._worst_possible_result)
 
@@ -530,9 +572,16 @@ class MetricResults:
             time_index = min(cur, timestep_size - 1)
             # If there already exists a previous allocated value, update by a better value
             train_perfs[time_index] = sign * max(sign * train_perfs[time_index], sign * train_score)
-            test_perfs[time_index] = sign * max(sign * test_perfs[time_index], sign * test_score)
+            # test_perfs can be none when X_test is not passed
+            if not all_test_perfs_null:
+                test_perfs[time_index] = sign * max(sign * test_perfs[time_index], sign * test_score)
 
-        data.update({key_train: train_perfs, key_test: test_perfs})
+        update_dict = {key_train: train_perfs}
+        if not all_test_perfs_null:
+            update_dict[key_test] = test_perfs
+
+        data.update(update_dict)
+
         return data
 
 

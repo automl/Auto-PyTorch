@@ -63,6 +63,11 @@ class DummyTrainEvaluator(TrainEvaluator):
             test_indices=test_indices,
         )
 
+        # the configuration is used in refit where
+        # pipeline.config is used to retrieve the
+        # original configuration.
+        pipeline.config = self.configuration
+
         if add_pipeline_to_self:
             self.pipeline = pipeline
         else:
@@ -94,7 +99,7 @@ def dummy_eval_train_function(
         include,
         exclude,
         disable_file_output,
-        pipeline_config=None,
+        pipeline_options=None,
         budget_type=None,
         init_params=None,
         logger_port=None,
@@ -118,7 +123,7 @@ def dummy_eval_train_function(
         budget_type=budget_type,
         logger_port=logger_port,
         all_supported_metrics=all_supported_metrics,
-        pipeline_config=pipeline_config,
+        pipeline_options=pipeline_options,
         search_space_updates=search_space_updates,
     )
     evaluator.fit_predict_and_loss()
@@ -137,7 +142,7 @@ def dummy_forecasting_eval_train_function(
         include,
         exclude,
         disable_file_output,
-        pipeline_config=None,
+        pipeline_options=None,
         budget_type=None,
         init_params=None,
         logger_port=None,
@@ -163,7 +168,7 @@ def dummy_forecasting_eval_train_function(
         budget_type=budget_type,
         logger_port=logger_port,
         all_supported_metrics=all_supported_metrics,
-        pipeline_config=pipeline_config,
+        pipeline_options=pipeline_options,
         search_space_updates=search_space_updates,
         max_budget=max_budget,
         min_num_test_instances=min_num_test_instances,

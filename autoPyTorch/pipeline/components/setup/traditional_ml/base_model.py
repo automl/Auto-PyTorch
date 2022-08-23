@@ -52,8 +52,7 @@ class BaseModelComponent(autoPyTorchSetupComponent):
         self.add_fit_requirements([
             FitRequirement('X_train', (np.ndarray, list, pd.DataFrame), user_defined=False, dataset_property=False),
             FitRequirement('y_train', (np.ndarray, list, pd.Series,), user_defined=False, dataset_property=False),
-            FitRequirement('train_indices', (np.ndarray, list), user_defined=False, dataset_property=False),
-            FitRequirement('val_indices', (np.ndarray, list), user_defined=False, dataset_property=False)])
+            FitRequirement('train_indices', (np.ndarray, list), user_defined=False, dataset_property=False)])
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> autoPyTorchSetupComponent:
         """
@@ -90,8 +89,14 @@ class BaseModelComponent(autoPyTorchSetupComponent):
 
         # train model
         blockPrint()
+        val_indices = X.get('val_indices', None)
+        X_val = None
+        y_val = None
+        if val_indices is not None:
+            X_val = X['X_train'][val_indices]
+            y_val = X['y_train'][val_indices]
         self.fit_output = self.model.fit(X['X_train'][X['train_indices']], X['y_train'][X['train_indices']],
-                                         X['X_train'][X['val_indices']], X['y_train'][X['val_indices']])
+                                         X_val, y_val)
         enablePrint()
 
         # infer

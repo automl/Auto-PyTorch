@@ -195,6 +195,42 @@ def test_plot_perf_over_time(metric_name):  # TODO
     plt.close()
 
 
+@pytest.mark.parametrize('metric_name', ('balanced_accuracy', 'accuracy'))
+def test_plot_perf_over_time_no_test(metric_name):  # TODO
+    dummy_history = [{'Timestamp': datetime(2022, 1, 1), 'train_accuracy': 1, 'test_accuracy': None}]
+    BaseTask.__abstractmethods__ = set()
+    api = BaseTask()
+    run_history_data = json.load(open(os.path.join(os.path.dirname(__file__),
+                                                   'runhistory_no_test.json'),
+                                      mode='r'))['data']
+    api._results_manager.run_history = MagicMock()
+    api.run_history.empty = MagicMock(return_value=False)
+
+    # The run_history has 16 runs + 1 run interruption ==> 16 runs
+    api.run_history.data = make_dict_run_history_data(run_history_data)
+    api._results_manager.ensemble_performance_history = dummy_history
+    api._metric = accuracy
+    api.dataset_name = 'iris'
+    api._scoring_functions = [accuracy, balanced_accuracy]
+    api.search_space = MagicMock(spec=ConfigurationSpace)
+
+    api.plot_perf_over_time(metric_name=metric_name)
+    _, ax = plt.subplots(nrows=1, ncols=1)
+    api.plot_perf_over_time(metric_name=metric_name, ax=ax)
+
+    # remove ensemble keys if metric name is not for the opt score
+    ans = set([
+        name
+        for name in [f'single train {metric_name}',
+                     f'single opt {metric_name}',
+                     f'ensemble train {metric_name}']
+        if metric_name == api._metric.name or not name.startswith('ensemble')
+    ])
+    legend_set = set([txt._text for txt in ax.get_legend().texts])
+    assert ans == legend_set
+    plt.close()
+
+
 @pytest.mark.parametrize('params', (
     PlotSettingParams(xscale='none', yscale='none'),
     PlotSettingParams(xscale='none', yscale='log'),

@@ -6,6 +6,8 @@ import pandas as pd
 
 from sklearn.base import BaseEstimator
 
+from autoPyTorch.constants import VERY_SMALL_VALUE
+
 
 # Similar to / inspired by
 # https://github.com/tslearn-team/tslearn/blob/a3cf3bf/tslearn/preprocessing/preprocessing.py
@@ -41,7 +43,7 @@ class TimeSeriesScaler(BaseEstimator):
                 self.loc[self.static_features] = X[self.static_features].mean()
 
                 # ensure that if all the values are the same in a group, we could still normalize them correctly
-                self.scale[self.scale == 0] = 1.
+                self.scale[self.scale < VERY_SMALL_VALUE] = 1.
 
             elif self.mode == "min_max":
                 X_grouped = X.groupby(X.index)
@@ -55,14 +57,14 @@ class TimeSeriesScaler(BaseEstimator):
                 self.loc = min_
                 self.scale = diff_
                 self.scale.mask(self.scale == 0.0, self.loc)
-                self.scale[self.scale == 0.0] = 1.0
+                self.scale[self.scale < VERY_SMALL_VALUE] = 1.0
 
             elif self.mode == "max_abs":
                 X_abs = X.transform("abs")
                 max_abs_ = X_abs.groupby(X_abs.index).agg("max")
                 max_abs_[self.static_features] = max_abs_[self.static_features].max()
 
-                max_abs_[max_abs_ == 0.0] = 1.0
+                max_abs_[max_abs_ < VERY_SMALL_VALUE] = 1.0
                 self.loc = None
                 self.scale = max_abs_
 
@@ -73,7 +75,7 @@ class TimeSeriesScaler(BaseEstimator):
                 mean_abs_[self.static_features] = mean_abs_[self.static_features].mean()
                 self.scale = mean_abs_.mask(mean_abs_ == 0.0, X_abs.agg("max"))
 
-                self.scale[self.scale == 0] = 1
+                self.scale[self.scale < VERY_SMALL_VALUE] = 1
                 self.loc = None
 
             elif self.mode == "none":
@@ -108,7 +110,7 @@ class TimeSeriesScaler(BaseEstimator):
                 loc = X.mean(axis=0, keepdims=True)
                 scale = np.nan_to_num(X.std(axis=0, ddof=1, keepdims=True))
                 scale = np.where(scale == 0, loc, scale)
-                scale[scale == 0] = 1.
+                scale[scale < VERY_SMALL_VALUE] = 1.
                 return (X - loc) / scale
 
             elif self.mode == 'min_max':
@@ -119,13 +121,13 @@ class TimeSeriesScaler(BaseEstimator):
                 loc = min_
                 scale = diff_
                 scale = np.where(scale == 0., loc, scale)
-                scale[scale == 0.0] = 1.0
+                scale[scale < VERY_SMALL_VALUE] = 1.0
                 return (X - loc) / scale
 
             elif self.mode == "max_abs":
                 X_abs = np.abs(X)
                 max_abs_ = X_abs.max(0, keepdims=True)
-                max_abs_[max_abs_ == 0.0] = 1.0
+                max_abs_[max_abs_ < VERY_SMALL_VALUE] = 1.0
                 scale = max_abs_
                 return X / scale
 
@@ -133,7 +135,7 @@ class TimeSeriesScaler(BaseEstimator):
                 X_abs = np.abs(X)
                 mean_abs_ = X_abs.mean(0, keepdims=True)
                 scale = np.where(mean_abs_ == 0.0, np.max(X_abs), mean_abs_)
-                scale[scale == 0] = 1
+                scale[scale < VERY_SMALL_VALUE] = 1
                 return X / scale
 
             elif self.mode == "none":

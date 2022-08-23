@@ -52,7 +52,6 @@ from autoPyTorch.datasets.resampling_strategy import (
 )
 from autoPyTorch.ensemble.ensemble_builder import EnsembleBuilderManager
 from autoPyTorch.ensemble.singlebest_ensemble import SingleBest
-from autoPyTorch.evaluation.abstract_evaluator import fit_and_suppress_warnings
 from autoPyTorch.evaluation.tae import ExecuteTaFuncWithQueue, get_cost_of_crash
 from autoPyTorch.evaluation.utils import DisableFileOutputParameters
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
@@ -69,6 +68,7 @@ from autoPyTorch.utils.logging_ import (
     start_log_server,
 )
 from autoPyTorch.utils.parallel import preload_modules
+from autoPyTorch.utils.parallel_model_runner import run_models_on_dataset
 from autoPyTorch.utils.pipeline import get_configuration_space, get_dataset_requirements
 from autoPyTorch.utils.results_manager import MetricResults, ResultsManager, SearchResults
 from autoPyTorch.utils.results_visualizer import ColorLabelSettings, PlotSettingParams, ResultsVisualizer
@@ -443,14 +443,14 @@ class BaseTask(ABC):
     def trajectory(self) -> Optional[List]:
         return self._results_manager.trajectory
 
-    def set_pipeline_config(self, **pipeline_config_kwargs: Any) -> None:
+    def set_pipeline_options(self, **pipeline_options_kwargs: Any) -> None:
         """
         Check whether arguments are valid and
         then sets them to the current pipeline
         configuration.
 
         Args:
-            **pipeline_config_kwargs: Valid config options include "num_run",
+            **pipeline_options_kwargs: Valid config options include "num_run",
             "device", "budget_type", "epochs", "runtime", "torch_num_threads",
             "early_stopping", "use_tensorboard_logger",
             "metrics_during_training"
@@ -459,7 +459,7 @@ class BaseTask(ABC):
             None
         """
         unknown_keys = []
-        for option, value in pipeline_config_kwargs.items():
+        for option, value in pipeline_options_kwargs.items():
             if option in self.pipeline_options.keys():
                 pass
             else:
@@ -470,7 +470,7 @@ class BaseTask(ABC):
                              " expected arguments to be in {}".
                              format(unknown_keys, self.pipeline_options.keys()))
 
-        self.pipeline_options.update(pipeline_config_kwargs)
+        self.pipeline_options.update(pipeline_options_kwargs)
 
     def get_pipeline_options(self) -> dict:
         """
@@ -634,7 +634,9 @@ class BaseTask(ABC):
             self._is_dask_client_internally_created = False
             del self._is_dask_client_internally_created
 
-    def _load_models(self) -> bool:
+    def _load_models(
+        self,
+    ) -> bool:
 
         """
         Loads the models saved in the temporary directory
@@ -645,6 +647,7 @@ class BaseTask(ABC):
         """
         if self.resampling_strategy is None:
             raise ValueError("Resampling strategy is needed to determine what models to load")
+
         self.ensemble_ = self._backend.load_ensemble(self.seed)
 
         # If no ensemble is loaded, try to get the best performing model
@@ -799,113 +802,37 @@ class BaseTask(ABC):
         assert self._dask_client is not None
 
         self._logger.info("Starting to create traditional classifier predictions.")
-        starttime = time.time()
 
         # Initialise run history for the traditional classifiers
-        run_history = RunHistory()
         memory_limit = self._memory_limit
         if memory_limit is not None:
             memory_limit = int(math.ceil(memory_limit))
         available_classifiers = get_available_traditional_learners()
-        dask_futures = []
+        model_configs = [(classifier, self.pipeline_options[self.pipeline_options['budget_type']])
+                         for classifier in available_classifiers]
 
-        total_number_classifiers = len(available_classifiers)
-        for n_r, classifier in enumerate(available_classifiers):
-
-            # Only launch a task if there is time
-            start_time = time.time()
-            if time_left >= func_eval_time_limit_secs:
-                self._logger.info(f"{n_r}: Started fitting {classifier} with cutoff={func_eval_time_limit_secs}")
-                scenario_mock = unittest.mock.Mock()
-                scenario_mock.wallclock_limit = time_left
-                # This stats object is a hack - maybe the SMAC stats object should
-                # already be generated here!
-                stats = Stats(scenario_mock)
-                stats.start_timing()
-                ta = ExecuteTaFuncWithQueue(
-                    pynisher_context=self._multiprocessing_context,
-                    backend=self._backend,
-                    seed=self.seed,
-                    multi_objectives=["cost"],
-                    metric=self._metric,
-                    logger_port=self._logger_port,
-                    cost_for_crash=get_cost_of_crash(self._metric),
-                    abort_on_first_run_crash=False,
-                    initial_num_run=self._backend.get_next_num_run(),
-                    stats=stats,
-                    memory_limit=memory_limit,
-                    disable_file_output=self._disable_file_output,
-                    all_supported_metrics=self._all_supported_metrics,
-                )
-                dask_futures.append([
-                    classifier,
-                    self._dask_client.submit(
-                        ta.run, config=classifier,
-                        cutoff=func_eval_time_limit_secs,
-                    )
-                ])
-
-            # When managing time, we need to take into account the allocated time resources,
-            # which are dependent on the number of cores. 'dask_futures' is a proxy to the number
-            # of workers /n_jobs that we have, in that if there are 4 cores allocated, we can run at most
-            # 4 task in parallel. Every 'cutoff' seconds, we generate up to 4 tasks.
-            # If we only have 4 workers and there are 4 futures in dask_futures, it means that every
-            # worker has a task. We would not like to launch another job until a worker is available. To this
-            # end, the following if-statement queries the number of active jobs, and forces to wait for a job
-            # completion via future.result(), so that a new worker is available for the next iteration.
-            if len(dask_futures) >= self.n_jobs:
-
-                # How many workers to wait before starting fitting the next iteration
-                workers_to_wait = 1
-                if n_r >= total_number_classifiers - 1 or time_left <= func_eval_time_limit_secs:
-                    # If on the last iteration, flush out all tasks
-                    workers_to_wait = len(dask_futures)
-
-                while workers_to_wait >= 1:
-                    workers_to_wait -= 1
-                    # We launch dask jobs only when there are resources available.
-                    # This allow us to control time allocation properly, and early terminate
-                    # the traditional machine learning pipeline
-                    cls, future = dask_futures.pop(0)
-                    status, cost, runtime, additional_info = future.result()
-                    if status == StatusType.SUCCESS:
-                        self._logger.info(
-                            "Fitting {} took {} [sec] and got performance: {}.\n"
-                            "additional info:\n{}".format(cls, runtime, cost, dict_repr(additional_info))
-                        )
-                        configuration = additional_info['pipeline_configuration']
-                        origin = additional_info['configuration_origin']
-                        additional_info.pop('pipeline_configuration')
-                        run_history.add(config=configuration, cost=cost,
-                                        time=runtime, status=status, seed=self.seed,
-                                        starttime=starttime, endtime=starttime + runtime,
-                                        origin=origin, additional_info=additional_info)
-                    else:
-                        if additional_info.get('exitcode') == -6:
-                            self._logger.error(
-                                "Traditional prediction for {} failed with run state {},\n"
-                                "because the provided memory limits were too tight.\n"
-                                "Please increase the 'ml_memory_limit' and try again.\n"
-                                "If you still get the problem, please open an issue\n"
-                                "and paste the additional info.\n"
-                                "Additional info:\n{}".format(cls, str(status), dict_repr(additional_info))
-                            )
-                        else:
-                            self._logger.error(
-                                "Traditional prediction for {} failed with run state {}.\nAdditional info:\n{}".format(
-                                    cls, str(status), dict_repr(additional_info)
-                                )
-                            )
-
-            # In the case of a serial execution, calling submit halts the run for a resource
-            # dynamically adjust time in this case
-            time_left -= int(time.time() - start_time)
-
-            # Exit if no more time is available for a new classifier
-            if time_left < func_eval_time_limit_secs:
-                self._logger.warning("Not enough time to fit all traditional machine learning models."
-                                     "Please consider increasing the run time to further improve performance.")
-                break
+        run_history = run_models_on_dataset(
+            time_left=time_left,
+            func_eval_time_limit_secs=func_eval_time_limit_secs,
+            model_configs=model_configs,
+            logger=self._logger,
+            logger_port=self._logger_port,
+            metric=self._metric,
+            dask_client=self._dask_client,
+            backend=self._backend,
+            memory_limit=memory_limit,
+            disable_file_output=self._disable_file_output,
+            all_supported_metrics=self._all_supported_metrics,
+            include=self.include_components,
+            exclude=self.exclude_components,
+            search_space_updates=self.search_space_updates,
+            pipeline_options=self.pipeline_options,
+            seed=self.seed,
+            multiprocessing_context=self._multiprocessing_context,
+            n_jobs=self.n_jobs,
+            current_search_space=self.search_space,
+            initial_num_run=self._backend.get_next_num_run()
+        )
 
         self._logger.debug("Run history traditional: {}".format(run_history))
         # add run history of traditional to api run history
@@ -1272,7 +1199,7 @@ class BaseTask(ABC):
                 all_supported_metrics=self._all_supported_metrics,
                 smac_scenario_args=smac_scenario_args,
                 get_smac_object_callback=get_smac_object_callback,
-                pipeline_config=self.pipeline_options,
+                pipeline_options=self.pipeline_options,
                 min_budget=min_budget,
                 max_budget=max_budget,
                 ensemble_callback=proc_ensemble,
@@ -1378,38 +1305,144 @@ class BaseTask(ABC):
 
     def refit(
         self,
-        dataset: BaseDataset,
-        split_id: int = 0
+        dataset: Optional[BaseDataset] = None,
+        X_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        y_train: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        X_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        y_test: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+        dataset_name: Optional[str] = None,
+        resampling_strategy: ResamplingStrategies = NoResamplingStrategyTypes.no_resampling,
+        resampling_strategy_args: Optional[Dict[str, Any]] = None,
+        total_walltime_limit: int = 120,
+        run_time_limit_secs: int = 60,
+        memory_limit: Optional[int] = None,
+        eval_metric: Optional[str] = None,
+        all_supported_metrics: bool = False,
+        budget_type: Optional[str] = None,
+        budget: Optional[float] = None,
+        pipeline_options: Optional[Dict] = None,
+        disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
     ) -> "BaseTask":
         """
-        Refit all models found with fit to new data.
+        Fit all the models found in the ensemble on the whole training set X_train.
+        Therefore, we recommend using `NoResamplingStrategy` to be able to do that. Nevertheless, it
+        is still able to fit using other splitting techniques such as hold out or cross validation.
 
-        Necessary when using cross-validation. During training, autoPyTorch
-        fits each model k times on the dataset, but does not keep any trained
-        model and can therefore not be used to predict for new data points.
-        This methods fits all models found during a call to fit on the data
-        given. This method may also be used together with holdout to avoid
-        only using 66% of the training data to fit the final model.
-
-        Refit uses the estimator pipeline_config attribute, which the user
-        can interact via the get_pipeline_config()/set_pipeline_config()
+        Refit uses the estimator pipeline_options attribute, which the user
+        can interact via the get_pipeline_options()/set_pipeline_options()
         methods.
 
         Args:
-            dataset (Dataset):
-                The argument that will provide the dataset splits. It can either
-                be a dictionary with the splits, or the dataset object which can
-                generate the splits based on different restrictions.
-            split_id (int):
-                split id to fit on.
+            dataset (BaseDataset):
+                An object of the appropriate child class of `BaseDataset`,
+                that will be used to fit the pipeline
+            X_train, y_train, X_test, y_test: Union[np.ndarray, List, pd.DataFrame]
+                A pair of features (X_train) and targets (y_train) used to fit a
+                pipeline. Additionally, a holdout of this pairs (X_test, y_test) can
+                be provided to track the generalization performance of each stage.
+            dataset_name (Optional[str]):
+                Name of the dataset, if None, random value is used.
+            resampling_strategy (ResamplingStrategies):
+                Strategy to split the training data. Defaults to
+                NoResamplingStrategyTypes.no_resampling.
+            resampling_strategy_args (Optional[Dict[str, Any]]):
+                Arguments required for the chosen resampling strategy. If None, uses
+                the default values provided in DEFAULT_RESAMPLING_PARAMETERS
+                in ```datasets/resampling_strategy.py```.
+            dataset_name (Optional[str]):
+                name of the dataset, used as experiment name.
+            total_walltime_limit (int):
+                Total time that can be used by all the models to be refitted. Defaults to 120.
+            run_time_limit_secs (int: default=60):
+                Time limit for a single call to the machine learning model.
+                Model fitting will be terminated if the machine learning algorithm
+                runs over the time limit. Set this value high enough so that
+                typical machine learning algorithms can be fit on the training
+                data.
+            memory_limit (Optional[int]):
+                Memory limit in MB for the machine learning algorithm. autopytorch
+                will stop fitting the machine learning algorithm if it tries
+                to allocate more than memory_limit MB. If None is provided,
+                no memory limit is set. In case of multi-processing, memory_limit
+                will be per job. This memory limit also applies to the ensemble
+                creation process.
+            eval_metric (Optional[str]):
+                Name of the metric that is used to evaluate a pipeline.
+            all_supported_metrics (bool: default=True):
+                if True, all metrics supporting current task will be calculated
+                for each pipeline and results will be available via cv_results
+            budget_type (str):
+                Type of budget to be used when fitting the pipeline.
+                It can be one of:
+
+                + `epochs`: The training of each pipeline will be terminated after
+                    a number of epochs have passed. This number of epochs is determined by the
+                    budget argument of this method.
+                + `runtime`: The training of each pipeline will be terminated after
+                    a number of seconds have passed. This number of seconds is determined by the
+                    budget argument of this method. The overall fitting time of a pipeline is
+                    controlled by func_eval_time_limit_secs. 'runtime' only controls the allocated
+                    time to train a pipeline, but it does not consider the overall time it takes
+                    to create a pipeline (data loading and preprocessing, other i/o operations, etc.).
+            budget (Optional[float]):
+                Budget to fit a single run of the pipeline. If not
+                provided, uses the default in the pipeline config
+            pipeline_options (Optional[Dict]):
+                Valid config options include "device",
+                "torch_num_threads", "early_stopping", "use_tensorboard_logger",
+                "metrics_during_training"
+            disable_file_output (Optional[List[Union[str, DisableFileOutputParameters]]]):
+                Used as a list to pass more fine-grained
+                information on what to save. Must be a member of `DisableFileOutputParameters`.
+                Allowed elements in the list are:
+
+                + `y_optimization`:
+                    do not save the predictions for the optimization set,
+                    which would later on be used to build an ensemble. Note that SMAC
+                    optimizes a metric evaluated on the optimization set.
+                + `pipeline`:
+                    do not save any individual pipeline files
+                + `pipelines`:
+                    In case of cross validation, disables saving the joint model of the
+                    pipelines fit on each fold.
+                + `y_test`:
+                    do not save the predictions for the test set.
+                + `all`:
+                    do not save any of the above.
+                For more information check `autoPyTorch.evaluation.utils.DisableFileOutputParameters`.
+
         Returns:
             self
         """
 
+        if dataset is None:
+            if (
+                X_train is None
+                and y_train is None
+            ):
+                raise ValueError("No dataset provided, must provide X_train, y_train tensors")
+            dataset = self.get_dataset(X_train=X_train,
+                                       y_train=y_train,
+                                       X_test=X_test,
+                                       y_test=y_test,
+                                       resampling_strategy=resampling_strategy,
+                                       resampling_strategy_args=resampling_strategy_args,
+                                       dataset_name=dataset_name
+                                       )
+
         self.dataset_name = dataset.dataset_name
 
-        if self._logger is None:
-            self._logger = self._get_logger(str(self.dataset_name))
+        # Used when loading models
+        self.resampling_strategy = resampling_strategy
+
+        self._logger = self._get_logger("RefitLogger")
+
+        self._logger.debug("Starting refit")
+
+        if self.n_jobs == 1:
+            self._dask_client = SingleThreadedClient()
+        else:
+            self._create_dask_client()
 
         dataset_requirements = get_dataset_requirements(
             info=dataset.get_required_dataset_info(),
@@ -1417,29 +1450,102 @@ class BaseTask(ABC):
             exclude=self.exclude_components,
             search_space_updates=self.search_space_updates)
         dataset_properties = dataset.get_dataset_properties(dataset_requirements)
+
         self._backend.save_datamanager(dataset)
+
+        scenario_mock = unittest.mock.Mock()
+        scenario_mock.wallclock_limit = run_time_limit_secs
+        # This stats object is a hack - maybe the SMAC stats object should
+        # already be generated here!
+        stats = Stats(scenario_mock)
+
+        if memory_limit is None and getattr(self, '_memory_limit', None) is not None:
+            memory_limit = self._memory_limit
+
+        metric = get_metrics(dataset_properties=dataset_properties,
+                             names=[eval_metric] if eval_metric is not None else None,
+                             all_supported_metrics=False).pop()
+
+        pipeline_options = self.pipeline_options.copy().update(pipeline_options) if pipeline_options is not None \
+            else self.pipeline_options.copy()
+
+        assert pipeline_options is not None
+
+        if budget_type is not None:
+            pipeline_options.update({'budget_type': budget_type})
+        else:
+            budget_type = pipeline_options['budget_type']
+
+        budget = budget if budget is not None else pipeline_options[budget_type]
+
+        if disable_file_output is None:
+            disable_file_output = getattr(self, '_disable_file_output', [])
+
+        stats.start_timing()
 
         if self.models_ is None or len(self.models_) == 0 or self.ensemble_ is None:
             self._load_models()
 
-        # Refit is not applicable when ensemble_size is set to zero.
-        if self.ensemble_ is None:
-            raise ValueError("Refit can only be called if 'ensemble_size != 0'")
-
+        model_configs = []
         for identifier in self.models_:
             model = self.models_[identifier]
-            # this updates the model inplace, it can then later be used in
-            # predict method
+            budget = identifier[-1]  # identifier is seed, num_run, budget
+            model_configs.append((model.config, budget))
 
-            # try to fit the model. If it fails, shuffle the data. This
-            # could alleviate the problem in algorithms that depend on
-            # the ordering of the data.
-            X = self._get_fit_dictionary(
-                dataset_properties=copy.copy(dataset_properties),
-                dataset=dataset,
-                split_id=split_id)
-            fit_and_suppress_warnings(self._logger, model, X, y=None)
+        self._logger.debug(f"Refitting {model_configs}")
+        run_history = run_models_on_dataset(
+            time_left=total_walltime_limit,
+            func_eval_time_limit_secs=run_time_limit_secs,
+            model_configs=model_configs,
+            logger=self._logger,
+            logger_port=self._logger_port,
+            metric=metric,
+            dask_client=self._dask_client,
+            backend=self._backend,
+            memory_limit=memory_limit,
+            disable_file_output=disable_file_output,
+            all_supported_metrics=all_supported_metrics,
+            include=self.include_components,
+            exclude=self.exclude_components,
+            search_space_updates=self.search_space_updates,
+            pipeline_options=pipeline_options,
+            seed=self.seed,
+            multiprocessing_context=self._multiprocessing_context,
+            n_jobs=self.n_jobs,
+            current_search_space=self.search_space,
+            initial_num_run=self._backend.get_next_num_run()
+        )
 
+        replace_old_identifiers_to_refit_identifiers = {}
+
+        self._logger.debug("Finished refit training")
+        old_identifier_index = None
+        for _, run_value in run_history.data.items():
+            config = run_value.additional_info['configuration']
+            for i, (configuration, _) in enumerate(model_configs):
+                if isinstance(configuration, Configuration):
+                    configuration = configuration.get_dictionary()
+                self._logger.debug(f"Matching {config} with {configuration}")
+                if config == configuration:
+                    old_identifier_index = i
+                    break
+            if old_identifier_index is not None:
+                old_identifier = list(self.models_.keys())[old_identifier_index]
+                refit_identifier = (self.seed, run_value.additional_info['num_run'], old_identifier[2])
+                replace_old_identifiers_to_refit_identifiers[old_identifier] = refit_identifier
+            else:
+                warnings.warn(f"Refit for {config} failed. Model fitted during search will be used instead.")
+            old_identifier_index = None
+        self.ensemble_.update_identifiers(replace_old_identifiers_to_refit_identifiers)
+
+        self.run_history.update(run_history, DataOrigin.EXTERNAL_SAME_INSTANCES)
+        run_history.save_json(os.path.join(self._backend.internals_directory, 'refit_run_history.json'),
+                              save_external=True)
+
+        # store ensemble for later use, with large iteration
+        self._backend.save_ensemble(self.ensemble_, 10**8, self.seed)
+
+        self._load_models()
         self._clean_logger()
 
         return self
@@ -1473,8 +1579,8 @@ class BaseTask(ABC):
         A pipeline configuration can be specified if None,
         uses default
 
-        Fit uses the estimator pipeline_config attribute, which the user
-        can interact via the get_pipeline_config()/set_pipeline_config()
+        Fit uses the estimator pipeline_options attribute, which the user
+        can interact via the get_pipeline_options()/set_pipeline_options()
         methods.
 
         Args:
@@ -1581,8 +1687,8 @@ class BaseTask(ABC):
 
         if dataset is None:
             if (
-                X_train is not None
-                and y_train is not None
+                X_train is None
+                and y_train is None
             ):
                 raise ValueError("No dataset provided, must provide X_train, y_train tensors")
             dataset = self.get_dataset(X_train=X_train,
@@ -1603,21 +1709,21 @@ class BaseTask(ABC):
         # search process, it makes sense to set it to 0
         configuration.__setattr__('config_id', 0)
 
+        include_components = self.include_components if include_components is None else include_components
+        exclude_components = self.exclude_components if exclude_components is None else exclude_components
+        search_space_updates = self.search_space_updates if search_space_updates is None else search_space_updates
+
         # get dataset properties
         dataset_requirements = get_dataset_requirements(
             info=dataset.get_required_dataset_info(),
-            include=self.include_components,
-            exclude=self.exclude_components,
-            search_space_updates=self.search_space_updates)
+            include=include_components,
+            exclude=exclude_components,
+            search_space_updates=search_space_updates)
         dataset_properties = dataset.get_dataset_properties(dataset_requirements)
         self._backend.save_datamanager(dataset)
 
         if self._logger is None:
             self._logger = self._get_logger(dataset.dataset_name)
-
-        include_components = self.include_components if include_components is None else include_components
-        exclude_components = self.exclude_components if exclude_components is None else exclude_components
-        search_space_updates = self.search_space_updates if search_space_updates is None else search_space_updates
 
         scenario_mock = unittest.mock.Mock()
         scenario_mock.wallclock_limit = run_time_limit_secs
@@ -1632,7 +1738,7 @@ class BaseTask(ABC):
                              names=[eval_metric] if eval_metric is not None else None,
                              all_supported_metrics=False).pop()
 
-        pipeline_options = self.pipeline_options.copy().update(pipeline_options) if pipeline_options is not None \
+        pipeline_options = {**self.pipeline_options, **pipeline_options} if pipeline_options is not None \
             else self.pipeline_options.copy()
 
         assert pipeline_options is not None
@@ -1666,7 +1772,7 @@ class BaseTask(ABC):
             include=include_components,
             exclude=exclude_components,
             search_space_updates=search_space_updates,
-            pipeline_config=pipeline_options,
+            pipeline_options=pipeline_options,
             pynisher_context=self._multiprocessing_context,
         )
 
@@ -1742,8 +1848,7 @@ class BaseTask(ABC):
 
         # Parallelize predictions across models with n_jobs processes.
         # Each process computes predictions in chunks of batch_size rows.
-        if self._logger is None:
-            self._logger = self._get_logger("Predict-Logger")
+        self._logger = self._get_logger("Predict-Logger")
 
         if self.ensemble_ is None and not self._load_models():
             raise ValueError("No ensemble found. Either fit has not yet "
