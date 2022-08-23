@@ -137,7 +137,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7facdff32bb0>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fd704a05250>
 
 
 
@@ -176,13 +176,13 @@ Print the final ensemble performance
     |  3 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,StandardScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.18 |
     |  4 | None                                                                                             | KNNLearner                                                      |     0.02 |
     autoPyTorch results:
-            Dataset name: 3e9a5de0-1a48-11ed-883e-c7f5fe1042ee
+            Dataset name: 7bb9ff95-22ee-11ed-88d2-3d9b0b4a5fcb
             Optimisation Metric: accuracy
             Best validation score: 0.8713450292397661
             Number of target algorithm runs: 20
-            Number of successful target algorithm runs: 15
+            Number of successful target algorithm runs: 16
             Number of crashed target algorithm runs: 4
-            Number of target algorithms that exceeded the time limit: 1
+            Number of target algorithms that exceeded the time limit: 0
             Number of target algorithms that exceeded the memory limit: 0
 
 
@@ -244,7 +244,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7facd4903220>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fd784b649a0>
 
 
 
@@ -284,7 +284,7 @@ Print the final ensemble performance
     |  4 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,QuantileTransformer,TruncSVD        | no embedding,ResNetBackbone,FullyConnectedHead,nn.Sequential    |     0.04 |
     |  5 | SimpleImputer,Variance Threshold,NoCoalescer,OneHotEncoder,MinMaxScaler,NoFeaturePreprocessing | no embedding,ShapedMLPBackbone,FullyConnectedHead,nn.Sequential |     0.04 |
     autoPyTorch results:
-            Dataset name: a6d8f1e6-1a48-11ed-883e-c7f5fe1042ee
+            Dataset name: e6d35a42-22ee-11ed-88d2-3d9b0b4a5fcb
             Optimisation Metric: accuracy
             Best validation score: 0.8626733083495604
             Number of target algorithm runs: 16
@@ -354,7 +354,7 @@ Search for an ensemble of machine learning algorithms
  .. code-block:: none
 
 
-    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7facd4011f70>
+    <autoPyTorch.api.tabular_classification.TabularClassificationTask object at 0x7fd6e4f030a0>
 
 
 
@@ -393,13 +393,13 @@ Print the final ensemble performance
     |  4 | None                                                                                             | SVMLearner                                                      |     0.04 |
     |  5 | None                                                                                             | LGBMLearner                                                     |     0.02 |
     autoPyTorch results:
-            Dataset name: 135d0fe3-1a49-11ed-883e-c7f5fe1042ee
+            Dataset name: 5688d92e-22ef-11ed-88d2-3d9b0b4a5fcb
             Optimisation Metric: accuracy
             Best validation score: 0.8362573099415205
-            Number of target algorithm runs: 17
+            Number of target algorithm runs: 18
             Number of successful target algorithm runs: 13
             Number of crashed target algorithm runs: 3
-            Number of target algorithms that exceeded the time limit: 1
+            Number of target algorithms that exceeded the time limit: 2
             Number of target algorithms that exceeded the memory limit: 0
 
 
@@ -409,7 +409,7 @@ Print the final ensemble performance
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 8 minutes  43.701 seconds)
+   **Total running time of the script:** ( 9 minutes  10.020 seconds)
 
 
 .. _sphx_glr_download_examples_40_advanced_example_resampling_strategy.py:

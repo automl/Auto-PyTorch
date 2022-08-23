@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
-    <title>Tabular Classification with n parallel jobs &#8212; AutoPyTorch 0.2 documentation</title>
+    <title>Tabular Classification with n parallel jobs &#8212; AutoPyTorch 0.2.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/bootstrap-sphinx.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css" />
@@ -56,7 +56,7 @@
         </button>
         <a class="navbar-brand" href="../../index.html">
           Auto-PyTorch</a>
-        <span class="navbar-text navbar-version pull-left"><b>0.2</b></span>
+        <span class="navbar-text navbar-version pull-left"><b>0.2.1</b></span>
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -124,7 +124,7 @@ to download the full example code or to run this example in your browser via Bin
 <span id="sphx-glr-examples-40-advanced-example-parallel-n-jobs-py"></span><h1>Tabular Classification with n parallel jobs<a class="headerlink" href="#tabular-classification-with-n-parallel-jobs" title="Permalink to this heading">¶</a></h1>
 <p>The following example shows how to fit a sample classification model parallely on 2 cores
 with AutoPyTorch</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>[ERROR] [2022-08-12 14:01:49,186:asyncio.events]
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>[ERROR] [2022-08-23 14:11:40,492:asyncio.events]
 Traceback (most recent call last):
   File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py&quot;, line 799, in wrapper
     return await func(*args, **kwargs)
@@ -137,7 +137,7 @@ Traceback (most recent call last):
   File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/asyncio/tasks.py&quot;, line 659, in sleep
     return await future
 asyncio.exceptions.CancelledError
-[ERROR] [2022-08-12 14:01:49,190:asyncio.events]
+[ERROR] [2022-08-23 14:11:40,540:asyncio.events]
 Traceback (most recent call last):
   File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/site-packages/distributed/utils.py&quot;, line 799, in wrapper
     return await func(*args, **kwargs)
@@ -154,14 +154,14 @@ Traceback (most recent call last):
   File &quot;/opt/hostedtoolcache/Python/3.8.13/x64/lib/python3.8/asyncio/tasks.py&quot;, line 659, in sleep
     return await future
 asyncio.exceptions.CancelledError
-{&#39;accuracy&#39;: 0.8497109826589595}
+{&#39;accuracy&#39;: 0.8554913294797688}
 autoPyTorch results:
-        Dataset name: 88611799-1a46-11ed-883e-c7f5fe1042ee
+        Dataset name: c4f63d6a-22ec-11ed-88d2-3d9b0b4a5fcb
         Optimisation Metric: accuracy
         Best validation score: 0.8713450292397661
-        Number of target algorithm runs: 46
-        Number of successful target algorithm runs: 37
-        Number of crashed target algorithm runs: 6
+        Number of target algorithm runs: 48
+        Number of successful target algorithm runs: 38
+        Number of crashed target algorithm runs: 7
         Number of target algorithms that exceeded the time limit: 3
         Number of target algorithms that exceeded the memory limit: 0
 </pre></div>
@@ -230,7 +230,7 @@ autoPyTorch results:
     <span class="nb">print</span><span class="p">(</span><span class="n">api</span><span class="o">.</span><span class="n">sprint_statistics</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  44.538 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 5 minutes  29.188 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-40-advanced-example-parallel-n-jobs-py">
 <div class="binder-badge docutils container">
 <a class="reference external image-reference" href="https://mybinder.org/v2/gh/automl/Auto-PyTorch/development?urlpath=lab/tree/notebooks/examples/40_advanced/example_parallel_n_jobs.ipynb"><img alt="Launch binder" src="../../_images/binder_badge_logo1.svg" width="150px" /></a>

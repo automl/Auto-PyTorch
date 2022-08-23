@@ -37,23 +37,6 @@ Basic examples for using *Auto-PyTorch* on tabular datasets
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="The following example shows how to fit a sample classification model with AutoPyTorch">
-
-.. only:: html
-
-  .. image:: /examples/20_basics/images/thumb/sphx_glr_example_tabular_classification_thumb.png
-    :alt: Tabular Classification
-
-  :ref:`sphx_glr_examples_20_basics_example_tabular_classification.py`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">Tabular Classification</div>
-    </div>
-
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="Image Classification">
 
 .. only:: html
@@ -66,6 +49,23 @@ Basic examples for using *Auto-PyTorch* on tabular datasets
 .. raw:: html
 
       <div class="sphx-glr-thumbnail-title">Image Classification</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="The following example shows how to fit a simple classification ensemble with AutoPyTorch and re...">
+
+.. only:: html
+
+  .. image:: /examples/20_basics/images/thumb/sphx_glr_example_tabular_classification_thumb.png
+    :alt: Tabular Classification
+
+  :ref:`sphx_glr_examples_20_basics_example_tabular_classification.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Tabular Classification</div>
     </div>
 
 
@@ -95,7 +95,7 @@ Basic examples for using *Auto-PyTorch* on tabular datasets
    :hidden:
 
    /examples/20_basics/example_tabular_regression
-   /examples/20_basics/example_tabular_classification
    /examples/20_basics/example_image_classification
+   /examples/20_basics/example_tabular_classification
    /examples/20_basics/example_time_series_forecasting
 

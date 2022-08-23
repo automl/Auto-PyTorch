@@ -33,22 +33,22 @@ Image Classification
 
     Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz
     Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz to ../datasets/FashionMNIST/raw/train-images-idx3-ubyte.gz
-      0%|          | 0/26421880 [00:00<?, ?it/s]      0%|          | 32768/26421880 [00:00<01:37, 269661.04it/s]      0%|          | 65536/26421880 [00:00<01:38, 267501.14it/s]      0%|          | 131072/26421880 [00:00<01:07, 388969.63it/s]      1%|          | 229376/26421880 [00:00<00:47, 551190.13it/s]      2%|1         | 458752/26421880 [00:00<00:25, 1024519.07it/s]      4%|3         | 950272/26421880 [00:00<00:12, 2034589.74it/s]      7%|7         | 1867776/26421880 [00:00<00:06, 3806328.31it/s]     14%|#4        | 3768320/26421880 [00:00<00:03, 7511243.63it/s]     26%|##6       | 6881280/26421880 [00:01<00:01, 13055905.73it/s]     38%|###7      | 9994240/26421880 [00:01<00:00, 16843136.89it/s]     49%|####9     | 13008896/26421880 [00:01<00:00, 19076794.87it/s]     61%|######    | 16089088/26421880 [00:01<00:00, 20876086.01it/s]     73%|#######2  | 19169280/26421880 [00:01<00:00, 22121784.53it/s]     84%|########4 | 22249472/26421880 [00:01<00:00, 22991935.53it/s]     96%|#########5| 25329664/26421880 [00:01<00:00, 23587015.14it/s]    100%|##########| 26421880/26421880 [00:01<00:00, 14248915.59it/s]
+      0%|          | 0/26421880 [00:00<?, ?it/s]      0%|          | 32768/26421880 [00:00<01:36, 273574.05it/s]      0%|          | 65536/26421880 [00:00<01:36, 272029.88it/s]      0%|          | 131072/26421880 [00:00<01:06, 395601.51it/s]      1%|          | 229376/26421880 [00:00<00:46, 560660.17it/s]      2%|1         | 491520/26421880 [00:00<00:22, 1140959.95it/s]      4%|3         | 950272/26421880 [00:00<00:12, 2042822.39it/s]      7%|7         | 1933312/26421880 [00:00<00:06, 4033969.41it/s]     15%|#4        | 3833856/26421880 [00:00<00:02, 7746025.35it/s]     26%|##6       | 6946816/26421880 [00:01<00:01, 13358825.50it/s]     38%|###7      | 10027008/26421880 [00:01<00:00, 17093733.49it/s]     50%|####9     | 13139968/26421880 [00:01<00:00, 19741478.86it/s]     61%|######1   | 16220160/26421880 [00:01<00:00, 21485812.46it/s]     73%|#######3  | 19333120/26421880 [00:01<00:00, 22775775.65it/s]     85%|########4 | 22446080/26421880 [00:01<00:00, 23652091.02it/s]     97%|#########6| 25559040/26421880 [00:01<00:00, 24300073.61it/s]    100%|##########| 26421880/26421880 [00:01<00:00, 14526598.00it/s]
     Extracting ../datasets/FashionMNIST/raw/train-images-idx3-ubyte.gz to ../datasets/FashionMNIST/raw
 
     Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-labels-idx1-ubyte.gz
     Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-labels-idx1-ubyte.gz to ../datasets/FashionMNIST/raw/train-labels-idx1-ubyte.gz
-      0%|          | 0/29515 [00:00<?, ?it/s]    100%|##########| 29515/29515 [00:00<00:00, 246986.62it/s]    100%|##########| 29515/29515 [00:00<00:00, 246193.85it/s]
+      0%|          | 0/29515 [00:00<?, ?it/s]    100%|##########| 29515/29515 [00:00<00:00, 243439.61it/s]    100%|##########| 29515/29515 [00:00<00:00, 242844.11it/s]
     Extracting ../datasets/FashionMNIST/raw/train-labels-idx1-ubyte.gz to ../datasets/FashionMNIST/raw
 
     Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz
     Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz to ../datasets/FashionMNIST/raw/t10k-images-idx3-ubyte.gz
-      0%|          | 0/4422102 [00:00<?, ?it/s]      1%|          | 32768/4422102 [00:00<00:16, 271365.89it/s]      1%|1         | 65536/4422102 [00:00<00:16, 270266.93it/s]      3%|2         | 131072/4422102 [00:00<00:10, 392338.29it/s]      5%|5         | 229376/4422102 [00:00<00:07, 556637.94it/s]     10%|#         | 458752/4422102 [00:00<00:03, 1036164.16it/s]     21%|##        | 917504/4422102 [00:00<00:01, 1967160.72it/s]     41%|####1     | 1835008/4422102 [00:00<00:00, 3788204.48it/s]     83%|########2 | 3670016/4422102 [00:00<00:00, 7365292.41it/s]    100%|##########| 4422102/4422102 [00:00<00:00, 4526747.11it/s]
+      0%|          | 0/4422102 [00:00<?, ?it/s]      1%|          | 32768/4422102 [00:00<00:16, 270172.58it/s]      1%|1         | 65536/4422102 [00:00<00:16, 270051.73it/s]      3%|2         | 131072/4422102 [00:00<00:10, 392890.90it/s]      5%|5         | 229376/4422102 [00:00<00:07, 555118.43it/s]     10%|9         | 425984/4422102 [00:00<00:04, 940337.77it/s]     20%|##        | 884736/4422102 [00:00<00:01, 1905018.51it/s]     39%|###9      | 1736704/4422102 [00:00<00:00, 3572988.78it/s]     79%|#######8  | 3473408/4422102 [00:00<00:00, 6986586.93it/s]    100%|##########| 4422102/4422102 [00:00<00:00, 4540677.18it/s]
     Extracting ../datasets/FashionMNIST/raw/t10k-images-idx3-ubyte.gz to ../datasets/FashionMNIST/raw
 
     Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labels-idx1-ubyte.gz
     Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labels-idx1-ubyte.gz to ../datasets/FashionMNIST/raw/t10k-labels-idx1-ubyte.gz
-      0%|          | 0/5148 [00:00<?, ?it/s]    100%|##########| 5148/5148 [00:00<00:00, 31894057.60it/s]
+      0%|          | 0/5148 [00:00<?, ?it/s]    100%|##########| 5148/5148 [00:00<00:00, 39473998.16it/s]
     Extracting ../datasets/FashionMNIST/raw/t10k-labels-idx1-ubyte.gz to ../datasets/FashionMNIST/raw
 
     Pipeline CS:
@@ -84,15 +84,17 @@ Image Classification
      ________________________________________ 
     Configuration(values={
       'image_augmenter:GaussianBlur:use_augmenter': False,
-      'image_augmenter:GaussianNoise:use_augmenter': False,
-      'image_augmenter:RandomAffine:rotate': 124,
-      'image_augmenter:RandomAffine:scale_offset': 0.06255439515201121,
-      'image_augmenter:RandomAffine:shear': 31,
-      'image_augmenter:RandomAffine:translate_percent_offset': 0.17281138629598677,
+      'image_augmenter:GaussianNoise:sigma_offset': 2.899271560486781,
+      'image_augmenter:GaussianNoise:use_augmenter': True,
+      'image_augmenter:RandomAffine:rotate': 168,
+      'image_augmenter:RandomAffine:scale_offset': 0.22161745479713446,
+      'image_augmenter:RandomAffine:shear': 23,
+      'image_augmenter:RandomAffine:translate_percent_offset': 0.27323515878841953,
       'image_augmenter:RandomAffine:use_augmenter': True,
-      'image_augmenter:RandomCutout:use_augmenter': False,
+      'image_augmenter:RandomCutout:p': 0.7562099317271191,
+      'image_augmenter:RandomCutout:use_augmenter': True,
       'image_augmenter:Resize:use_augmenter': False,
-      'image_augmenter:ZeroPadAndCrop:percent': 0.1857189312490744,
+      'image_augmenter:ZeroPadAndCrop:percent': 0.007525257951395414,
       'normalizer:__choice__': 'NoNormalizer',
     })
 
@@ -173,7 +175,7 @@ Image Classification
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  6.707 seconds)
+   **Total running time of the script:** ( 0 minutes  6.676 seconds)
 
 
 .. _sphx_glr_download_examples_20_basics_example_image_classification.py:
