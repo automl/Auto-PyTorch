@@ -46,6 +46,43 @@ CV_NUM_SPLITS = 2
 HOLDOUT_NUM_SPLITS = 1
 
 
+def refit_test_estimator(
+    estimator,
+    X_train,
+    y_train,
+    X_test,
+    y_test,
+):
+    estimator.refit(
+        X_train=X_train,
+        y_train=y_train,
+        X_test=X_test,
+        y_test=y_test
+    )
+
+    # Check if the refit models are actually used in the new ensemble.
+    refit_ensemble_identifiers = estimator.ensemble_.get_selected_model_identifiers()
+    refit_run_history_path = os.path.join(estimator._backend.internals_directory, 'refit_run_history.json')
+    assert os.path.exists(refit_run_history_path)
+
+    refit_run_history: RunHistory = RunHistory()
+    refit_run_history.update_from_json(refit_run_history_path, estimator.search_space)
+
+    all_refit_runs_in_new_ensemble = []
+    model_num_runs = []
+    for run_key, run_value in refit_run_history.data.items():
+        any_refit_run_in_new_ensemble = False
+        num_run = run_value.additional_info["num_run"]
+        model_num_runs.append(num_run)
+        for identifier in refit_ensemble_identifiers:
+            if num_run == identifier[1]:
+                any_refit_run_in_new_ensemble = True
+                break
+        all_refit_runs_in_new_ensemble.append(any_refit_run_in_new_ensemble)
+
+    assert all(all_refit_runs_in_new_ensemble), "All successful runs in the refit should be a part of the new ensemble"
+
+
 # Test
 # ====
 @unittest.mock.patch('autoPyTorch.evaluation.tae.eval_train_function',
@@ -186,8 +223,9 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
     # Ensemble Builder produced an ensemble
     estimator.ensemble_ is not None
 
+    ensemble_identifiers = estimator.ensemble_.identifiers_
     # There should be a weight for each element of the ensemble
-    assert len(estimator.ensemble_.identifiers_) == len(estimator.ensemble_.weights_)
+    assert len(ensemble_identifiers) == len(estimator.ensemble_.weights_)
 
     y_pred = estimator.predict(X_test)
     assert np.shape(y_pred)[0] == np.shape(X_test)[0]
@@ -207,6 +245,15 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
                                                                                              successful_num_run)
     assert 'train_loss' in incumbent_results
 
+    # Test refit on dummy data
+    refit_test_estimator(
+        estimator=estimator,
+        X_train=X_train,
+        y_train=y_train,
+        X_test=X_test,
+        y_test=y_test
+    )
+
     # Check that we can pickle
     dump_file = os.path.join(estimator._backend.temporary_directory, 'dump.pkl')
 
@@ -216,9 +263,6 @@ def test_tabular_classification(openml_id, resampling_strategy, backend, resampl
     with open(dump_file, 'rb') as f:
         restored_estimator = pickle.load(f)
     restored_estimator.predict(X_test)
-
-    # Test refit on dummy data
-    estimator.refit(dataset=backend.load_datamanager())
 
     # Make sure that a configuration space is stored in the estimator
     assert isinstance(estimator.get_search_space(), CS.ConfigurationSpace)
@@ -387,6 +431,15 @@ def test_tabular_regression(openml_name, resampling_strategy, backend, resamplin
                                                                                              successful_num_run)
     assert 'train_loss' in incumbent_results, estimator.run_history.data
 
+    # Test refit on dummy data
+    refit_test_estimator(
+        estimator=estimator,
+        X_train=X_train,
+        y_train=y_train,
+        X_test=X_test,
+        y_test=y_test
+    )
+
     # Check that we can pickle
     dump_file = os.path.join(estimator._backend.temporary_directory, 'dump.pkl')
 
@@ -396,9 +449,6 @@ def test_tabular_regression(openml_name, resampling_strategy, backend, resamplin
     with open(dump_file, 'rb') as f:
         restored_estimator = pickle.load(f)
     restored_estimator.predict(X_test)
-
-    # Test refit on dummy data
-    estimator.refit(dataset=backend.load_datamanager())
 
     # Make sure that a configuration space is stored in the estimator
     assert isinstance(estimator.get_search_space(), CS.ConfigurationSpace)
@@ -580,7 +630,14 @@ def test_time_series_forecasting(forecasting_toy_dataset, resampling_strategy, b
     assert np.shape(y_pred) == np.shape(y_test)
 
     # Test refit on dummy data
-    estimator.refit(dataset=backend.load_datamanager())
+    refit_test_estimator(
+        estimator=estimator,
+        X_train=X_train,
+        y_train=y_train,
+        X_test=X_test,
+        y_test=y_test
+    )
+
     # Make sure that a configuration space is stored in the estimator
     assert isinstance(estimator.get_search_space(), CS.ConfigurationSpace)
 

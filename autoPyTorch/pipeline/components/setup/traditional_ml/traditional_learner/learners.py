@@ -45,8 +45,10 @@ class LGBModel(BaseTraditionalLearner):
                        X_train: np.ndarray,
                        y_train: np.ndarray
                        ) -> None:
-        early_stopping = 150 if X_train.shape[0] > 10000 else max(round(150 * 10000 / X_train.shape[0]), 10)
-        self.config["early_stopping_rounds"] = early_stopping
+
+        if self.has_val_set:
+            early_stopping = 150 if X_train.shape[0] > 10000 else max(round(150 * 10000 / X_train.shape[0]), 10)
+            self.config["early_stopping_rounds"] = early_stopping
         if not self.is_classification:
             self.model = LGBMRegressor(**self.config, random_state=self.random_state)
         else:
@@ -57,11 +59,14 @@ class LGBModel(BaseTraditionalLearner):
 
     def _fit(self, X_train: np.ndarray,
              y_train: np.ndarray,
-             X_val: np.ndarray,
-             y_val: np.ndarray
+             X_val: Optional[np.ndarray] = None,
+             y_val: Optional[np.ndarray] = None
              ) -> None:
         assert self.model is not None, "No model found. Can't fit without preparing the model"
-        self.model.fit(X_train, y_train, eval_set=[(X_val, y_val)])
+        eval_set = None
+        if self.has_val_set:
+            eval_set = [(X_val, y_val)]
+        self.model.fit(X_train, y_train, eval_set=eval_set)
 
     def predict(self, X_test: np.ndarray,
                 predict_proba: bool = False,
@@ -125,15 +130,21 @@ class CatboostModel(BaseTraditionalLearner):
 
     def _fit(self, X_train: np.ndarray,
              y_train: np.ndarray,
-             X_val: np.ndarray,
-             y_val: np.ndarray) -> None:
+             X_val: Optional[np.ndarray] = None,
+             y_val: Optional[np.ndarray] = None
+             ) -> None:
 
         assert self.model is not None, "No model found. Can't fit without preparing the model"
-        early_stopping = 150 if X_train.shape[0] > 10000 else max(round(150 * 10000 / X_train.shape[0]), 10)
         categoricals = [ind for ind in range(X_train.shape[1]) if isinstance(X_train[0, ind], str)]
 
         X_train_pooled = Pool(data=X_train, label=y_train, cat_features=categoricals)
-        X_val_pooled = Pool(data=X_val, label=y_val, cat_features=categoricals)
+        X_val_pooled = None
+        if self.has_val_set:
+            X_val_pooled = Pool(data=X_val, label=y_val, cat_features=categoricals)
+            early_stopping: Optional[int] = 150 if X_train.shape[0] > 10000 else max(
+                round(150 * 10000 / X_train.shape[0]), 10)
+        else:
+            early_stopping = None
 
         self.model.fit(X_train_pooled,
                        eval_set=X_val_pooled,
@@ -189,8 +200,9 @@ class RFModel(BaseTraditionalLearner):
 
     def _fit(self, X_train: np.ndarray,
              y_train: np.ndarray,
-             X_val: np.ndarray,
-             y_val: np.ndarray) -> None:
+             X_val: Optional[np.ndarray] = None,
+             y_val: Optional[np.ndarray] = None
+             ) -> None:
         assert self.model is not None, "No model found. Can't fit without preparing the model"
 
         self.model.fit(X_train, y_train)
@@ -244,8 +256,8 @@ class ExtraTreesModel(BaseTraditionalLearner):
 
     def _fit(self, X_train: np.ndarray,
              y_train: np.ndarray,
-             X_val: np.ndarray,
-             y_val: np.ndarray) -> None:
+             X_val: Optional[np.ndarray] = None,
+             y_val: Optional[np.ndarray] = None) -> None:
         assert self.model is not None, "No model found. Can't fit without preparing the model"
         self.model.fit(X_train, y_train)
         if self.config["warm_start"]:
@@ -303,8 +315,8 @@ class KNNModel(BaseTraditionalLearner):
 
     def _fit(self, X_train: np.ndarray,
              y_train: np.ndarray,
-             X_val: np.ndarray,
-             y_val: np.ndarray) -> None:
+             X_val: Optional[np.ndarray] = None,
+             y_val: Optional[np.ndarray] = None) -> None:
         assert self.model is not None, "No model found. Can't fit without preparing the model"
         self.model.fit(X_train, y_train)
 
@@ -346,8 +358,8 @@ class SVMModel(BaseTraditionalLearner):
 
     def _fit(self, X_train: np.ndarray,
              y_train: np.ndarray,
-             X_val: np.ndarray,
-             y_val: np.ndarray) -> None:
+             X_val: Optional[np.ndarray] = None,
+             y_val: Optional[np.ndarray] = None) -> None:
         assert self.model is not None, "No model found. Can't fit without preparing the model"
         self.model.fit(X_train, y_train)
 

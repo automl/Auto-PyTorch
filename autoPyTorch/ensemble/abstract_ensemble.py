@@ -9,6 +9,9 @@ from autoPyTorch.pipeline.base_pipeline import BasePipeline
 class AbstractEnsemble(object):
     __metaclass__ = ABCMeta
 
+    def __init__(self):
+        self.identifiers_: List[Tuple[int, int, float]] = []
+
     @abstractmethod
     def fit(
         self,
@@ -76,3 +79,12 @@ class AbstractEnsemble(object):
         Returns:
             Score
         """
+
+    def update_identifiers(
+        self,
+        replace_identifiers_mapping: Dict[Tuple[int, int, float], Tuple[int, int, float]]
+    ) -> None:
+        identifiers = self.identifiers_.copy()
+        for i, identifier in enumerate(self.identifiers_):
+            identifiers[i] = replace_identifiers_mapping.get(identifier, identifier)
+        self.identifiers_ = identifiers
