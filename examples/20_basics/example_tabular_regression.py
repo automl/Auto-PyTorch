@@ -50,6 +50,7 @@ api.search(
     optimize_metric='r2',
     total_walltime_limit=300,
     func_eval_time_limit_secs=50,
+    dataset_name="Boston"
 )
 
 ############################################################################
@@ -72,8 +73,8 @@ api.refit(
     X_test=X_test,
     y_test=y_test,
     dataset_name="Boston",
-    total_walltime_limit=1000,
-    run_time_limit_secs=200
+    total_walltime_limit=500,
+    run_time_limit_secs=50
     # you can change the resampling strategy to
     # for example, CrossValTypes.k_fold_cross_validation
     # to fit k fold models and have a voting classifier
