@@ -23,7 +23,6 @@ Version 0.2.1
 
 Contributors v0.2
 *****************
-
 * Difan Deng
 * Ravin Kohli
 * Shuhei Watanabe
