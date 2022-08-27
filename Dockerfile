@@ -4,6 +4,8 @@ WORKDIR /auto-pytorch
 
 # install linux packages
 RUN apt-get update
+# Install missing opencv dependencies
+RUN apt-get install ffmpeg libsm6 libxext6  -y
 
 # Set the locale
 # workaround for https://github.com/automl/auto-sklearn/issues/867
