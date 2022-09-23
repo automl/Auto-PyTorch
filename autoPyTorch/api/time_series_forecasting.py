@@ -289,7 +289,7 @@ class TimeSeriesForecastingTask(BaseTask):
         memory_limit: Optional[int] = 4096,
         smac_scenario_args: Optional[Dict[str, Any]] = None,
         get_smac_object_callback: Optional[Callable] = None,
-        all_supported_metrics: bool = True,
+        all_supported_metrics: bool = False,
         precision: int = 32,
         disable_file_output: List = [],
         load_models: bool = True,
@@ -396,7 +396,7 @@ class TimeSeriesForecastingTask(BaseTask):
                 instances, num_params, runhistory, seed and ta. This is
                 an advanced feature. Use only if you are familiar with
                 [SMAC](https://automl.github.io/SMAC3/master/index.html).
-            all_supported_metrics (bool), (default=True): if True, all
+            all_supported_metrics (bool), (default=False): if True, all
                 metrics supporting current task will be calculated
                 for each pipeline and results will be available via cv_results
             precision (int), (default=32): Numeric precision used when loading
