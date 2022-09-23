@@ -978,7 +978,7 @@ class BaseTask(ABC):
         smac_scenario_args: Optional[Dict[str, Any]] = None,
         get_smac_object_callback: Optional[Callable] = None,
         tae_func: Optional[Callable] = None,
-        all_supported_metrics: bool = True,
+        all_supported_metrics: bool = False,
         precision: int = 32,
         disable_file_output: Optional[List[Union[str, DisableFileOutputParameters]]] = None,
         load_models: bool = True,
@@ -1076,7 +1076,7 @@ class BaseTask(ABC):
                 TargetAlgorithm to be optimised. If None, `eval_function`
                 available in autoPyTorch/evaluation/train_evaluator is used.
                 Must be child class of AbstractEvaluator.
-            all_supported_metrics (bool: default=True):
+            all_supported_metrics (bool: default=False):
                 If True, all metrics supporting current task will be calculated
                 for each pipeline and results will be available via cv_results
             precision (int: default=32):
