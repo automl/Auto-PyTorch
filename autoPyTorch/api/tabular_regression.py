@@ -483,15 +483,3 @@ class TabularRegressionTask(BaseTask):
         # Allow to predict in the original domain -- that is, the user is not interested
         # in our encoded values
         return self.input_validator.target_validator.inverse_transform(predicted_values)
-
-    def score(
-        self,
-        y_pred: np.ndarray,
-        y_test: Union[np.ndarray, pd.DataFrame]
-    ) -> Dict[str, float]:
-        if self.input_validator is None or not self.input_validator._is_fitted:
-            raise ValueError("predict() is only supported after calling search. Kindly call first "
-                             "the estimator search() method.")
-        y_pred = self.input_validator.target_validator.transform(y_pred)
-        y_test = self.input_validator.target_validator.transform(y_test)
-        return super().score(y_pred=y_pred, y_test=y_test)
