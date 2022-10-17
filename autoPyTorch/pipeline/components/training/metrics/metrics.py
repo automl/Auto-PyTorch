@@ -57,7 +57,7 @@ f1 = make_metric('f1',
 
 
 # Score functions that need decision values
-roc_auc = make_metric('roc_auc', sklearn.metrics.roc_auc_score, needs_threshold=True)
+roc_auc = make_metric('roc_auc', sklearn.metrics.roc_auc_score, needs_threshold=True, multi_class= 'ovo')
 average_precision = make_metric('average_precision',
                                 sklearn.metrics.average_precision_score,
                                 needs_threshold=True)

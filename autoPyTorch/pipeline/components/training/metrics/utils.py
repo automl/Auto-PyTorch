@@ -99,8 +99,8 @@ def get_metrics(dataset_properties: Dict[str, Any],
     if names is not None:
         for name in names:
             if name not in supported_metrics.keys():
-                raise ValueError("Invalid name entered for task {}, currently "
-                                 "supported metrics for task include {}".format(dataset_properties['task_type'],
+                raise ValueError("Invalid name {} entered for task {}, currently "
+                                 "supported metrics for task include {}".format(name, dataset_properties['task_type'],
                                                                                 list(supported_metrics.keys())))
             else:
                 metric = supported_metrics[name]
