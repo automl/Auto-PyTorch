@@ -78,3 +78,5 @@ SEASONALITY_MAP = {
 
 # To avoid that we get a sequence that is too long to be fed to a network
 MAX_WINDOW_SIZE_BASE = 500
+
+MIN_CATEGORIES_FOR_EMBEDDING_MAX = 7

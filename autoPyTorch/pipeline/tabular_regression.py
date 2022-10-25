@@ -17,8 +17,8 @@ from autoPyTorch.pipeline.components.base_component import autoPyTorchComponent
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.TabularColumnTransformer import (
     TabularColumnTransformer
 )
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.coalescer import (
-    CoalescerChoice
+from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.column_splitting.ColumnSplitter import (
+    ColumnSplitter
 )
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.encoding import (
     EncoderChoice
@@ -28,8 +28,6 @@ from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.feature
 )
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.imputation.SimpleImputer import SimpleImputer
 from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.scaling import ScalerChoice
-from autoPyTorch.pipeline.components.preprocessing.tabular_preprocessing.variance_thresholding. \
-    VarianceThreshold import VarianceThreshold
 from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing import EarlyPreprocessing
 from autoPyTorch.pipeline.components.setup.lr_scheduler import SchedulerChoice
 from autoPyTorch.pipeline.components.setup.network.base_network import NetworkComponent
@@ -55,20 +53,21 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
     It implements a pipeline, which includes the following as steps:
 
     1. `imputer`
-    2. `encoder`
-    3. `scaler`
-    4. `feature_preprocessor`
-    5. `tabular_transformer`
-    6. `preprocessing`
-    7. `network_embedding`
-    8. `network_backbone`
-    9. `network_head`
-    10. `network`
-    11. `network_init`
-    12. `optimizer`
-    13. `lr_scheduler`
-    14. `data_loader`
-    15. `trainer`
+    2. `column_splitter
+    3. `encoder`
+    4. `scaler`
+    5. `feature_preprocessor`
+    6. `tabular_transformer`
+    7. `preprocessing`
+    8. `network_embedding`
+    9. `network_backbone`
+    10. `network_head`
+    11. `network`
+    12. `network_init`
+    13. `optimizer`
+    14. `lr_scheduler`
+    15. `data_loader`
+    16. `trainer`
 
     Contrary to the sklearn API it is not possible to enumerate the
     possible parameters in the __init__ function because we only know the
@@ -234,8 +233,9 @@ class TabularRegressionPipeline(RegressorMixin, BasePipeline):
 
         steps.extend([
             ("imputer", SimpleImputer(random_state=self.random_state)),
-            ("variance_threshold", VarianceThreshold(random_state=self.random_state)),
-            ("coalescer", CoalescerChoice(default_dataset_properties, random_state=self.random_state)),
+            # ("variance_threshold", VarianceThreshold(random_state=self.random_state)),
+            # ("coalescer", CoalescerChoice(default_dataset_properties, random_state=self.random_state)),
+            ("column_splitter", ColumnSplitter(random_state=self.random_state)),
             ("encoder", EncoderChoice(default_dataset_properties, random_state=self.random_state)),
             ("scaler", ScalerChoice(default_dataset_properties, random_state=self.random_state)),
             ("feature_preprocessor", FeatureProprocessorChoice(default_dataset_properties,

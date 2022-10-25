@@ -16,7 +16,6 @@ def test_imageloader_build_transform():
 
     fit_dictionary = dict()
     fit_dictionary['dataset_properties'] = dict()
-    fit_dictionary['dataset_properties']['is_small_preprocess'] = unittest.mock.Mock(())
     fit_dictionary['image_augmenter'] = unittest.mock.Mock()
     fit_dictionary['preprocess_transforms'] = unittest.mock.Mock()
 

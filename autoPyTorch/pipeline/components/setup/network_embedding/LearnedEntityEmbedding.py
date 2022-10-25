@@ -1,54 +1,74 @@
+from math import ceil
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import (
     UniformFloatHyperparameter,
-    UniformIntegerHyperparameter
+    UniformIntegerHyperparameter,
+    CategoricalHyperparameter
 )
 
 import numpy as np
 
 import torch
-from torch import nn
+from torch import embedding, nn
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.network_embedding.base_network_embedding import NetworkEmbeddingComponent
 from autoPyTorch.utils.common import HyperparameterSearchSpace, add_hyperparameter
 
 
+def get_num_output_dimensions(config: Dict[str, Any], num_categs_per_feature: List[int]) -> List[int]:
+    """
+        Returns list of embedding sizes for each categorical variable.
+        Selects this adaptively based on training_datset.
+        Note: Assumes there is at least one embed feature.
+    Args:
+        config (Dict[str, Any]): 
+            contains the hyperparameters required to calculate the `num_output_dimensions`
+        num_categs_per_feature (List[int]):
+            list containing number of categories for each feature that is to be embedded,
+            0 if the column is not an embed column
+    Returns:
+        List[int]:
+            list containing the output embedding size for each column,
+            1 if the column is not an embed column
+    """
+
+    max_embedding_dim = config['max_embedding_dim']
+    embed_exponent = config['embed_exponent']
+    size_factor = config['embedding_size_factor']
+    num_output_dimensions = [int(size_factor*max(
+                                                 2,
+                                                 min(max_embedding_dim,
+                                                     1.6 * num_categories**embed_exponent)))
+                             if num_categories > 0 else 1 for num_categories in num_categs_per_feature]
+    return num_output_dimensions
+
+
 class _LearnedEntityEmbedding(nn.Module):
     """ Learned entity embedding module for categorical features"""
 
-    def __init__(self, config: Dict[str, Any], num_input_features: np.ndarray, num_numerical_features: int):
+    def __init__(self, config: Dict[str, Any], num_categories_per_col: np.ndarray, num_features_excl_embed: int):
         """
         Args:
             config (Dict[str, Any]): The configuration sampled by the hyperparameter optimizer
-            num_input_features (np.ndarray): column wise information of number of output columns after transformation
-                for each categorical column and 0 for numerical columns
-            num_numerical_features (int): number of numerical features in X
+            num_categories_per_col (np.ndarray): number of categories per categorical columns that will be embedded
+            num_features_excl_embed (int): number of features in X excluding the features that need to be embedded
         """
         super().__init__()
         self.config = config
-
-        self.num_numerical = num_numerical_features
         # list of number of categories of categorical data
         # or 0 for numerical data
-        self.num_input_features = num_input_features
-        categorical_features: np.ndarray = self.num_input_features > 0
+        self.num_categories_per_col = num_categories_per_col
+        self.embed_features = self.num_categories_per_col > 0
+        self.num_features_excl_embed = num_features_excl_embed
 
-        self.num_categorical_features = self.num_input_features[categorical_features]
+        self.num_embed_features = self.num_categories_per_col[self.embed_features]
 
-        self.embed_features = [num_in >= config["min_unique_values_for_embedding"] for num_in in
-                               self.num_input_features]
-        self.num_output_dimensions = [0] * num_numerical_features
-        self.num_output_dimensions.extend([config["dimension_reduction_" + str(i)] * num_in for i, num_in in
-                                           enumerate(self.num_categorical_features)])
-        self.num_output_dimensions = [int(np.clip(num_out, 1, num_in - 1)) for num_out, num_in in
-                                      zip(self.num_output_dimensions, self.num_input_features)]
-        self.num_output_dimensions = [num_out if embed else num_in for num_out, embed, num_in in
-                                      zip(self.num_output_dimensions, self.embed_features,
-                                          self.num_input_features)]
-        self.num_out_feats = self.num_numerical + sum(self.num_output_dimensions)
+        self.num_output_dimensions = get_num_output_dimensions(config, self.num_categories_per_col)
+
+        self.num_out_feats = num_features_excl_embed + sum(self.num_output_dimensions)
 
         self.ee_layers = self._create_ee_layers()
 
@@ -65,8 +85,8 @@ class _LearnedEntityEmbedding(nn.Module):
             partial_model (_LearnedEntityEmbedding)
                 a new partial model
         """
-        num_input_features = self.num_input_features[subset_features]
-        num_numerical_features = sum([sf < self.num_numerical for sf in subset_features])
+        num_input_features = self.num_categories_per_col[subset_features]
+        num_features_excl_embed = sum([sf < self.num_features_excl_embed for sf in subset_features])
 
         num_output_dimensions = [self.num_output_dimensions[sf] for sf in subset_features]
         embed_features = [self.embed_features[sf] for sf in subset_features]
@@ -79,39 +99,35 @@ class _LearnedEntityEmbedding(nn.Module):
                 ee_layer_tracker += 1
         ee_layers = nn.ModuleList(ee_layers)
 
-        return PartialLearnedEntityEmbedding(num_input_features, num_numerical_features, embed_features,
+        return PartialLearnedEntityEmbedding(num_input_features, num_features_excl_embed, embed_features,
                                              num_output_dimensions, ee_layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # pass the columns of each categorical feature through entity embedding layer
         # before passing it through the model
         concat_seq = []
-        last_concat = 0
-        x_pointer = 0
-        layer_pointer = 0
-        for num_in, embed in zip(self.num_input_features, self.embed_features):
-            if not embed:
-                x_pointer += 1
-                continue
-            if x_pointer > last_concat:
-                concat_seq.append(x[..., last_concat: x_pointer])
-            categorical_feature_slice = x[..., x_pointer: x_pointer + num_in]
-            concat_seq.append(self.ee_layers[layer_pointer](categorical_feature_slice))
-            layer_pointer += 1
-            x_pointer += num_in
-            last_concat = x_pointer
 
-        concat_seq.append(x[..., last_concat:])
-        return torch.cat(concat_seq, dim=-1)
+        layer_pointer = 0
+        for x_pointer, embed in enumerate(self.embed_features):
+            current_feature_slice = x[:, x_pointer]
+            if not embed:
+                concat_seq.append(current_feature_slice.view(-1, 1))
+                continue
+            current_feature_slice = current_feature_slice.to(torch.int)
+            concat_seq.append(self.ee_layers[layer_pointer](current_feature_slice))
+            layer_pointer += 1
+
+        return torch.cat(concat_seq, dim=1)
 
     def _create_ee_layers(self) -> nn.ModuleList:
         # entity embeding layers are Linear Layers
         layers = nn.ModuleList()
-        for i, (num_in, embed, num_out) in enumerate(zip(self.num_input_features, self.embed_features,
-                                                         self.num_output_dimensions)):
+        for num_cat, embed, num_out in zip(self.num_categories_per_col,
+                                           self.embed_features,
+                                           self.num_output_dimensions):
             if not embed:
                 continue
-            layers.append(nn.Linear(num_in, num_out))
+            layers.append(nn.Embedding(num_cat, num_out))
         return layers
 
 
@@ -121,27 +137,26 @@ class PartialLearnedEntityEmbedding(_LearnedEntityEmbedding):
     of the input features. This is applied to forecasting tasks where not all the features might be known beforehand
     """
     def __init__(self,
-                 num_input_features: np.ndarray,
-                 num_numerical_features: int,
+                 num_categories_per_col: np.ndarray,
+                 num_features_excl_embed: int,
                  embed_features: List[bool],
                  num_output_dimensions: List[int],
                  ee_layers: nn.Module
                  ):
         super(_LearnedEntityEmbedding, self).__init__()
-        self.num_numerical = num_numerical_features
+        self.num_features_excl_embed = num_features_excl_embed
         # list of number of categories of categorical data
         # or 0 for numerical data
-        self.num_input_features = num_input_features
-        categorical_features: np.ndarray = self.num_input_features > 0
-
-        self.num_categorical_features = self.num_input_features[categorical_features]
+        self.num_categories_per_col = num_categories_per_col
 
         self.embed_features = embed_features
 
         self.num_output_dimensions = num_output_dimensions
-        self.num_out_feats = self.num_numerical + sum(self.num_output_dimensions)
+        self.num_out_feats = self.num_features_excl_embed + sum(self.num_output_dimensions)
 
         self.ee_layers = ee_layers
+
+        self.num_embed_features = self.num_categories_per_col[self.embed_features]
 
 
 class LearnedEntityEmbedding(NetworkEmbeddingComponent):
@@ -153,38 +168,35 @@ class LearnedEntityEmbedding(NetworkEmbeddingComponent):
         super().__init__(random_state=random_state)
         self.config = kwargs
 
-    def build_embedding(self,
-                        num_input_features: np.ndarray,
-                        num_numerical_features: int) -> Tuple[nn.Module, List[int]]:
+    def build_embedding(self, num_categories_per_col: np.ndarray, num_features_excl_embed: int) -> nn.Module:
 
         embedding = _LearnedEntityEmbedding(config=self.config,
-                                            num_input_features=num_input_features,
-                                            num_numerical_features=num_numerical_features)
+                                       num_categories_per_col=num_categories_per_col,
+                                       num_features_excl_embed=num_features_excl_embed)
+
         return embedding, embedding.num_output_dimensions
 
     @staticmethod
     def get_hyperparameter_search_space(
         dataset_properties: Optional[Dict[str, BaseDatasetPropertiesType]] = None,
-        min_unique_values_for_embedding: HyperparameterSearchSpace = HyperparameterSearchSpace(
-            hyperparameter="min_unique_values_for_embedding",
-            value_range=(3, 7),
-            default_value=5,
-            log=True),
-        dimension_reduction: HyperparameterSearchSpace = HyperparameterSearchSpace(
-            hyperparameter="dimension_reduction",
-            value_range=(0, 1),
-            default_value=0.5),
+        embed_exponent: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="embed_exponent",
+                                                                                   value_range=(0.56,),
+                                                                                   default_value=0.56),
+        max_embedding_dim: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="max_embedding_dim",
+                                                                                   value_range=(100,),
+                                                                                   default_value=100),
+        embedding_size_factor: HyperparameterSearchSpace = HyperparameterSearchSpace(hyperparameter="embedding_size_factor",
+                                                                                     value_range=(0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5),
+                                                                                     default_value=1,
+                                                                                     ),
     ) -> ConfigurationSpace:
         cs = ConfigurationSpace()
-        add_hyperparameter(cs, min_unique_values_for_embedding, UniformIntegerHyperparameter)
         if dataset_properties is not None:
-            for i in range(len(dataset_properties['categorical_columns'])
-                           if isinstance(dataset_properties['categorical_columns'], List) else 0):
-                ee_dimensions_search_space = HyperparameterSearchSpace(hyperparameter="dimension_reduction_" + str(i),
-                                                                       value_range=dimension_reduction.value_range,
-                                                                       default_value=dimension_reduction.default_value,
-                                                                       log=dimension_reduction.log)
-                add_hyperparameter(cs, ee_dimensions_search_space, UniformFloatHyperparameter)
+            if len(dataset_properties['categorical_columns']) > 0:
+                add_hyperparameter(cs, embed_exponent, UniformFloatHyperparameter)
+                add_hyperparameter(cs, max_embedding_dim, UniformIntegerHyperparameter)
+                add_hyperparameter(cs, embedding_size_factor, CategoricalHyperparameter)
+
         return cs
 
     @staticmethod

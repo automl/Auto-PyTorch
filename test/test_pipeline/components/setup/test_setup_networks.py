@@ -19,8 +19,7 @@ def head(request):
     return request.param
 
 
-# TODO: add 'LearnedEntityEmbedding' after preprocessing dix
-@pytest.fixture(params=['NoEmbedding'])
+@pytest.fixture(params=['NoEmbedding', 'LearnedEntityEmbedding'])
 def embedding(request):
     return request.param
 

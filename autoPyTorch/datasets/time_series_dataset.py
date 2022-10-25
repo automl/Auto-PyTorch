@@ -559,7 +559,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
         self.num_features: int = self.validator.feature_validator.num_features  # type: ignore[assignment]
         self.num_targets: int = self.validator.target_validator.out_dimensionality  # type: ignore[assignment]
 
-        self.categories = self.validator.feature_validator.categories
+        self.num_categories_per_col = self.validator.feature_validator.num_categories_per_col
 
         self.feature_shapes = self.validator.feature_shapes
         self.feature_names = tuple(self.validator.feature_names)
@@ -1072,7 +1072,7 @@ class TimeSeriesForecastingDataset(BaseDataset, ConcatDataset):
             'categorical_features': self.categorical_features,
             'numerical_columns': self.numerical_columns,
             'categorical_columns': self.categorical_columns,
-            'categories': self.categories,
+            'num_categories_per_col': self.num_categories_per_col,
         })
         return info
 

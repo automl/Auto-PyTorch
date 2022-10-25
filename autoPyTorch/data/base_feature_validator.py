@@ -46,11 +46,11 @@ class BaseFeatureValidator(BaseEstimator):
 
         # Required for dataset properties
         self.num_features: Optional[int] = None
-        self.categories: List[List[int]] = []
         self.categorical_columns: List[int] = []
         self.numerical_columns: List[int] = []
         self.encode_columns: List[str] = []
 
+        self.num_categories_per_col: Optional[List[int]] = []
         self.all_nan_columns: Optional[Set[Union[int, str]]] = None
 
         self._is_fitted = False

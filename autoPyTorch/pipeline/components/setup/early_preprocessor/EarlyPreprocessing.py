@@ -10,7 +10,7 @@ from scipy.sparse import spmatrix
 
 from autoPyTorch.datasets.base_dataset import BaseDatasetPropertiesType
 from autoPyTorch.pipeline.components.setup.base_setup import autoPyTorchSetupComponent
-from autoPyTorch.pipeline.components.setup.early_preprocessor.utils import get_preprocess_transforms, preprocess
+from autoPyTorch.pipeline.components.setup.early_preprocessor.utils import get_preprocess_transforms, get_preprocessed_dtype, preprocess
 from autoPyTorch.utils.common import FitRequirement
 
 
@@ -39,8 +39,14 @@ class EarlyPreprocessing(autoPyTorchSetupComponent):
 
         X['X_train'] = preprocess(dataset=X_train, transforms=transforms)
 
+        preprocessed_dtype = get_preprocessed_dtype(X['X_train'])
+
         # We need to also save the preprocess transforms for inference
-        X.update({'preprocess_transforms': transforms})
+        X.update({
+                 'preprocess_transforms': transforms,
+                 'shape_after_preprocessing': X['X_train'].shape[1:],
+                 'preprocessed_dtype': preprocessed_dtype
+                 })
         return X
 
     @staticmethod
