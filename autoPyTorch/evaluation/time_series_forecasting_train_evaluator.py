@@ -146,10 +146,7 @@ class TimeSeriesForecastingTrainEvaluator(TrainEvaluator):
         self.num_sequences = self.datamanager.num_sequences
         self.num_targets = self.datamanager.num_targets
         self.seq_length_min = np.min(self.num_sequences)
-        seasonality = SEASONALITY_MAP.get(self.datamanager.freq, 1)
-        if isinstance(seasonality, list):
-            seasonality = min(seasonality)  # Use to calculate MASE
-        self.seasonality = int(seasonality)  # type: ignore[call-overload]
+        self.seasonality = self.datamanager.seasonality
 
         self.max_budget = max_budget
         self.min_num_test_instances = min_num_test_instances
