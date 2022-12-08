@@ -1781,7 +1781,8 @@ class BaseTask(ABC):
     def score(
         self,
         y_pred: np.ndarray,
-        y_test: Union[np.ndarray, pd.DataFrame]
+        y_test: Union[np.ndarray, pd.DataFrame],
+        **score_kwargs: Any,
     ) -> Dict[str, float]:
         """Calculate the score on the test set.
         Calculate the evaluation measure on the test set.
@@ -1791,6 +1792,8 @@ class BaseTask(ABC):
                 The test predictions
             y_test (np.ndarray):
                 The test ground truth labels.
+            score_kwargs: Any
+                additional arguments for computing the scores. Some metrics might require special arguments
 
         Returns:
             Dict[str, float]:
@@ -1804,7 +1807,8 @@ class BaseTask(ABC):
                              "Please check the log file for related errors. ")
         return calculate_score(target=y_test, prediction=y_pred,
                                task_type=STRING_TO_TASK_TYPES[self.task_type],
-                               metrics=[self._metric])
+                               metrics=[self._metric],
+                               **score_kwargs)
 
     def __getstate__(self) -> Dict[str, Any]:
         # Cannot serialize a client!

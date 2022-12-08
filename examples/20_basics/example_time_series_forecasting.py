@@ -12,6 +12,8 @@ import tempfile as tmp
 import warnings
 import copy
 
+import numpy as np
+
 os.environ['JOBLIB_TEMP_FOLDER'] = tmp.gettempdir()
 os.environ['OMP_NUM_THREADS'] = '1'
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
@@ -91,3 +93,6 @@ for feature, future_feature, target, start_time in zip(X_train, X_test,y_train, 
 # test_sets2 = api.dataset.generate_test_seqs()
 
 pred = api.predict(test_sets)
+# To compute the scores with AutoPyTorch, the ground truth value must be of shape [n_seq, seq_length, n_output]
+# or [n_seq * seq_length, n_output]
+score = api.score(np.expand_dims(pred, -1), np.expand_dims(np.asarray(y_test), -1))
