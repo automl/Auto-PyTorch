@@ -17,6 +17,9 @@ from autoPyTorch.constants import (
     TIMESERIES_FORECASTING
 )
 from autoPyTorch.metrics import (
+    CLASSIFICATION_METRICS,
+    FORECASTING_METRICS,
+    REGRESSION_METRICS,
     accuracy,
     balanced_accuracy,
     compute_mase_coefficient,
@@ -30,7 +33,12 @@ from autoPyTorch.pipeline.components.training.metrics.base import (
     autoPyTorchMetric,
     make_metric
 )
-from autoPyTorch.pipeline.components.training.metrics.utils import calculate_loss, calculate_score, get_metrics
+from autoPyTorch.pipeline.components.training.metrics.utils import (
+    add_metric,
+    calculate_loss,
+    calculate_score,
+    get_metrics
+)
 
 
 @pytest.mark.parametrize('output_type', ['multiclass',
@@ -354,3 +362,41 @@ def test_compute_mase_coefficient():
     past_target = np.zeros(12)
     assert compute_mase_coefficient(past_target, 15) == 1.
     assert compute_mase_coefficient(past_target, 5) == 1.
+
+
+@pytest.mark.parametrize('task_type,task_metrics_dict,output_type', [
+    ('tabular_classification', CLASSIFICATION_METRICS, 'multiclass'),
+    ('tabular_classification', CLASSIFICATION_METRICS, 'multiclass-multioutput'),
+    ('tabular_classification', CLASSIFICATION_METRICS, 'binary'),
+    ('tabular_regression', REGRESSION_METRICS, 'continuous'),
+    ('tabular_regression', REGRESSION_METRICS, 'continuous-multioutput'),
+    ('time_series_forecasting', FORECASTING_METRICS, 'continuous'),
+    ('time_series_forecasting', FORECASTING_METRICS, 'continuous-multioutput'),
+])
+def test_add_metric(task_type, task_metrics_dict, output_type):
+    """
+    Tests if the custom score function is added to the metrics for the given task.
+    Also checks if the added metric is returned by the `get_metrics` function.
+
+    Args:
+        task_type (str)
+        task_metrics_dict (Dict[str, autoPyTorchMetric])
+        output_type (str)
+    """
+    def score_function(y_test, y_pred):
+        return sum(y_pred == y_test) / y_pred.shape[0]
+
+    custom_metric = make_metric(
+        name="custom_metric",
+        score_func=score_function,
+        worst_possible_result=0,
+        greater_is_better=True
+    )
+
+    add_metric(metric=custom_metric, task_type=task_type)
+    assert 'custom_metric' in list(task_metrics_dict.keys())
+    metrics = get_metrics(
+        dataset_properties={'task_type': task_type, 'output_type': output_type},
+        names=['custom_metric']
+    )
+    assert custom_metric in metrics
