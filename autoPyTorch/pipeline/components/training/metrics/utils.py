@@ -20,6 +20,31 @@ from autoPyTorch.pipeline.components.training.metrics.metrics import (
 )
 
 
+def add_metric(
+    metric: autoPyTorchMetric,
+    task_type: str,
+) -> None:
+    """
+    Adds an `autoPyTorchMetric` such that it can be used for
+    the search as well as for model evaluation.
+
+    Args:
+        metric (autoPyTorchMetric):
+            Metric to be added.
+        task_type (str):
+            The current task type, in string.
+    """
+
+    if STRING_TO_TASK_TYPES[task_type] in REGRESSION_TASKS:
+        metrics = REGRESSION_METRICS
+    elif STRING_TO_TASK_TYPES[task_type] in CLASSIFICATION_TASKS:
+        metrics = CLASSIFICATION_METRICS
+    elif STRING_TO_TASK_TYPES[task_type] in FORECASTING_TASKS:
+        metrics = FORECASTING_METRICS
+
+    metrics[metric.name] = metric
+
+
 def sanitize_array(array: np.ndarray) -> np.ndarray:
     """
     Replace NaN and Inf (there should not be any!)
@@ -66,14 +91,14 @@ def get_metrics(dataset_properties: Dict[str, Any],
 
     Args:
         dataset_properties: Dict[str, Any]
-        contains information about the dataset and task type
+            contains information about the dataset and task type
         names: Optional[Iterable[str]]
-        names of metrics to return
+            names of metrics to return
         all_supported_metrics: bool
-        if true, returns all metrics that are relevant to task_type
+            if true, returns all metrics that are relevant to task_type
 
     Returns:
-
+        List[autoPyTorchMetric]
     """
     assert 'task_type' in dataset_properties, \
         "Expected dataset_properties to have task_type got {}".format(dataset_properties.keys())
@@ -189,27 +214,24 @@ def calculate_loss(
     """
     Returns a loss (a magnitude that allows casting the
     optimization problem, as a minimization one) for the
-    given Auto-Sklearn Scorer object
-    Parameters
-    ----------
-        solution: np.ndarray
+    given autoPyTorchMetric object
+
+    Args:
+        target (np.ndarray):
             The ground truth of the targets
-        prediction: np.ndarray
+        prediction (np.ndarray):
             The best estimate from the model, of the given targets
-        task_type: int
+        task_type (int):
             To understand if the problem task is classification
             or regression
-        metric: Scorer
-            Object that host a function to calculate how good the
-            prediction is according to the solution.
-        scoring_functions: List[Scorer]
+        metrics (Iterable[autoPyTorchMetric]):
             A list of metrics to calculate multiple losses
         score_kwargs: Dict
             additional arguments for computing scores
-    Returns
-    -------
-        float or Dict[str, float]
-            A loss function for each of the provided scorer objects
+
+    Returns:
+        Dict[str, float]:
+            A loss score for each of the provided metrics
     """
     score = calculate_score(
         target=target,
