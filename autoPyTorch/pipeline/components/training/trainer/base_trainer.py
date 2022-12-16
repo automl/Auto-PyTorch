@@ -257,6 +257,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         if self.use_stochastic_weight_averaging:
             self.swa_model = swa_utils.AveragedModel(self.model, avg_fn=swa_update)
 
+        # self.swa_model.to(device=device)
         # in case we are using se or swa, initialise budget_threshold to know when to start swa or se
         self._budget_threshold = 0
         if self.use_stochastic_weight_averaging or self.use_snapshot_ensemble:
@@ -373,7 +374,6 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                 break
 
             loss, outputs = self.train_step(data, targets)
-
             # save for metric evaluation
             outputs_data.append(outputs.detach().cpu())
             targets_data.append(targets.detach().cpu())

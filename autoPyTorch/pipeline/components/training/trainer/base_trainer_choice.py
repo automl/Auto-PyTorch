@@ -323,6 +323,8 @@ class TrainerChoice(autoPyTorchChoice):
         # Support additional user metrics
         additional_metrics = X['additional_metrics'] if 'additional_metrics' in X else None
         additional_losses = X['additional_losses'] if 'additional_losses' in X else None
+        # prepare_timestamp = time.time()
+        # self.logger.debug(f"Choice prepare started: {prepare_timestamp}")
         self.choice.prepare(
             model=X['network'],
             metrics=get_metrics(dataset_properties=X['dataset_properties'],
@@ -337,8 +339,9 @@ class TrainerChoice(autoPyTorchChoice):
             task_type=STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']],
             labels=X['y_train'][X['backend'].load_datamanager().splits[X['split_id']][0]],
             numerical_columns=X['dataset_properties']['numerical_columns'] if 'numerical_columns' in X[
-                'dataset_properties'] else None
+                'dataset_properties'] else None,
         )
+        # self.logger.debug(f"Choice prepare finished at: {time.time()}, took {time.time() - prepare_timestamp}")
         total_parameter_count, trainable_parameter_count = self.count_parameters(X['network'])
         self.run_summary = RunSummary(
             total_parameter_count,
@@ -354,12 +357,15 @@ class TrainerChoice(autoPyTorchChoice):
 
             self.choice.on_epoch_start(X=X, epoch=epoch)
 
+            train_timestamp = time.time()
+            # self.logger.debug(f"Starting training at {train_timestamp}")
             # training
             train_loss, train_metrics = self.choice.train_epoch(
                 train_loader=X['train_data_loader'],
                 epoch=epoch,
                 writer=writer,
             )
+            # self.logger.debug(f"Ending training at {time.time()} took {time.time() - train_timestamp}")
 
             val_loss, val_metrics, test_loss, test_metrics = None, {}, None, {}
             if self.eval_valid_each_epoch(X):
@@ -403,32 +409,32 @@ class TrainerChoice(autoPyTorchChoice):
         if self.choice.use_stochastic_weight_averaging and self.choice.swa_updated:
 
             # update batch norm statistics
-            swa_utils.update_bn(loader=X['train_data_loader'], model=self.choice.swa_model.double())
+            swa_utils.update_bn(loader=X['train_data_loader'], model=self.choice.swa_model.cpu().double())
 
             # change model
             update_model_state_dict_from_swa(X['network'], self.choice.swa_model.state_dict())
             if self.choice.use_snapshot_ensemble:
                 # we update only the last network which pertains to the stochastic weight averaging model
-                swa_utils.update_bn(X['train_data_loader'], self.choice.model_snapshots[-1].double())
+                swa_utils.update_bn(X['train_data_loader'], self.choice.model_snapshots[-1].cpu().double())
 
         # wrap up -- add score if not evaluating every epoch
-        if not self.eval_valid_each_epoch(X):
-            if 'val_data_loader' in X and X['val_data_loader']:
-                val_loss, val_metrics = self.choice.evaluate(X['val_data_loader'], epoch, writer)
-            if 'test_data_loader' in X and X['test_data_loader']:
-                test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'])
-            self.run_summary.add_performance(
-                epoch=epoch,
-                start_time=start_time,
-                end_time=time.time(),
-                train_loss=train_loss,
-                val_loss=val_loss,
-                test_loss=test_loss,
-                train_metrics=train_metrics,
-                val_metrics=val_metrics,
-                test_metrics=test_metrics,
-            )
-            self.save_model_for_ensemble()
+        # if not self.eval_valid_each_epoch(X):
+        #     if 'val_data_loader' in X and X['val_data_loader']:
+        #         val_loss, val_metrics = self.choice.evaluate(X['val_data_loader'], epoch, writer)
+        #     if 'test_data_loader' in X and X['test_data_loader']:
+        #         test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'])
+        #     self.run_summary.add_performance(
+        #         epoch=epoch,
+        #         start_time=start_time,
+        #         end_time=time.time(),
+        #         train_loss=train_loss,
+        #         val_loss=val_loss,
+        #         test_loss=test_loss,
+        #         train_metrics=train_metrics,
+        #         val_metrics=val_metrics,
+        #         test_metrics=test_metrics,
+        #     )
+        #     self.save_model_for_ensemble()
 
         self.logger.info(f"Finished training with {self.run_summary.repr_last_epoch()}")
 
@@ -469,8 +475,8 @@ class TrainerChoice(autoPyTorchChoice):
         if epochs_since_best == 0:
             torch.save(X['network'].state_dict(), best_path)
 
-        if epochs_since_best > X['early_stopping']:
-            self.logger.debug(f" Early stopped model {X['num_run']} on epoch {self.run_summary.get_best_epoch()}")
+        if X['early_stopping'] > 0 and epochs_since_best > X['early_stopping']:
+            self.logger.debug(f" Early stopped model {X['num_run']} on epoch {self.run_summary.get_best_epoch(target_metrics)}")
             # We will stop the training. Load the last best performing weights
             X['network'].load_state_dict(torch.load(best_path))
 
@@ -494,7 +500,7 @@ class TrainerChoice(autoPyTorchChoice):
             bool: if True, the model is evaluated in every epoch
 
         """
-        if 'early_stopping' in X and X['early_stopping']:
+        if 'early_stopping' in X and X['early_stopping'] > 0:
             return True
 
         # We need to know if we should reduce the rate based on val loss
