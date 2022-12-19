@@ -119,12 +119,12 @@ class CatboostModel(BaseTraditionalLearner):
                        X_train: np.ndarray,
                        y_train: np.ndarray
                        ) -> None:
-        if not self.is_classification:
+        if hasattr(AutoPyTorchToCatboostMetrics, self.metric.name):
             self.config['eval_metric'] = AutoPyTorchToCatboostMetrics[self.metric.name].value
+        if not self.is_classification:
             # CatBoost Cannot handle a random state object, just the seed
             self.model = CatBoostRegressor(**self.config, random_state=self.random_state.get_state()[1][0])
         else:
-            self.config['eval_metric'] = AutoPyTorchToCatboostMetrics[self.metric.name].value
             # CatBoost Cannot handle a random state object, just the seed
             self.model = CatBoostClassifier(**self.config, random_state=self.random_state.get_state()[1][0])
 

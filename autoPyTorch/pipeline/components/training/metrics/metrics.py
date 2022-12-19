@@ -1,5 +1,5 @@
 from functools import partial
-from typing import List, Union
+from typing import Dict, List, Union
 
 import numpy as np
 
@@ -13,7 +13,12 @@ except ModuleNotFoundError:
 
 from smac.utils.constants import MAXINT
 
-from autoPyTorch.pipeline.components.training.metrics.base import make_metric
+from autoPyTorch.pipeline.components.training.metrics.base import autoPyTorchMetric, make_metric
+
+
+CLASSIFICATION_METRICS: Dict[str, autoPyTorchMetric]
+FORECASTING_METRICS: Dict[str, autoPyTorchMetric]
+REGRESSION_METRICS: Dict[str, autoPyTorchMetric]
 
 # Standard regression scores
 mean_absolute_error = make_metric('mean_absolute_error',

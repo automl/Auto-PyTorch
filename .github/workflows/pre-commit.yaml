@@ -34,8 +34,11 @@ jobs:
       run: |
         git submodule update --init --recursive
 
+    # flake8 does not restrict the version for importlib_metadata, however, it is incompatible.
+    # See https://github.com/python/importlib_metadata/issues/406
     - name: Install pre-commit
       run: |
+        pip install "importlib_metadata<5.0.0"
         pip install pre-commit
         pre-commit install
 
