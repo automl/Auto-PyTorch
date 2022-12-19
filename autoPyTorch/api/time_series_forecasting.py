@@ -1,4 +1,5 @@
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
+import warnings
 
 import numpy as np
 
@@ -590,3 +591,65 @@ class TimeSeriesForecastingTask(BaseTask):
             ],
             default_value=int(np.ceil(1.25 * base_window_size)),
         )
+
+    def score(
+        self,
+        y_pred: np.ndarray,
+        y_test: Union[np.ndarray, pd.DataFrame],
+        y_test_past: Optional[List[Union[np.ndarray, pd.DataFrame]]] = None,
+        sp: Optional[int] = None,
+        n_prediction_steps: Optional[int] = None,
+        **score_kwargs: Any,
+    ) -> Dict[str, float]:
+        """Calculate the score on the test set.
+        Calculate the evaluation measure on the test set. As forecasting metrics might require some additional metrics,
+        they can  be either given by the users or by default given by the api.
+
+        NOTE: MASE metric requires to scale the predicted values with the previous data. However, given that we do not
+        have access to the previous data within this function, users need to manually compute the coefficient with the
+        function autoPyTorch.pipeline.components.training.metrics.metrics.compute_mase_coefficient and multiple both
+        y_pred and y_test with that coefficient
+
+        Args:
+            y_pred (np.ndarray):
+                The test predictions
+            y_test (np.ndarray):
+                The test ground truth labels.
+            y_test_past:
+            sp (Optional[int]):
+
+            score_kwargs: Any
+                additional arguments for computing the scores. Some metrics might require special arguments
+
+        Returns:
+            Dict[str, float]:
+                Value of the evaluation metric calculated on the test set.
+        """
+        y_pred = np.asarray(y_pred)
+        y_test = np.asarray(y_test)
+        assert np.all(y_pred.shape == y_test.shape), f"y_pred and y_test must have the same shape! But they are " \
+                                                     f"{y_pred.shape} and {y_test.shape}!"
+        score_kwargs_forecasting = {}
+        if sp is None:
+            sp = self.dataset.seasonality
+        score_kwargs_forecasting['sp'] = sp
+        if n_prediction_steps is None:
+            n_prediction_steps = self.dataset.n_prediction_steps
+        score_kwargs_forecasting['n_prediction_steps'] = n_prediction_steps
+        if y_test_past is not None:
+            assert len(y_test_past) == len(y_test), f'The length of y_test_past must be equal to the length of ' \
+                                                    f'y_test.But they are {len(y_test_past)} and {len(y_test)}'
+            from autoPyTorch.pipeline.components.training.metrics.metrics import compute_mase_coefficient
+            mase_coefficient = np.asarray([compute_mase_coefficient(y_past, sp) for y_past in y_test_past])
+            if len(y_pred.shape) > 2:
+                mase_coefficient = np.expand_dims(mase_coefficient, 1)
+            # Match the shape of mase_coefficient and y_test
+            score_kwargs_forecasting['mase_coefficient'] = mase_coefficient
+        else:
+            if self._metric.name.endswith('MASE_Forecasting'):
+                warnings.warn("To compute MASE losses, the past target values must be provided. Here we simply ignore "
+                              "the scaling coefficient and the loss degenerate to a MAE loss")
+
+        return super(TimeSeriesForecastingTask, self).score(np.asarray(y_pred), np.asarray(y_test),
+                                                            **score_kwargs_forecasting,
+                                                            **score_kwargs)

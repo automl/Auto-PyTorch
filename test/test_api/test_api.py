@@ -39,8 +39,7 @@ from autoPyTorch.datasets.resampling_strategy import (
 from autoPyTorch.optimizer.smbo import AutoMLSMBO
 from autoPyTorch.pipeline.base_pipeline import BasePipeline
 from autoPyTorch.pipeline.components.setup.traditional_ml.traditional_learner import _traditional_learners
-from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy
-
+from autoPyTorch.pipeline.components.training.metrics.metrics import accuracy, mean_MASE_forecasting
 
 CV_NUM_SPLITS = 2
 HOLDOUT_NUM_SPLITS = 1
@@ -628,6 +627,14 @@ def test_time_series_forecasting(forecasting_toy_dataset, resampling_strategy, b
     y_pred = estimator.predict(X_test)
 
     assert np.shape(y_pred) == np.shape(y_test)
+    score_mse = estimator.score(np.expand_dims(np.asarray(y_pred), -1),
+                            np.expand_dims(np.asarray(y_test), -1))
+    assert isinstance(score_mse, dict)
+
+    estimator._metric = mean_MASE_forecasting
+    score_mase = estimator.score(np.expand_dims(np.asarray(y_pred), -1),
+                            np.expand_dims(np.asarray(y_test), -1),
+                            y_test_past=y_train)
 
     # Test refit on dummy data
     refit_test_estimator(
@@ -640,6 +647,8 @@ def test_time_series_forecasting(forecasting_toy_dataset, resampling_strategy, b
 
     # Make sure that a configuration space is stored in the estimator
     assert isinstance(estimator.get_search_space(), CS.ConfigurationSpace)
+
+
 
 
 @pytest.mark.parametrize('openml_id', (

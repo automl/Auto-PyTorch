@@ -132,7 +132,7 @@ class TimeSeriesSequence(Dataset):
                  Y: np.ndarray,
                  start_time: Optional[pd.DatetimeIndex] = None,
                  freq: str = '1Y',
-                 time_feature_transform: List[TimeFeature] = [ConstantTransform],
+                 time_feature_transform: List[TimeFeature] = [ConstantTransform()],
                  X_test: Optional[np.ndarray] = None,
                  Y_test: Optional[np.ndarray] = None,
                  train_transforms: Optional[torchvision.transforms.Compose] = None,
