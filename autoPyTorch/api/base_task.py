@@ -1793,7 +1793,9 @@ class BaseTask(ABC):
             y_test (np.ndarray):
                 The test ground truth labels.
             score_kwargs: Any
-                additional arguments for computing the scores. Some metrics might require special arguments
+                additional arguments for computing the scores. Some metrics might require special arguments. Currently,
+                this argument is required by time series forecasting tasks. For detailed information, please check
+                autoPyTorch/api/time_series_forecasting.py
 
         Returns:
             Dict[str, float]:
