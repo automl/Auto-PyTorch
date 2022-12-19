@@ -2,7 +2,7 @@ import unittest
 from typing import Callable, List, Tuple
 
 from gluonts.time_feature import Constant as ConstantTransform
-from gluonts.time_feature import DayOfMonth
+from gluonts.time_feature import day_of_month
 
 import numpy as np
 
@@ -11,7 +11,6 @@ import pandas as pd
 import pytest
 
 import torch
-
 
 from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes
 from autoPyTorch.datasets.time_series_dataset import (
@@ -40,7 +39,7 @@ class TestTimeSeriesSequence(unittest.TestCase):
 
         self.x_test_data = rng.rand(self.n_prediction_steps, 5)
         self.y_test = rng.rand(self.n_prediction_steps, 1)
-        self.time_feature_transform = [DayOfMonth(), ConstantTransform(10.0)]
+        self.time_feature_transform = [day_of_month, ConstantTransform()]
         self.known_future_features_index = [0, 2]
         self.seq_uni = TimeSeriesSequence(X=None, Y=self.y,
                                           n_prediction_steps=self.n_prediction_steps,
@@ -122,8 +121,8 @@ class TestTimeSeriesSequence(unittest.TestCase):
         self.assertEqual(len(self.seq_uni._cached_time_features), len(self.y))
         self.assertTrue(list(past_features.shape) == [3 + 1, len(self.time_feature_transform)])
         self.assertTrue(list(future_features.shape) == [self.n_prediction_steps, len(self.time_feature_transform)])
-        self.assertTrue(torch.all(past_features[:, 1] == 10.))
-        self.assertTrue(torch.all(future_features[:, 1] == 10.))
+        self.assertTrue(torch.all(past_features[:, 1] == 0.))
+        self.assertTrue(torch.all(future_features[:, 1] == 0.))
 
     def test_uni_to_test_set(self):
         self.seq_uni.transform_time_features = True
