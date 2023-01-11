@@ -66,6 +66,8 @@ class TabularDataset(BaseDataset):
     def __init__(self,
                  X: Union[np.ndarray, pd.DataFrame],
                  Y: Union[np.ndarray, pd.Series],
+                 X_val: Optional[Union[np.ndarray, pd.DataFrame]] = None,
+                 Y_val: Optional[Union[np.ndarray, pd.DataFrame]] = None,
                  X_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
                  Y_test: Optional[Union[np.ndarray, pd.DataFrame]] = None,
                  resampling_strategy: Union[CrossValTypes,
@@ -88,8 +90,25 @@ class TabularDataset(BaseDataset):
             raise ValueError("A feature validator is required to build a tabular pipeline")
 
         X, Y = validator.transform(X, Y)
+
+        if X_val is not None:
+            X_val, Y_val = validator.transform(X_val, Y_val)
+
+            train_indices = range(X.shape[0])
+            val_indices = range(X_val.shape[0])
+
+            self.splits = [(train_indices, val_indices)]
+            if hasattr(X, 'iloc'):
+                X = pd.concat([X, X_val])
+                Y = pd.concat([Y, Y_val])
+            else:
+                X = np.concatenate([X, X_val])
+                Y = np.concatenate([Y, Y_val])
+            shuffle = False
+
         if X_test is not None:
             X_test, Y_test = validator.transform(X_test, Y_test)
+
         self.categorical_columns = validator.feature_validator.categorical_columns
         self.numerical_columns = validator.feature_validator.numerical_columns
         self.num_features = validator.feature_validator.num_features
@@ -101,6 +120,8 @@ class TabularDataset(BaseDataset):
                          seed=seed, train_transforms=train_transforms,
                          dataset_name=dataset_name,
                          val_transforms=val_transforms)
+
+
         if self.output_type is not None:
             if STRING_TO_OUTPUT_TYPES[self.output_type] in CLASSIFICATION_OUTPUTS:
                 self.task_type = TASK_TYPES_TO_STRING[TABULAR_CLASSIFICATION]

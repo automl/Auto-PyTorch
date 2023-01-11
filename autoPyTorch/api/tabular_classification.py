@@ -131,6 +131,8 @@ class TabularClassificationTask(BaseTask):
                     y_train: Union[List, pd.DataFrame, np.ndarray],
                     X_test: Union[List, pd.DataFrame, np.ndarray],
                     y_test: Union[List, pd.DataFrame, np.ndarray],
+                    X_val: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
+                    y_val: Optional[Union[List, pd.DataFrame, np.ndarray]] = None,
                     resampling_strategy: Optional[Union[CrossValTypes,
                                                         HoldoutValTypes,
                                                         NoResamplingStrategyTypes]] = None,
@@ -160,6 +162,7 @@ class TabularClassificationTask(BaseTask):
 
         dataset = TabularDataset(
             X=X_train, Y=y_train,
+            X_val=X_val, Y_val=y_val,
             X_test=X_test, Y_test=y_test,
             validator=input_validator,
             resampling_strategy=resampling_strategy,
@@ -180,6 +183,8 @@ class TabularClassificationTask(BaseTask):
         y_train: Union[List, pd.DataFrame, np.ndarray],
         X_test: Union[List, pd.DataFrame, np.ndarray],
         y_test: Union[List, pd.DataFrame, np.ndarray],
+        X_val: Union[List, pd.DataFrame, np.ndarray] = None,
+        y_val: Union[List, pd.DataFrame, np.ndarray] = None,
         dataset_name: Optional[str] = None,
         budget_type: Optional[str] = None,
         budget: Optional[float] = None,
@@ -278,6 +283,8 @@ class TabularClassificationTask(BaseTask):
 
         self.get_dataset(X_train=X_train,
                          y_train=y_train,
+                         X_val=X_val,
+                         y_val=y_val,
                          X_test=X_test,
                          y_test=y_test,
                          dataset_name=dataset_name)

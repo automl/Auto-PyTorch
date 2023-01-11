@@ -150,7 +150,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.holdout_validators = HoldOutFuncs.get_holdout_validators(*HoldoutValTypes)
         self.no_resampling_validators = NoResamplingFuncs.get_no_resampling_validators(*NoResamplingStrategyTypes)
 
-        self.splits = self.get_splits_from_resampling_strategy()
+        if not (hasattr(self, 'splits') and self.splits is not None):
+            self.splits = self.get_splits_from_resampling_strategy()
 
         # We also need to be able to transform the data, be it for pre-processing
         # or for augmentation
