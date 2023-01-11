@@ -338,12 +338,17 @@ class TabularFeatureValidator(BaseFeatureValidator):
             dtypes = [dtype.name for dtype in X.dtypes]
 
             dtypes_diff = [s_dtype != dtype for s_dtype, dtype in zip(self.dtypes, dtypes)]
+            diff_dtypes_train = np.array(self.dtypes)[dtypes_diff]
+            diff_dtypes_test = np.array(dtypes)[dtypes_diff]
+            diff_dtypes_combined = np.concatenate([diff_dtypes_train, diff_dtypes_test]).tolist()
+            int_float_diffs = ['int' in diff_dtype.lower() or 'float' in diff_dtype.lower() for diff_dtype in set(diff_dtypes_combined)]
             if len(self.dtypes) == 0:
                 self.dtypes = dtypes
             elif (
                 any(dtypes_diff)  # the dtypes of some columns are different in train and test dataset
                 and self.all_nan_columns is not None  # Ignore all_nan_columns is None
                 and len(set(X.columns[dtypes_diff]).difference(self.all_nan_columns)) != 0
+                and not all(int_float_diffs)
             ):
                 # The dtypes can be different if and only if the column belongs
                 # to all_nan_columns as these columns would be imputed.
