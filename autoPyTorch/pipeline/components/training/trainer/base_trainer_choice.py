@@ -494,7 +494,7 @@ class TrainerChoice(autoPyTorchChoice):
             bool: if True, the model is evaluated in every epoch
 
         """
-        if 'early_stopping' in X and X['early_stopping']:
+        if 'early_stopping' in X and X['early_stopping'] >= 0:
             return True
 
         # We need to know if we should reduce the rate based on val loss

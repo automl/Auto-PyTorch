@@ -189,7 +189,7 @@ class TabularClassificationTask(BaseTask):
         memory_limit: Optional[int] = 4096,
         smac_scenario_args: Optional[Dict[str, Any]] = None,
         get_smac_object_callback: Optional[Callable] = None,
-        all_supported_metrics: bool = True,
+        all_supported_metrics: bool = False,
         precision: int = 32,
         disable_file_output: List = [],
         load_models: bool = True,
