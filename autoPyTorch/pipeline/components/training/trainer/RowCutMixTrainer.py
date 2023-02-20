@@ -36,16 +36,27 @@ class RowCutMixTrainer(MixUp, BaseTrainerComponent):
         if beta <= 0 or r > self.alpha:
             return X, {'y_a': y, 'y_b': y[shuffled_indices], 'lam': 1}
 
-        for i, idx in enumerate(shuffled_indices):
-            cut_column_indices = torch.as_tensor(
-                self.random_state.choice(
-                    range(n_columns),
-                    max(1, np.int32(n_columns * lam)),
-                    replace=False,
-                ),
-            )
-            X[i, cut_column_indices] = X[idx, cut_column_indices]
+        cut_column_indices = torch.as_tensor(
+            self.random_state.choice(
+                range(n_columns),
+                max(1, np.int32(n_columns * lam)),
+                replace=False,
+            ),
+        )
 
+        # Replace the values in `cut_indices` columns with
+        # the values from `permed_indices`
+        X[:, cut_column_indices] = X[shuffled_indices, :][:, cut_column_indices]
+
+        # for i, idx in enumerate(shuffled_indices):
+        #     cut_column_indices = torch.as_tensor(
+        #         self.random_state.choice(
+        #             range(n_columns),
+        #             max(1, np.int32(n_columns * lam)),
+        #             replace=False,
+        #         ),
+        #     )
+        #     X[i, cut_column_indices] = X[idx, cut_column_indices]
         # Since we cannot cut exactly `lam x 100 %` of rows, we need to adjust the `lam`
         lam = 1 - (len(cut_column_indices) / n_columns)
 
