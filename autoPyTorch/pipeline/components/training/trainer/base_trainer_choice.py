@@ -401,22 +401,31 @@ class TrainerChoice(autoPyTorchChoice):
                 torch.cuda.empty_cache()
 
         if self.choice.use_stochastic_weight_averaging and self.choice.swa_updated:
+            # By default, we assume the data is double. Only if the data was preprocessed,
+            # we check the dtype and use it accordingly
+            preprocessed_dtype = X.get('preprocessed_dtype', None)
+            if preprocessed_dtype is None:
+                use_double = True
+            else:
+                use_double = 'float64' in preprocessed_dtype or 'int64' in preprocessed_dtype
 
             # update batch norm statistics
             swa_utils.update_bn(loader=X['train_data_loader'], model=self.choice.swa_model.double())
-
+            # swa_model = self.choice.swa_model.double() if use_double else self.choice.swa_model
+            # swa_utils.update_bn(loader=X['train_data_loader'], model=swa_model)
             # change model
             update_model_state_dict_from_swa(X['network'], self.choice.swa_model.state_dict())
             if self.choice.use_snapshot_ensemble:
                 # we update only the last network which pertains to the stochastic weight averaging model
-                swa_utils.update_bn(X['train_data_loader'], self.choice.model_snapshots[-1].double())
+                snapshot_model = self.choice.model_snapshots[-1].double() if use_double else self.choice.model_snapshots[-1]
+                swa_utils.update_bn(X['train_data_loader'], snapshot_model)
 
         # wrap up -- add score if not evaluating every epoch
         if not self.eval_valid_each_epoch(X):
             if 'val_data_loader' in X and X['val_data_loader']:
                 val_loss, val_metrics = self.choice.evaluate(X['val_data_loader'], epoch, writer)
             if 'test_data_loader' in X and X['test_data_loader']:
-                test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'])
+                test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'], epoch, writer)
             self.run_summary.add_performance(
                 epoch=epoch,
                 start_time=start_time,
@@ -428,7 +437,7 @@ class TrainerChoice(autoPyTorchChoice):
                 val_metrics=val_metrics,
                 test_metrics=test_metrics,
             )
-            self.save_model_for_ensemble()
+            # self.save_model_for_ensemble()
 
         self.logger.info(f"Finished training with {self.run_summary.repr_last_epoch()}")
 
