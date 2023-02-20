@@ -37,3 +37,10 @@ def preprocess(dataset: np.ndarray, transforms: torchvision.transforms.Compose,
         ensure_2d=False,
         allow_nd=True,
     )
+
+
+def get_preprocessed_dtype(X_train):
+    if hasattr(X_train, 'iloc'):
+        return X_train.dtypes[X_train.columns].name
+    else:
+        return X_train.dtype.name

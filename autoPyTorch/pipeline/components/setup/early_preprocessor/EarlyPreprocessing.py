@@ -9,7 +9,7 @@ import pandas as pd
 from scipy.sparse import csr_matrix
 
 from autoPyTorch.pipeline.components.setup.base_setup import autoPyTorchSetupComponent
-from autoPyTorch.pipeline.components.setup.early_preprocessor.utils import get_preprocess_transforms, preprocess
+from autoPyTorch.pipeline.components.setup.early_preprocessor.utils import get_preprocess_transforms, preprocess, get_preprocessed_dtype
 from autoPyTorch.utils.common import FitRequirement
 
 
@@ -31,6 +31,7 @@ class EarlyPreprocessing(autoPyTorchSetupComponent):
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
 
         transforms = get_preprocess_transforms(X)
+        preprocessed_dtype = None
         if X['dataset_properties']['is_small_preprocess']:
             if 'X_train' in X:
                 X_train = X['X_train']
@@ -40,8 +41,13 @@ class EarlyPreprocessing(autoPyTorchSetupComponent):
 
             X['X_train'] = preprocess(dataset=X_train, transforms=transforms)
 
+            preprocessed_dtype = get_preprocessed_dtype(X['X_train'])
+
         # We need to also save the preprocess transforms for inference
-        X.update({'preprocess_transforms': transforms})
+        X.update({
+            'preprocess_transforms': transforms,
+            'preprocessed_dtype': preprocessed_dtype
+        })
         return X
 
     @staticmethod
