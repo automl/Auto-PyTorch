@@ -158,7 +158,7 @@ class _ThresholdMetric(autoPyTorchMetric):
             Score function applied to prediction of estimator on X.
         """
         y_type = type_of_target(y_true)
-        if y_type not in ("binary", "multilabel-indicator"):
+        if y_type not in ("binary", "multilabel-indicator") and self.name != 'roc_auc':
             raise ValueError("{0} format is not supported".format(y_type))
 
         if y_type == "binary":
