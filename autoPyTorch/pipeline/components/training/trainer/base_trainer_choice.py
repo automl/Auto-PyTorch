@@ -325,6 +325,7 @@ class TrainerChoice(autoPyTorchChoice):
         additional_losses = X['additional_losses'] if 'additional_losses' in X else None
         self.choice.prepare(
             model=X['network'],
+            model_final_activation=X['final_activation'],
             metrics=get_metrics(dataset_properties=X['dataset_properties'],
                                 names=additional_metrics),
             criterion=get_loss(X['dataset_properties'],

@@ -35,7 +35,7 @@ class NetworkComponent(autoPyTorchTrainingComponent):
             FitRequirement("network_backbone", (torch.nn.Module,), user_defined=False, dataset_property=False),
             FitRequirement("network_embedding", (torch.nn.Module,), user_defined=False, dataset_property=False),
         ])
-        self.final_activation = None
+        self.final_activation: Optional[torch.nn.Module] = None
 
     def fit(self, X: Dict[str, Any], y: Any = None) -> autoPyTorchTrainingComponent:
         """
@@ -72,7 +72,8 @@ class NetworkComponent(autoPyTorchTrainingComponent):
         The transform function updates the network in the X dictionary.
         """
         X.update({'network': self.network,
-                  'network_snapshots': self.network_snapshots})
+                  'network_snapshots': self.network_snapshots,
+                  'final_activation': self.final_activation})
         return X
 
     def get_network(self) -> nn.Module:
