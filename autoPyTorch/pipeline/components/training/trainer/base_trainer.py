@@ -244,7 +244,11 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         output_type: int,
         labels: Union[np.ndarray, torch.Tensor, pd.DataFrame],
         model_final_activation: Optional[torch.nn.Module] = None,
+<<<<<<< HEAD
         numerical_columns: Optional[List[int]] = None,
+=======
+        numerical_columns: Optional[List[int]] = None
+>>>>>>> 6cf2b912 (working roc metric)
     ) -> None:
 
         # Save the device to be used
