@@ -234,6 +234,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         scheduler: _LRScheduler,
         task_type: int,
         labels: Union[np.ndarray, torch.Tensor, pd.DataFrame],
+        model_final_activation: Optional[torch.nn.Module] = None,
         numerical_columns: Optional[List[int]] = None
     ) -> None:
 
@@ -252,6 +253,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         self.criterion = criterion(**kwargs)
         # setup the model
         self.model = model.to(device)
+        self.model_final_activation = model_final_activation.to(device)
 
         # in case we are using swa, maintain an averaged model,
         if self.use_stochastic_weight_averaging:
@@ -375,6 +377,10 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
             loss, outputs = self.train_step(data, targets)
             # save for metric evaluation
+            # Store probability data
+            if self.model_final_activation is not None:
+                outputs = self.model_final_activation(outputs)
+
             outputs_data.append(outputs.detach().cpu())
             targets_data.append(targets.detach().cpu())
 
@@ -471,6 +477,10 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                 loss = self.criterion(outputs, targets)
                 loss_sum += loss.item() * batch_size
                 N += batch_size
+
+                # Store probability data
+                if self.model_final_activation is not None:
+                    outputs = self.model_final_activation(outputs)
 
                 outputs_data.append(outputs.detach().cpu())
                 targets_data.append(targets.detach().cpu())

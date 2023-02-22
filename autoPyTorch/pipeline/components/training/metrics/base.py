@@ -126,6 +126,12 @@ class _ProbaMetric(autoPyTorchMetric):
                     return self._sign * self._metric_func(y_true, y_pred,
                                                           labels=labels, **self._kwargs)
 
+        if self._metric_func is sklearn.metrics.roc_auc_score:
+            y_type = type_of_target(y_true)
+            if y_type == 'binary':
+                if y_pred.ndim > 1:
+                    y_pred = y_pred[:, 1]
+    
         if sample_weight is not None:
             return self._sign * self._metric_func(y_true, y_pred,
                                                   sample_weight=sample_weight,
@@ -158,7 +164,7 @@ class _ThresholdMetric(autoPyTorchMetric):
             Score function applied to prediction of estimator on X.
         """
         y_type = type_of_target(y_true)
-        if y_type not in ("binary", "multilabel-indicator") and self.name != 'roc_auc':
+        if y_type not in ("binary", "multilabel-indicator"):
             raise ValueError("{0} format is not supported".format(y_type))
 
         if y_type == "binary":
