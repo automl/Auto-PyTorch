@@ -324,6 +324,7 @@ class TrainerChoice(autoPyTorchChoice):
             task_type=STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']],
             labels=labels,
             step_interval=X['step_interval'],
+            model_final_activation=X['final_activation'],
             numerical_columns=X['dataset_properties']['numerical_columns'] if 'numerical_columns' in X[
                 'dataset_properties'] else None
         )
@@ -447,22 +448,30 @@ class TrainerChoice(autoPyTorchChoice):
             raise RuntimeError("Budget exhausted without finishing an epoch.")
 
         if self.choice.use_stochastic_weight_averaging and self.choice.swa_updated:
+            # By default, we assume the data is double. Only if the data was preprocessed,
+            # we check the dtype and use it accordingly
+            preprocessed_dtype = X.get('preprocessed_dtype', None)
+            if preprocessed_dtype is None:
+                use_double = True
+            else:
+                use_double = 'float64' in preprocessed_dtype or 'int64' in preprocessed_dtype
 
             # update batch norm statistics
-            swa_utils.update_bn(loader=X['train_data_loader'], model=self.choice.swa_model.double())
-
+            swa_model = self.choice.swa_model.double() if use_double else self.choice.swa_model
+            swa_utils.update_bn(loader=X['train_data_loader'], model=swa_model)
             # change model
             update_model_state_dict_from_swa(X['network'], self.choice.swa_model.state_dict())
             if self.choice.use_snapshot_ensemble:
                 # we update only the last network which pertains to the stochastic weight averaging model
-                swa_utils.update_bn(X['train_data_loader'], self.choice.model_snapshots[-1].double())
+                snapshot_model = self.choice.model_snapshots[-1].double() if use_double else self.choice.model_snapshots[-1]
+                swa_utils.update_bn(X['train_data_loader'], snapshot_model)
 
         # wrap up -- add score if not evaluating every epoch
         if not self.eval_valid_each_epoch(X):
             if 'val_data_loader' in X and X['val_data_loader']:
                 val_loss, val_metrics = self.choice.evaluate(X['val_data_loader'], epoch, writer)
             if 'test_data_loader' in X and X['test_data_loader']:
-                test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'])
+                test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'], epoch, writer)
             self.run_summary.add_performance(
                 epoch=epoch,
                 start_time=start_time,
@@ -474,7 +483,7 @@ class TrainerChoice(autoPyTorchChoice):
                 val_metrics=val_metrics,
                 test_metrics=test_metrics,
             )
-            self.save_model_for_ensemble()
+            # self.save_model_for_ensemble()
 
         # As training have finished, load the best weight
         if self.checkpoint_dir is not None:
@@ -492,7 +501,7 @@ class TrainerChoice(autoPyTorchChoice):
         Verifies and validates the labels from train split.
         """
         # Ensure that the split is not missing any class.
-        labels: List[int] = X['y_train'][X['backend'].load_datamanager().splits[X['split_id']][0]]
+        labels: List[int] = X['y_train'][X['train_indices']]
         if STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']] in CLASSIFICATION_TASKS:
             unique_labels = len(np.unique(labels))
             if unique_labels < X['dataset_properties']['output_shape']:
@@ -573,7 +582,7 @@ class TrainerChoice(autoPyTorchChoice):
             bool: if True, the model is evaluated in every epoch
 
         """
-        if 'early_stopping' in X and X['early_stopping']:
+        if 'early_stopping' in X and X['early_stopping'] >= 0:
             return True
 
         # We need to know if we should reduce the rate based on val loss

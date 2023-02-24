@@ -77,10 +77,9 @@ class TabularFeatureValidator(BaseFeatureValidator):
     transformer.
 
     Attributes:
-        categories (List[List[str]]):
-            List for which an element at each index is a
-            list containing the categories for the respective
-            categorical column.
+        num_categories_per_col (List[int]):
+            List for which an element at each index is the number
+            of categories for the respective categorical column.
         transformed_columns (List[str])
             List of columns that were transformed.
         column_transformer (Optional[BaseEstimator])
@@ -202,10 +201,8 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 encoded_categories = self.column_transformer.\
                     named_transformers_['categorical_pipeline'].\
                     named_steps['ordinalencoder'].categories_
-                self.categories = [
-                    list(range(len(cat)))
-                    for cat in encoded_categories
-                ]
+
+                self.num_categories_per_col = [len(cat) for cat in encoded_categories]
 
             # differently to categorical_columns and numerical_columns,
             # this saves the index of the column.
@@ -283,7 +280,6 @@ class TabularFeatureValidator(BaseFeatureValidator):
             X = self.numpy_to_pandas(X)
 
         if ispandas(X) and not issparse(X):
-
             if self.all_nan_columns is None:
                 raise ValueError('_fit must be called before calling transform')
 

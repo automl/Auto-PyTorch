@@ -21,7 +21,7 @@ def get_tabular_preprocessers(X: Dict[str, Any]) -> Dict[str, List[BaseEstimator
     Returns:
         (Dict[str, List[BaseEstimator]]): dictionary with list of numerical and categorical preprocessors
     """
-    preprocessor: Dict[str, List[BaseEstimator]] = dict(numerical=list(), categorical=list())
+    preprocessor: Dict[str, List[BaseEstimator]] = dict(numerical=list(), categorical=list(), encode=list())
     for key, value in X.items():
         if isinstance(value, dict):
             # as each preprocessor is child of BaseEstimator
@@ -29,5 +29,7 @@ def get_tabular_preprocessers(X: Dict[str, Any]) -> Dict[str, List[BaseEstimator
                 preprocessor['numerical'].append(value['numerical'])
             if 'categorical' in value and isinstance(value['categorical'], BaseEstimator):
                 preprocessor['categorical'].append(value['categorical'])
+            if 'encode' in value and isinstance(value['encode'], BaseEstimator):
+                preprocessor['encode'].append(value['encode'])
 
     return preprocessor

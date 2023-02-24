@@ -10,7 +10,7 @@ from autoPyTorch.pipeline.components.preprocessing.base_preprocessing import \
 from autoPyTorch.pipeline.components.setup.early_preprocessor.EarlyPreprocessing import \
     EarlyPreprocessing
 from autoPyTorch.pipeline.components.setup.early_preprocessor.utils import (
-    get_preprocess_transforms, time_series_preprocess)
+    get_preprocess_transforms, get_preprocessed_dtype, time_series_preprocess)
 from autoPyTorch.utils.common import FitRequirement
 
 
@@ -19,7 +19,6 @@ class TimeSeriesEarlyPreprocessing(EarlyPreprocessing):
         super(EarlyPreprocessing, self).__init__()
         self.random_state = random_state
         self.add_fit_requirements([
-            FitRequirement('is_small_preprocess', (bool,), user_defined=True, dataset_property=True),
             FitRequirement('X_train', (pd.DataFrame, ), user_defined=True,
                            dataset_property=False),
             FitRequirement('feature_names', (tuple,), user_defined=True, dataset_property=True),
@@ -44,14 +43,13 @@ class TimeSeriesEarlyPreprocessing(EarlyPreprocessing):
         """
 
         transforms = get_preprocess_transforms(X)
-        if X['dataset_properties']['is_small_preprocess']:
-            if 'X_train' in X:
-                X_train = X['X_train']
-            else:
-                # Incorporate the transform to the dataset
-                X_train = X['backend'].load_datamanager().train_tensors[0]
+        if 'X_train' in X:
+            X_train = X['X_train']
+        else:
+            # Incorporate the transform to the dataset
+            X_train = X['backend'].load_datamanager().train_tensors[0]
 
-            X['X_train'] = time_series_preprocess(dataset=X_train, transforms=transforms)
+        X['X_train'] = time_series_preprocess(dataset=X_train, transforms=transforms)
 
         feature_names = X['dataset_properties']['feature_names']
         numerical_columns = X['dataset_properties']['numerical_columns']
@@ -64,8 +62,13 @@ class TimeSeriesEarlyPreprocessing(EarlyPreprocessing):
             new_feature_names += list(set(feature_names) - set(new_feature_names))
         X['dataset_properties']['feature_names'] = tuple(new_feature_names)
 
+        preprocessed_dtype = get_preprocessed_dtype(X['X_train'])
         # We need to also save the preprocess transforms for inference
-        X.update({'preprocess_transforms': transforms})
+        X.update({
+            'preprocess_transforms': transforms,
+            'shape_after_preprocessing': X['X_train'].shape[1:],
+            'preprocessed_dtype': preprocessed_dtype
+            })
         return X
 
     @staticmethod
@@ -90,14 +93,13 @@ class TimeSeriesTargetEarlyPreprocessing(EarlyPreprocessing):
     def transform(self, X: Dict[str, Any]) -> Dict[str, Any]:
         # TODO consider inverse transformation
         transforms = get_preprocess_transforms(X, preprocess_type=autoPyTorchTargetPreprocessingComponent)
-        if X['dataset_properties']['is_small_preprocess']:
-            if 'y_train' in X:
-                y_train = X['y_train']
-            else:
-                # Incorporate the transform to the dataset
-                y_train = X['backend'].load_datamanager().train_tensors[1]
+        if 'y_train' in X:
+            y_train = X['y_train']
+        else:
+            # Incorporate the transform to the dataset
+            y_train = X['backend'].load_datamanager().train_tensors[1]
 
-            X['y_train'] = time_series_preprocess(dataset=y_train, transforms=transforms)
+        X['y_train'] = time_series_preprocess(dataset=y_train, transforms=transforms)
 
         # We need to also save the preprocess transforms for inference
         X.update({'preprocess_target_transforms': transforms})

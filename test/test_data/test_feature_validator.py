@@ -288,7 +288,7 @@ def test_features_unsupported_calls_are_raised():
     expected
     """
     validator = TabularFeatureValidator()
-    with pytest.raises(TypeError, match=r"Valid types are `numerical`, `categorical` or `boolean`, but input column"):
+    with pytest.raises(TypeError, match=r"Valid types are .*"):
         validator.fit(
             pd.DataFrame({'datetime': [pd.Timestamp('20180310')]})
         )
@@ -298,7 +298,7 @@ def test_features_unsupported_calls_are_raised():
         validator.fit({'input1': 1, 'input2': 2})
 
     validator = TabularFeatureValidator()
-    with pytest.raises(TypeError, match=r"Valid types are `numerical`, `categorical` or `boolean`, but input column"):
+    with pytest.raises(TypeError, match=r"Valid types are .*"):
         validator.fit(pd.DataFrame([{'A': 1, 'B': 2}], dtype='string'))
 
     validator = TabularFeatureValidator()
@@ -430,7 +430,7 @@ def test_unknown_encode_value():
     assert expected_row == x_t[0].tolist()
 
     # Notice how there is only one column 'c' to encode
-    assert validator.categories == [list(range(2)) for i in range(1)]
+    assert validator.num_categories_per_col == [2]
 
 
 # Actual checks for the features
@@ -485,13 +485,13 @@ def test_feature_validator_new_data_after_fit(
     if train_data_type == 'pandas':
         old_dtypes = copy.deepcopy(validator.dtypes)
         validator.dtypes = ['dummy' for dtype in X_train.dtypes]
-        with pytest.raises(ValueError, match=r"The dtype of the features must not be changed after fit()"):
+        with pytest.raises(ValueError, match=r"The dtype of the features must not be changed after fit.*"):
             transformed_X = validator.transform(X_test)
         validator.dtypes = old_dtypes
         if test_data_type == 'pandas':
             columns = X_test.columns.tolist()
             X_test = X_test[reversed(columns)]
-            with pytest.raises(ValueError, match=r"The column order of the features"):
+            with pytest.raises(ValueError, match=r"The column order of the features must not be changed after fit.*"):
                 transformed_X = validator.transform(X_test)
 
 

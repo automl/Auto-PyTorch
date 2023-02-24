@@ -19,14 +19,14 @@ class TimeSeriesOneHotEncoder(TimeSeriesBaseEncoder):
     def fit(self, X: Dict[str, Any], y: Any = None) -> TimeSeriesBaseEncoder:
         OneHotEncoder.fit(self, X, y)
         categorical_columns = X['dataset_properties']['categorical_columns']
-        n_features_cat = X['dataset_properties']['categories']
+        num_categories_per_col = X['dataset_properties']['num_categories_per_col']
         feature_names = X['dataset_properties']['feature_names']
         feature_shapes = X['dataset_properties']['feature_shapes']
 
-        if len(n_features_cat) == 0:
-            n_features_cat = self.preprocessor['categorical'].categories  # type: ignore
+        if len(num_categories_per_col) == 0:
+            num_categories_per_col = [len(cat) for cat in self.preprocessor['categorical'].categories]  # type: ignore
         for i, cat_column in enumerate(categorical_columns):
-            feature_shapes[feature_names[cat_column]] = len(n_features_cat[i])
+            feature_shapes[feature_names[cat_column]] = num_categories_per_col[i]
         self.feature_shapes = feature_shapes
         return self
 

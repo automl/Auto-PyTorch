@@ -61,11 +61,9 @@ class TestTabularRegression:
         """This test makes sure that the pipeline is able to fit
         given random combinations of hyperparameters across the pipeline"""
         # TODO: fix issue where adversarial also works for regression
-        # TODO: Fix issue with learned entity embedding after preprocessing PR
         pipeline = TabularRegressionPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'],
-            exclude={'trainer': ['AdversarialTrainer'],
-                     'network_embedding': ['LearnedEntityEmbedding']})
+            exclude={'trainer': ['AdversarialTrainer']})
         cs = pipeline.get_hyperparameter_search_space()
 
         config = cs.sample_configuration()
@@ -91,8 +89,7 @@ class TestTabularRegression:
         X = fit_dictionary_tabular['X_train'].copy()
         pipeline = TabularRegressionPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'],
-            exclude={'trainer': ['AdversarialTrainer'],
-                     'network_embedding': ['LearnedEntityEmbedding']})
+            exclude={'trainer': ['AdversarialTrainer']})
 
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.sample_configuration()
@@ -121,8 +118,7 @@ class TestTabularRegression:
 
         pipeline = TabularRegressionPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'],
-            exclude={'trainer': ['AdversarialTrainer'],
-                     'network_embedding': ['LearnedEntityEmbedding']})
+            exclude={'trainer': ['AdversarialTrainer']})
         cs = pipeline.get_hyperparameter_search_space()
         config = cs.sample_configuration()
         pipeline.set_hyperparameters(config)
@@ -139,11 +135,10 @@ class TestTabularRegression:
         assert fit_dictionary_tabular.items() <= transformed_fit_dictionary_tabular.items()
 
         # Then the pipeline should have added the following keys
-        # Removing 'imputer', 'encoder', 'scaler', these will be
-        # TODO: added back after a PR fixing preprocessing
         expected_keys = {'tabular_transformer', 'preprocess_transforms', 'network',
                          'optimizer', 'lr_scheduler', 'train_data_loader',
-                         'val_data_loader', 'run_summary', 'feature_preprocessor'}
+                         'val_data_loader', 'run_summary', 'feature_preprocessor',
+                         'imputer', 'encoder', 'scaler'}
         assert expected_keys.issubset(set(transformed_fit_dictionary_tabular.keys()))
 
         # Then we need to have transformations being created.
@@ -152,12 +147,9 @@ class TestTabularRegression:
         # We expect the transformations to be in the pipeline at anytime for inference
         assert 'preprocess_transforms' in transformed_fit_dictionary_tabular.keys()
 
-    @pytest.mark.parametrize("is_small_preprocess", [True, False])
-    def test_default_configuration(self, fit_dictionary_tabular, is_small_preprocess):
+    def test_default_configuration(self, fit_dictionary_tabular):
         """Makes sure that when no config is set, we can trust the
         default configuration from the space"""
-
-        fit_dictionary_tabular['is_small_preprocess'] = is_small_preprocess
 
         pipeline = TabularRegressionPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'],

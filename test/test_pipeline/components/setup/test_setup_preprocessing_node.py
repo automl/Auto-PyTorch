@@ -37,7 +37,7 @@ class TabularPreprocessingTest(unittest.TestCase):
             'is_small_preprocess': True,
             'input_shape': (15,),
             'output_shape': 2,
-            'categories': [],
+            'num_categories_per_col': [],
             'issparse': False
         }
         X = dict(X_train=np.random.random((10, 15)),
@@ -63,43 +63,6 @@ class TabularPreprocessingTest(unittest.TestCase):
 
         # We expect the transformation always for inference
         self.assertIn('preprocess_transforms', X.keys())
-
-    def test_tabular_no_preprocess(self):
-        dataset_properties = {
-            'numerical_columns': list(range(15)),
-            'categorical_columns': [],
-            'task_type': TASK_TYPES_TO_STRING[TABULAR_CLASSIFICATION],
-            'output_type': OUTPUT_TYPES_TO_STRING[MULTICLASS],
-            'is_small_preprocess': False,
-            'input_shape': (15,),
-            'output_shape': 2,
-            'categories': [],
-            'issparse': False
-        }
-        X = dict(X_train=np.random.random((10, 15)),
-                 y_train=np.random.random(10),
-                 train_indices=[0, 1, 2, 3, 4, 5],
-                 val_indices=[6, 7, 8, 9],
-                 dataset_properties=dataset_properties,
-                 # Training configuration
-                 num_run=16,
-                 device='cpu',
-                 budget_type='epochs',
-                 epochs=10,
-                 torch_num_threads=1,
-                 early_stopping=20,
-                 split_id=0,
-                 backend=self.backend,
-                 )
-
-        pipeline = TabularClassificationPipeline(dataset_properties=dataset_properties)
-        # Remove the trainer
-        pipeline.steps.pop()
-        pipeline = pipeline.fit(X)
-        X = pipeline.transform(X)
-        self.assertIn('preprocess_transforms', X.keys())
-        self.assertIsInstance(X['preprocess_transforms'], list)
-        self.assertIsInstance(X['preprocess_transforms'][-1].preprocessor, BaseEstimator)
 
 
 class ImagePreprocessingTest(unittest.TestCase):

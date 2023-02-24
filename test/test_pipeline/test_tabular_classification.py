@@ -123,8 +123,8 @@ class TestTabularClassification:
             pipeline.fit(fit_dictionary_tabular)
 
         # we expect the output to have the same batch size as the test input,
-        # and number of outputs per batch sample equal to the number of outputs
-        expected_output_shape = (X.shape[0], fit_dictionary_tabular["dataset_properties"]["output_shape"])
+        # and number of outputs per batch sample equal to 1
+        expected_output_shape = (X.shape[0], )
 
         prediction = pipeline.predict(X)
         assert isinstance(prediction, np.ndarray)
@@ -205,14 +205,11 @@ class TestTabularClassification:
         # We expect the transformations to be in the pipeline at anytime for inference
         assert 'preprocess_transforms' in transformed_fit_dictionary_tabular.keys()
 
-    @pytest.mark.parametrize("is_small_preprocess", [True, False])
-    def test_default_configuration(self, fit_dictionary_tabular, is_small_preprocess, exclude):
+    def test_default_configuration(self, fit_dictionary_tabular, exclude):
         """Makes sure that when no config is set, we can trust the
         default configuration from the space"""
 
         fit_dictionary_tabular['epochs'] = 5
-
-        fit_dictionary_tabular['is_small_preprocess'] = is_small_preprocess
 
         pipeline = TabularClassificationPipeline(
             dataset_properties=fit_dictionary_tabular['dataset_properties'],
@@ -435,9 +432,9 @@ class TestTabularClassification:
                len(X['network_snapshots']) == config.get(f'trainer:{trainer}:se_lastk')
 
         mocker.patch("autoPyTorch.pipeline.components.setup.network.base_network.NetworkComponent._predict",
-                     return_value=torch.Tensor([1]))
+                     return_value=torch.Tensor([[1, 0]]))
         # Assert that predict gives no error when swa and se are on
-        assert isinstance(pipeline.predict(fit_dictionary_tabular['X_train']), np.ndarray)
+        assert isinstance(pipeline.predict(X['X_train']), np.ndarray)
         # As SE is True, _predict should be called 3 times
         assert pipeline.named_steps['network']._predict.call_count == 3
 
