@@ -57,7 +57,7 @@ class NetworkComponent(autoPyTorchTrainingComponent):
         self.network = torch.nn.Sequential(X['network_embedding'], X['network_backbone'], X['network_head'])
 
         if STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']] in CLASSIFICATION_TASKS:
-            self.network = torch.nn.Sequential(self.network, nn.Softmax(dim=1))
+            self.final_activation = nn.Softmax(dim=1)
         # Properly set the network training device
         if self.device is None:
             self.device = get_device_from_fit_dictionary(X)
@@ -73,7 +73,8 @@ class NetworkComponent(autoPyTorchTrainingComponent):
         The transform function updates the network in the X dictionary.
         """
         X.update({'network': self.network,
-                  'network_snapshots': self.network_snapshots})
+                  'network_snapshots': self.network_snapshots,
+                  'final_activation': self.final_activation})
         return X
 
     def get_network(self) -> nn.Module:

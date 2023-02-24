@@ -93,8 +93,7 @@ def get_smac_object(
         initial_design=None,
         run_id=seed,
         intensifier=intensifier,
-        intensifier_kwargs={'initial_budget': initial_budget, 'max_budget': max_budget,
-                            'eta': 2, 'min_chall': 1, 'instance_order': 'shuffle_once'},
+        intensifier_kwargs=intensifier_kwargs,
         dask_client=dask_client,
         n_jobs=n_jobs,
     )

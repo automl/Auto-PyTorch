@@ -324,6 +324,7 @@ class TrainerChoice(autoPyTorchChoice):
             task_type=STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']],
             labels=labels,
             step_interval=X['step_interval'],
+            model_final_activation=X['final_activation'],
             numerical_columns=X['dataset_properties']['numerical_columns'] if 'numerical_columns' in X[
                 'dataset_properties'] else None
         )
@@ -470,7 +471,7 @@ class TrainerChoice(autoPyTorchChoice):
             if 'val_data_loader' in X and X['val_data_loader']:
                 val_loss, val_metrics = self.choice.evaluate(X['val_data_loader'], epoch, writer)
             if 'test_data_loader' in X and X['test_data_loader']:
-                test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'])
+                test_loss, test_metrics = self.choice.evaluate(X['test_data_loader'], epoch, writer)
             self.run_summary.add_performance(
                 epoch=epoch,
                 start_time=start_time,
@@ -482,7 +483,7 @@ class TrainerChoice(autoPyTorchChoice):
                 val_metrics=val_metrics,
                 test_metrics=test_metrics,
             )
-            self.save_model_for_ensemble()
+            # self.save_model_for_ensemble()
 
         # As training have finished, load the best weight
         if self.checkpoint_dir is not None:
@@ -581,7 +582,7 @@ class TrainerChoice(autoPyTorchChoice):
             bool: if True, the model is evaluated in every epoch
 
         """
-        if 'early_stopping' in X and X['early_stopping']:
+        if 'early_stopping' in X and X['early_stopping'] >= 0:
             return True
 
         # We need to know if we should reduce the rate based on val loss
