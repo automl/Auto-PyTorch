@@ -258,6 +258,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         # in case we are using swa, maintain an averaged model,
         if self.use_stochastic_weight_averaging:
             self.swa_model = swa_utils.AveragedModel(self.model, avg_fn=swa_update)
+            self.swa_model.to(device)
 
         # in case we are using se or swa, initialise budget_threshold to know when to start swa or se
         self._budget_threshold = 0
@@ -328,7 +329,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                         model_copy = deepcopy(self.model)
 
                     assert model_copy is not None
-                    model_copy.cpu()
+                    # model_copy.cpu()
                     self.model_snapshots.append(model_copy)
                     self.model_snapshots = self.model_snapshots[-self.se_lastk:]
         else:
@@ -344,7 +345,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                     model_copy = deepcopy(self.swa_model) if self.use_stochastic_weight_averaging \
                         else deepcopy(self.model)
                     assert model_copy is not None
-                    model_copy.cpu()
+                    # model_copy.cpu()
                     self.model_snapshots.append(model_copy)
                     self.model_snapshots = self.model_snapshots[-self.se_lastk:]
         return False
@@ -381,8 +382,9 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
             if self.model_final_activation is not None:
                 outputs = self.model_final_activation(outputs)
 
-            outputs_data.append(outputs.detach().cpu())
-            targets_data.append(targets.detach().cpu())
+            if self.metrics_during_training:
+                outputs_data.append(outputs.detach().cpu())
+                targets_data.append(targets.detach().cpu())
 
             batch_size = data.size(0)
             loss_sum += loss * batch_size
@@ -482,8 +484,9 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                 if self.model_final_activation is not None:
                     outputs = self.model_final_activation(outputs)
 
-                outputs_data.append(outputs.detach().cpu())
-                targets_data.append(targets.detach().cpu())
+                if self.metrics_during_training:
+                    outputs_data.append(outputs.detach().cpu())
+                    targets_data.append(targets.detach().cpu())
 
                 if writer:
                     writer.add_scalar(
@@ -493,7 +496,10 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                     )
 
         self.model.train()
-        return loss_sum / N, self.compute_metrics(outputs_data, targets_data)
+        if self.metrics_during_training:
+            return loss_sum / N, self.compute_metrics(outputs_data, targets_data)
+        else:
+            return loss_sum / N, {}
 
     def compute_metrics(self, outputs_data: np.ndarray, targets_data: np.ndarray
                         ) -> Dict[str, float]:
