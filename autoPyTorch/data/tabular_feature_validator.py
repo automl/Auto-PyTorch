@@ -14,7 +14,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.exceptions import NotFittedError
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import OrdinalEncoder, StandardScaler
 
 from autoPyTorch.data.base_feature_validator import BaseFeatureValidator, SUPPORTED_FEAT_TYPES
 
@@ -66,14 +66,15 @@ def get_tabular_preprocessors() -> Dict[str, List[BaseEstimator]]:
     preprocessors: Dict[str, List[BaseEstimator]] = dict()
 
     # Categorical Preprocessors
-    onehot_encoder = OneHotEncoder(categories='auto', sparse=False, handle_unknown='ignore')
+    ordinal_encoder = OrdinalEncoder(handle_unknown='use_encoded_value',
+                                     unknown_value=-1)
     categorical_imputer = SimpleImputer(strategy='constant', copy=False)
 
     # Numerical Preprocessors
     numerical_imputer = SimpleImputer(strategy='median', copy=False)
     standard_scaler = StandardScaler(with_mean=True, with_std=True, copy=False)
 
-    preprocessors['categorical'] = [categorical_imputer, onehot_encoder]
+    preprocessors['categorical'] = [categorical_imputer, ordinal_encoder]
     preprocessors['numerical'] = [numerical_imputer, standard_scaler]
 
     return preprocessors
@@ -161,6 +162,14 @@ class TabularFeatureValidator(BaseFeatureValidator):
                 key=functools.cmp_to_key(self._comparator)
             )
 
+            if len(self.enc_columns) > 0:
+                encoded_categories = self.column_transformer.\
+                    named_transformers_['categorical_pipeline'].\
+                    named_steps['ordinalencoder'].categories_
+                self.num_categories_per_col = [
+                    len(cat)
+                    for cat in encoded_categories
+                ]
             # differently to categorical_columns and numerical_columns,
             # this saves the index of the column.
             for i, type_ in enumerate(self.feat_type):

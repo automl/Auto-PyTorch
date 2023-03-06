@@ -58,7 +58,7 @@ class BaseFeatureValidator(BaseEstimator):
 
         # Required for dataset properties
         self.num_features: Optional[int] = None
-        self.categories: List[List[int]] = []
+        self.num_categories_per_col: List[List[int]] = []
         self.categorical_columns: List[int] = []
         self.numerical_columns: List[int] = []
 
