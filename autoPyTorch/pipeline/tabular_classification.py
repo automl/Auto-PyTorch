@@ -194,15 +194,13 @@ class TabularClassificationPipeline(ClassifierMixin, BasePipeline):
                 possible_default_embeddings = copy.copy(list(embeddings))
                 del possible_default_embeddings[possible_default_embeddings.index('LearnedEntityEmbedding')]
 
-                for encoder in encoders:
-                    if encoder == 'OneHotEncoder':
-                        continue
+                if 'OneHotEncoder' in encoders:
                     while True:
                         try:
                             cs.add_forbidden_clause(ForbiddenAndConjunction(
                                 ForbiddenEqualsClause(cs.get_hyperparameter(
                                     'network_embedding:__choice__'), 'LearnedEntityEmbedding'),
-                                ForbiddenEqualsClause(cs.get_hyperparameter('encoder:__choice__'), encoder)
+                                ForbiddenEqualsClause(cs.get_hyperparameter('encoder:__choice__'), "OneHotEncoder")
                             ))
                             break
                         except ValueError:
