@@ -50,15 +50,7 @@ smac==0.13.1
 tensorboard==2.5.0
 tensorboard-data-server==0.6.0
 tensorboard-plugin-wit==1.8.0
-threadpoolctl==2.1.0
-tifffile==2021.4.8
-toolz==0.11.1
 torch==1.8.1
 torchvision==0.9.1
-tornado==6.1
 tqdm==4.62.2
 typing-extensions==3.7.4.3
-urllib3==1.26.4
-Werkzeug==1.0.1
-xmltodict==0.12.0
-zict==2.0.0
