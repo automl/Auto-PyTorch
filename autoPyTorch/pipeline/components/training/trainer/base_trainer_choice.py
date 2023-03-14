@@ -340,7 +340,7 @@ class TrainerChoice(autoPyTorchChoice):
             numerical_columns=X['dataset_properties']['numerical_columns'] if 'numerical_columns' in X[
                 'dataset_properties'] else None
         )
-        self.logger.debug(f"Running on device: {get_device_from_fit_dictionary(X)}")
+        self.logger.debug(f"Running on device: {get_device_from_fit_dictionary(X)} with loss function: {self.choice.criterion}")
         total_parameter_count, trainable_parameter_count = self.count_parameters(X['network'])
         self.run_summary = RunSummary(
             total_parameter_count,

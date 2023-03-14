@@ -26,7 +26,7 @@ from autoPyTorch.constants import BINARY, CLASSIFICATION_TASKS, CONTINUOUS, MULT
 
 losses = dict(classification=dict(
     CrossEntropyLoss=dict(
-        module=CrossEntropyLoss, supported_output_types=[MULTICLASS, BINARY]),
+        module=CrossEntropyLoss, supported_output_types=[MULTICLASS]),
     BCEWithLogitsLoss=dict(
         module=BCEWithLogitsLoss, supported_output_types=[BINARY])),
     regression=dict(
@@ -110,6 +110,6 @@ def get_loss(dataset_properties: Dict[str, Any], name: Optional[str] = None) -> 
         else:
             loss = supported_losses[name]
     else:
-        loss = get_default(task)
+        loss = list(supported_losses.values())[0]  # get_default(task)
 
     return loss
