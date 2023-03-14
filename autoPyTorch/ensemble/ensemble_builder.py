@@ -1346,7 +1346,7 @@ class EnsembleBuilder(object):
 
         if n_preds == len(predictions):
             y = ensemble.predict(predictions)
-            if self.output_type == BINARY:
+            if self.output_type == BINARY and y.shape[1] > 1:
                 y = y[:, 1]
             if self.SAVE2DISC:
                 self.backend.save_predictions_as_txt(

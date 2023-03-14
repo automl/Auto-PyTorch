@@ -13,6 +13,7 @@ import pandas as pd
 from sklearn.base import BaseEstimator
 from sklearn.dummy import DummyClassifier, DummyRegressor
 from sklearn.ensemble import VotingClassifier
+from sklearn.utils.multiclass import type_of_target
 
 from smac.tae import StatusType
 
@@ -459,6 +460,8 @@ class AbstractEvaluator(object):
         else:
             metrics = [self.metric]
 
+        # self.logger.debug(f"Target shape {y_true.shape}, target_type: {type_of_target(y_true)}")
+        # self.logger.debug(f"Pred shape {y_hat.shape}, pred_type: {type_of_target(y_hat)}")
         return calculate_loss(
             y_true, y_hat, self.task_type, metrics)
 

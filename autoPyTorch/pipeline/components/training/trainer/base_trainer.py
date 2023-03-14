@@ -21,7 +21,15 @@ from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
 
+from autoPyTorch.constants import CLASSIFICATION_TASKS, REGRESSION_TASKS, STRING_TO_TASK_TYPES, BINARY
+from autoPyTorch.constants import CLASSIFICATION_TASKS, REGRESSION_TASKS, STRING_TO_TASK_TYPES, BINARY
+from autoPyTorch.constants import CLASSIFICATION_TASKS, REGRESSION_TASKS, STRING_TO_TASK_TYPES, BINARY
+from autoPyTorch.constants import CLASSIFICATION_TASKS, REGRESSION_TASKS, STRING_TO_TASK_TYPES, BINARY
 from autoPyTorch.constants import CLASSIFICATION_TASKS, REGRESSION_TASKS, STRING_TO_TASK_TYPES
+from autoPyTorch.constants import CLASSIFICATION_TASKS, REGRESSION_TASKS, STRING_TO_TASK_TYPES, BINARY
+from autoPyTorch.constants import CLASSIFICATION_TASKS, REGRESSION_TASKS, STRING_TO_TASK_TYPES, BINARY
+from autoPyTorch.constants import CLASSIFICATION_TASKS, REGRESSION_TASKS, STRING_TO_TASK_TYPES, BINARY
+from autoPyTorch.constants import CLASSIFICATION_TASKS, REGRESSION_TASKS, STRING_TO_TASK_TYPES, BINARY
 from autoPyTorch.pipeline.components.training.base_training import autoPyTorchTrainingComponent
 from autoPyTorch.pipeline.components.training.metrics.utils import calculate_score
 from autoPyTorch.pipeline.components.training.trainer.utils import Lookahead, swa_update
@@ -233,9 +241,10 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         metrics_during_training: bool,
         scheduler: _LRScheduler,
         task_type: int,
+        output_type: int,
         labels: Union[np.ndarray, torch.Tensor, pd.DataFrame],
         model_final_activation: Optional[torch.nn.Module] = None,
-        numerical_columns: Optional[List[int]] = None
+        numerical_columns: Optional[List[int]] = None,
     ) -> None:
 
         # Save the device to be used
@@ -294,6 +303,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
         # task type (used for calculating metrics)
         self.task_type = task_type
+        self.output_type = output_type
 
         # for cutout trainer, we need the list of numerical columns
         self.numerical_columns = numerical_columns
@@ -416,8 +426,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                 targets = targets.unsqueeze(1)
         else:
             # make sure that targets will have same shape as outputs (really important for mse loss for example)
-            if targets.ndim == 1:
-                targets = targets.unsqueeze(1)
+            if self.output_type == BINARY:
                 # BCE requires target to be float.
                 targets = targets.float().to(self.device)
             else:
@@ -447,10 +456,10 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         self.optimizer.zero_grad()
         outputs = self.model(data)
         loss_func = self.criterion_preparation(**criterion_kwargs)
-        if len(outputs.size()) == 1:
-            outputs = outputs.unsqueeze(1)
-
-        loss = loss_func(self.criterion, outputs)
+        loss = loss_func(
+            self.criterion,
+            outputs if self.output_type != BINARY else torch.squeeze(outputs),
+        )
         loss.backward()
         self.optimizer.step()
 
@@ -485,11 +494,10 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                 targets = self.cast_targets(targets)
 
                 outputs = self.model(data)
-
-                if len(outputs.size()) == 1:
-                    outputs = outputs.unsqueeze(1)
-
-                loss = self.criterion(outputs, targets)
+                    
+                loss = self.criterion(
+                    outputs if self.output_type != BINARY else torch.squeeze(outputs),
+                    targets)
                 loss_sum += loss.item() * batch_size
                 N += batch_size
 

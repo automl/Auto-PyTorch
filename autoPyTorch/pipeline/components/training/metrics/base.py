@@ -60,7 +60,7 @@ class _PredictMetric(autoPyTorchMetric):
         """
         type_true = type_of_target(y_true)
         if type_true == 'binary' and type_of_target(y_pred) == 'continuous' and \
-                len(y_pred.shape) == 1:
+                len(np.squeeze(y_pred).shape) == 1:
             # For a pred autoPyTorchMetric, no threshold, nor probability is required
             # If y_true is binary, and y_pred is continuous
             # it means that a rounding is necessary to obtain the binary class
