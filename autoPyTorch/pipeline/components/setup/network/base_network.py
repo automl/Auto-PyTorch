@@ -61,7 +61,10 @@ class NetworkComponent(autoPyTorchTrainingComponent):
         self.to(self.device)
 
         if STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']] in CLASSIFICATION_TASKS:
-            self.final_activation = nn.Softmax(dim=1)
+            if X['dataset_properties']['output_shape'] > 1:
+                self.final_activation = nn.Softmax(dim=1)
+            else:
+                self.final_activation = nn.Sigmoid()
 
         self.is_fitted_ = True
 

@@ -415,7 +415,14 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
             if targets.ndim == 1:
                 targets = targets.unsqueeze(1)
         else:
-            targets = targets.long().to(self.device)
+            # make sure that targets will have same shape as outputs (really important for mse loss for example)
+            if targets.ndim == 1:
+                targets = targets.unsqueeze(1)
+                # BCE requires target to be float.
+                targets = targets.float().to(self.device)
+            else:
+                targets = targets.long().to(self.device)
+
         return targets
 
     def train_step(self, data: np.ndarray, targets: np.ndarray) -> Tuple[float, torch.Tensor]:
@@ -440,6 +447,9 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         self.optimizer.zero_grad()
         outputs = self.model(data)
         loss_func = self.criterion_preparation(**criterion_kwargs)
+        if len(outputs.size()) == 1:
+            outputs = outputs.unsqueeze(1)
+
         loss = loss_func(self.criterion, outputs)
         loss.backward()
         self.optimizer.step()
@@ -475,6 +485,9 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                 targets = self.cast_targets(targets)
 
                 outputs = self.model(data)
+
+                if len(outputs.size()) == 1:
+                    outputs = outputs.unsqueeze(1)
 
                 loss = self.criterion(outputs, targets)
                 loss_sum += loss.item() * batch_size
