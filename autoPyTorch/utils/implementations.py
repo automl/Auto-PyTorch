@@ -52,7 +52,7 @@ class LossWeightStrategyWeightedBinary():
         if isinstance(y[0], str):
             y = y.astype('float64')
         counts_one = np.sum(y, axis=0)
-        counts_zero = counts_one + (-y.shape[0])
+        counts_zero = y.shape[0] - counts_one
         weights = counts_zero / np.maximum(counts_one, 1)
 
         return np.array(weights)

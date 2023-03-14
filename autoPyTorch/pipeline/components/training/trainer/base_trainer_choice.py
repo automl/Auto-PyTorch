@@ -17,7 +17,7 @@ from torch.optim import Optimizer, swa_utils
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from autoPyTorch.constants import STRING_TO_TASK_TYPES
+from autoPyTorch.constants import STRING_TO_TASK_TYPES, STRING_TO_OUTPUT_TYPES
 from autoPyTorch.pipeline.components.base_choice import autoPyTorchChoice
 from autoPyTorch.pipeline.components.base_component import (
     ThirdPartyComponents,
@@ -336,9 +336,10 @@ class TrainerChoice(autoPyTorchChoice):
             metrics_during_training=X['metrics_during_training'],
             scheduler=X['lr_scheduler'],
             task_type=STRING_TO_TASK_TYPES[X['dataset_properties']['task_type']],
+            output_type=STRING_TO_OUTPUT_TYPES[X['dataset_properties']['output_type']],
             labels=X['y_train'][X['backend'].load_datamanager().splits[X['split_id']][0]],
             numerical_columns=X['dataset_properties']['numerical_columns'] if 'numerical_columns' in X[
-                'dataset_properties'] else None
+                'dataset_properties'] else None,
         )
         self.logger.debug(f"Running on device: {get_device_from_fit_dictionary(X)} with loss function: {self.choice.criterion}")
         total_parameter_count, trainable_parameter_count = self.count_parameters(X['network'])
