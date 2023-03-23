@@ -72,10 +72,10 @@ class FeatureDataLoader(BaseDataLoaderComponent):
         # distinction is performed
         candidate_transformations = []  # type: List[Callable]
 
-        if 'test' in mode or not X['dataset_properties']['is_small_preprocess']:
-            candidate_transformations.append((ExpandTransform()))
-            candidate_transformations.extend(X['preprocess_transforms'])
-            candidate_transformations.append((ContractTransform()))
+        # if 'test' in mode or not X['dataset_properties']['is_small_preprocess']:
+        #     candidate_transformations.append((ExpandTransform()))
+        #     candidate_transformations.extend(X['preprocess_transforms'])
+        #     candidate_transformations.append((ContractTransform()))
 
         # Transform to tensor
         candidate_transformations.append(torch.from_numpy)

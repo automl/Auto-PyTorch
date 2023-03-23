@@ -144,7 +144,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
 
         # TODO: Look for a criteria to define small enough to preprocess
         # False for the regularization cocktails initially
-        self.is_small_preprocess = False
+        self.is_small_preprocess = True
 
         # Make sure cross validation splits are created once
         self.cross_validators = CrossValFuncs.get_cross_validators(*CrossValTypes)

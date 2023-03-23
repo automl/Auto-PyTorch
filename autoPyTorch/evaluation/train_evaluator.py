@@ -131,7 +131,9 @@ class TrainEvaluator(AbstractEvaluator):
                 file_output=True,
                 status=status,
             )
-
+            # clear cache
+            import torch
+            torch.cuda.empty_cache()
         else:
             Y_train_pred: List[Optional[np.ndarray]] = [None] * self.num_folds
             Y_optimization_pred: List[Optional[np.ndarray]] = [None] * self.num_folds

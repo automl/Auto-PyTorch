@@ -71,7 +71,7 @@ class TabularColumnTransformer(autoPyTorchTabularPreprocessingComponent):
         else:
             X_train = X['backend'].load_datamanager().train_tensors[0]
 
-        self.preprocessor.fit(X_train)
+        # self.preprocessor.fit(X_train)
 
         return self
 
