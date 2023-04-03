@@ -434,6 +434,14 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
 
         return targets
 
+    def squeeze_outputs_pre_criterion(self, outputs: torch.Tensor) -> torch.Tensor:
+        if self.task_type in CLASSIFICATION_TASKS:
+            if self.output_type == BINARY:
+                # BCE requires target to be float.
+                outputs = torch.squeeze(outputs)
+
+        return outputs
+
     def train_step(self, data: np.ndarray, targets: np.ndarray) -> Tuple[float, torch.Tensor]:
         """
         Allows to train 1 step of gradient descent, given a batch of train/labels
@@ -458,7 +466,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
         loss_func = self.criterion_preparation(**criterion_kwargs)
         loss = loss_func(
             self.criterion,
-            outputs if self.output_type != BINARY else torch.squeeze(outputs),
+            self.squeeze_outputs_pre_criterion(outputs),
         )
         loss.backward()
         self.optimizer.step()
@@ -496,7 +504,7 @@ class BaseTrainerComponent(autoPyTorchTrainingComponent):
                 outputs = self.model(data)
                     
                 loss = self.criterion(
-                    outputs if self.output_type != BINARY else torch.squeeze(outputs),
+                    self.squeeze_outputs_pre_criterion(outputs),
                     targets)
                 loss_sum += loss.item() * batch_size
                 N += batch_size
