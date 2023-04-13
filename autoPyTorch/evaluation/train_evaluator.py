@@ -14,7 +14,7 @@ from autoPyTorch.constants import (
     CLASSIFICATION_TASKS,
     MULTICLASSMULTIOUTPUT
 )
-from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes
+from autoPyTorch.datasets.resampling_strategy import CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes
 from autoPyTorch.evaluation.abstract_evaluator import (
     AbstractEvaluator,
     fit_and_suppress_warnings
@@ -153,10 +153,10 @@ class TrainEvaluator(AbstractEvaluator):
             search_space_updates=search_space_updates
         )
 
-        if not isinstance(self.resampling_strategy, (CrossValTypes, HoldoutValTypes)):
+        if not isinstance(self.resampling_strategy, (CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes)):
             raise ValueError(
                 f'resampling_strategy for TrainEvaluator must be in '
-                f'(CrossValTypes, HoldoutValTypes), but got {self.resampling_strategy}'
+                f'(CrossValTypes, HoldoutValTypes, NoResamplingStrategyTypes), but got {self.resampling_strategy}'
             )
 
         self.num_folds: int = len(self.splits)
