@@ -228,7 +228,7 @@
             "network_backbone:flat_encoder:NBEATSDecoder:expansion_coefficient_length_g": 32,
             "network_backbone:flat_encoder:NBEATSDecoder:dropout_g": 0.1
         },
-        "TemoporalFusionTransformer": {
+        "TemporalFusionTransformer": {
             "loss:__choice__": "QuantileLoss",
             "target_scaler:scaling_mode": "standard",
             "data_loader:transform_time_features": true,
